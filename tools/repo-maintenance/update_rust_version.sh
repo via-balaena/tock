@@ -38,3 +38,48 @@ sed -i._SED_HACK "s/nightly-[0-9]*-[0-9]*-[0-9]*/${NIGHTLY}/g" .vscode/settings.
 sed -i._SED_HACK "s/nightly-[0-9]*-[0-9]*-[0-9]*/${NIGHTLY}/g" doc/Getting_Started.md
 
 find . -name '*._SED_HACK' -delete
+
+# Update custom RISC-V target specs to match the new toolchain.
+#
+# Tock uses custom target JSON specs (boards/cargo/riscv*.json) rather than
+# the built-in RISC-V targets so that the +relax feature (which enables LLVM
+# to emit relaxable relocations for linker relaxation, providing significant
+# code size savings) can be included in the base target definition. Features
+# specified via -Ctarget-feature trigger an "unstable feature" warning for
+# +relax because rustc has not yet stabilized it; features in the target spec
+# itself do not. There is no active upstream stabilization effort as of 2026;
+# track progress at https://github.com/rust-lang/rust/issues/109426.
+#
+# These JSON files are derived from `rustc --print target-spec-json` with
+# +relax appended to features and the metadata block stripped; they must be
+# kept in sync when the toolchain changes.
+echo "Checking RISC-V custom target specs..."
+for TARGET in riscv32imc-unknown-none-elf riscv32imac-unknown-none-elf riscv64imac-unknown-none-elf; do
+    JSON="boards/cargo/${TARGET}.json"
+    [ -f "$JSON" ] || continue
+
+    UPSTREAM_FILE=$(mktemp)
+    rustup run "$NIGHTLY" rustc -Z unstable-options --print target-spec-json --target "$TARGET" 2>/dev/null > "$UPSTREAM_FILE"
+
+    python3 - "$JSON" "$TARGET" "$UPSTREAM_FILE" <<'PYEOF'
+import json, sys
+
+with open(sys.argv[3]) as f:
+    upstream = json.load(f)
+upstream['features'] = upstream.get('features', '') + ',+relax'
+upstream.pop('metadata', None)
+
+path = sys.argv[1]
+with open(path) as f:
+    current = json.load(f)
+
+if current != upstream:
+    print(f"  {sys.argv[2]}: spec changed, updating")
+    with open(path, 'w') as f:
+        json.dump(upstream, f, indent=2)
+        f.write('\n')
+else:
+    print(f"  {sys.argv[2]}: up to date")
+PYEOF
+    rm "$UPSTREAM_FILE"
+done
