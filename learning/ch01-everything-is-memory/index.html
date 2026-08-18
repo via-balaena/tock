@@ -14,13 +14,14 @@
   --surface-sunk:#E9EEEB;
   --ink:         #131A1D;
   --ink-soft:    #5C6A70;
-  --ink-faint:   #8B979C;
+  --ink-faint:   #616D72;
   --rule:        #D3DBD8;
-  --rule-strong: #B4C0BC;
+  --rule-strong: #7D918A;
   --accent:      #0E6B70;
   --accent-soft: #E0EDEC;
-  --hot:         #E07B05;
-  --hot-ink:     #FFFFFF;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
   --hot-soft:    #FBEBD6;
   --danger:      #B93A2B;
   --danger-soft: #F7E4E1;
@@ -41,12 +42,13 @@
     --surface-sunk:#0A0F11;
     --ink:         #E3EAE7;
     --ink-soft:    #93A0A6;
-    --ink-faint:   #6B787E;
+    --ink-faint:   #77858C;
     --rule:        #252F34;
-    --rule-strong: #3A484E;
+    --rule-strong: #556A73;
     --accent:      #43B6BA;
     --accent-soft: #113034;
     --hot:         #FFA733;
+    --hot-fill:    #FFA733;
     --hot-ink:     #1A1206;
     --hot-soft:    #33240E;
     --danger:      #E8695C;
@@ -61,12 +63,13 @@
   --surface-sunk:#0A0F11;
   --ink:         #E3EAE7;
   --ink-soft:    #93A0A6;
-  --ink-faint:   #6B787E;
+  --ink-faint:   #77858C;
   --rule:        #252F34;
-  --rule-strong: #3A484E;
+  --rule-strong: #556A73;
   --accent:      #43B6BA;
   --accent-soft: #113034;
   --hot:         #FFA733;
+  --hot-fill:    #FFA733;
   --hot-ink:     #1A1206;
   --hot-soft:    #33240E;
   --danger:      #E8695C;
@@ -279,7 +282,7 @@ button.primary:hover:not(:disabled) { filter: brightness(1.12); color: var(--sur
   flex-wrap: wrap;
 }
 
-input[type="range"] { accent-color: var(--hot); width: 100%; }
+input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 
 /* ---------- ladder (reveal) ---------- */
 
@@ -409,11 +412,11 @@ input[type="range"] { accent-color: var(--hot); width: 100%; }
   transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
 }
 .bit.set {
-  background: var(--hot);
-  border-color: var(--hot);
+  background: var(--hot-fill);
+  border-color: var(--hot-fill);
   color: var(--hot-ink);
   font-weight: 600;
-  box-shadow: 0 0 0 1px var(--hot), 0 0 14px -2px var(--hot);
+  box-shadow: 0 0 0 1px var(--hot-fill), 0 0 14px -2px var(--hot-fill);
 }
 
 .bitlabels {
@@ -509,7 +512,7 @@ input[type="range"] { accent-color: var(--hot); width: 100%; }
   flex-direction: column;
   gap: .55rem;
 }
-.panel h4 {
+.panel h3 {
   font-family: var(--display);
   font-size: .74rem;
   font-weight: 700;
@@ -518,7 +521,7 @@ input[type="range"] { accent-color: var(--hot); width: 100%; }
   margin: 0;
   color: var(--accent);
 }
-.panel.hot h4 { color: var(--hot); }
+.panel.hot h3 { color: var(--hot); }
 .panel-line {
   font-family: var(--mono);
   font-size: .82rem;
@@ -618,6 +621,7 @@ input[type="range"] { accent-color: var(--hot); width: 100%; }
   text-transform: uppercase;
   color: var(--ink-soft);
 }
+.step-what { white-space: pre; overflow-x: auto; }
 .step.lost .step-what { color: var(--danger); font-weight: 500; }
 
 .outcome {
@@ -711,6 +715,15 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 .sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
 .sources ul { margin: 0; padding-left: 1.1rem; }
 .sources code { font-size: .8em; }
+
+@media (max-width: 30rem) {
+  .rung { grid-template-columns: 1fr; gap: .35rem; }
+  .rung-who { padding-top: 0; }
+  .map-row { grid-template-columns: 1fr auto; row-gap: .15rem; }
+  .map-row .map-addr { grid-column: 1 / -1; }
+  .step { grid-template-columns: 1.6rem 1fr; row-gap: .1rem; }
+  .step .step-what { grid-column: 2 / -1; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
@@ -827,11 +840,11 @@ bx    lr</code></pre>
     <div class="map" id="beh"></div>
     <div class="compare" style="margin-top:1.1rem">
       <div class="panel">
-        <h4>A write does</h4>
+        <h3>A write does</h3>
         <div class="panel-line prose" id="beh-w">&mdash;</div>
       </div>
       <div class="panel hot">
-        <h4>A read returns</h4>
+        <h3>A read returns</h3>
         <div class="panel-line prose" id="beh-r">&mdash;</div>
       </div>
     </div>
@@ -930,10 +943,10 @@ bx    lr</code></pre>
   </div>
   <div class="instrument-body">
     <div class="tabs" role="tablist">
-      <button class="tab" id="tab-rmw" role="tab" aria-selected="true" aria-controls="race-panel">Read&ndash;modify&ndash;write</button>
-      <button class="tab" id="tab-atomic" role="tab" aria-selected="false" aria-controls="race-panel">Atomic set</button>
+      <button class="tab" id="tab-rmw" role="tab" aria-selected="true" aria-controls="race-panel" tabindex="0">Read&ndash;modify&ndash;write</button>
+      <button class="tab" id="tab-atomic" role="tab" aria-selected="false" aria-controls="race-panel" tabindex="-1">Atomic set</button>
     </div>
-    <div id="race-panel" role="tabpanel">
+    <div id="race-panel" role="tabpanel" aria-labelledby="tab-rmw">
       <p style="font-family:var(--body);font-size:.95rem;color:var(--ink-soft);margin-bottom:1rem" id="race-intro"></p>
       <div class="race-grid">
         <div class="core" id="core0">
@@ -1402,14 +1415,41 @@ bx    lr</code></pre>
   });
   document.getElementById("race-reset").addEventListener("click", resetRace);
 
+  var TABS = ["tab-rmw", "tab-atomic"];
+
   function selectTab(m) {
     mode = m;
-    document.getElementById("tab-rmw").setAttribute("aria-selected", String(m === "rmw"));
-    document.getElementById("tab-atomic").setAttribute("aria-selected", String(m === "atomic"));
+    var active = m === "rmw" ? "tab-rmw" : "tab-atomic";
+    TABS.forEach(function (id) {
+      var el = document.getElementById(id);
+      var on = id === active;
+      el.setAttribute("aria-selected", String(on));
+      // Roving tabindex: only the selected tab sits in the tab order, which is
+      // what the WAI-ARIA tab pattern expects.
+      el.setAttribute("tabindex", on ? "0" : "-1");
+    });
+    document.getElementById("race-panel").setAttribute("aria-labelledby", active);
     resetRace();
   }
-  document.getElementById("tab-rmw").addEventListener("click", function () { selectTab("rmw"); });
-  document.getElementById("tab-atomic").addEventListener("click", function () { selectTab("atomic"); });
+
+  TABS.forEach(function (id, i) {
+    var el = document.getElementById(id);
+    el.addEventListener("click", function () { selectTab(i ? "atomic" : "rmw"); });
+    // Left/Right move between tabs; Home/End jump to the ends.
+    el.addEventListener("keydown", function (e) {
+      var key = e && e.key;
+      var next = null;
+      if (key === "ArrowRight" || key === "ArrowDown") { next = (i + 1) % TABS.length; }
+      else if (key === "ArrowLeft" || key === "ArrowUp") { next = (i + TABS.length - 1) % TABS.length; }
+      else if (key === "Home") { next = 0; }
+      else if (key === "End") { next = TABS.length - 1; }
+      if (next === null) { return; }
+      if (e.preventDefault) { e.preventDefault(); }
+      selectTab(next ? "atomic" : "rmw");
+      var moved = document.getElementById(TABS[next]);
+      if (moved.focus) { moved.focus(); }
+    });
+  });
 
   resetRace();
 })();

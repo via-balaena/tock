@@ -43,9 +43,15 @@ El.prototype.addEventListener = function (e, f) { (this._h[e] = this._h[e] || []
 El.prototype.querySelectorAll = function () { return this.children; };
 
 // Dispatch an event to this element's registered handlers.
-El.prototype.fire = function (e) {
+El.prototype.focus = function () { REG._focused = this.id; };
+
+// Dispatch an event to this element's registered handlers. `detail` is passed
+// through as the event object, so keyboard handlers can be exercised.
+El.prototype.fire = function (e, detail) {
   var self = this;
-  (this._h[e] || []).forEach(function (f) { f.call(self); });
+  var ev = detail || {};
+  if (!ev.preventDefault) { ev.preventDefault = function () { ev.defaultPrevented = true; }; }
+  (this._h[e] || []).forEach(function (f) { f.call(self, ev); });
 };
 
 var REG = {};
@@ -70,6 +76,13 @@ function chk(name, got, want) {
     line: (ok ? "pass  " : "FAIL  ") + name +
           (ok ? "" : "\n          got:  " + got + "\n          want: " + want)
   });
+}
+
+// Run an adversarial sequence. Passes if it neither throws nor trips an
+// internal consistency check of its own.
+function t(name, fn) {
+  try { fn(); RESULTS.push({ ok: true, line: "pass  " + name }); }
+  catch (e) { RESULTS.push({ ok: false, line: "FAIL  " + name + "\n          threw: " + e }); }
 }
 
 function report() {
