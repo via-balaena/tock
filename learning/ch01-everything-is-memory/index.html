@@ -377,8 +377,25 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   font-variant-numeric: tabular-nums;
 }
 
+/* A small muted aside: provenance lines, caveats, footnotes. */
+.note {
+  font-size: .92rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* An instrument whose content is a single code block, so the block can sit
+   flush against the frame instead of inside the usual padding. */
+.instrument-body.flush { padding: 0; }
+
+/* An instrument that should hold the reading column's width rather than
+   breaking out wide. */
+.instrument.narrow { max-width: var(--measure); }
+
+.compare { margin-top: 1.1rem; }
+
 .map-detail {
-  margin-top: .9rem;
+  margin-top: 1.1rem;
   padding: .85rem 1rem;
   background: var(--accent-soft);
   border-left: 3px solid var(--accent);
@@ -539,16 +556,6 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 .bit.nopin { opacity: .32; border-style: dashed; }
 .bitlabel.nopin { opacity: .45; }
 
-.verdict {
-  font-family: var(--display);
-  font-size: .82rem;
-  font-weight: 600;
-  letter-spacing: .02em;
-  padding-top: .4rem;
-  border-top: 1px dashed var(--rule-strong);
-}
-.verdict.ok { color: var(--accent); }
-.verdict.odd { color: var(--hot); }
 
 /* ---------- race machine ---------- */
 
@@ -668,6 +675,17 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 
 /* ---------- aside ---------- */
 
+/* A verbatim quotation from a datasheet or specification. */
+.quote {
+  margin: 0;
+  padding: .1rem 0 .1rem 1rem;
+  border-left: 3px solid var(--rule-strong);
+  font-size: .97rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
 .aside {
   border-left: 3px solid var(--hot);
   background: var(--hot-soft);
@@ -711,7 +729,20 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   font-size: .84rem;
   color: var(--ink-soft);
   line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
 }
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
 .sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
 .sources ul { margin: 0; padding-left: 1.1rem; }
 .sources code { font-size: .8em; }
@@ -735,7 +766,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 <header class="masthead">
   <div class="eyebrow">Learning Tock from the ground up &middot; Chapter&nbsp;1</div>
   <h1>Everything Is Memory</h1>
-  <p class="standfirst">On a microcontroller, a peripheral is not a device you talk to. It is a set of memory addresses that <em>do something</em> when you write to them. Once that clicks, most of embedded programming stops being mysterious &mdash; and the reason an operating system like Tock has to exist at all becomes obvious.</p>
+  <p class="standfirst">On a microcontroller, a peripheral is not a device you talk to. It is a set of memory addresses that <em>do something</em> when you read or write them. Once that clicks, most of embedded programming stops being mysterious &mdash; and the reason an operating system like Tock has to exist at all becomes obvious.</p>
   <div class="byline">Verified against Tock at commit <code>47287a64e</code> and the RP2350 datasheet (build 2025-07-29), targeting the Raspberry Pi Pico&nbsp;2. Every address, register description and code excerpt below is quoted from one of those two documents, not from memory.</div>
 </header>
 
@@ -744,7 +775,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   <p>If you have used an Arduino, you have written something like <code>digitalWrite(25, HIGH)</code>. It reads like a command issued to a device: <em>pin, turn on</em>.</p>
   <p>It isn't. On this chip, the thing that actually changes the pin is <strong>a single store of a single 32-bit value to a single memory address</strong>. There is no message, no protocol, no driver conversation with a device. One write.</p>
   <p>Layers around that store still do work &mdash; Arduino's helper checks and reconfigures things, and Tock's checks that you configured the pin as an output. But none of that is <em>how the pin turns on</em>. The store is.</p>
-  <p>Here is the entire ladder on the RP2350, from the friendliest layer to the instruction the processor actually executes.</p>
+  <p>Here is the entire ladder on the RP2350, from the friendliest layer down to the instructions the processor actually executes.</p>
 </section>
 
 <figure class="instrument">
@@ -760,7 +791,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
     </div>
     <div class="ladder" id="ladder"></div>
   </div>
-  <div class="instrument-note">The bottom rung is the truth. Every rung above it is a convenience that compiles away to exactly that store.</div>
+  <div class="instrument-note">The bottom rung is where the pin actually changes. Everything above it is convenience wrapped around that store.</div>
 </figure>
 
 <section class="col">
@@ -772,7 +803,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
     <span class="instrument-label">Instrument 2</span>
     <span class="instrument-title">The actual machine code, from your own build</span>
   </div>
-  <div class="instrument-body" style="padding:0">
+  <div class="instrument-body flush">
 <pre><code><span class="tok-c">; &lt;RPGpioPin as kernel::hil::gpio::Output&gt;::set     @ 0x1000b66a</span>
 push  {r4, r6, r7, lr}
 add   r7, sp, #0x8
@@ -823,22 +854,22 @@ bx    lr</code></pre>
 
 <section class="col">
   <h2>What happens when you read one back?</h2>
-  <p>It is tempting to summarise all this as "registers aren't storage, they're doorbells." That is half right, and the wrong half matters.</p>
-  <p>Some registers really do behave like storage. <code>GPIO_OUT</code> at <code class="addr">0xD0000010</code> is one &mdash; the chip crate's description of it, transcribed from the datasheet, reads <em>"Set output level (1/0 &rarr; high/low) for GPIO0&hellip;31. Reading back gives the last value written, NOT the input value from the pins."</em> Write to it, read it, and you get your value back. The datasheet types it <code>RW</code>.</p>
-  <p><code>GPIO_OUT_SET</code>, eight bytes further along, does not. A write there is an <em>operation applied to a different register</em>: <code>gpio_out |= value</code>. Write a value with no bits set and nothing happens at all &mdash; no storage location in the world silently discards a write like that.</p>
-  <p>That is the datasheet's own description of the register, word for word: <em>"Perform an atomic bit-set on GPIO_OUT, i.e. <code>GPIO_OUT |= wdata</code>"</em>. Its two neighbours are spelled out the same way &mdash; <code>GPIO_OUT_CLR</code> is <code>GPIO_OUT &amp;= ~wdata</code>, and <code>GPIO_OUT_XOR</code> is <code>GPIO_OUT ^= wdata</code>.</p>
-  <p class="footnote-ish" style="font-size:.92rem;color:var(--ink-soft)">One detail worth noticing, because it is the kind of thing that bites later: the datasheet types <code>GPIO_OUT_SET</code> as <strong>WO</strong>, write-only. Tock's chip crate declares it <code>ReadWrite&lt;u32&gt;</code>, which is looser than the hardware contract. Nothing breaks today, because the kernel only ever writes it &mdash; but the type permits a read the hardware never promised to answer.</p>
-  <p>So the real lesson is sharper than "doorbell": <strong>what an address does on a read, and on a write, is a decision the hardware designer made for that one register.</strong> The address itself tells you nothing about it. You cannot infer the behaviour; you can only look it up.</p>
+  <p>It is tempting to summarize all this as "registers aren't storage, they're doorbells." That is half right, and the wrong half matters.</p>
+  <p>Some registers really do behave like storage. <code>GPIO_OUT</code> at <code class="addr">0xD0000010</code> is one. The datasheet's description of it reads <em>"Set output level (1/0 &rarr; high/low) for GPIO0&hellip;31. Reading back gives the last value written, NOT the input value from the pins."</em> Write to it, read it, and you get your value back. The datasheet types it <code>RW</code>.</p>
+  <p><code>GPIO_OUT_SET</code>, eight bytes further along, does not. Its entire description is an <em>operation applied to a different register</em> &mdash; word for word, <em>"Perform an atomic bit-set on GPIO_OUT, i.e. <code>GPIO_OUT |= wdata</code>"</em>. Its two neighbors are spelled out the same way: <code>GPIO_OUT_CLR</code> is <code>GPIO_OUT &amp;= ~wdata</code>, and <code>GPIO_OUT_XOR</code> is <code>GPIO_OUT ^= wdata</code>.</p>
+  <p>So the value you write here is not kept anywhere. It is consumed as an argument. Write a value with no bits set and nothing happens at all &mdash; no storage location in the world silently discards a write like that.</p>
+  <p class="note">One detail worth noticing, because it is the kind of thing that bites later: the datasheet types <code>GPIO_OUT_SET</code> as <strong>WO</strong>, write-only. Tock's chip crate declares it <code>ReadWrite&lt;u32&gt;</code>, which is looser than the hardware contract. Nothing breaks today, because the kernel only ever writes it &mdash; but the type permits a read the hardware never promised to answer.</p>
+  <p>So the real lesson is sharper than "doorbell": <strong>what an address does on a read, and on a write, is a decision the hardware designer made for that one register.</strong> The address itself tells you nothing about it. You cannot infer the behavior; you can only look it up.</p>
 </section>
 
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Instrument 4</span>
-    <span class="instrument-title">Four addresses, four different behaviours</span>
+    <span class="instrument-title">Four addresses, four different behaviors</span>
   </div>
   <div class="instrument-body">
     <div class="map" id="beh"></div>
-    <div class="compare" style="margin-top:1.1rem">
+    <div class="compare">
       <div class="panel">
         <h3>A write does</h3>
         <div class="panel-line prose" id="beh-w">&mdash;</div>
@@ -848,7 +879,7 @@ bx    lr</code></pre>
         <div class="panel-line prose" id="beh-r">&mdash;</div>
       </div>
     </div>
-    <div class="map-detail" id="beh-d" style="margin-top:1.1rem">Select an address to compare.</div>
+    <div class="map-detail" id="beh-d">Select an address to compare.</div>
   </div>
   <div class="instrument-note">Only the first is purely a variable. The second retains what you write <em>and</em> changes the physical world; the last two are not storage at all. One address in four behaves the way ordinary programming taught you to expect.</div>
 </figure>
@@ -856,7 +887,7 @@ bx    lr</code></pre>
 <section class="col">
   <h2>Where <code>1 &lt;&lt; 25</code> comes from</h2>
   <p>One register controls a whole bank of pins at once, because a 32-bit register has thirty-two independent bits. Bit 0 is GPIO&nbsp;0, bit 25 is GPIO&nbsp;25. To act on pin <em>n</em> you set bit <em>n</em>, and the idiom for "a value with only bit <em>n</em> set" is <code>1 &lt;&lt; n</code>. That is the whole reason the Tock source reads <code>1 &lt;&lt; self.pin</code>.</p>
-  <p>Be careful with an assumption that looks safe here: <strong>a 32-bit register does not imply thirty-two pins.</strong> Tock's RP2350 crate defines pins <code>GPIO0</code> through <code>GPIO29</code> &mdash; thirty of them, not thirty-two. Bits 30 and 31 are real bits in a real register with no pin behind them here. Register width and pin count are two separate facts, and only one of them is visible in the code.</p>
+  <p>Be careful with an assumption that looks safe here: <strong>a 32-bit register does not imply thirty-two pins.</strong> Tock's RP2350 crate defines pins <code>GPIO0</code> through <code>GPIO29</code> &mdash; thirty of them, not thirty-two. Bits 30 and 31 are real bits in a real register with no pin behind them on this chip. Register width and pin count are two separate facts, and only one of them is visible in the code.</p>
 </section>
 
 <figure class="instrument">
@@ -894,7 +925,7 @@ bx    lr</code></pre>
         <span class="readout-v" id="ro-store">*0xD0000018 = 0x02000000</span>
       </div>
     </div>
-    <div class="map-detail" id="pin-note" style="margin-top:1.1rem">&nbsp;</div>
+    <div class="map-detail" id="pin-note">&nbsp;</div>
   </div>
   <div class="instrument-note">Top row is bits 31&ndash;16, bottom row bits 15&ndash;0 &mdash; the layout datasheets use for register diagrams. The two dashed cells are bits with no pin behind them on this chip.</div>
 </figure>
@@ -908,7 +939,7 @@ bx    lr</code></pre>
 #define CYW43_DEFAULT_PIN_WL_CLOCK    29u
 <span class="tok-n">#define CYW43_DEFAULT_PIN_WL_CS       25u</span>
 <span class="tok-n">#define CYW43_WL_GPIO_LED_PIN          0</span></code></pre>
-    <p style="font-size:.9rem;color:var(--ink-soft)">pico-sdk, <code>src/boards/include/boards/pico2_w.h</code></p>
+    <p class="note">pico-sdk, <code>src/boards/include/boards/pico2_w.h</code></p>
     <p>So on your Pico&nbsp;2&nbsp;W this write will not light anything &mdash; it will toggle the radio's chip-select. The LED is <code>CYW43_WL_GPIO_LED_PIN 0</code>: a pin on the wireless chip, which the RP2350 can only reach by talking to that chip over SPI first.</p>
     <p>Worth sitting with, because it is the first real lesson about layering: the <em>chip</em> says "pin 25." What pin 25 is <em>connected to</em> is a fact about the <em>board</em>. Confusing the two is how you spend an afternoon debugging an LED that was never there.</p>
   </div>
@@ -919,8 +950,8 @@ bx    lr</code></pre>
   <p>Look closely at the SIO register block and something looks redundant. Four different registers all control the same bank of output pins:</p>
 </section>
 
-<div class="instrument" style="max-width:var(--measure)">
-  <div class="instrument-body" style="padding:0">
+<div class="instrument narrow">
+  <div class="instrument-body flush">
 <pre><code>(0x010 =&gt; gpio_out)        <span class="tok-c">// GPIO0..31 output value</span>
 (0x018 =&gt; gpio_out_set)    <span class="tok-c">// GPIO0..31 output value set</span>
 (0x020 =&gt; gpio_out_clr)    <span class="tok-c">// GPIO0..31 output value clear</span>
@@ -931,8 +962,10 @@ bx    lr</code></pre>
 
 <section class="col">
   <p>If <code>gpio_out</code> already holds the output state, then turning on pin 25 is obviously <code>gpio_out |= 1 &lt;&lt; 25</code>. So why did the designers spend silicon on three more registers that do things you could already do?</p>
-  <p><strong>Because <code>|=</code> is not one operation. It is three:</strong> read the current value, OR in your bit, write the result back. Anything happening between the read and the write &mdash; an interrupt firing, or the other CPU core running at that instant &mdash; gets clobbered by that final write. The RP2350 has two cores, so this is not hypothetical.</p>
-  <p>It is not a subtlety we are inventing, either. The chip's own register documentation raises it unprompted. The description of <code>GPIO_OUT</code> carried into the Tock source at <code>chips/rp2350/src/gpio.rs:623</code> begins a sentence with <em>"If core 0 and core 1 both write to GPIO_OUT simultan&hellip;"</em> &mdash; the vendor documents the race in the very register that has it. (The comment is truncated in the crate; the full text is in the datasheet.)</p>
+  <p><strong>Because <code>|=</code> is not one operation. It is three:</strong> read the current value, OR in your bit, write the result back. Any change somebody else makes in the gap between your read and your write &mdash; an interrupt handler, or the other CPU core running at that instant &mdash; is erased when your write lands, because your write carries the value you read <em>before</em> they touched it. The RP2350 has two cores, so this is not hypothetical.</p>
+  <p>The chip designers were thinking about two cores here. The datasheet's description of <code>GPIO_OUT</code> says exactly what happens when both hit it at once:</p>
+  <blockquote class="quote">If core 0 and core 1 both write to GPIO_OUT simultaneously (or to a SET/CLR/XOR alias), the result is as though the write from core 0 took place first, and the write from core 1 was then applied to that intermediate result.</blockquote>
+  <p>Read that carefully, because it is a promise about <em>stores</em>, and it does not rescue you. Two simultaneous writes are cleanly serialized, one after the other, with a defined outcome. But <code>|=</code> is not a write. It is a read, then a write, with a window in between &mdash; and the damage is done by the stale value your <em>read</em> returned, long before the store this paragraph is talking about ever happens.</p>
   <p>Step through it and watch a write disappear.</p>
 </section>
 
@@ -947,7 +980,7 @@ bx    lr</code></pre>
       <button class="tab" id="tab-atomic" role="tab" aria-selected="false" aria-controls="race-panel" tabindex="-1">Atomic set</button>
     </div>
     <div id="race-panel" role="tabpanel" aria-labelledby="tab-rmw">
-      <p style="font-family:var(--body);font-size:.95rem;color:var(--ink-soft);margin-bottom:1rem" id="race-intro"></p>
+      <p class="note" style="margin-bottom:1rem" id="race-intro"></p>
       <div class="race-grid">
         <div class="core" id="core0">
           <span class="core-name">Core 0 &mdash; wants pin 25</span>
@@ -985,8 +1018,8 @@ bx    lr</code></pre>
   <p>In Tock this is not something you remember to do &mdash; it is baked into the register types, so it is impossible to forget:</p>
 </section>
 
-<div class="instrument" style="max-width:var(--measure)">
-  <div class="instrument-body" style="padding:0">
+<div class="instrument narrow">
+  <div class="instrument-body flush">
 <pre><code><span class="tok-c">// impl&lt;T, R&gt; Writeable for ReadWrite&lt;T, R&gt;</span>
 <span class="tok-k">fn</span> set(&amp;<span class="tok-k">self</span>, value: T) {
     <span class="tok-k">unsafe</span> { ::core::ptr::<span class="tok-n">write_volatile</span>(<span class="tok-k">self</span>.value.get(), value) }
@@ -1006,14 +1039,14 @@ bx    lr</code></pre>
   <p>Take stock of what is now true. Peripherals are memory addresses. Writing to them has physical effects. And on a bare microcontroller, <strong>any code running on the chip can write to any address at any time.</strong></p>
   <p>There is no permission to check. No kernel to ask. The store instruction to <code class="addr">0xD0000018</code> is exactly as permitted as a store to a variable of your own, and costs about as much. A stray pointer in some unrelated sensor routine can drive a lock relay, reconfigure a UART mid-transmission, or scribble over the flash controller's registers.</p>
   <p>That is not a bug in anyone's code. It is the default condition of the machine.</p>
-  <p><strong>Every single thing Tock does is an answer to that sentence.</strong> Its capsules, its processes, its grants, the MPU configuration it programs before running your application &mdash; all of it exists to put something between arbitrary code and arbitrary addresses. Chapter by chapter, that is the story we are going to build.</p>
+  <p><strong>Every single thing Tock does is an answer to that one sentence &mdash; any code can write any address.</strong> Its capsules, its processes, its grants, the MPU configuration it programs before letting your application run: all of it exists to put something between arbitrary code and arbitrary addresses. Chapter by chapter, that is the story we are going to build.</p>
 </section>
 
 <div class="next col">
-  <div class="eyebrow" style="color:var(--hot)">Next</div>
+  <div class="eyebrow forward">Next</div>
   <h3 style="margin-top:0">Chapter 2 &mdash; How code starts running</h3>
   <p>Before anything can write to a register, something has to be executing. We will follow the RP2350 from the instant power arrives to the first line of Tock's <code>main()</code> &mdash; the reset vector, what the boot ROM is looking for in that 1&nbsp;KB reserved in front of the kernel, and what "initialize RAM" actually means when RAM contains garbage.</p>
-  <p style="color:var(--ink-soft);font-size:.95rem">Things worth carrying forward from this chapter:</p>
+  <p class="note">Things worth carrying forward from this chapter:</p>
   <ol>
     <li>A peripheral is an address, not a device.</li>
     <li>What an address does on read and write is a per-register design decision. Look it up; never infer it.</li>
@@ -1029,7 +1062,7 @@ bx    lr</code></pre>
   <ul>
     <li>SIO base <code>0xD0000000</code>, IO_BANK0 <code>0x40028000</code>, PADS <code>0x40038000</code> &mdash; <code>chips/rp2350/src/gpio.rs:1165&ndash;1169</code></li>
     <li>Register offsets <code>gpio_out</code> <code>0x010</code> &hellip; <code>gpio_out_xor</code> <code>0x028</code>, and their descriptions &mdash; <code>chips/rp2350/src/gpio.rs:89&ndash;105</code></li>
-    <li><code>GPIO_OUT</code> read-back wording and the two-core race note &mdash; <code>chips/rp2350/src/gpio.rs:621&ndash;625</code></li>
+    <li><code>GPIO_OUT</code> read-back wording, and how simultaneous writes from both cores resolve &mdash; RP2350 datasheet, Table&nbsp;21. Tock's crate carries the same text truncated, at <code>chips/rp2350/src/gpio.rs:621&ndash;625</code></li>
     <li><code>gpio_out_set.set(1 &lt;&lt; self.pin)</code> &mdash; <code>chips/rp2350/src/gpio.rs:1485</code></li>
     <li>Pins defined as <code>GPIO0</code>&ndash;<code>GPIO29</code>, thirty of them &mdash; <code>chips/rp2350/src/gpio.rs:1245&ndash;1250</code></li>
     <li><code>Output::set</code> as the portable HIL contract &mdash; <code>kernel/src/hil/gpio.rs:151&ndash;154</code></li>
@@ -1042,9 +1075,9 @@ bx    lr</code></pre>
     <li><code>GPIO_OUT</code> read-back wording in full, the <code>|=</code> / <code>&amp;= ~</code> / <code>^=</code> semantics, and the <code>WO</code> type of <code>GPIO_OUT_SET</code> &mdash; RP2350 datasheet &sect;3.1, register tables at offsets 0x010&ndash;0x028</li>
     <li>How the processors reach SIO &mdash; RP2350 datasheet &sect;3.1 opening paragraph and Figure 7</li>
   </ul>
-  <p style="margin-top:.8rem">Every claim on this page now rests on one of the documents above. Three items that earlier drafts marked as inference have been chased down and resolved: the Pico&nbsp;2&nbsp;W chip-select assignment (confirmed by Raspberry Pi's own <code>pico2_w.h</code>), the <code>GPIO_OUT_SET</code> read-modify-write semantics (confirmed by the datasheet's register table), and how the processors reach SIO.</p>
-  <p style="margin-top:.6rem">That last one turned out to be <em>wrong</em> as originally written. An earlier draft said SIO was reached by a route separate from the peripheral fabric. It is not &mdash; the datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The error came from recalling the RP2040, where SIO does sit on the Cortex-M0+ single-cycle IOPORT. Different chip, different answer.</p>
-  <p style="margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--rule)">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
+  <p>Every claim on this page now rests on one of the documents above. Three items that earlier drafts marked as inference have been chased down and resolved: the Pico&nbsp;2&nbsp;W chip-select assignment (confirmed by Raspberry Pi's own <code>pico2_w.h</code>), the <code>GPIO_OUT_SET</code> read-modify-write semantics (confirmed by the datasheet's register table), and how the processors reach SIO.</p>
+  <p>That last one turned out to be <em>wrong</em> as originally written. An earlier draft said SIO was reached by a route separate from the peripheral fabric. It is not &mdash; the datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The error came from recalling the RP2040, where SIO does sit on the Cortex-M0+ single-cycle IOPORT. Different chip, different answer.</p>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
 </div>
 
 </div>
@@ -1176,7 +1209,7 @@ bx    lr</code></pre>
     mapEl.appendChild(row);
   });
 
-  /* ---------------- Instrument 4: four behaviours ---------------- */
+  /* ---------------- Instrument 4: four behaviors ---------------- */
 
   var BEHAVIOURS = [
     { addr: "0x20000100", name: "SRAM", tag: "ordinary memory",

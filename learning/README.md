@@ -62,10 +62,10 @@ fails, so it can gate a commit.
 
 **Static checks** on the page: duplicate ids, unbalanced tags, JavaScript
 reaching for ids that do not exist, CSS variables used but never defined, and
-colour literals outside the theme token blocks -- that last one being the usual
-way a page ends up unreadable in one of the two colour schemes.
+color literals outside the theme token blocks -- that last one being the usual
+way a page ends up unreadable in one of the two color schemes.
 
-**Behavioural checks**: the page's own `<script>` is executed headlessly under
+**Behavioral checks**: the page's own `<script>` is executed headlessly under
 JavaScriptCore against the DOM shim in `tools/harness.js`, then the chapter's
 assertions run against the resulting state. This is how the interactive figures
 are verified to actually compute what the prose claims they compute -- the

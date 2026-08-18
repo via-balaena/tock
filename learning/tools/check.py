@@ -10,13 +10,13 @@ For every chapter directory under learning/ this runs:
 
   1. Static checks on the page  - duplicate ids, unbalanced tags, JavaScript
      reaching for ids that do not exist, CSS variables used but never defined,
-     and colours hardcoded outside the theme token blocks (which is the classic
+     and colors hardcoded outside the theme token blocks (which is the classic
      way an artifact ends up unreadable in one of the two themes). Also the
      WCAG contrast of every foreground-on-background pair in both themes, that
      the OS-dark and toggled-dark palettes agree, heading order, and whether
-     ARIA roles are backed by the behaviour they promise.
+     ARIA roles are backed by the behavior they promise.
 
-  2. Behavioural checks         - the page's own <script> is executed headlessly
+  2. Behavioral checks         - the page's own <script> is executed headlessly
      against the DOM shim in harness.js, then the chapter's assertions in
      tools/<chapter-prefix>.tests.js run against the resulting state.
 
@@ -64,8 +64,8 @@ CONTRAST_PAIRS = [
 ]
 
 
-def _luminance(hex_colour):
-    parts = [int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+def _luminance(hex_color):
+    parts = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
     parts = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
              for v in parts]
     return 0.2126 * parts[0] + 0.7152 * parts[1] + 0.0722 * parts[2]
@@ -131,7 +131,7 @@ def semantic_checks(html):
     if sum(1 for level, _ in headings if level == 1) != 1:
         problems.append("expected exactly one h1")
 
-    # A role is a promise about behaviour. Claiming the tab role without the
+    # A role is a promise about behavior. Claiming the tab role without the
     # keyboard pattern misleads screen-reader users. Check the markup itself,
     # not the whole file: an attribute that only the script sets is absent for
     # the initial render, which is exactly when a reader first meets the page.
@@ -183,14 +183,14 @@ def static_checks(html, name):
         problems.append("CSS variables used but never defined: %s"
                         % ", ".join(undefined))
 
-    # Colours must live in the token blocks so both themes resolve as a set.
+    # Colors must live in the token blocks so both themes resolve as a set.
     # Everything after the reset is component CSS and should reference tokens.
     marker = "* { box-sizing: border-box; }"
     if marker in html and "</style>" in html:
         component_css = html.split(marker, 1)[1].split("</style>", 1)[0]
         literals = sorted(set(re.findall(r"#[0-9A-Fa-f]{3,8}\b", component_css)))
         if literals:
-            problems.append("colour literals outside the token blocks: %s"
+            problems.append("color literals outside the token blocks: %s"
                             % ", ".join(literals))
 
     if "<title>" not in html:
@@ -202,7 +202,7 @@ def static_checks(html, name):
     return problems
 
 
-def behaviour_checks(html, tests_path):
+def behavior_checks(html, tests_path):
     """Execute the page JS plus assertions under jsc. Returns (ok, output)."""
     if not os.path.exists(JSC):
         return None, "JavaScriptCore not found at %s - skipped" % JSC
@@ -274,7 +274,7 @@ def main():
         prefix = chapter.split("-", 1)[0]
         tests_path = os.path.join(TOOLS, "%s.tests.js" % prefix)
         if os.path.exists(tests_path):
-            ok, out = behaviour_checks(html, tests_path)
+            ok, out = behavior_checks(html, tests_path)
             if ok is None:
                 print("  ----  %s" % out)
             else:
@@ -282,7 +282,7 @@ def main():
                 if not ok:
                     bad = True
         else:
-            print("  ----  no %s.tests.js, behavioural checks skipped" % prefix)
+            print("  ----  no %s.tests.js, behavioral checks skipped" % prefix)
 
         if bad:
             failures += 1

@@ -43,9 +43,9 @@ REG["map"].children[15].fire("click");
 chk("SIO detail derives 0xD0000018",
     REG["map-detail"].textContent.indexOf("0xD0000018") > -1, true);
 
-// ---- Instrument 4: read/write behaviours ----
+// ---- Instrument 4: read/write behaviors ----
 
-chk("all four behaviours are rendered", REG["beh"].children.length, 4);
+chk("all four behaviors are rendered", REG["beh"].children.length, 4);
 REG["beh"].children[0].fire("click");
 chk("SRAM reads back what you wrote", REG["beh-r"].textContent, "Exactly what you wrote.");
 REG["beh"].children[2].fire("click");
@@ -171,7 +171,7 @@ t("only one map row stays selected", function(){
   if(sel!==1) throw new Error(sel+" rows selected");
 });
 
-t("only one behaviour row stays selected", function(){
+t("only one behavior row stays selected", function(){
   REG["beh"].children[1].fire("click");
   REG["beh"].children[3].fire("click");
   var sel=0;
