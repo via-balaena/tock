@@ -526,6 +526,16 @@ input[type="range"] { accent-color: var(--hot); width: 100%; }
   overflow-x: auto;
   white-space: pre;
 }
+.panel-line.prose {
+  white-space: normal;
+  font-family: var(--body);
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+.bit.nopin { opacity: .32; border-style: dashed; }
+.bitlabel.nopin { opacity: .45; }
+
 .verdict {
   font-family: var(--display);
   font-size: .82rem;
@@ -713,7 +723,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   <div class="eyebrow">Learning Tock from the ground up &middot; Chapter&nbsp;1</div>
   <h1>Everything Is Memory</h1>
   <p class="standfirst">On a microcontroller, a peripheral is not a device you talk to. It is a set of memory addresses that <em>do something</em> when you write to them. Once that clicks, most of embedded programming stops being mysterious &mdash; and the reason an operating system like Tock has to exist at all becomes obvious.</p>
-  <div class="byline">Written against Tock at commit <code>20adc62c2</code>, targeting the RP2350 (Raspberry Pi Pico&nbsp;2). Every address and code excerpt below is quoted from the repository, not from memory.</div>
+  <div class="byline">Verified against Tock at commit <code>47287a64e</code>, targeting the RP2350 (Raspberry Pi Pico&nbsp;2). Every address and code excerpt below is quoted from the repository, not from memory.</div>
 </header>
 
 <section class="col">
@@ -740,6 +750,45 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 </figure>
 
 <section class="col">
+  <p>That bottom rung is not a simplification for teaching. It is what a disassembler prints when you point it at the kernel you built earlier in this chapter's repository. Here is the whole function, unedited.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Instrument 2</span>
+    <span class="instrument-title">The actual machine code, from your own build</span>
+  </div>
+  <div class="instrument-body" style="padding:0">
+<pre><code><span class="tok-c">; &lt;RPGpioPin as kernel::hil::gpio::Output&gt;::set     @ 0x1000b66a</span>
+push  {r4, r6, r7, lr}
+add   r7, sp, #0x8
+mov   r4, r0
+bl    &lt;RPGpioPin::get_mode&gt;      <span class="tok-c">; the match guard in the Rust</span>
+uxtb  r0, r0
+cmp   r0, #0x1
+bls   0x1000b680                 <span class="tok-c">; not an output? skip the store</span>
+bl    &lt;OUTLINED_FUNCTION_8&gt;      <span class="tok-c">; computes r0 and r1, below</span>
+<span class="tok-n">str   r1, [r0, #0x18]</span>            <span class="tok-c">; &lt;-- this is digitalWrite</span>
+pop   {r4, r6, r7, pc}
+
+<span class="tok-c">; &lt;OUTLINED_FUNCTION_8&gt;                             @ 0x1000b840</span>
+ldrd  r0, r1, [r4, #8]           <span class="tok-c">; r0 = SIO base, r1 = pin number</span>
+movs  r2, #0x1
+<span class="tok-n">and   r1, r1, #0x1f</span>              <span class="tok-c">; pin &amp; 31</span>
+<span class="tok-n">lsl.w r1, r2, r1</span>                <span class="tok-c">; r1 = 1 &lt;&lt; pin</span>
+bx    lr</code></pre>
+  </div>
+  <div class="instrument-note">Reproduce it yourself: build <code>boards/raspberry_pi_pico_2</code>, then run <code>llvm-objdump -d</code> on the resulting ELF and look for the mangled symbol ending <code>gpio6Output3set</code>. Addresses will differ between builds.</div>
+</figure>
+
+<section class="col">
+  <p>Read the two highlighted groups and the whole chapter is already visible in four instructions.</p>
+  <p><code>lsl.w r1, r2, r1</code> is <code>1 &lt;&lt; pin</code> &mdash; a shift instruction, exactly what the Rust source says. <code>and r1, r1, #0x1f</code> masks the pin number to five bits first, which is the hardware's way of saying a 32-bit register only has 32 positions to shift into.</p>
+  <p>And <code>str r1, [r0, #0x18]</code> is the store &mdash; but look at its shape. The address is not one number. It is <strong>a base held in a register, plus an offset baked into the instruction</strong>. <code>r0</code> holds <code class="addr">0xD0000000</code>; <code>0x18</code> is the offset of <code>gpio_out_set</code> within the block. That is why register blocks are written as a struct of offsets from a base address: the processor's addressing modes are built for exactly that shape, so it costs nothing.</p>
+  <p>The one thing above that is <em>not</em> the store: <code>get_mode</code> and the <code>bls</code> after it are the <code>match</code> guard from the Rust source, skipping the write if the pin was never configured as an output.</p>
+</section>
+
+<section class="col">
   <h2>What an address actually is</h2>
   <p>A 32-bit processor can name 4,294,967,296 distinct byte-sized locations &mdash; that is what "32-bit" means here. Think of it as a numbered strip four billion slots long, from <code class="addr">0x00000000</code> to <code class="addr">0xFFFFFFFF</code>.</p>
   <p>On a desktop, nearly every slot you can reach is RAM, and the operating system decides what you may see. On a microcontroller there is no such indirection. The strip is wired directly to physical things, and <strong>different stretches of it are wired to different silicon</strong>. Some stretches are flash. Some are RAM. And some are not storage at all &mdash; they are the control panels of hardware blocks.</p>
@@ -748,7 +797,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Instrument 2</span>
+    <span class="instrument-label">Instrument 3</span>
     <span class="instrument-title">The RP2350 address space, as Tock maps it</span>
   </div>
   <div class="instrument-body">
@@ -759,49 +808,44 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 </figure>
 
 <section class="col">
-  <h2>Storage, or a doorbell?</h2>
-  <p>This is the reframe the whole chapter turns on, so it is worth being blunt about it.</p>
-  <p>When you write to RAM at <code class="addr">0x20000100</code>, a value is <em>kept</em>. Read the address back and you get what you put there. The address behaves like a box.</p>
-  <p>When you write to <code class="addr">0xD0000018</code>, nothing is kept. The write <em>causes a physical voltage to appear on a pin</em> and is then gone. Read that address back and you do not get your value returned &mdash; that address isn't even readable as what you wrote. The address behaves like a doorbell: pressing it has an effect, but the button does not remember being pressed.</p>
-</section>
-
-<figure class="instrument">
-  <div class="instrument-head">
-    <span class="instrument-label">Instrument 3</span>
-    <span class="instrument-title">Write, then read back &mdash; two very different outcomes</span>
-  </div>
-  <div class="instrument-body">
-    <div class="controls" style="margin-bottom:1.1rem">
-      <button class="primary" id="db-run">Write <code>0x02000000</code> to both</button>
-      <button id="db-reset">Reset</button>
-    </div>
-    <div class="compare">
-      <div class="panel">
-        <h4>RAM &mdash; <span style="font-family:var(--mono);text-transform:none;letter-spacing:0">0x20000100</span></h4>
-        <div class="panel-line" id="db-ram-w">write  &rarr;  &mdash;</div>
-        <div class="panel-line" id="db-ram-r">read   &rarr;  &mdash;</div>
-        <div class="verdict" id="db-ram-v">&nbsp;</div>
-      </div>
-      <div class="panel hot">
-        <h4>SIO GPIO_OUT_SET &mdash; <span style="font-family:var(--mono);text-transform:none;letter-spacing:0">0xD0000018</span></h4>
-        <div class="panel-line" id="db-reg-w">write  &rarr;  &mdash;</div>
-        <div class="panel-line" id="db-reg-r">read   &rarr;  &mdash;</div>
-        <div class="verdict" id="db-reg-v">&nbsp;</div>
-      </div>
-    </div>
-  </div>
-  <div class="instrument-note">The physical effect &mdash; pin 25 going high &mdash; is the entire point of the second write. The value itself is not retained anywhere.</div>
-</figure>
-
-<section class="col">
-  <h2>Where <code>1 &lt;&lt; 25</code> comes from</h2>
-  <p>One register controls thirty-two pins at once, because a 32-bit register has thirty-two bits and the chip has thirty-two GPIO pins in that bank. Bit 0 is GPIO 0, bit 25 is GPIO 25. To act on pin <em>n</em> you set bit <em>n</em>, and the idiom for "a value with only bit <em>n</em> set" is <code>1 &lt;&lt; n</code>.</p>
-  <p>That is the whole reason the Tock source reads <code>1 &lt;&lt; self.pin</code>. Drag the slider and watch the value assemble itself.</p>
+  <h2>What happens when you read one back?</h2>
+  <p>It is tempting to summarise all this as "registers aren't storage, they're doorbells." That is half right, and the wrong half matters.</p>
+  <p>Some registers really do behave like storage. <code>GPIO_OUT</code> at <code class="addr">0xD0000010</code> is one &mdash; the chip crate's description of it, transcribed from the datasheet, reads <em>"Set output level (1/0 -&gt; high/low) for GPIO0...31. Reading back gives the last v&hellip;"</em>. Write to it, read it, and you get your value.</p>
+  <p><code>GPIO_OUT_SET</code>, eight bytes further along, does not. A write there is an <em>operation applied to a different register</em>: <code>gpio_out |= value</code>. Write a value with no bits set and nothing happens at all &mdash; no storage location in the world silently discards a write like that.</p>
+  <p>So the real lesson is sharper than "doorbell": <strong>what an address does on a read, and on a write, is a decision the hardware designer made for that one register.</strong> The address itself tells you nothing about it. You cannot infer the behaviour; you can only look it up.</p>
 </section>
 
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Instrument 4</span>
+    <span class="instrument-title">Four addresses, four different behaviours</span>
+  </div>
+  <div class="instrument-body">
+    <div class="map" id="beh"></div>
+    <div class="compare" style="margin-top:1.1rem">
+      <div class="panel">
+        <h4>A write does</h4>
+        <div class="panel-line prose" id="beh-w">&mdash;</div>
+      </div>
+      <div class="panel hot">
+        <h4>A read returns</h4>
+        <div class="panel-line prose" id="beh-r">&mdash;</div>
+      </div>
+    </div>
+    <div class="map-detail" id="beh-d" style="margin-top:1.1rem">Select an address to compare.</div>
+  </div>
+  <div class="instrument-note">Only the first behaves the way a variable does. The other three would each break a mental model built on "memory stores things."</div>
+</figure>
+
+<section class="col">
+  <h2>Where <code>1 &lt;&lt; 25</code> comes from</h2>
+  <p>One register controls a whole bank of pins at once, because a 32-bit register has thirty-two independent bits. Bit 0 is GPIO&nbsp;0, bit 25 is GPIO&nbsp;25. To act on pin <em>n</em> you set bit <em>n</em>, and the idiom for "a value with only bit <em>n</em> set" is <code>1 &lt;&lt; n</code>. That is the whole reason the Tock source reads <code>1 &lt;&lt; self.pin</code>.</p>
+  <p>Be careful with an assumption that looks safe here: <strong>a 32-bit register does not imply thirty-two pins.</strong> Tock's RP2350 crate defines pins <code>GPIO0</code> through <code>GPIO29</code> &mdash; thirty of them, not thirty-two. Bits 30 and 31 are real bits in a real register that simply have no pin behind them on this package. Register width and pin count are two separate facts, and only one of them is visible in the code.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Instrument 5</span>
     <span class="instrument-title">Build the value that turns on a pin</span>
   </div>
   <div class="instrument-body">
@@ -834,8 +878,9 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
         <span class="readout-v" id="ro-store">*0xD0000018 = 0x02000000</span>
       </div>
     </div>
+    <div class="map-detail" id="pin-note" style="margin-top:1.1rem">&nbsp;</div>
   </div>
-  <div class="instrument-note">Top row is bits 31&ndash;16, bottom row bits 15&ndash;0 &mdash; the same layout datasheets use for register diagrams.</div>
+  <div class="instrument-note">Top row is bits 31&ndash;16, bottom row bits 15&ndash;0 &mdash; the layout datasheets use for register diagrams. The two dashed cells are bits with no pin behind them on this chip.</div>
 </figure>
 
 <div class="col">
@@ -863,13 +908,14 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 
 <section class="col">
   <p>If <code>gpio_out</code> already holds the output state, then turning on pin 25 is obviously <code>gpio_out |= 1 &lt;&lt; 25</code>. So why did the designers spend silicon on three more registers that do things you could already do?</p>
-  <p><strong>Because <code>|=</code> is not one operation. It is three:</strong> read the current value, OR in your bit, write the result back. Anything that happens between the read and the write &mdash; an interrupt firing, or the other CPU core running at the same instant &mdash; can be clobbered by that final write. The RP2350 has two cores. This is not hypothetical.</p>
+  <p><strong>Because <code>|=</code> is not one operation. It is three:</strong> read the current value, OR in your bit, write the result back. Anything happening between the read and the write &mdash; an interrupt firing, or the other CPU core running at that instant &mdash; gets clobbered by that final write. The RP2350 has two cores, so this is not hypothetical.</p>
+  <p>It is not a subtlety we are inventing, either. The chip's own register documentation raises it unprompted. The description of <code>GPIO_OUT</code> carried into the Tock source at <code>chips/rp2350/src/gpio.rs:623</code> begins a sentence with <em>"If core 0 and core 1 both write to GPIO_OUT simultan&hellip;"</em> &mdash; the vendor documents the race in the very register that has it. (The comment is truncated in the crate; the full text is in the datasheet.)</p>
   <p>Step through it and watch a write disappear.</p>
 </section>
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Instrument 5</span>
+    <span class="instrument-label">Instrument 6</span>
     <span class="instrument-title">Two cores, one register</span>
   </div>
   <div class="instrument-body">
@@ -946,8 +992,8 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   <p style="color:var(--ink-soft);font-size:.95rem">Things worth carrying forward from this chapter:</p>
   <ol>
     <li>A peripheral is an address, not a device.</li>
-    <li>A write can be a doorbell rather than a box.</li>
-    <li>One register, thirty-two pins, hence <code>1 &lt;&lt; n</code>.</li>
+    <li>What an address does on read and write is a per-register design decision. Look it up; never infer it.</li>
+    <li>One register, one bit per pin, hence <code>1 &lt;&lt; n</code> &mdash; but register width is not pin count.</li>
     <li>Read&ndash;modify&ndash;write is three operations and can be torn apart.</li>
     <li><code>volatile</code> stops the optimizer from helpfully destroying your driver.</li>
     <li>Nothing yet stops any code from touching any address.</li>
@@ -958,11 +1004,16 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   <h3>Everything above, checked against source</h3>
   <ul>
     <li>SIO base <code>0xD0000000</code>, IO_BANK0 <code>0x40028000</code>, PADS <code>0x40038000</code> &mdash; <code>chips/rp2350/src/gpio.rs:1165&ndash;1169</code></li>
-    <li>Register offsets <code>gpio_out</code> <code>0x010</code> &hellip; <code>gpio_out_xor</code> <code>0x028</code> &mdash; <code>chips/rp2350/src/gpio.rs:89&ndash;105</code></li>
+    <li>Register offsets <code>gpio_out</code> <code>0x010</code> &hellip; <code>gpio_out_xor</code> <code>0x028</code>, and their descriptions &mdash; <code>chips/rp2350/src/gpio.rs:89&ndash;105</code></li>
+    <li><code>GPIO_OUT</code> read-back wording and the two-core race note &mdash; <code>chips/rp2350/src/gpio.rs:621&ndash;625</code></li>
     <li><code>gpio_out_set.set(1 &lt;&lt; self.pin)</code> &mdash; <code>chips/rp2350/src/gpio.rs:1485</code></li>
+    <li>Pins defined as <code>GPIO0</code>&ndash;<code>GPIO29</code>, thirty of them &mdash; <code>chips/rp2350/src/gpio.rs:1245&ndash;1250</code></li>
+    <li><code>Output::set</code> as the portable HIL contract &mdash; <code>kernel/src/hil/gpio.rs:151&ndash;154</code></li>
     <li>Flash, kernel, app and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code></li>
-    <li>Remaining peripheral bases &mdash; <code>clocks.rs</code>, <code>resets.rs</code>, <code>uart.rs</code>, <code>timer.rs</code>, <code>ticks.rs</code>, <code>xosc.rs</code></li>
+    <li>Boot block contents: 28-byte <code>METADATA_BLOCK</code> and 256-byte <code>FLASH_BOOTLOADER</code> &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
+    <li>Remaining peripheral bases &mdash; <code>clocks.rs</code>, <code>resets.rs</code>, <code>uart.rs</code>, <code>timer.rs</code>, <code>ticks.rs</code>, <code>xosc.rs</code> in <code>chips/rp2350/src/</code></li>
     <li><code>write_volatile</code> &mdash; <code>tock-registers 0.10.0</code>, <code>src/registers.rs:63</code></li>
+    <li>Disassembly in Instrument 2 &mdash; <code>llvm-objdump -d</code> on <code>target/thumbv8m.main-none-eabi/release/raspberry_pi_pico_2.elf</code>, built from this tree</li>
     <li>GPIO 25 as radio chip-select on wireless boards &mdash; <code>boards/raspberry_pi_pico_w/src/main.rs:126</code></li>
   </ul>
   <p style="margin-top:.8rem">The one item here <em>not</em> read from a primary source: that the Pico&nbsp;2&nbsp;W wires GPIO&nbsp;25 the same way the Pico&nbsp;W does. That is an inference from the RP2040 board file, since Tock has no Pico&nbsp;2&nbsp;W board yet. Verify it against the board schematic before relying on it.</p>
@@ -978,11 +1029,16 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   /* ---------------- Instrument 1: the ladder ---------------- */
 
   var RUNGS = [
-    { who: "Arduino",     code: "digitalWrite(25, HIGH);",                        where: "the friendly layer — hides everything below" },
-    { who: "Tock HIL",    code: "pin.set();",                                     where: "kernel/src/hil/gpio.rs — the portable contract" },
-    { who: "Chip driver", code: "self.sio_registers.gpio_out_set.set(1 << self.pin);", where: "chips/rp2350/src/gpio.rs:1485" },
-    { who: "Registers",   code: "write_volatile(0xD0000018 as *mut u32, 0x02000000);", where: "tock-registers 0.10.0, src/registers.rs:63" },
-    { who: "The machine", code: "str  r1, [r0]",                                  where: "one store instruction. r0 = 0xD0000018, r1 = 0x02000000" }
+    { who: "Arduino",     code: "digitalWrite(25, HIGH);",
+      where: "the friendly layer \u2014 hides everything below" },
+    { who: "Tock HIL",    code: "pin.set();",
+      where: "kernel/src/hil/gpio.rs:154 \u2014 the portable contract every chip implements" },
+    { who: "Chip driver", code: "self.sio_registers.gpio_out_set.set(1 << self.pin);",
+      where: "chips/rp2350/src/gpio.rs:1485" },
+    { who: "Registers",   code: "write_volatile(self.value.get(), value)",
+      where: "tock-registers 0.10.0, src/registers.rs:63" },
+    { who: "The machine", code: "and   r1, r1, #0x1f\nlsl.w r1, r2, r1\nstr   r1, [r0, #0x18]",
+      where: "the real instructions from your own build \u2014 see Instrument 2" }
   ];
 
   var ladder = document.getElementById("ladder");
@@ -1029,30 +1085,38 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   /* ---------------- Instrument 2: memory map ---------------- */
 
   var REGIONS = [
-    { addr: "0x10000000", name: "Flash — bootloader", size: "1 KB", hot: false,
-      detail: "A 1024-byte block the RP2350 boot ROM inspects before it will run anything. Tock's Pico 2 board reserves it explicitly in its linker script and fills it with a metadata block." },
+    { addr: "0x10000000", name: "Flash — boot block", size: "1 KB reserved", hot: false,
+      detail: "Two separate things live here, not one. First a 28-byte METADATA_BLOCK: an IMAGE_DEF declaring this image executable, Secure-mode, Arm, for RP2350, plus a VECTOR_TABLE item pointing at 0x10000400. Then a 256-byte second-stage bootloader — a prebuilt blob from the Pico SDK — whose job is configuring the QSPI flash interface so the chip can execute code directly out of flash. The linker reserves 1 KB; only 284 bytes are used." },
     { addr: "0x10000400", name: "Flash — Tock kernel", size: "255 KB", hot: false,
-      detail: "The kernel image itself. Read-only at runtime: this is code, and it stays exactly where the linker put it." },
+      detail: "The kernel image. Read-only at runtime: this is code, and it stays exactly where the linker put it. Note this address is what the VECTOR_TABLE item in the boot block points at — that is how the boot process finds it." },
     { addr: "0x10040000", name: "Flash — applications", size: "256 KB", hot: false,
-      detail: "Where your compiled userspace processes live, as a chain of Tock Binary Format images. Note the hard boundary: apps are in a different part of flash from the kernel, and that separation is the beginning of the isolation story." },
+      detail: "Your compiled userspace processes, as a chain of Tock Binary Format images. Note the hard boundary: apps sit in a different part of flash from the kernel, and that separation is where the isolation story begins." },
     { addr: "0x20000000", name: "SRAM", size: "264 KB", hot: false,
-      detail: "The only genuinely read/write storage on the chip. Kernel data, every process's stack and heap, and the grant regions all get carved out of this one block. Contents are garbage at power-on." },
+      detail: "The only general read/write storage on the chip. Kernel data, every process's stack and heap, and the grant regions are all carved out of this one block. Contents are garbage at power-on." },
     { addr: "0x40010000", name: "CLOCKS", size: "—", hot: true,
-      detail: "Clock generators and multiplexers. Not storage — writing here changes how fast the chip runs. Get this wrong early in boot and nothing else works." },
+      detail: "Clock generators and multiplexers. Writing here changes how fast the chip runs. Get this wrong early in boot and nothing else works." },
     { addr: "0x40020000", name: "RESETS", size: "—", hot: true,
       detail: "Holds peripherals in reset. Most blocks on the RP2350 are dead until you clear their reset bit here, which is why chip initialization order matters so much." },
     { addr: "0x40028000", name: "IO_BANK0", size: "—", hot: true,
-      detail: "Pin function select — decides whether a physical pin is GPIO, UART, SPI, PWM, and so on. A pin can be wired to several peripherals; this register block picks which one wins." },
+      detail: "Pin function select — decides whether a physical pin acts as GPIO, UART, SPI, I2C, PWM, PIO, USB or XIP. A pin can be routed to several peripherals; this block picks which one wins." },
     { addr: "0x40038000", name: "PADS_BANK0", size: "—", hot: true,
-      detail: "The analog side of each pin: drive strength, pull-up and pull-down resistors, slew rate, input enable. Electrical properties, not logic." },
+      detail: "The analog side of each pin: drive strength, pull-up and pull-down resistors, slew rate, input enable. Electrical properties rather than logic." },
     { addr: "0x40048000", name: "XOSC", size: "—", hot: true,
-      detail: "The crystal oscillator — the physical timing reference the whole chip derives its clocks from." },
+      detail: "The crystal oscillator — the physical timing reference every other clock on the chip is derived from." },
+    { addr: "0x40050000", name: "PLL_SYS", size: "—", hot: true,
+      detail: "Phase-locked loop that multiplies the crystal frequency up to the system clock rate." },
+    { addr: "0x40058000", name: "PLL_USB", size: "—", hot: true,
+      detail: "A second PLL, generating the 48 MHz USB needs independently of the system clock." },
     { addr: "0x40070000", name: "UART0", size: "—", hot: true,
-      detail: "The serial port Tock's console runs over. When you saw text appear from the kernel, bytes were being written one at a time into a register in this block." },
+      detail: "The serial port Tock's console runs over. When kernel text appeared on your terminal, bytes were being written one at a time into a register in this block." },
+    { addr: "0x40078000", name: "UART1", size: "—", hot: true,
+      detail: "A second, identical UART. Same register layout, different base address — which is exactly why a driver is written once and pointed at a base." },
     { addr: "0x400B0000", name: "TIMER0", size: "—", hot: true,
-      detail: "A free-running microsecond counter with compare registers. Reading a value here does not return anything you wrote — it returns the current time." },
+      detail: "A free-running microsecond counter with compare registers. Reading here does not return anything you wrote; it returns the current time. A clear case of an address whose read value has nothing to do with any write." },
+    { addr: "0x40108000", name: "TICKS", size: "—", hot: true,
+      detail: "Tick generators that divide a reference clock down to drive the timers and watchdog." },
     { addr: "0xD0000000", name: "SIO", size: "—", hot: true,
-      detail: "Single-cycle I/O — the block this whole chapter is about. Deliberately placed on its own dedicated bus so accesses take one cycle instead of crossing the main peripheral fabric. GPIO_OUT_SET sits at offset 0x018, giving 0xD0000018." }
+      detail: "Single-cycle I/O — the block this chapter is about. Note how far its address sits from every other peripheral above: those cluster around 0x4, this one is at 0xD, reached over a separate path built for speed rather than the shared peripheral fabric. GPIO_OUT_SET lives at offset 0x018, which is where 0xD0000018 comes from." }
   ];
 
   var mapEl = document.getElementById("map");
@@ -1085,37 +1149,49 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
     mapEl.appendChild(row);
   });
 
-  /* ---------------- Instrument 3: storage vs doorbell ---------------- */
+  /* ---------------- Instrument 4: four behaviours ---------------- */
 
-  var dbRun = document.getElementById("db-run");
-  var dbReset = document.getElementById("db-reset");
+  var BEHAVIOURS = [
+    { addr: "0x20000100", name: "SRAM", tag: "ordinary memory",
+      w: "Stores your value, and does nothing else.",
+      r: "Exactly what you wrote.",
+      d: "The only one of the four that behaves like a variable. Write it, come back an hour later, read the same thing. This is the model most programming teaches you, and on a microcontroller it covers a surprisingly small share of the address space." },
+    { addr: "0xD0000010", name: "SIO GPIO_OUT", tag: "storage and effect",
+      w: "Drives all 32 pins in the bank at once to match the 32 bits you wrote.",
+      r: "The last value written.",
+      d: "Storage and physical effect in the same address. Reading back works \u2014 but because a write sets all 32 bits at once, changing one pin means read, modify, write. That is precisely the hazard the next instrument is about." },
+    { addr: "0xD0000018", name: "SIO GPIO_OUT_SET", tag: "an operation",
+      w: "Performs gpio_out |= value. Bits you leave at 0 do nothing whatsoever.",
+      r: "Nothing you wrote. The chip crate documents no read behaviour for this address \u2014 check the datasheet before relying on one.",
+      d: "Not a location at all, but a verb. The value you write is consumed as an argument and never kept. This is the address the whole chapter has been about, and it is the clearest case that 'memory' is the wrong noun." },
+    { addr: "0xD0000004", name: "SIO GPIO_IN", tag: "the outside world",
+      w: "Nothing useful \u2014 this reflects state you do not control.",
+      r: "The voltage actually present on the pins, right now.",
+      d: "The value here is written by the physical world, not by your program. Read it twice and you can get two different answers with no code in between \u2014 which is exactly why the compiler must never cache it, and why volatile exists." }
+  ];
 
-  function dbClear() {
-    document.getElementById("db-ram-w").textContent = "write  →  —";
-    document.getElementById("db-ram-r").textContent = "read   →  —";
-    document.getElementById("db-ram-v").textContent = " ";
-    document.getElementById("db-ram-v").className = "verdict";
-    document.getElementById("db-reg-w").textContent = "write  →  —";
-    document.getElementById("db-reg-r").textContent = "read   →  —";
-    document.getElementById("db-reg-v").textContent = " ";
-    document.getElementById("db-reg-v").className = "verdict";
-  }
-
-  dbRun.addEventListener("click", function () {
-    document.getElementById("db-ram-w").textContent = "write  →  0x02000000";
-    document.getElementById("db-ram-r").textContent = "read   →  0x02000000";
-    var rv = document.getElementById("db-ram-v");
-    rv.textContent = "Same value back. It is a box.";
-    rv.className = "verdict ok";
-
-    document.getElementById("db-reg-w").textContent = "write  →  0x02000000   pin 25 goes HIGH";
-    document.getElementById("db-reg-r").textContent = "read   →  not your value";
-    var gv = document.getElementById("db-reg-v");
-    gv.textContent = "Nothing stored. It is a doorbell.";
-    gv.className = "verdict odd";
+  var behEl = document.getElementById("beh");
+  BEHAVIOURS.forEach(function (b, idx) {
+    var row = document.createElement("button");
+    row.className = "map-row" + (idx ? " is-hot" : "");
+    row.type = "button";
+    row.setAttribute("aria-pressed", "false");
+    var a = document.createElement("span"); a.className = "map-addr"; a.textContent = b.addr;
+    var n = document.createElement("span"); n.className = "map-name"; n.textContent = b.name;
+    var t = document.createElement("span"); t.className = "map-size"; t.textContent = b.tag;
+    row.appendChild(a); row.appendChild(n); row.appendChild(t);
+    row.addEventListener("click", function () {
+      var all = behEl.querySelectorAll(".map-row");
+      for (var i = 0; i < all.length; i++) all[i].setAttribute("aria-pressed", "false");
+      row.setAttribute("aria-pressed", "true");
+      document.getElementById("beh-w").textContent = b.w;
+      document.getElementById("beh-r").textContent = b.r;
+      var d = document.getElementById("beh-d");
+      d.textContent = b.d;
+      d.classList.toggle("hot", idx > 0);
+    });
+    behEl.appendChild(row);
   });
-  dbReset.addEventListener("click", dbClear);
-  dbClear();
 
   /* ---------------- Instrument 4: bit builder ---------------- */
 
@@ -1143,6 +1219,14 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   buildBits(bitsHi, labelsHi, 31, 16);
   buildBits(bitsLo, labelsLo, 15, 0);
 
+  // Tock's RP2350 crate defines GPIO0..GPIO29 (chips/rp2350/src/gpio.rs:1245).
+  // Bits 30 and 31 exist in the register but have no pin on this package.
+  var MAX_PIN = 29;
+  for (var np = MAX_PIN + 1; np < 32; np++) {
+    cells[np].classList.add("nopin");
+    labels[np].classList.add("nopin");
+  }
+
   var pinInput = document.getElementById("pin");
 
   function hex32(v) {
@@ -1161,6 +1245,16 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
       labels[b].classList.toggle("mark", on);
     }
     document.getElementById("pin-badge").textContent = n;
+    var note = document.getElementById("pin-note");
+    if (n > MAX_PIN) {
+      note.classList.add("hot");
+      note.textContent = "Bit " + n + " is a real bit in a real register, but this chip has no GPIO " + n +
+        " \u2014 Tock's RP2350 crate stops at GPIO29. The store below would succeed and drive nothing. " +
+        "Register width is not pin count.";
+    } else {
+      note.classList.remove("hot");
+      note.textContent = "Bit " + n + " drives GPIO " + n + " on this chip.";
+    }
     document.getElementById("ro-expr").textContent = "1 << " + n;
     document.getElementById("ro-hex").textContent = hex32(val);
     document.getElementById("ro-dec").textContent = val.toLocaleString("en-US");
