@@ -1,0 +1,12 @@
+# Licensed under the Apache License, Version 2.0 or the MIT License.
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# Copyright Jon Hillesheim 2026.
+
+# The learning series is prose and teaching material, not Tock source, and is
+# licensed CC BY-SA 4.0 rather than Apache-2.0 OR MIT. Tock's license checker
+# hardcodes its own SPDX string (tools/ci/license-checker/src/main.rs:100), so
+# these files are excluded from it here. This file itself is repository tooling
+# configuration and keeps the Tock license.
+README.md
+LICENSE
+ch*/

@@ -1,0 +1,1308 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>Everything Is Memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #8B979C;
+  --rule:        #D3DBD8;
+  --rule-strong: #B4C0BC;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #E07B05;
+  --hot-ink:     #FFFFFF;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #6B787E;
+    --rule:        #252F34;
+    --rule-strong: #3A484E;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #6B787E;
+  --rule:        #252F34;
+  --rule-strong: #3A484E;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+p { margin: 0; }
+strong { font-weight: 600; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.byline {
+  font-family: var(--display);
+  font-size: .8rem;
+  letter-spacing: .04em;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .9rem;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+.addr { color: var(--hot); font-weight: 500; }
+
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+button.primary:hover:not(:disabled) { filter: brightness(1.12); color: var(--surface); }
+
+.controls {
+  display: flex;
+  gap: .55rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+input[type="range"] { accent-color: var(--hot); width: 100%; }
+
+/* ---------- ladder (reveal) ---------- */
+
+.ladder { display: flex; flex-direction: column; gap: 0; }
+
+.rung {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 1rem;
+  align-items: start;
+  padding: .85rem 0;
+  border-bottom: 1px dashed var(--rule);
+  opacity: .28;
+  transition: opacity .35s ease;
+}
+.rung:last-child { border-bottom: 0; }
+.rung.on { opacity: 1; }
+
+.rung-who {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-top: .28rem;
+}
+.rung.on .rung-who { color: var(--accent); }
+.rung:last-child.on .rung-who { color: var(--hot); }
+
+.rung-code {
+  font-family: var(--mono);
+  font-size: .9rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  white-space: pre;
+  padding-bottom: .15rem;
+}
+.rung-where {
+  font-family: var(--display);
+  font-size: .74rem;
+  color: var(--ink-faint);
+  letter-spacing: .02em;
+  margin-top: .25rem;
+  white-space: normal;
+}
+
+/* ---------- memory map ---------- */
+
+.map { display: flex; flex-direction: column; gap: 2px; }
+
+.map-row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr auto;
+  gap: .9rem;
+  align-items: center;
+  padding: .5rem .7rem;
+  background: var(--surface-sunk);
+  border-left: 3px solid var(--rule-strong);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  color: inherit;
+  border-top: 0; border-right: 0; border-bottom: 0;
+  border-radius: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: inherit;
+}
+.map-row:hover { background: var(--accent-soft); border-left-color: var(--accent); color: inherit; }
+.map-row[aria-pressed="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+.map-row.is-hot[aria-pressed="true"] { background: var(--hot-soft); border-left-color: var(--hot); }
+
+.map-addr {
+  font-family: var(--mono);
+  font-size: .84rem;
+  font-weight: 500;
+  color: var(--hot);
+  font-variant-numeric: tabular-nums;
+}
+.map-name {
+  font-family: var(--display);
+  font-size: .92rem;
+  font-weight: 600;
+}
+.map-size {
+  font-family: var(--mono);
+  font-size: .76rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.map-detail {
+  margin-top: .9rem;
+  padding: .85rem 1rem;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  font-size: .95rem;
+  line-height: 1.55;
+  min-height: 3.5rem;
+}
+.map-detail.hot { background: var(--hot-soft); border-left-color: var(--hot); }
+
+/* ---------- bit strip ---------- */
+
+.bitgrid {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 30rem;
+}
+.bitwrap { overflow-x: auto; padding-bottom: .35rem; }
+
+.bit {
+  aspect-ratio: 1 / 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: .8rem;
+  color: var(--ink-faint);
+  border-radius: 1px;
+  transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+}
+.bit.set {
+  background: var(--hot);
+  border-color: var(--hot);
+  color: var(--hot-ink);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--hot), 0 0 14px -2px var(--hot);
+}
+
+.bitlabels {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 30rem;
+  margin-top: .2rem;
+}
+.bitlabel {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: .62rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.bitlabel.mark { color: var(--hot); font-weight: 600; }
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: .8rem;
+  margin-top: 1.1rem;
+}
+.readout-cell {
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  padding: .6rem .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .18rem;
+}
+.readout-k {
+  font-family: var(--display);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.readout-v {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.readout-v.hot { color: var(--hot); }
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+.slider-row label {
+  font-family: var(--display);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.slider-row .grow { flex: 1 1 12rem; min-width: 10rem; }
+.pinbadge {
+  font-family: var(--mono);
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--hot);
+  background: var(--hot-soft);
+  border: 1px solid var(--hot);
+  padding: .18rem .55rem;
+  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- doorbell compare ---------- */
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.panel {
+  border: 1px solid var(--rule);
+  background: var(--surface-sunk);
+  padding: .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+.panel h4 {
+  font-family: var(--display);
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--accent);
+}
+.panel.hot h4 { color: var(--hot); }
+.panel-line {
+  font-family: var(--mono);
+  font-size: .82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre;
+}
+.verdict {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  padding-top: .4rem;
+  border-top: 1px dashed var(--rule-strong);
+}
+.verdict.ok { color: var(--accent); }
+.verdict.odd { color: var(--hot); }
+
+/* ---------- race machine ---------- */
+
+.race-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: .85rem;
+  margin-bottom: 1.1rem;
+}
+
+.core {
+  border: 1px solid var(--rule);
+  background: var(--surface-sunk);
+  padding: .8rem .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  transition: border-color .18s, background .18s;
+}
+.core.active { border-color: var(--accent); background: var(--accent-soft); }
+.core.hw { border-style: solid; }
+.core.hw.active { border-color: var(--hot); background: var(--hot-soft); }
+
+.core-name {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.core.active .core-name { color: var(--accent); }
+.core.hw.active .core-name { color: var(--hot); }
+
+.core-val {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.core-sub {
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--ink-faint);
+  min-height: 1.1rem;
+}
+
+.steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 1.1rem; }
+.step {
+  display: grid;
+  grid-template-columns: 2rem 5.5rem 1fr;
+  gap: .7rem;
+  align-items: baseline;
+  padding: .42rem .5rem;
+  border-bottom: 1px solid var(--rule);
+  opacity: .3;
+  transition: opacity .2s, background .2s;
+  font-family: var(--mono);
+  font-size: .82rem;
+}
+.step.done { opacity: 1; }
+.step.now { opacity: 1; background: var(--accent-soft); }
+.step.lost { background: var(--danger-soft); }
+.step-n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.step-who {
+  font-family: var(--display);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.step.lost .step-what { color: var(--danger); font-weight: 500; }
+
+.outcome {
+  padding: .8rem 1rem;
+  border-left: 3px solid var(--rule-strong);
+  background: var(--surface-sunk);
+  font-size: .95rem;
+  line-height: 1.55;
+  min-height: 3.2rem;
+}
+.outcome.bad { border-left-color: var(--danger); background: var(--danger-soft); }
+.outcome.good { border-left-color: var(--accent); background: var(--accent-soft); }
+
+.tabs { display: flex; gap: 0; margin-bottom: 1.1rem; border-bottom: 1px solid var(--rule); }
+.tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  border-radius: 0;
+  padding: .5rem .9rem;
+  color: var(--ink-faint);
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--hot); }
+.tab:hover { color: var(--ink); border-color: transparent; border-bottom-color: var(--rule-strong); }
+.tab[aria-selected="true"]:hover { border-bottom-color: var(--hot); }
+
+/* ---------- code block ---------- */
+
+pre {
+  font-family: var(--mono);
+  font-size: .84rem;
+  line-height: 1.6;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  padding: .9rem 1rem;
+  overflow-x: auto;
+  margin: 0;
+  border-radius: 2px;
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
+.tok-c { color: var(--ink-faint); font-style: italic; }
+.tok-k { color: var(--accent); }
+.tok-n { color: var(--hot); }
+
+/* ---------- aside ---------- */
+
+.aside {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .85rem 1rem;
+  font-size: .95rem;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.aside-label {
+  font-family: var(--display);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--hot);
+}
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+.next ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .35rem; }
+.next li::marker { font-family: var(--mono); color: var(--hot); }
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">Learning Tock from the ground up &middot; Chapter&nbsp;1</div>
+  <h1>Everything Is Memory</h1>
+  <p class="standfirst">On a microcontroller, a peripheral is not a device you talk to. It is a set of memory addresses that <em>do something</em> when you write to them. Once that clicks, most of embedded programming stops being mysterious &mdash; and the reason an operating system like Tock has to exist at all becomes obvious.</p>
+  <div class="byline">Written against Tock at commit <code>20adc62c2</code>, targeting the RP2350 (Raspberry Pi Pico&nbsp;2). Every address and code excerpt below is quoted from the repository, not from memory.</div>
+</header>
+
+<section class="col">
+  <h2>One line, all the way down</h2>
+  <p>If you have used an Arduino, you have written something like <code>digitalWrite(25, HIGH)</code>. It reads like a command issued to a device: <em>pin, turn on</em>.</p>
+  <p>It isn't. Underneath every layer, that operation is <strong>a single store of a single 32-bit value to a single memory address</strong>. Nothing more happens. There is no message, no protocol, no driver conversation. One write.</p>
+  <p>Here is the entire ladder on the RP2350, from the friendliest layer to the instruction the processor actually executes.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Instrument 1</span>
+    <span class="instrument-title">Strip the layers off <code>digitalWrite</code></span>
+  </div>
+  <div class="instrument-body">
+    <div class="controls" style="margin-bottom:1.1rem">
+      <button class="primary" id="ladder-next">Strip a layer</button>
+      <button id="ladder-reset">Reset</button>
+      <span class="instrument-title" id="ladder-count">1 of 5 shown</span>
+    </div>
+    <div class="ladder" id="ladder"></div>
+  </div>
+  <div class="instrument-note">The bottom rung is the truth. Every rung above it is a convenience that compiles away to exactly that store.</div>
+</figure>
+
+<section class="col">
+  <h2>What an address actually is</h2>
+  <p>A 32-bit processor can name 4,294,967,296 distinct byte-sized locations &mdash; that is what "32-bit" means here. Think of it as a numbered strip four billion slots long, from <code class="addr">0x00000000</code> to <code class="addr">0xFFFFFFFF</code>.</p>
+  <p>On a desktop, nearly every slot you can reach is RAM, and the operating system decides what you may see. On a microcontroller there is no such indirection. The strip is wired directly to physical things, and <strong>different stretches of it are wired to different silicon</strong>. Some stretches are flash. Some are RAM. And some are not storage at all &mdash; they are the control panels of hardware blocks.</p>
+  <p>Here is the real strip for your Pico 2, assembled from the board's linker script and the chip crate's register definitions.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Instrument 2</span>
+    <span class="instrument-title">The RP2350 address space, as Tock maps it</span>
+  </div>
+  <div class="instrument-body">
+    <div class="map" id="map"></div>
+    <div class="map-detail" id="map-detail">Select any region to see what lives there and where the address comes from.</div>
+  </div>
+  <div class="instrument-note">Addresses in the <code>0x4</code> and <code>0xD</code> ranges are not memory in any ordinary sense. Nothing is stored there.</div>
+</figure>
+
+<section class="col">
+  <h2>Storage, or a doorbell?</h2>
+  <p>This is the reframe the whole chapter turns on, so it is worth being blunt about it.</p>
+  <p>When you write to RAM at <code class="addr">0x20000100</code>, a value is <em>kept</em>. Read the address back and you get what you put there. The address behaves like a box.</p>
+  <p>When you write to <code class="addr">0xD0000018</code>, nothing is kept. The write <em>causes a physical voltage to appear on a pin</em> and is then gone. Read that address back and you do not get your value returned &mdash; that address isn't even readable as what you wrote. The address behaves like a doorbell: pressing it has an effect, but the button does not remember being pressed.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Instrument 3</span>
+    <span class="instrument-title">Write, then read back &mdash; two very different outcomes</span>
+  </div>
+  <div class="instrument-body">
+    <div class="controls" style="margin-bottom:1.1rem">
+      <button class="primary" id="db-run">Write <code>0x02000000</code> to both</button>
+      <button id="db-reset">Reset</button>
+    </div>
+    <div class="compare">
+      <div class="panel">
+        <h4>RAM &mdash; <span style="font-family:var(--mono);text-transform:none;letter-spacing:0">0x20000100</span></h4>
+        <div class="panel-line" id="db-ram-w">write  &rarr;  &mdash;</div>
+        <div class="panel-line" id="db-ram-r">read   &rarr;  &mdash;</div>
+        <div class="verdict" id="db-ram-v">&nbsp;</div>
+      </div>
+      <div class="panel hot">
+        <h4>SIO GPIO_OUT_SET &mdash; <span style="font-family:var(--mono);text-transform:none;letter-spacing:0">0xD0000018</span></h4>
+        <div class="panel-line" id="db-reg-w">write  &rarr;  &mdash;</div>
+        <div class="panel-line" id="db-reg-r">read   &rarr;  &mdash;</div>
+        <div class="verdict" id="db-reg-v">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+  <div class="instrument-note">The physical effect &mdash; pin 25 going high &mdash; is the entire point of the second write. The value itself is not retained anywhere.</div>
+</figure>
+
+<section class="col">
+  <h2>Where <code>1 &lt;&lt; 25</code> comes from</h2>
+  <p>One register controls thirty-two pins at once, because a 32-bit register has thirty-two bits and the chip has thirty-two GPIO pins in that bank. Bit 0 is GPIO 0, bit 25 is GPIO 25. To act on pin <em>n</em> you set bit <em>n</em>, and the idiom for "a value with only bit <em>n</em> set" is <code>1 &lt;&lt; n</code>.</p>
+  <p>That is the whole reason the Tock source reads <code>1 &lt;&lt; self.pin</code>. Drag the slider and watch the value assemble itself.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Instrument 4</span>
+    <span class="instrument-title">Build the value that turns on a pin</span>
+  </div>
+  <div class="instrument-body">
+    <div class="slider-row">
+      <label for="pin">GPIO pin</label>
+      <span class="pinbadge" id="pin-badge">25</span>
+      <span class="grow"><input type="range" id="pin" min="0" max="31" value="25" aria-label="GPIO pin number"></span>
+    </div>
+    <div class="bitwrap">
+      <div class="bitgrid" id="bits-hi"></div>
+      <div class="bitlabels" id="labels-hi"></div>
+      <div class="bitgrid" id="bits-lo" style="margin-top:.7rem"></div>
+      <div class="bitlabels" id="labels-lo"></div>
+    </div>
+    <div class="readout">
+      <div class="readout-cell">
+        <span class="readout-k">Expression</span>
+        <span class="readout-v" id="ro-expr">1 &lt;&lt; 25</span>
+      </div>
+      <div class="readout-cell">
+        <span class="readout-k">Hexadecimal</span>
+        <span class="readout-v hot" id="ro-hex">0x02000000</span>
+      </div>
+      <div class="readout-cell">
+        <span class="readout-k">Decimal</span>
+        <span class="readout-v" id="ro-dec">33554432</span>
+      </div>
+      <div class="readout-cell">
+        <span class="readout-k">The store</span>
+        <span class="readout-v" id="ro-store">*0xD0000018 = 0x02000000</span>
+      </div>
+    </div>
+  </div>
+  <div class="instrument-note">Top row is bits 31&ndash;16, bottom row bits 15&ndash;0 &mdash; the same layout datasheets use for register diagrams.</div>
+</figure>
+
+<div class="col">
+  <div class="aside">
+    <span class="aside-label">Careful &mdash; your board is the W</span>
+    <p>Pin 25 is the onboard LED on a plain Pico&nbsp;2, and that is what <code>boards/raspberry_pi_pico_2/src/main.rs:385</code> assumes. On the wireless variants, GPIO&nbsp;25 is wired to the CYW43439 radio's SPI chip-select instead &mdash; you can see exactly that in Tock's Pico&nbsp;W board file at <code>boards/raspberry_pi_pico_w/src/main.rs:126</code>. So on your Pico&nbsp;2&nbsp;W, this write will not light anything; it will wiggle the radio's chip-select line.</p>
+    <p>Worth sitting with, because it is the first real lesson about layering: the <em>chip</em> says "pin 25." What pin 25 is <em>connected to</em> is a fact about the <em>board</em>. Confusing the two is how you spend an afternoon debugging an LED that was never there.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>Why the same pins have four registers</h2>
+  <p>Look closely at the SIO register block and something looks redundant. Four different registers all control the same thirty-two output pins:</p>
+</section>
+
+<div class="instrument" style="max-width:var(--measure)">
+  <div class="instrument-body" style="padding:0">
+<pre><code>(0x010 =&gt; gpio_out)        <span class="tok-c">// GPIO0..31 output value</span>
+(0x018 =&gt; gpio_out_set)    <span class="tok-c">// GPIO0..31 output value set</span>
+(0x020 =&gt; gpio_out_clr)    <span class="tok-c">// GPIO0..31 output value clear</span>
+(0x028 =&gt; gpio_out_xor)    <span class="tok-c">// GPIO0..31 output value XOR</span></code></pre>
+  </div>
+  <div class="instrument-note"><code>chips/rp2350/src/gpio.rs</code>, lines 89&ndash;105</div>
+</div>
+
+<section class="col">
+  <p>If <code>gpio_out</code> already holds the output state, then turning on pin 25 is obviously <code>gpio_out |= 1 &lt;&lt; 25</code>. So why did the designers spend silicon on three more registers that do things you could already do?</p>
+  <p><strong>Because <code>|=</code> is not one operation. It is three:</strong> read the current value, OR in your bit, write the result back. Anything that happens between the read and the write &mdash; an interrupt firing, or the other CPU core running at the same instant &mdash; can be clobbered by that final write. The RP2350 has two cores. This is not hypothetical.</p>
+  <p>Step through it and watch a write disappear.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Instrument 5</span>
+    <span class="instrument-title">Two cores, one register</span>
+  </div>
+  <div class="instrument-body">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-rmw" role="tab" aria-selected="true" aria-controls="race-panel">Read&ndash;modify&ndash;write</button>
+      <button class="tab" id="tab-atomic" role="tab" aria-selected="false" aria-controls="race-panel">Atomic set</button>
+    </div>
+    <div id="race-panel" role="tabpanel">
+      <p style="font-family:var(--body);font-size:.95rem;color:var(--ink-soft);margin-bottom:1rem" id="race-intro"></p>
+      <div class="race-grid">
+        <div class="core" id="core0">
+          <span class="core-name">Core 0 &mdash; wants pin 25</span>
+          <span class="core-val" id="core0-val">&mdash;</span>
+          <span class="core-sub" id="core0-sub">idle</span>
+        </div>
+        <div class="core" id="core1">
+          <span class="core-name">Core 1 &mdash; wants pin 10</span>
+          <span class="core-val" id="core1-val">&mdash;</span>
+          <span class="core-sub" id="core1-sub">idle</span>
+        </div>
+        <div class="core hw" id="corehw">
+          <span class="core-name">Hardware GPIO_OUT</span>
+          <span class="core-val" id="corehw-val">0x00000000</span>
+          <span class="core-sub" id="corehw-sub">no pins high</span>
+        </div>
+      </div>
+      <div class="steps" id="race-steps"></div>
+      <div class="controls" style="margin-bottom:1.1rem">
+        <button class="primary" id="race-step">Step</button>
+        <button id="race-all">Run all</button>
+        <button id="race-reset">Reset</button>
+      </div>
+      <div class="outcome" id="race-outcome">Press <strong>Step</strong> to advance one instruction at a time.</div>
+    </div>
+  </div>
+  <div class="instrument-note">The atomic variant needs no lock, no disabled interrupts, and no coordination between cores. The hardware does the OR itself, and a single store cannot be interrupted halfway.</div>
+</figure>
+
+<section class="col">
+  <h2>Why <code>volatile</code> has to exist</h2>
+  <p>There is one more thing standing between your Rust and the silicon: the optimizer.</p>
+  <p>A compiler reasons about memory the way you would reason about variables. If you write a value to an address and never read it, the write is dead code &mdash; delete it. If you write twice, only the last one matters &mdash; delete the first. If you read the same address in a loop and nothing modified it, hoist the read out. Every one of those transformations is correct for ordinary memory and <strong>catastrophically wrong for a doorbell</strong>, where the write itself <em>is</em> the point and where the value can change without any code touching it.</p>
+  <p><code>volatile</code> is how you tell the compiler this address is one of those. Every access happens, exactly as many times as written, in the order written, and none may be invented, removed, or reordered relative to each other.</p>
+  <p>In Tock this is not something you remember to do &mdash; it is baked into the register types, so it is impossible to forget:</p>
+</section>
+
+<div class="instrument" style="max-width:var(--measure)">
+  <div class="instrument-body" style="padding:0">
+<pre><code><span class="tok-k">pub fn</span> set(&amp;<span class="tok-k">self</span>, value: T) {
+    <span class="tok-k">unsafe</span> { ::core::ptr::<span class="tok-n">write_volatile</span>(<span class="tok-k">self</span>.value.get(), value) }
+}</code></pre>
+  </div>
+  <div class="instrument-note"><code>tock-registers 0.10.0</code>, <code>src/registers.rs:63</code> &mdash; the bottom of every register write in the kernel</div>
+</div>
+
+<section class="col">
+  <h3>What the <code>unsafe</code> is doing there</h3>
+  <p>Since you have the Rust Book but not its <em>Advanced Features</em> chapter yet: <code>unsafe</code> here is not an admission that the code is dangerous. It is a claim &mdash; "I have checked the thing the compiler cannot check." Dereferencing a raw pointer could be catastrophic if the address were wrong, and Rust has no way to verify that <code class="addr">0xD0000018</code> is a real register. So a human asserts it, in a block small enough to audit.</p>
+  <p>That pattern &mdash; a tiny audited <code>unsafe</code> core wrapped in a safe API that no one can misuse &mdash; is the single most characteristic move in the whole Tock kernel. You will see it constantly. Here, it means every <code>pin.set()</code> in the codebase is a completely safe call, and the trust is concentrated in one three-line function.</p>
+</section>
+
+<section class="col">
+  <h2>So here is the problem</h2>
+  <p>Take stock of what is now true. Peripherals are memory addresses. Writing to them has physical effects. And on a bare microcontroller, <strong>any code running on the chip can write to any address at any time.</strong></p>
+  <p>There is no permission to check. No kernel to ask. The store instruction to <code class="addr">0xD0000018</code> is exactly as fast and exactly as allowed as a store to your own local variable. A stray pointer in some unrelated sensor routine can drive a lock relay, reconfigure a UART mid-transmission, or scribble over the flash controller's registers.</p>
+  <p>That is not a bug in anyone's code. It is the default condition of the machine.</p>
+  <p><strong>Every single thing Tock does is an answer to that sentence.</strong> Its capsules, its processes, its grants, the MPU configuration it programs before running your application &mdash; all of it exists to put something between arbitrary code and arbitrary addresses. Chapter by chapter, that is the story we are going to build.</p>
+</section>
+
+<div class="next col">
+  <div class="eyebrow" style="color:var(--hot)">Next</div>
+  <h3 style="margin-top:0">Chapter 2 &mdash; How code starts running</h3>
+  <p>Before anything can write to a register, something has to be executing. We will follow the RP2350 from the instant power arrives to the first line of Tock's <code>main()</code> &mdash; the reset vector, why <code>0x10000000</code> has a 1024-byte bootloader carved out in front of the kernel, and what "initialize RAM" actually means when RAM contains garbage.</p>
+  <p style="color:var(--ink-soft);font-size:.95rem">Things worth carrying forward from this chapter:</p>
+  <ol>
+    <li>A peripheral is an address, not a device.</li>
+    <li>A write can be a doorbell rather than a box.</li>
+    <li>One register, thirty-two pins, hence <code>1 &lt;&lt; n</code>.</li>
+    <li>Read&ndash;modify&ndash;write is three operations and can be torn apart.</li>
+    <li><code>volatile</code> stops the optimizer from helpfully destroying your driver.</li>
+    <li>Nothing yet stops any code from touching any address.</li>
+  </ol>
+</div>
+
+<div class="sources">
+  <h3>Everything above, checked against source</h3>
+  <ul>
+    <li>SIO base <code>0xD0000000</code>, IO_BANK0 <code>0x40028000</code>, PADS <code>0x40038000</code> &mdash; <code>chips/rp2350/src/gpio.rs:1165&ndash;1169</code></li>
+    <li>Register offsets <code>gpio_out</code> <code>0x010</code> &hellip; <code>gpio_out_xor</code> <code>0x028</code> &mdash; <code>chips/rp2350/src/gpio.rs:89&ndash;105</code></li>
+    <li><code>gpio_out_set.set(1 &lt;&lt; self.pin)</code> &mdash; <code>chips/rp2350/src/gpio.rs:1485</code></li>
+    <li>Flash, kernel, app and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code></li>
+    <li>Remaining peripheral bases &mdash; <code>clocks.rs</code>, <code>resets.rs</code>, <code>uart.rs</code>, <code>timer.rs</code>, <code>ticks.rs</code>, <code>xosc.rs</code></li>
+    <li><code>write_volatile</code> &mdash; <code>tock-registers 0.10.0</code>, <code>src/registers.rs:63</code></li>
+    <li>GPIO 25 as radio chip-select on wireless boards &mdash; <code>boards/raspberry_pi_pico_w/src/main.rs:126</code></li>
+  </ul>
+  <p style="margin-top:.8rem">The one item here <em>not</em> read from a primary source: that the Pico&nbsp;2&nbsp;W wires GPIO&nbsp;25 the same way the Pico&nbsp;W does. That is an inference from the RP2040 board file, since Tock has no Pico&nbsp;2&nbsp;W board yet. Verify it against the board schematic before relying on it.</p>
+  <p style="margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--rule)">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- Instrument 1: the ladder ---------------- */
+
+  var RUNGS = [
+    { who: "Arduino",     code: "digitalWrite(25, HIGH);",                        where: "the friendly layer — hides everything below" },
+    { who: "Tock HIL",    code: "pin.set();",                                     where: "kernel/src/hil/gpio.rs — the portable contract" },
+    { who: "Chip driver", code: "self.sio_registers.gpio_out_set.set(1 << self.pin);", where: "chips/rp2350/src/gpio.rs:1485" },
+    { who: "Registers",   code: "write_volatile(0xD0000018 as *mut u32, 0x02000000);", where: "tock-registers 0.10.0, src/registers.rs:63" },
+    { who: "The machine", code: "str  r1, [r0]",                                  where: "one store instruction. r0 = 0xD0000018, r1 = 0x02000000" }
+  ];
+
+  var ladder = document.getElementById("ladder");
+  var ladderCount = document.getElementById("ladder-count");
+  var shown = 1;
+
+  RUNGS.forEach(function (r) {
+    var row = document.createElement("div");
+    row.className = "rung";
+    var who = document.createElement("div");
+    who.className = "rung-who";
+    who.textContent = r.who;
+    var body = document.createElement("div");
+    var code = document.createElement("div");
+    code.className = "rung-code";
+    code.textContent = r.code;
+    var where = document.createElement("div");
+    where.className = "rung-where";
+    where.textContent = r.where;
+    body.appendChild(code);
+    body.appendChild(where);
+    row.appendChild(who);
+    row.appendChild(body);
+    ladder.appendChild(row);
+  });
+
+  function drawLadder() {
+    var rows = ladder.children;
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].classList.toggle("on", i < shown);
+    }
+    ladderCount.textContent = shown + " of " + RUNGS.length + " shown";
+    document.getElementById("ladder-next").disabled = shown >= RUNGS.length;
+  }
+
+  document.getElementById("ladder-next").addEventListener("click", function () {
+    if (shown < RUNGS.length) { shown++; drawLadder(); }
+  });
+  document.getElementById("ladder-reset").addEventListener("click", function () {
+    shown = 1; drawLadder();
+  });
+  drawLadder();
+
+  /* ---------------- Instrument 2: memory map ---------------- */
+
+  var REGIONS = [
+    { addr: "0x10000000", name: "Flash — bootloader", size: "1 KB", hot: false,
+      detail: "A 1024-byte block the RP2350 boot ROM inspects before it will run anything. Tock's Pico 2 board reserves it explicitly in its linker script and fills it with a metadata block." },
+    { addr: "0x10000400", name: "Flash — Tock kernel", size: "255 KB", hot: false,
+      detail: "The kernel image itself. Read-only at runtime: this is code, and it stays exactly where the linker put it." },
+    { addr: "0x10040000", name: "Flash — applications", size: "256 KB", hot: false,
+      detail: "Where your compiled userspace processes live, as a chain of Tock Binary Format images. Note the hard boundary: apps are in a different part of flash from the kernel, and that separation is the beginning of the isolation story." },
+    { addr: "0x20000000", name: "SRAM", size: "264 KB", hot: false,
+      detail: "The only genuinely read/write storage on the chip. Kernel data, every process's stack and heap, and the grant regions all get carved out of this one block. Contents are garbage at power-on." },
+    { addr: "0x40010000", name: "CLOCKS", size: "—", hot: true,
+      detail: "Clock generators and multiplexers. Not storage — writing here changes how fast the chip runs. Get this wrong early in boot and nothing else works." },
+    { addr: "0x40020000", name: "RESETS", size: "—", hot: true,
+      detail: "Holds peripherals in reset. Most blocks on the RP2350 are dead until you clear their reset bit here, which is why chip initialization order matters so much." },
+    { addr: "0x40028000", name: "IO_BANK0", size: "—", hot: true,
+      detail: "Pin function select — decides whether a physical pin is GPIO, UART, SPI, PWM, and so on. A pin can be wired to several peripherals; this register block picks which one wins." },
+    { addr: "0x40038000", name: "PADS_BANK0", size: "—", hot: true,
+      detail: "The analog side of each pin: drive strength, pull-up and pull-down resistors, slew rate, input enable. Electrical properties, not logic." },
+    { addr: "0x40048000", name: "XOSC", size: "—", hot: true,
+      detail: "The crystal oscillator — the physical timing reference the whole chip derives its clocks from." },
+    { addr: "0x40070000", name: "UART0", size: "—", hot: true,
+      detail: "The serial port Tock's console runs over. When you saw text appear from the kernel, bytes were being written one at a time into a register in this block." },
+    { addr: "0x400B0000", name: "TIMER0", size: "—", hot: true,
+      detail: "A free-running microsecond counter with compare registers. Reading a value here does not return anything you wrote — it returns the current time." },
+    { addr: "0xD0000000", name: "SIO", size: "—", hot: true,
+      detail: "Single-cycle I/O — the block this whole chapter is about. Deliberately placed on its own dedicated bus so accesses take one cycle instead of crossing the main peripheral fabric. GPIO_OUT_SET sits at offset 0x018, giving 0xD0000018." }
+  ];
+
+  var mapEl = document.getElementById("map");
+  var mapDetail = document.getElementById("map-detail");
+
+  REGIONS.forEach(function (r) {
+    var row = document.createElement("button");
+    row.className = "map-row" + (r.hot ? " is-hot" : "");
+    row.type = "button";
+    row.setAttribute("aria-pressed", "false");
+
+    var a = document.createElement("span");
+    a.className = "map-addr";
+    a.textContent = r.addr;
+    var n = document.createElement("span");
+    n.className = "map-name";
+    n.textContent = r.name;
+    var s = document.createElement("span");
+    s.className = "map-size";
+    s.textContent = r.size;
+
+    row.appendChild(a); row.appendChild(n); row.appendChild(s);
+    row.addEventListener("click", function () {
+      var all = mapEl.querySelectorAll(".map-row");
+      for (var i = 0; i < all.length; i++) all[i].setAttribute("aria-pressed", "false");
+      row.setAttribute("aria-pressed", "true");
+      mapDetail.textContent = r.detail;
+      mapDetail.classList.toggle("hot", r.hot);
+    });
+    mapEl.appendChild(row);
+  });
+
+  /* ---------------- Instrument 3: storage vs doorbell ---------------- */
+
+  var dbRun = document.getElementById("db-run");
+  var dbReset = document.getElementById("db-reset");
+
+  function dbClear() {
+    document.getElementById("db-ram-w").textContent = "write  →  —";
+    document.getElementById("db-ram-r").textContent = "read   →  —";
+    document.getElementById("db-ram-v").textContent = " ";
+    document.getElementById("db-ram-v").className = "verdict";
+    document.getElementById("db-reg-w").textContent = "write  →  —";
+    document.getElementById("db-reg-r").textContent = "read   →  —";
+    document.getElementById("db-reg-v").textContent = " ";
+    document.getElementById("db-reg-v").className = "verdict";
+  }
+
+  dbRun.addEventListener("click", function () {
+    document.getElementById("db-ram-w").textContent = "write  →  0x02000000";
+    document.getElementById("db-ram-r").textContent = "read   →  0x02000000";
+    var rv = document.getElementById("db-ram-v");
+    rv.textContent = "Same value back. It is a box.";
+    rv.className = "verdict ok";
+
+    document.getElementById("db-reg-w").textContent = "write  →  0x02000000   pin 25 goes HIGH";
+    document.getElementById("db-reg-r").textContent = "read   →  not your value";
+    var gv = document.getElementById("db-reg-v");
+    gv.textContent = "Nothing stored. It is a doorbell.";
+    gv.className = "verdict odd";
+  });
+  dbReset.addEventListener("click", dbClear);
+  dbClear();
+
+  /* ---------------- Instrument 4: bit builder ---------------- */
+
+  var bitsHi = document.getElementById("bits-hi");
+  var bitsLo = document.getElementById("bits-lo");
+  var labelsHi = document.getElementById("labels-hi");
+  var labelsLo = document.getElementById("labels-lo");
+  var cells = [];
+  var labels = [];
+
+  function buildBits(container, labelContainer, from, to) {
+    for (var b = from; b >= to; b--) {
+      var c = document.createElement("div");
+      c.className = "bit";
+      c.textContent = "0";
+      container.appendChild(c);
+      cells[b] = c;
+      var l = document.createElement("div");
+      l.className = "bitlabel";
+      l.textContent = b;
+      labelContainer.appendChild(l);
+      labels[b] = l;
+    }
+  }
+  buildBits(bitsHi, labelsHi, 31, 16);
+  buildBits(bitsLo, labelsLo, 15, 0);
+
+  var pinInput = document.getElementById("pin");
+
+  function hex32(v) {
+    var s = (v >>> 0).toString(16).toUpperCase();
+    while (s.length < 8) s = "0" + s;
+    return "0x" + s;
+  }
+
+  function drawBits() {
+    var n = parseInt(pinInput.value, 10);
+    var val = (1 << n) >>> 0;
+    for (var b = 0; b < 32; b++) {
+      var on = b === n;
+      cells[b].classList.toggle("set", on);
+      cells[b].textContent = on ? "1" : "0";
+      labels[b].classList.toggle("mark", on);
+    }
+    document.getElementById("pin-badge").textContent = n;
+    document.getElementById("ro-expr").textContent = "1 << " + n;
+    document.getElementById("ro-hex").textContent = hex32(val);
+    document.getElementById("ro-dec").textContent = val.toLocaleString("en-US");
+    document.getElementById("ro-store").textContent = "*0xD0000018 = " + hex32(val);
+  }
+  pinInput.addEventListener("input", drawBits);
+  drawBits();
+
+  /* ---------------- Instrument 5: the race ---------------- */
+
+  var BIT0 = (1 << 25) >>> 0;   // core 0 wants pin 25
+  var BIT1 = (1 << 10) >>> 0;   // core 1 wants pin 10
+
+  var SCENARIOS = {
+    rmw: {
+      intro: "Both cores run gpio_out |= 1 << n. Each one reads the register, ORs in its own bit, and writes the whole 32-bit result back. Watch what the last write does.",
+      steps: [
+        { who: "Core 0", what: "read  gpio_out            → 0x00000000", act: function (s) { s.c0 = s.hw; s.c0sub = "holds 0x00000000"; } },
+        { who: "Core 1", what: "read  gpio_out            → 0x00000000", act: function (s) { s.c1 = s.hw; s.c1sub = "holds 0x00000000"; } },
+        { who: "Core 0", what: "or    0x02000000          (pin 25)",        act: function (s) { s.c0 = (s.c0 | BIT0) >>> 0; s.c0sub = "pin 25 set locally"; } },
+        { who: "Core 1", what: "or    0x00000400          (pin 10)",        act: function (s) { s.c1 = (s.c1 | BIT1) >>> 0; s.c1sub = "pin 10 set locally"; } },
+        { who: "Core 0", what: "write gpio_out = 0x02000000", act: function (s) { s.hw = s.c0; s.c0sub = "written"; } },
+        { who: "Core 1", what: "write gpio_out = 0x00000400   ← overwrites core 0", lost: true, act: function (s) { s.hw = s.c1; s.c1sub = "written"; } }
+      ],
+      verdict: function (s) {
+        return {
+          cls: "bad",
+          html: "<strong>Pin 25 never turned on.</strong> Core 1 read the register before core 0 wrote to it, so core 1's copy did not contain core 0's bit. When core 1 wrote its full 32-bit value back, it erased core 0's work. Final value <code>" + hex32(s.hw) + "</code> — only pin 10 is high. No error is reported. Nothing crashes. The LED simply does not light, intermittently, and only under timing you cannot reproduce on demand."
+        };
+      }
+    },
+    atomic: {
+      intro: "Both cores write to gpio_out_set instead. A write of 1 bits tells the hardware to OR those bits into gpio_out; 0 bits are left alone. Each core issues exactly one store.",
+      steps: [
+        { who: "Core 0", what: "write gpio_out_set = 0x02000000", act: function (s) { s.hw = (s.hw | BIT0) >>> 0; s.c0 = BIT0; s.c0sub = "one store, done"; } },
+        { who: "Core 1", what: "write gpio_out_set = 0x00000400", act: function (s) { s.hw = (s.hw | BIT1) >>> 0; s.c1 = BIT1; s.c1sub = "one store, done"; } }
+      ],
+      verdict: function (s) {
+        return {
+          cls: "good",
+          html: "<strong>Both pins are high.</strong> Final value <code>" + hex32(s.hw) + "</code>. There was no read step to go stale, and a single store cannot be split in half — so there is no window for the cores to interfere. The OR happens inside the hardware. This is why <code>gpio_out_set</code> earns its silicon, and it is why <code>chips/rp2350/src/gpio.rs:1485</code> uses it instead of a read–modify–write."
+        };
+      }
+    }
+  };
+
+  var mode = "rmw";
+  var state, cursor;
+
+  var stepsEl = document.getElementById("race-steps");
+  var outcomeEl = document.getElementById("race-outcome");
+  var introEl = document.getElementById("race-intro");
+
+  function resetRace() {
+    state = { hw: 0, c0: null, c1: null, c0sub: "idle", c1sub: "idle" };
+    cursor = 0;
+    introEl.textContent = SCENARIOS[mode].intro;
+    renderSteps();
+    renderState();
+    outcomeEl.className = "outcome";
+    outcomeEl.innerHTML = "Press <strong>Step</strong> to advance one instruction at a time.";
+    document.getElementById("race-step").disabled = false;
+    document.getElementById("race-all").disabled = false;
+  }
+
+  function renderSteps() {
+    stepsEl.innerHTML = "";
+    SCENARIOS[mode].steps.forEach(function (st, i) {
+      var row = document.createElement("div");
+      row.className = "step";
+      if (i < cursor) row.classList.add("done");
+      if (i === cursor - 1) row.classList.add("now");
+      if (st.lost && i < cursor) row.classList.add("lost");
+
+      var n = document.createElement("span");
+      n.className = "step-n";
+      n.textContent = (i + 1);
+      var who = document.createElement("span");
+      who.className = "step-who";
+      who.textContent = st.who;
+      var what = document.createElement("span");
+      what.className = "step-what";
+      what.textContent = st.what;
+
+      row.appendChild(n); row.appendChild(who); row.appendChild(what);
+      stepsEl.appendChild(row);
+    });
+  }
+
+  function pinsOf(v) {
+    var out = [];
+    for (var b = 0; b < 32; b++) if (v & (1 << b)) out.push(b);
+    return out.length ? "pin " + out.join(", ") + " high" : "no pins high";
+  }
+
+  function renderState() {
+    document.getElementById("core0-val").textContent = state.c0 === null ? "—" : hex32(state.c0);
+    document.getElementById("core1-val").textContent = state.c1 === null ? "—" : hex32(state.c1);
+    document.getElementById("corehw-val").textContent = hex32(state.hw);
+    document.getElementById("core0-sub").textContent = state.c0sub;
+    document.getElementById("core1-sub").textContent = state.c1sub;
+    document.getElementById("corehw-sub").textContent = pinsOf(state.hw);
+
+    var steps = SCENARIOS[mode].steps;
+    var cur = cursor > 0 ? steps[cursor - 1].who : null;
+    document.getElementById("core0").classList.toggle("active", cur === "Core 0");
+    document.getElementById("core1").classList.toggle("active", cur === "Core 1");
+    document.getElementById("corehw").classList.toggle("active",
+      cursor > 0 && steps[cursor - 1].what.indexOf("write") === 0);
+  }
+
+  function stepRace() {
+    var steps = SCENARIOS[mode].steps;
+    if (cursor >= steps.length) return;
+    steps[cursor].act(state);
+    cursor++;
+    renderSteps();
+    renderState();
+    if (cursor >= steps.length) {
+      var v = SCENARIOS[mode].verdict(state);
+      outcomeEl.className = "outcome " + v.cls;
+      outcomeEl.innerHTML = v.html;
+      document.getElementById("race-step").disabled = true;
+      document.getElementById("race-all").disabled = true;
+    }
+  }
+
+  document.getElementById("race-step").addEventListener("click", stepRace);
+  document.getElementById("race-all").addEventListener("click", function () {
+    while (cursor < SCENARIOS[mode].steps.length) stepRace();
+  });
+  document.getElementById("race-reset").addEventListener("click", resetRace);
+
+  function selectTab(m) {
+    mode = m;
+    document.getElementById("tab-rmw").setAttribute("aria-selected", String(m === "rmw"));
+    document.getElementById("tab-atomic").setAttribute("aria-selected", String(m === "atomic"));
+    resetRace();
+  }
+  document.getElementById("tab-rmw").addEventListener("click", function () { selectTab("rmw"); });
+  document.getElementById("tab-atomic").addEventListener("click", function () { selectTab("atomic"); });
+
+  resetRace();
+})();
+</script>
