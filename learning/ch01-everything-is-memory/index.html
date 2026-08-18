@@ -723,7 +723,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   <div class="eyebrow">Learning Tock from the ground up &middot; Chapter&nbsp;1</div>
   <h1>Everything Is Memory</h1>
   <p class="standfirst">On a microcontroller, a peripheral is not a device you talk to. It is a set of memory addresses that <em>do something</em> when you write to them. Once that clicks, most of embedded programming stops being mysterious &mdash; and the reason an operating system like Tock has to exist at all becomes obvious.</p>
-  <div class="byline">Verified against Tock at commit <code>47287a64e</code>, targeting the RP2350 (Raspberry Pi Pico&nbsp;2). Every address and code excerpt below is quoted from the repository, not from memory.</div>
+  <div class="byline">Verified against Tock at commit <code>47287a64e</code> and the RP2350 datasheet (build 2025-07-29), targeting the Raspberry Pi Pico&nbsp;2. Every address, register description and code excerpt below is quoted from one of those two documents, not from memory.</div>
 </header>
 
 <section class="col">
@@ -811,9 +811,10 @@ bx    lr</code></pre>
 <section class="col">
   <h2>What happens when you read one back?</h2>
   <p>It is tempting to summarise all this as "registers aren't storage, they're doorbells." That is half right, and the wrong half matters.</p>
-  <p>Some registers really do behave like storage. <code>GPIO_OUT</code> at <code class="addr">0xD0000010</code> is one &mdash; the chip crate's description of it, transcribed from the datasheet, reads <em>"Set output level (1/0 -&gt; high/low) for GPIO0...31. Reading back gives the last v&hellip;"</em>. Write to it, read it, and you get your value.</p>
+  <p>Some registers really do behave like storage. <code>GPIO_OUT</code> at <code class="addr">0xD0000010</code> is one &mdash; the chip crate's description of it, transcribed from the datasheet, reads <em>"Set output level (1/0 &rarr; high/low) for GPIO0&hellip;31. Reading back gives the last value written, NOT the input value from the pins."</em> Write to it, read it, and you get your value back. The datasheet types it <code>RW</code>.</p>
   <p><code>GPIO_OUT_SET</code>, eight bytes further along, does not. A write there is an <em>operation applied to a different register</em>: <code>gpio_out |= value</code>. Write a value with no bits set and nothing happens at all &mdash; no storage location in the world silently discards a write like that.</p>
-  <p class="footnote-ish" style="font-size:.92rem;color:var(--ink-soft)">Worth being exact about the evidence: the crate spells that <code>|=</code> behaviour out for <code>GPIO_HI_OUT_SET</code>, the identical register covering pins 32&ndash;47 (<code>gpio.rs:97</code>), while the one we are using is labelled only "GPIO0...31 output value set". The behaviour of ours is inferred from its twin, its name, and the existence of separate <code>_clr</code> and <code>_xor</code> registers beside it.</p>
+  <p>That is the datasheet's own description of the register, word for word: <em>"Perform an atomic bit-set on GPIO_OUT, i.e. <code>GPIO_OUT |= wdata</code>"</em>. Its two neighbours are spelled out the same way &mdash; <code>GPIO_OUT_CLR</code> is <code>GPIO_OUT &amp;= ~wdata</code>, and <code>GPIO_OUT_XOR</code> is <code>GPIO_OUT ^= wdata</code>.</p>
+  <p class="footnote-ish" style="font-size:.92rem;color:var(--ink-soft)">One detail worth noticing, because it is the kind of thing that bites later: the datasheet types <code>GPIO_OUT_SET</code> as <strong>WO</strong>, write-only. Tock's chip crate declares it <code>ReadWrite&lt;u32&gt;</code>, which is looser than the hardware contract. Nothing breaks today, because the kernel only ever writes it &mdash; but the type permits a read the hardware never promised to answer.</p>
   <p>So the real lesson is sharper than "doorbell": <strong>what an address does on a read, and on a write, is a decision the hardware designer made for that one register.</strong> The address itself tells you nothing about it. You cannot infer the behaviour; you can only look it up.</p>
 </section>
 
@@ -888,7 +889,14 @@ bx    lr</code></pre>
 <div class="col">
   <div class="aside">
     <span class="aside-label">Careful &mdash; your board is the W</span>
-    <p>Pin 25 is the onboard LED on a plain Pico&nbsp;2, and that is what <code>boards/raspberry_pi_pico_2/src/main.rs:385</code> assumes. On the wireless variants, GPIO&nbsp;25 is wired to the CYW43439 radio's SPI chip-select instead &mdash; you can see exactly that in Tock's Pico&nbsp;W board file at <code>boards/raspberry_pi_pico_w/src/main.rs:126</code>. So on your Pico&nbsp;2&nbsp;W, this write will not light anything; it will wiggle the radio's chip-select line.</p>
+    <p>Pin 25 is the onboard LED on a plain Pico&nbsp;2, and that is what <code>boards/raspberry_pi_pico_2/src/main.rs:385</code> assumes. On the wireless variants, GPIO&nbsp;25 is wired to the CYW43439 radio's SPI chip-select instead. Raspberry Pi's own board header for this exact board says so outright:</p>
+    <pre style="margin:.2rem 0"><code>#define CYW43_DEFAULT_PIN_WL_REG_ON   23u
+#define CYW43_DEFAULT_PIN_WL_DATA_OUT 24u
+#define CYW43_DEFAULT_PIN_WL_CLOCK    29u
+<span class="tok-n">#define CYW43_DEFAULT_PIN_WL_CS       25u</span>
+<span class="tok-n">#define CYW43_WL_GPIO_LED_PIN          0</span></code></pre>
+    <p style="font-size:.9rem;color:var(--ink-soft)">pico-sdk, <code>src/boards/include/boards/pico2_w.h</code></p>
+    <p>So on your Pico&nbsp;2&nbsp;W this write will not light anything &mdash; it will toggle the radio's chip-select. The LED is <code>CYW43_WL_GPIO_LED_PIN 0</code>: a pin on the wireless chip, which the RP2350 can only reach by talking to that chip over SPI first.</p>
     <p>Worth sitting with, because it is the first real lesson about layering: the <em>chip</em> says "pin 25." What pin 25 is <em>connected to</em> is a fact about the <em>board</em>. Confusing the two is how you spend an afternoon debugging an LED that was never there.</p>
   </div>
 </div>
@@ -1017,9 +1025,12 @@ bx    lr</code></pre>
     <li>Remaining peripheral bases &mdash; <code>clocks.rs</code>, <code>resets.rs</code>, <code>uart.rs</code>, <code>timer.rs</code>, <code>ticks.rs</code>, <code>xosc.rs</code> in <code>chips/rp2350/src/</code></li>
     <li><code>write_volatile</code> &mdash; <code>tock-registers 0.10.0</code>, <code>src/registers.rs:63</code></li>
     <li>Disassembly in Instrument 2 &mdash; <code>llvm-objdump -d</code> on <code>target/thumbv8m.main-none-eabi/release/raspberry_pi_pico_2.elf</code>, built from this tree</li>
-    <li>GPIO 25 as radio chip-select on wireless boards &mdash; <code>boards/raspberry_pi_pico_w/src/main.rs:126</code></li>
+    <li>GPIO 25 as radio chip-select on wireless boards &mdash; <code>boards/raspberry_pi_pico_w/src/main.rs:126</code>, and Raspberry Pi's own <code>pico-sdk/src/boards/include/boards/pico2_w.h</code></li>
+    <li><code>GPIO_OUT</code> read-back wording in full, the <code>|=</code> / <code>&amp;= ~</code> / <code>^=</code> semantics, and the <code>WO</code> type of <code>GPIO_OUT_SET</code> &mdash; RP2350 datasheet &sect;3.1, register tables at offsets 0x010&ndash;0x028</li>
+    <li>How the processors reach SIO &mdash; RP2350 datasheet &sect;3.1 opening paragraph and Figure 7</li>
   </ul>
-  <p style="margin-top:.8rem">The one item here <em>not</em> read from a primary source: that the Pico&nbsp;2&nbsp;W wires GPIO&nbsp;25 the same way the Pico&nbsp;W does. That is an inference from the RP2040 board file, since Tock has no Pico&nbsp;2&nbsp;W board yet. Verify it against the board schematic before relying on it.</p>
+  <p style="margin-top:.8rem">Every claim on this page now rests on one of the documents above. Three items that earlier drafts marked as inference have been chased down and resolved: the Pico&nbsp;2&nbsp;W chip-select assignment (confirmed by Raspberry Pi's own <code>pico2_w.h</code>), the <code>GPIO_OUT_SET</code> read-modify-write semantics (confirmed by the datasheet's register table), and how the processors reach SIO.</p>
+  <p style="margin-top:.6rem">That last one turned out to be <em>wrong</em> as originally written. An earlier draft said SIO was reached by a route separate from the peripheral fabric. It is not &mdash; the datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The error came from recalling the RP2040, where SIO does sit on the Cortex-M0+ single-cycle IOPORT. Different chip, different answer.</p>
   <p style="margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--rule)">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
 </div>
 
@@ -1119,7 +1130,7 @@ bx    lr</code></pre>
     { addr: "0x40108000", name: "TICKS", size: "—", hot: true,
       detail: "Tick generators that divide a reference clock down to drive the timers and watchdog." },
     { addr: "0xD0000000", name: "SIO", size: "—", hot: true,
-      detail: "Single-cycle I/O — the block this chapter is about. The expansion of the name is the vendor's own. Note how far its address sits from every other peripheral above: those cluster around 0x4, this one alone is at 0xD, which is at least consistent with it being reached by a shorter route than the shared peripheral fabric. GPIO_OUT_SET lives at offset 0x018, which is where 0xD0000018 comes from." }
+      detail: "Single-cycle I/O, which the address map labels 'Core-local Peripherals'. The datasheet: it 'contains peripherals that require low-latency, deterministic access from the processors. It is accessed via the AHB Fabric. The SIO has a dedicated bus interface for each processor.' So the speed does not come from bypassing the bus \u2014 it comes from each core having its own interface to this block instead of contending for a shared one. GPIO_OUT_SET sits at offset 0x018, which is where 0xD0000018 comes from." }
   ];
 
   var mapEl = document.getElementById("map");
@@ -1165,7 +1176,7 @@ bx    lr</code></pre>
       d: "Storage and physical effect in the same address. Reading back works \u2014 but because a write sets all 32 bits at once, changing one pin means read, modify, write. That is precisely the hazard the next instrument is about." },
     { addr: "0xD0000018", name: "SIO GPIO_OUT_SET", tag: "an operation",
       w: "Performs gpio_out |= value. Bits you leave at 0 do nothing whatsoever.",
-      r: "Nothing you wrote. The chip crate documents no read behaviour for this address \u2014 check the datasheet before relying on one.",
+      r: "Undefined by the contract \u2014 the datasheet types this register WO, write-only. (Tock's crate types it ReadWrite, which is looser than the hardware promises.)",
       d: "Not a location at all, but a verb. The value you write is consumed as an argument and never kept. This is the address the whole chapter has been about, and it is the clearest case that 'memory' is the wrong noun." },
     { addr: "0xD0000004", name: "SIO GPIO_IN", tag: "the outside world",
       w: "Nothing useful \u2014 this reflects state you do not control.",
