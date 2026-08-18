@@ -36,7 +36,8 @@ That property is not automatic; it holds only while these rules hold:
    paths, not directory names, so as long as upstream never creates a file at one
    of our exact paths, a rebase is a fast-forward with no merge work.
 3. **Keep chapter files inside a distinctly named subdirectory.** `learning/ch01-.../index.html`
-   is safe in a way that a generic top-level filename would not be.
+   is safe in a way that a generic top-level filename would not be. Shared
+   tooling lives in `learning/tools/`.
 
 If those hold, the workflow is:
 
@@ -46,6 +47,33 @@ git rebase upstream/master
 ```
 
 There is nothing to resolve, because there is nothing overlapping.
+
+## Checking a chapter
+
+The chapters are interactive, so "it looks right" is not evidence. From the
+repository root:
+
+```
+python3 learning/tools/check.py
+```
+
+This runs two kinds of check against every chapter and exits non-zero if either
+fails, so it can gate a commit.
+
+**Static checks** on the page: duplicate ids, unbalanced tags, JavaScript
+reaching for ids that do not exist, CSS variables used but never defined, and
+colour literals outside the theme token blocks -- that last one being the usual
+way a page ends up unreadable in one of the two colour schemes.
+
+**Behavioural checks**: the page's own `<script>` is executed headlessly under
+JavaScriptCore against the DOM shim in `tools/harness.js`, then the chapter's
+assertions run against the resulting state. This is how the interactive figures
+are verified to actually compute what the prose claims they compute -- the
+chapter 1 suite caught a `1 << 31` integer-overflow case that no amount of
+reading would have found.
+
+Adding a chapter means adding `tools/chNN.tests.js`; the runner discovers it by
+the chapter directory's prefix and needs no changes.
 
 ## What CI requires of these files
 
