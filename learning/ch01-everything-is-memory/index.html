@@ -760,7 +760,9 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   .map-row { grid-template-columns: 1fr auto; row-gap: .15rem; }
   .map-row .map-addr { grid-column: 1 / -1; }
   .step { grid-template-columns: 1.6rem 1fr; row-gap: .1rem; }
-  .step .step-what { grid-column: 2 / -1; }
+  /* Preserve the alignment where it fits, but wrap rather than making the
+     reader scroll each row on a phone. */
+  .step .step-what { grid-column: 2 / -1; white-space: pre-wrap; overflow-x: visible; }
 }
 
 @media (prefers-reduced-motion: reduce) {
