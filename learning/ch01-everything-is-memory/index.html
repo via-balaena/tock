@@ -1074,6 +1074,9 @@ bx    lr</code></pre>
     <li>GPIO 25 as radio chip-select on wireless boards &mdash; <code>boards/raspberry_pi_pico_w/src/main.rs:126</code>, and Raspberry Pi's own <code>pico-sdk/src/boards/include/boards/pico2_w.h</code></li>
     <li><code>GPIO_OUT</code> read-back wording in full, the <code>|=</code> / <code>&amp;= ~</code> / <code>^=</code> semantics, and the <code>WO</code> type of <code>GPIO_OUT_SET</code> &mdash; RP2350 datasheet &sect;3.1, register tables at offsets 0x010&ndash;0x028</li>
     <li>How the processors reach SIO &mdash; RP2350 datasheet &sect;3.1 opening paragraph and Figure 7</li>
+    <li><code>GPIO_IN</code> typed <code>RO</code> &mdash; RP2350 datasheet, Table&nbsp;19</li>
+    <li>48&nbsp;MHz fixed PLL for USB or ADC, and a system clock up to 150&nbsp;MHz &mdash; RP2350 datasheet, chip overview</li>
+    <li><code>TIMER0</code> counting microseconds &mdash; <code>chips/rp2350/src/timer.rs:219</code> declares <code>Freq1MHz</code></li>
   </ul>
   <p>Every claim on this page now rests on one of the documents above. Three items that earlier drafts marked as inference have been chased down and resolved: the Pico&nbsp;2&nbsp;W chip-select assignment (confirmed by Raspberry Pi's own <code>pico2_w.h</code>), the <code>GPIO_OUT_SET</code> read-modify-write semantics (confirmed by the datasheet's register table), and how the processors reach SIO.</p>
   <p>That last one turned out to be <em>wrong</em> as originally written. An earlier draft said SIO was reached by a route separate from the peripheral fabric. It is not &mdash; the datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The error came from recalling the RP2040, where SIO does sit on the Cortex-M0+ single-cycle IOPORT. Different chip, different answer.</p>
@@ -1146,7 +1149,7 @@ bx    lr</code></pre>
 
   var REGIONS = [
     { addr: "0x10000000", name: "Flash — boot block", size: "1 KB reserved", hot: false,
-      detail: "Two separate things live here, not one. First a 28-byte METADATA_BLOCK: an IMAGE_DEF declaring this image executable, Secure-mode, Arm, for RP2350, plus a VECTOR_TABLE item pointing at 0x10000400. Then a 256-byte second-stage bootloader — a prebuilt blob from the Pico SDK — whose job is configuring the QSPI flash interface so the chip can execute code directly out of flash. The linker reserves 1 KB; only 284 bytes are used." },
+      detail: "Two separate things live here, not one. First a 28-byte METADATA_BLOCK: an IMAGE_DEF declaring this image executable, Secure-mode, Arm, for RP2350, plus a VECTOR_TABLE item pointing at 0x10000400. Then a 256-byte second-stage bootloader — a prebuilt blob from the Pico SDK — whose job is configuring the QSPI flash interface so the chip can execute code directly out of flash. The linker reserves 1 KB for the pair; between them they come to 284 bytes." },
     { addr: "0x10000400", name: "Flash — Tock kernel", size: "255 KB", hot: false,
       detail: "The kernel image. Read-only at runtime: this is code, and it stays exactly where the linker put it. Note this address is what the VECTOR_TABLE item in the boot block points at — that is how the boot process finds it." },
     { addr: "0x10040000", name: "Flash — applications", size: "256 KB", hot: false,
@@ -1164,9 +1167,9 @@ bx    lr</code></pre>
     { addr: "0x40048000", name: "XOSC", size: "—", hot: true,
       detail: "The crystal oscillator — the physical timing reference every other clock on the chip is derived from." },
     { addr: "0x40050000", name: "PLL_SYS", size: "—", hot: true,
-      detail: "Phase-locked loop that multiplies the crystal frequency up to the system clock rate." },
+      detail: "Phase-locked loop that multiplies the crystal frequency up to the system clock rate \u2014 as high as 150 MHz on this chip." },
     { addr: "0x40058000", name: "PLL_USB", size: "—", hot: true,
-      detail: "A second PLL, generating the 48 MHz USB needs independently of the system clock." },
+      detail: "A second PLL. The datasheet: two PLLs provide \u201ca fixed 48 MHz clock for USB or ADC, and a flexible system clock up to 150 MHz\u201d. This is the fixed one, so USB timing does not drift when the system clock is retuned." },
     { addr: "0x40070000", name: "UART0", size: "—", hot: true,
       detail: "The serial port Tock's console runs over. When kernel text appeared on your terminal, bytes were being written one at a time into a register in this block." },
     { addr: "0x40078000", name: "UART1", size: "—", hot: true,
@@ -1176,7 +1179,7 @@ bx    lr</code></pre>
     { addr: "0x40108000", name: "TICKS", size: "—", hot: true,
       detail: "Tick generators that divide a reference clock down to drive the timers and watchdog." },
     { addr: "0xD0000000", name: "SIO", size: "—", hot: true,
-      detail: "Single-cycle I/O, which the address map labels 'Core-local Peripherals'. The datasheet: it 'contains peripherals that require low-latency, deterministic access from the processors. It is accessed via the AHB Fabric. The SIO has a dedicated bus interface for each processor.' So the speed does not come from bypassing the bus \u2014 it comes from each core having its own interface to this block instead of contending for a shared one. GPIO_OUT_SET sits at offset 0x018, which is where 0xD0000018 comes from." }
+      detail: "Single-cycle I/O, which the address map labels \u201cCore-local Peripherals\u201d. The datasheet: it \u201ccontains peripherals that require low-latency, deterministic access from the processors. It is accessed via the AHB Fabric. The SIO has a dedicated bus interface for each processor.\u201d So the speed does not come from bypassing the bus \u2014 it comes from each core having its own interface to this block instead of contending for a shared one. GPIO_OUT_SET sits at offset 0x018, which is where 0xD0000018 comes from." }
   ];
 
   var mapEl = document.getElementById("map");
@@ -1217,15 +1220,15 @@ bx    lr</code></pre>
       r: "Exactly what you wrote.",
       d: "The only one of the four that behaves like a variable. Write it, come back an hour later, read the same thing. This is the model most programming teaches you, and on a microcontroller it covers a surprisingly small share of the address space." },
     { addr: "0xD0000010", name: "SIO GPIO_OUT", tag: "storage and effect",
-      w: "Drives all 32 pins in the bank at once to match the 32 bits you wrote.",
+      w: "Drives the whole bank at once \u2014 every bit you write lands on its pin simultaneously.",
       r: "The last value written.",
-      d: "Storage and physical effect in the same address. Reading back works \u2014 but because a write sets all 32 bits at once, changing one pin means read, modify, write. That is precisely the hazard the next instrument is about." },
+      d: "Storage and physical effect in the same address. Reading back works \u2014 but because a write lands on every pin at once, changing one pin means read, modify, write. That is precisely the hazard this chapter's last instrument is about." },
     { addr: "0xD0000018", name: "SIO GPIO_OUT_SET", tag: "an operation",
       w: "Performs gpio_out |= value. Bits you leave at 0 do nothing whatsoever.",
       r: "Undefined by the contract \u2014 the datasheet types this register WO, write-only. (Tock's crate types it ReadWrite, which is looser than the hardware promises.)",
-      d: "Not a location at all, but a verb. The value you write is consumed as an argument and never kept. This is the address the whole chapter has been about, and it is the clearest case that 'memory' is the wrong noun." },
+      d: "Not a location at all, but a verb. The value you write is consumed as an argument and never kept. This is the address the whole chapter has been about, and it is the clearest case that \u201cmemory\u201d is the wrong noun." },
     { addr: "0xD0000004", name: "SIO GPIO_IN", tag: "the outside world",
-      w: "Nothing useful \u2014 this reflects state you do not control.",
+      w: "Nothing. The datasheet types this register RO, read-only \u2014 it reflects state you do not control. (Tock's crate types it ReadWrite here too.)",
       r: "The voltage actually present on the pins, right now.",
       d: "The value here is written by the physical world, not by your program. Read it twice and you can get two different answers with no code in between \u2014 which is exactly why the compiler must never cache it, and why volatile exists." }
   ];
