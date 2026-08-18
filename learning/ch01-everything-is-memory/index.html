@@ -729,7 +729,8 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 <section class="col">
   <h2>One line, all the way down</h2>
   <p>If you have used an Arduino, you have written something like <code>digitalWrite(25, HIGH)</code>. It reads like a command issued to a device: <em>pin, turn on</em>.</p>
-  <p>It isn't. Underneath every layer, that operation is <strong>a single store of a single 32-bit value to a single memory address</strong>. Nothing more happens. There is no message, no protocol, no driver conversation. One write.</p>
+  <p>It isn't. On this chip, the thing that actually changes the pin is <strong>a single store of a single 32-bit value to a single memory address</strong>. There is no message, no protocol, no driver conversation with a device. One write.</p>
+  <p>Layers around that store still do work &mdash; Arduino's helper checks and reconfigures things, and Tock's checks that you configured the pin as an output. But none of that is <em>how the pin turns on</em>. The store is.</p>
   <p>Here is the entire ladder on the RP2350, from the friendliest layer to the instruction the processor actually executes.</p>
 </section>
 
@@ -750,7 +751,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 </figure>
 
 <section class="col">
-  <p>That bottom rung is not a simplification for teaching. It is what a disassembler prints when you point it at the kernel you built earlier in this chapter's repository. Here is the whole function, unedited.</p>
+  <p>That bottom rung is not a simplification for teaching. It is what a disassembler prints when you point it at a kernel built from this repository. Here is the entire function &mdash; with only the mangled symbol names shortened, the per-line addresses dropped, and the comments added.</p>
 </section>
 
 <figure class="instrument">
@@ -782,8 +783,8 @@ bx    lr</code></pre>
 </figure>
 
 <section class="col">
-  <p>Read the two highlighted groups and the whole chapter is already visible in four instructions.</p>
-  <p><code>lsl.w r1, r2, r1</code> is <code>1 &lt;&lt; pin</code> &mdash; a shift instruction, exactly what the Rust source says. <code>and r1, r1, #0x1f</code> masks the pin number to five bits first, which is the hardware's way of saying a 32-bit register only has 32 positions to shift into.</p>
+  <p>The three highlighted instructions are the whole chapter.</p>
+  <p><code>lsl.w r1, r2, r1</code> is <code>1 &lt;&lt; pin</code> &mdash; a shift instruction, exactly what the Rust source says. <code>and r1, r1, #0x1f</code> masks the pin number down to five bits first. That is the compiler, not the chip: five bits count from 0 to 31, which is every shift position a 32-bit value has, so the mask makes the shift well-defined no matter what number it is handed.</p>
   <p>And <code>str r1, [r0, #0x18]</code> is the store &mdash; but look at its shape. The address is not one number. It is <strong>a base held in a register, plus an offset baked into the instruction</strong>. <code>r0</code> holds <code class="addr">0xD0000000</code>; <code>0x18</code> is the offset of <code>gpio_out_set</code> within the block. That is why register blocks are written as a struct of offsets from a base address: the processor's addressing modes are built for exactly that shape, so it costs nothing.</p>
   <p>The one thing above that is <em>not</em> the store: <code>get_mode</code> and the <code>bls</code> after it are the <code>match</code> guard from the Rust source, skipping the write if the pin was never configured as an output.</p>
 </section>
@@ -804,7 +805,7 @@ bx    lr</code></pre>
     <div class="map" id="map"></div>
     <div class="map-detail" id="map-detail">Select any region to see what lives there and where the address comes from.</div>
   </div>
-  <div class="instrument-note">Addresses in the <code>0x4</code> and <code>0xD</code> ranges are not memory in any ordinary sense. Nothing is stored there.</div>
+  <div class="instrument-note">Addresses in the <code>0x4</code> and <code>0xD</code> ranges are not memory in the ordinary sense. A few of them do retain what you write; most do something instead, and the next section is about telling which is which.</div>
 </figure>
 
 <section class="col">
@@ -812,6 +813,7 @@ bx    lr</code></pre>
   <p>It is tempting to summarise all this as "registers aren't storage, they're doorbells." That is half right, and the wrong half matters.</p>
   <p>Some registers really do behave like storage. <code>GPIO_OUT</code> at <code class="addr">0xD0000010</code> is one &mdash; the chip crate's description of it, transcribed from the datasheet, reads <em>"Set output level (1/0 -&gt; high/low) for GPIO0...31. Reading back gives the last v&hellip;"</em>. Write to it, read it, and you get your value.</p>
   <p><code>GPIO_OUT_SET</code>, eight bytes further along, does not. A write there is an <em>operation applied to a different register</em>: <code>gpio_out |= value</code>. Write a value with no bits set and nothing happens at all &mdash; no storage location in the world silently discards a write like that.</p>
+  <p class="footnote-ish" style="font-size:.92rem;color:var(--ink-soft)">Worth being exact about the evidence: the crate spells that <code>|=</code> behaviour out for <code>GPIO_HI_OUT_SET</code>, the identical register covering pins 32&ndash;47 (<code>gpio.rs:97</code>), while the one we are using is labelled only "GPIO0...31 output value set". The behaviour of ours is inferred from its twin, its name, and the existence of separate <code>_clr</code> and <code>_xor</code> registers beside it.</p>
   <p>So the real lesson is sharper than "doorbell": <strong>what an address does on a read, and on a write, is a decision the hardware designer made for that one register.</strong> The address itself tells you nothing about it. You cannot infer the behaviour; you can only look it up.</p>
 </section>
 
@@ -834,13 +836,13 @@ bx    lr</code></pre>
     </div>
     <div class="map-detail" id="beh-d" style="margin-top:1.1rem">Select an address to compare.</div>
   </div>
-  <div class="instrument-note">Only the first behaves the way a variable does. The other three would each break a mental model built on "memory stores things."</div>
+  <div class="instrument-note">Only the first is purely a variable. The second retains what you write <em>and</em> changes the physical world; the last two are not storage at all. One address in four behaves the way ordinary programming taught you to expect.</div>
 </figure>
 
 <section class="col">
   <h2>Where <code>1 &lt;&lt; 25</code> comes from</h2>
   <p>One register controls a whole bank of pins at once, because a 32-bit register has thirty-two independent bits. Bit 0 is GPIO&nbsp;0, bit 25 is GPIO&nbsp;25. To act on pin <em>n</em> you set bit <em>n</em>, and the idiom for "a value with only bit <em>n</em> set" is <code>1 &lt;&lt; n</code>. That is the whole reason the Tock source reads <code>1 &lt;&lt; self.pin</code>.</p>
-  <p>Be careful with an assumption that looks safe here: <strong>a 32-bit register does not imply thirty-two pins.</strong> Tock's RP2350 crate defines pins <code>GPIO0</code> through <code>GPIO29</code> &mdash; thirty of them, not thirty-two. Bits 30 and 31 are real bits in a real register that simply have no pin behind them on this package. Register width and pin count are two separate facts, and only one of them is visible in the code.</p>
+  <p>Be careful with an assumption that looks safe here: <strong>a 32-bit register does not imply thirty-two pins.</strong> Tock's RP2350 crate defines pins <code>GPIO0</code> through <code>GPIO29</code> &mdash; thirty of them, not thirty-two. Bits 30 and 31 are real bits in a real register with no pin behind them here. Register width and pin count are two separate facts, and only one of them is visible in the code.</p>
 </section>
 
 <figure class="instrument">
@@ -893,7 +895,7 @@ bx    lr</code></pre>
 
 <section class="col">
   <h2>Why the same pins have four registers</h2>
-  <p>Look closely at the SIO register block and something looks redundant. Four different registers all control the same thirty-two output pins:</p>
+  <p>Look closely at the SIO register block and something looks redundant. Four different registers all control the same bank of output pins:</p>
 </section>
 
 <div class="instrument" style="max-width:var(--measure)">
@@ -964,23 +966,24 @@ bx    lr</code></pre>
 
 <div class="instrument" style="max-width:var(--measure)">
   <div class="instrument-body" style="padding:0">
-<pre><code><span class="tok-k">pub fn</span> set(&amp;<span class="tok-k">self</span>, value: T) {
+<pre><code><span class="tok-c">// impl&lt;T, R&gt; Writeable for ReadWrite&lt;T, R&gt;</span>
+<span class="tok-k">fn</span> set(&amp;<span class="tok-k">self</span>, value: T) {
     <span class="tok-k">unsafe</span> { ::core::ptr::<span class="tok-n">write_volatile</span>(<span class="tok-k">self</span>.value.get(), value) }
 }</code></pre>
   </div>
-  <div class="instrument-note"><code>tock-registers 0.10.0</code>, <code>src/registers.rs:63</code> &mdash; the bottom of every register write in the kernel</div>
+  <div class="instrument-note"><code>tock-registers 0.10.0</code>, <code>src/registers.rs:63</code> &mdash; the bottom of every write to a <code>ReadWrite</code> register. Three near-identical siblings cover the <code>WriteOnly</code>, <code>Aliased</code> and <code>InMemoryRegister</code> types at lines 119, 164 and 208.</div>
 </div>
 
 <section class="col">
   <h3>What the <code>unsafe</code> is doing there</h3>
-  <p>Since you have the Rust Book but not its <em>Advanced Features</em> chapter yet: <code>unsafe</code> here is not an admission that the code is dangerous. It is a claim &mdash; "I have checked the thing the compiler cannot check." Dereferencing a raw pointer could be catastrophic if the address were wrong, and Rust has no way to verify that <code class="addr">0xD0000018</code> is a real register. So a human asserts it, in a block small enough to audit.</p>
-  <p>That pattern &mdash; a tiny audited <code>unsafe</code> core wrapped in a safe API that no one can misuse &mdash; is the single most characteristic move in the whole Tock kernel. You will see it constantly. Here, it means every <code>pin.set()</code> in the codebase is a completely safe call, and the trust is concentrated in one three-line function.</p>
+  <p>If you have worked through the Rust Book but not yet reached its <em>Advanced Features</em> chapter, this is the first thing to know: <code>unsafe</code> here is not an admission that the code is dangerous. It is a claim &mdash; "I have checked the thing the compiler cannot check." Dereferencing a raw pointer could be catastrophic if the address were wrong, and Rust has no way to verify that <code class="addr">0xD0000018</code> is a real register. So a human asserts it, in a block small enough to audit.</p>
+  <p>That pattern &mdash; a tiny audited <code>unsafe</code> core wrapped in a safe API that no one can misuse &mdash; is the single most characteristic move in the whole Tock kernel. You will see it constantly. Here, it means every <code>pin.set()</code> in the codebase is a safe call in Rust's sense of the word, and the trust for all of them is concentrated in four three-line functions that a reviewer can read in a minute.</p>
 </section>
 
 <section class="col">
   <h2>So here is the problem</h2>
   <p>Take stock of what is now true. Peripherals are memory addresses. Writing to them has physical effects. And on a bare microcontroller, <strong>any code running on the chip can write to any address at any time.</strong></p>
-  <p>There is no permission to check. No kernel to ask. The store instruction to <code class="addr">0xD0000018</code> is exactly as fast and exactly as allowed as a store to your own local variable. A stray pointer in some unrelated sensor routine can drive a lock relay, reconfigure a UART mid-transmission, or scribble over the flash controller's registers.</p>
+  <p>There is no permission to check. No kernel to ask. The store instruction to <code class="addr">0xD0000018</code> is exactly as permitted as a store to a variable of your own, and costs about as much. A stray pointer in some unrelated sensor routine can drive a lock relay, reconfigure a UART mid-transmission, or scribble over the flash controller's registers.</p>
   <p>That is not a bug in anyone's code. It is the default condition of the machine.</p>
   <p><strong>Every single thing Tock does is an answer to that sentence.</strong> Its capsules, its processes, its grants, the MPU configuration it programs before running your application &mdash; all of it exists to put something between arbitrary code and arbitrary addresses. Chapter by chapter, that is the story we are going to build.</p>
 </section>
@@ -988,7 +991,7 @@ bx    lr</code></pre>
 <div class="next col">
   <div class="eyebrow" style="color:var(--hot)">Next</div>
   <h3 style="margin-top:0">Chapter 2 &mdash; How code starts running</h3>
-  <p>Before anything can write to a register, something has to be executing. We will follow the RP2350 from the instant power arrives to the first line of Tock's <code>main()</code> &mdash; the reset vector, why <code>0x10000000</code> has a 1024-byte bootloader carved out in front of the kernel, and what "initialize RAM" actually means when RAM contains garbage.</p>
+  <p>Before anything can write to a register, something has to be executing. We will follow the RP2350 from the instant power arrives to the first line of Tock's <code>main()</code> &mdash; the reset vector, what the boot ROM is looking for in that 1&nbsp;KB reserved in front of the kernel, and what "initialize RAM" actually means when RAM contains garbage.</p>
   <p style="color:var(--ink-soft);font-size:.95rem">Things worth carrying forward from this chapter:</p>
   <ol>
     <li>A peripheral is an address, not a device.</li>
@@ -1098,7 +1101,7 @@ bx    lr</code></pre>
     { addr: "0x40020000", name: "RESETS", size: "—", hot: true,
       detail: "Holds peripherals in reset. Most blocks on the RP2350 are dead until you clear their reset bit here, which is why chip initialization order matters so much." },
     { addr: "0x40028000", name: "IO_BANK0", size: "—", hot: true,
-      detail: "Pin function select — decides whether a physical pin acts as GPIO, UART, SPI, I2C, PWM, PIO, USB or XIP. A pin can be routed to several peripherals; this block picks which one wins." },
+      detail: "Pin function select — decides whether a physical pin acts as plain GPIO (the chip's own name for that function is SIO), or as UART, SPI, I2C, PWM, PIO, USB or XIP. A pin can be routed to several peripherals; this block picks which one wins." },
     { addr: "0x40038000", name: "PADS_BANK0", size: "—", hot: true,
       detail: "The analog side of each pin: drive strength, pull-up and pull-down resistors, slew rate, input enable. Electrical properties rather than logic." },
     { addr: "0x40048000", name: "XOSC", size: "—", hot: true,
@@ -1112,11 +1115,11 @@ bx    lr</code></pre>
     { addr: "0x40078000", name: "UART1", size: "—", hot: true,
       detail: "A second, identical UART. Same register layout, different base address — which is exactly why a driver is written once and pointed at a base." },
     { addr: "0x400B0000", name: "TIMER0", size: "—", hot: true,
-      detail: "A free-running microsecond counter with compare registers. Reading here does not return anything you wrote; it returns the current time. A clear case of an address whose read value has nothing to do with any write." },
+      detail: "A free-running 64-bit counter with four alarm registers that fire when the time matches. It counts microseconds — Tock's driver declares it Freq1MHz at timer.rs:219. Reading here does not return anything you wrote; it returns the current time. A clear case of an address whose read value has nothing to do with any write." },
     { addr: "0x40108000", name: "TICKS", size: "—", hot: true,
       detail: "Tick generators that divide a reference clock down to drive the timers and watchdog." },
     { addr: "0xD0000000", name: "SIO", size: "—", hot: true,
-      detail: "Single-cycle I/O — the block this chapter is about. Note how far its address sits from every other peripheral above: those cluster around 0x4, this one is at 0xD, reached over a separate path built for speed rather than the shared peripheral fabric. GPIO_OUT_SET lives at offset 0x018, which is where 0xD0000018 comes from." }
+      detail: "Single-cycle I/O — the block this chapter is about. The expansion of the name is the vendor's own. Note how far its address sits from every other peripheral above: those cluster around 0x4, this one alone is at 0xD, which is at least consistent with it being reached by a shorter route than the shared peripheral fabric. GPIO_OUT_SET lives at offset 0x018, which is where 0xD0000018 comes from." }
   ];
 
   var mapEl = document.getElementById("map");
