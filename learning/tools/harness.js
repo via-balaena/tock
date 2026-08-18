@@ -10,7 +10,6 @@
 
 function El(id) {
   this.id = id || "";
-  this.textContent = "";
   this.className = "";
   this.value = "";
   this.disabled = false;
@@ -24,11 +23,24 @@ function El(id) {
     add: function (c) { classes[c] = 1; },
     remove: function (c) { delete classes[c]; },
     contains: function (c) { return !!classes[c]; },
+    // Returns whether the class is present afterwards, as the real
+    // classList.toggle does -- page code is entitled to use the result.
     toggle: function (c, v) {
       if (v === undefined) { classes[c] ? delete classes[c] : classes[c] = 1; }
       else { v ? classes[c] = 1 : delete classes[c]; }
+      return !!classes[c];
     }
   };
+  // The DOM coerces whatever you assign to textContent into a string, so
+  // `el.textContent = 25` reads back as "25". Without this a test comparing
+  // against "25" fails against the number 25 for no reason a reader would care
+  // about.
+  var text = "";
+  Object.defineProperty(this, "textContent", {
+    get: function () { return text; },
+    set: function (v) { text = v === null || v === undefined ? "" : String(v); }
+  });
+
   // Chapters clear containers with `el.innerHTML = ""` before rebuilding.
   Object.defineProperty(this, "innerHTML", {
     get: function () { return ""; },
@@ -56,6 +68,13 @@ El.prototype.fire = function (e, detail) {
 
 var REG = {};
 PAGE_IDS.forEach(function (i) { REG[i] = new El(i); });
+// Elements carrying value="" in the markup start with it, as they do in a
+// browser, so the page's first render is exercised the way a reader sees it.
+if (typeof PAGE_VALUES === "object" && PAGE_VALUES) {
+  Object.keys(PAGE_VALUES).forEach(function (i) {
+    if (REG[i]) { REG[i].value = PAGE_VALUES[i]; }
+  });
+}
 
 var document = {
   getElementById: function (i) {

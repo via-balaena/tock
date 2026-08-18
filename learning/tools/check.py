@@ -16,7 +16,13 @@ For every chapter directory under learning/ this runs:
      the OS-dark and toggled-dark palettes agree, heading order, and whether
      ARIA roles are backed by the behavior they promise.
 
-  2. Behavioral checks         - the page's own <script> is executed headlessly
+  2. Pedagogy checks           - every load-bearing term is marked <dfn> at or
+     before its first bare use in the prose and carried in the glossary, no
+     sentence runs past the length a reader can hold or introduces more new
+     vocabulary than it can carry, and only a small share of the prose is
+     allowed to hide behind a click.
+
+  3. Behavioral checks         - the page's own <script> is executed headlessly
      against the DOM shim in harness.js, then the chapter's assertions in
      tools/<chapter-prefix>.tests.js run against the resulting state.
 
@@ -28,6 +34,7 @@ Exits non-zero if anything fails, so it can gate a commit.
 """
 
 import collections
+import json
 import os
 import re
 import subprocess
@@ -58,7 +65,11 @@ CONTRAST_PAIRS = [
     ("hot", "ground", 4.5), ("hot", "surface", 4.5),
     ("hot", "surface-sunk", 4.5), ("hot", "hot-soft", 4.5),
     ("hot-ink", "hot-fill", 4.5), ("surface", "accent", 4.5),
-    ("danger", "danger-soft", 4.5),
+    ("danger", "danger-soft", 4.5), ("danger", "surface", 4.5),
+    ("danger", "ground", 4.5),
+    # Tinted states: the text inside them is the ordinary ink colour.
+    ("ink", "danger-soft", 4.5), ("ink", "accent-soft", 4.5),
+    ("ink", "hot-soft", 4.5),
     ("rule-strong", "surface", 3.0), ("rule-strong", "ground", 3.0),
     ("hot-fill", "surface", 3.0),
 ]
@@ -193,6 +204,43 @@ def static_checks(html, name):
             problems.append("color literals outside the token blocks: %s"
                             % ", ".join(literals))
 
+    # The page is served both from this repository and as a standalone upload,
+    # and it declares no charset, so a raw multi-byte character is at the mercy
+    # of whatever the host guesses. Entities in the markup and \uXXXX escapes in
+    # the script cost nothing and remove the question.
+    if "charset" not in html.lower():
+        for line_no, line in enumerate(html.splitlines(), 1):
+            bad = sorted({c for c in line if ord(c) > 127})
+            if bad:
+                problems.append("non-ASCII on line %d with no charset declared: "
+                                "%s - use an HTML entity or a \\uXXXX escape"
+                                % (line_no, " ".join("U+%04X" % ord(c) for c in bad)))
+                break
+
+    # Cascade trap. The shared `button:hover:not(:disabled)` rule has
+    # specificity (0,2,1), so a component rule written as `.thing:hover`
+    # (0,2,0) loses to it and its color is silently replaced. That is invisible
+    # to the contrast checks below, which compare tokens rather than resolved
+    # rules -- it shipped once as amber-on-amber at 1.25:1. Any class-based
+    # :hover that sets a color must therefore out-specify it.
+    if marker in html and "</style>" in html:
+        component_css = html.split(marker, 1)[1].split("</style>", 1)[0]
+        generic = re.search(r"button:hover:not\(:disabled\)", component_css)
+        if generic:
+            for rule in re.finditer(r"(^|\n)(\.[^{\n]*:hover[^{\n]*)\{([^}]*)\}",
+                                    component_css):
+                selector, body = rule.group(2).strip(), rule.group(3)
+                # The `color` property itself, not border-color, background-color
+                # or border-bottom-color.
+                if not re.search(r"(?:^|;|\s)color\s*:", body):
+                    continue
+                if ":not(" in selector:
+                    continue
+                problems.append("%r sets a color on hover but does not "
+                                "out-specify button:hover:not(:disabled), so "
+                                "the shared rule wins - add :not(:disabled)"
+                                % selector)
+
     if "<title>" not in html:
         problems.append("no <title> - the artifact would be named by filename")
 
@@ -213,6 +261,17 @@ def behavior_checks(html, tests_path):
     page_js = html[html.rindex("<script>") + len("<script>"):html.rindex("</script>")]
     ids = sorted(set(re.findall(r'\bid="([^"]+)"', html)))
 
+    # A browser gives an <input value="25"> that value before any script runs.
+    # Without this the shim starts every control empty, so the page's first
+    # render -- the one a reader actually meets -- goes untested, and a slider
+    # silently computes parseInt("") for it.
+    values = {}
+    for tag in re.findall(r"<[a-zA-Z][^>]*>", html):
+        tag_id = re.search(r'\bid="([^"]+)"', tag)
+        tag_value = re.search(r'\bvalue="([^"]*)"', tag)
+        if tag_id and tag_value:
+            values[tag_id.group(1)] = tag_value.group(1)
+
     with open(os.path.join(TOOLS, "harness.js"), encoding="utf-8") as fh:
         harness = fh.read()
     with open(tests_path, encoding="utf-8") as fh:
@@ -220,6 +279,7 @@ def behavior_checks(html, tests_path):
 
     bundle = "\n".join([
         "var PAGE_IDS = %s;" % repr(ids).replace("'", '"'),
+        "var PAGE_VALUES = %s;" % json.dumps(values),
         harness,
         page_js,
         tests,
@@ -237,6 +297,209 @@ def behavior_checks(html, tests_path):
         return proc.returncode == 0, out
     finally:
         os.unlink(tmp.name)
+
+
+
+# ---------------------------------------------------------------------------
+# Pedagogy gate.
+#
+# A beginner chapter fails in ways the contrast and ARIA checks cannot see: a
+# load-bearing noun used before anyone says what it means, prose that only
+# exists once you click something, and sentences with more joints than a reader
+# can hold. These are the three that an audit of chapter 1 actually caught, so
+# they are the three that get enforced.
+#
+# The contract for a definition is <dfn>: the word's defining appearance is
+# tagged, and that appearance must come at or before the first time the running
+# prose uses the word bare. Marking it also puts it in the glossary check, so a
+# term cannot be defined inline and then go missing from the summary list.
+
+# Words this chapter is not allowed to use before defining. Keyed by the
+# chapter directory prefix, because chapter 2 inherits chapter 1's vocabulary
+# and should not have to redefine it.
+MUST_DEFINE = {
+    "ch01": [
+        "address", "atomic", "bank", "base address", "bit", "byte", "core",
+        "disassembler", "GPIO", "hexadecimal", "interrupt", "mask", "offset",
+        "optimizer", "peripheral", "pin", "register", "SIO", "store",
+        "volatile",
+    ],
+}
+
+# Words this series has decided not to use, and why. Seeded from the places a
+# real beginner reading chapter 1 actually stopped and asked what something
+# meant, which is the only reliable signal available -- an author's own sense of
+# what is obvious is measurably unreliable (Hinds 1999 found experts
+# underestimate novice difficulty by 35-40% and resist debiasing).
+BANNED_WORDS = {
+    "leg": "informal, and wrong for this hardware anyway -- the RP2350 is a "
+           "QFN package with flat pads and nothing protruding. Say 'pin'.",
+}
+
+
+# Two limits on a sentence, and they are not equally well founded.
+#
+# Word count is the weak one. Redish (2000), "Readability formulas have even
+# more limitations than Klare discusses", is blunt that counting surface
+# features tells you nothing about the causes of a reader's trouble, and the
+# grade-level formulas behind that habit were calibrated on 1940s schoolchildren
+# rather than adults reading technical prose. It is kept only as a backstop
+# against genuinely runaway sentences.
+#
+# Novel terms per sentence is the one with a mechanism behind it. Cognitive load
+# theory measures difficulty as element interactivity -- how many unfamiliar
+# things must be held and related at once -- so a short sentence carrying three
+# new terms is harder than a long one carrying none.
+MAX_SENTENCE_WORDS = 34
+MAX_NEW_TERMS_PER_SENTENCE = 2
+
+# The technical vocabulary whose first appearances get counted. Wider than
+# MUST_DEFINE, because a term can be fair to use undefined and still cost the
+# reader something on the sentence where it lands.
+TRACKED_TERMS = [
+    "address", "atomic", "bank", "base address", "bit", "bus", "byte", "core",
+    "compiler", "crate", "disassembler", "flash", "GPIO", "hexadecimal",
+    "instruction", "interrupt", "kernel", "mask", "offset", "optimizer",
+    "peripheral", "pin", "processor", "register", "RAM", "SIO", "SRAM",
+    "store", "volatile", "voltage",
+]
+
+# Share of prose allowed to live only inside the script, reachable by clicking.
+# Chapter 1 shipped at 30%, including the only expansion of "SIO".
+MAX_GATED_PROSE = 0.20
+
+
+def _strip_for_prose(html):
+    """The running prose a reader parses: no code, no script, no citations."""
+    text = re.sub(r"<style.*?</style>", " ", html, flags=re.S)
+    text = re.sub(r"<script.*?</script>", " ", text, flags=re.S)
+    text = re.sub(r"<pre.*?</pre>", " ", text, flags=re.S)
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+    text = re.sub(r'<div class="sources">.*', " ", text, flags=re.S)
+    # Diagram labels are not sentences, and a verbatim quotation cannot be
+    # rewritten to suit a house style, so neither is held to the prose limits.
+    text = re.sub(r"<svg.*?</svg>", " ", text, flags=re.S)
+    text = re.sub(r"<blockquote.*?</blockquote>", " ", text, flags=re.S)
+    return text
+
+
+def _sentences(text):
+    # Block boundaries end a sentence. Without this a heading glues onto the
+    # paragraph after it and the pair looks like one enormous sentence.
+    text = re.sub(r"</(h[1-6]|p|li|div|section|figure|blockquote|dt|dd|span|"
+                  r"button|figcaption|summary|td|th|caption|tr)>", ". ", text)
+    plain = re.sub(r"<[^>]+>", " ", text)
+    for entity, char in (("&mdash;", "-"), ("&ndash;", "-"), ("&nbsp;", " "),
+                         ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
+                         ("&hellip;", "..."), ("&rarr;", "->")):
+        plain = plain.replace(entity, char)
+    plain = re.sub(r"\s+", " ", plain)
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", plain) if s.strip()]
+
+
+def pedagogy_checks(html, chapter):
+    problems = []
+    prose = _strip_for_prose(html)
+
+    # 1. Every must-define term is tagged <dfn> before its first bare use.
+    #    Both offsets are measured against `prose`, and the blanking below
+    #    preserves length, so the two are directly comparable.
+    defined = {}
+    for match in re.finditer(r"<dfn[^>]*>(.*?)</dfn>", prose, flags=re.S | re.I):
+        word = re.sub(r"<[^>]+>", "", match.group(1)).strip().lower()
+        defined.setdefault(word, match.start())
+
+    def _blank(match):
+        return " " * len(match.group(0))
+
+    scan = re.sub(r"<dfn[^>]*>.*?</dfn>", _blank, prose, flags=re.S | re.I)
+    scan = re.sub(r"<code.*?</code>", _blank, scan, flags=re.S)
+    # Attribute values are not prose. Without this an id like "tab-atomic"
+    # counts as the reader meeting the word "atomic".
+    scan = re.sub(r"<[^>]+>", _blank, scan)
+
+    terms = MUST_DEFINE.get(chapter.split("-", 1)[0], [])
+    for term in terms:
+        pattern = r"\b%s(?:s|es)?\b" % re.escape(term)
+        flags = 0 if term.isupper() else re.I
+        first_use = re.search(pattern, scan, flags)
+        marked = defined.get(term.lower())
+        if marked is None:
+            if first_use:
+                problems.append("%r is used in the prose but never marked "
+                                "<dfn>%s</dfn>" % (term, term))
+            continue
+        if first_use and first_use.start() < marked:
+            problems.append("%r is used before it is defined "
+                            "(bare use at %d, <dfn> at %d)"
+                            % (term, first_use.start(), marked))
+
+    # 2. Everything defined inline also appears in the glossary, and vice
+    #    versa, so the two never drift apart.
+    listed = set()
+    found_any = False
+    for block in re.finditer(r'<(\w+)[^>]*class="glossary"[^>]*>(.*?)</\1>',
+                             html, flags=re.S):
+        found_any = True
+        for entry in re.findall(r"<dt[^>]*>(.*?)</dt>", block.group(2), flags=re.S):
+            listed.add(re.sub(r"<[^>]+>", "", entry).strip().lower())
+    if terms:
+        if not found_any:
+            problems.append("no element with class=\"glossary\"")
+        else:
+            for term in terms:
+                if term.lower() not in listed:
+                    problems.append("%r is not in the glossary" % term)
+
+    # 3. A word a reader has already tripped over does not come back.
+    for word, why in BANNED_WORDS.items():
+        hit = re.search(r"\b%ss?\b" % re.escape(word), prose, re.I)
+        if hit:
+            near = re.sub(r"\s+", " ",
+                          prose[max(0, hit.start() - 45):hit.start() + 45]).strip()
+            problems.append("%r is on the do-not-use list: %s (near %r)"
+                            % (word, why, near))
+
+    # 4. No sentence longer than the reader can hold, and no sentence that
+    #    introduces more new vocabulary than it can carry.
+    seen_terms = set()
+    for sentence in _sentences(prose):
+        words = re.findall(r"[A-Za-z0-9'_.-]+", sentence)
+        if len(words) > MAX_SENTENCE_WORDS:
+            problems.append("sentence of %d words (limit %d): %r"
+                            % (len(words), MAX_SENTENCE_WORDS,
+                               sentence[:90] + "..."))
+        fresh = []
+        for term in TRACKED_TERMS:
+            if term in seen_terms:
+                continue
+            flags = 0 if term.isupper() else re.I
+            if re.search(r"\b%s(?:s|es)?\b" % re.escape(term), sentence, flags):
+                fresh.append(term)
+        seen_terms.update(fresh)
+        if len(fresh) > MAX_NEW_TERMS_PER_SENTENCE:
+            problems.append("sentence introduces %d new terms (limit %d) "
+                            "%s: %r" % (len(fresh), MAX_NEW_TERMS_PER_SENTENCE,
+                                        sorted(fresh), sentence[:80] + "..."))
+
+    # 5. Prose hidden behind a click, as a share of the whole. A reader with
+    #    JavaScript off, or one who simply does not click, must not lose an
+    #    explanation the chapter depends on.
+    script = "".join(re.findall(r"<script.*?</script>", html, flags=re.S))
+    gated = 0
+    for literal in re.findall(r'"((?:[^"\\]|\\.){12,})"', script):
+        if " " in literal and re.search(r"[a-z]{3} [a-z]{3}", literal):
+            gated += len(re.findall(r"[A-Za-z0-9']+", literal))
+    visible = len(re.findall(r"[A-Za-z0-9']+", re.sub(r"<[^>]+>", " ", prose)))
+    if visible:
+        share = gated / float(gated + visible)
+        if share > MAX_GATED_PROSE:
+            problems.append("%.0f%% of prose is only reachable by clicking "
+                            "(limit %.0f%%): %d words in the script vs %d in "
+                            "the page" % (100 * share, 100 * MAX_GATED_PROSE,
+                                          gated, visible))
+
+    return problems
 
 
 def main():
@@ -270,6 +533,14 @@ def main():
                 print("  FAIL  %s" % problem)
         else:
             print("  pass  static checks")
+
+        problems = pedagogy_checks(html, chapter)
+        if problems:
+            bad = True
+            for problem in problems:
+                print("  FAIL  %s" % problem)
+        else:
+            print("  pass  pedagogy checks")
 
         prefix = chapter.split("-", 1)[0]
         tests_path = os.path.join(TOOLS, "%s.tests.js" % prefix)

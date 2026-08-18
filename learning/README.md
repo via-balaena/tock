@@ -57,7 +57,7 @@ repository root:
 python3 learning/tools/check.py
 ```
 
-This runs two kinds of check against every chapter and exits non-zero if either
+This runs three kinds of check against every chapter and exits non-zero if any
 fails, so it can gate a commit.
 
 **Static checks** on the page: duplicate ids, unbalanced tags, JavaScript
@@ -65,12 +65,57 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
+Two more static checks exist because each caught a live defect:
+
+- **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
+  and are served both from this repository and as standalone uploads, so a raw
+  multi-byte character is at the mercy of whatever the host guesses. Use HTML
+  entities in markup and `\uXXXX` escapes in script.
+- **Hover rules that lose the cascade.** The shared `button:hover:not(:disabled)`
+  rule has specificity (0,2,1), so a component rule written `.thing:hover`
+  (0,2,0) loses to it and has its color silently replaced. This shipped once as
+  the selected digit in chapter 1's first figure rendering at 1.25:1 in dark
+  mode. The contrast checks cannot see it, because they compare *tokens* rather
+  than *resolved rules* -- both colors involved were individually fine. Any
+  class-based `:hover` that sets `color` must therefore out-specify the shared
+  rule; `:not(:disabled)` is the convention.
+
+**Pedagogy checks**, which exist because an audit of chapter 1 found roughly
+forty technical terms used without ever being defined, and a third of the prose
+sitting behind buttons a reader might never press. Three rules are enforced:
+
+1. Every load-bearing term is wrapped in `<dfn>` at or before its first bare use
+   in the running prose, and carried in a `class="glossary"` list. The term list
+   is `MUST_DEFINE` in `check.py`, keyed by chapter prefix, so chapter 2 inherits
+   chapter 1's vocabulary instead of redefining it.
+2. No sentence introduces more than two new technical terms, and none runs past
+   34 words. The novel-term limit is the one with a mechanism behind it --
+   cognitive load theory measures difficulty as how many unfamiliar things must
+   be held at once, so a short sentence carrying three new terms is harder than
+   a long one carrying none. The word count is only a backstop; readability
+   formulas are calibrated on 1940s schoolchildren and cannot find or fix a real
+   problem, which is why nothing here targets a grade level.
+3. No word on the do-not-use list appears. That list is seeded from the places
+   a real beginner reading the chapter actually stopped and asked what
+   something meant -- the first entry is "leg", which was both informal and
+   wrong, since the RP2350 is a QFN package with flat pads and nothing
+   protruding. Add to it whenever a reader trips; an author's own sense of
+   what is obvious is measurably unreliable.
+4. At most 20% of the prose may be reachable only by clicking. Quotations,
+   diagram labels and the sources list are exempt from the sentence limits: a
+   datasheet quote cannot be rewritten to suit a house style.
+
 **Behavioral checks**: the page's own `<script>` is executed headlessly under
 JavaScriptCore against the DOM shim in `tools/harness.js`, then the chapter's
 assertions run against the resulting state. This is how the interactive figures
 are verified to actually compute what the prose claims they compute -- the
 chapter 1 suite caught a `1 << 31` integer-overflow case that no amount of
 reading would have found.
+
+Two of those assertions exist to enforce a finding rather than a behavior: no
+figure may boot into an empty "select something to begin" state, because most
+readers never click, and a figure that teaches nothing until clicked teaches
+nothing. They run before any other test touches a control.
 
 Adding a chapter means adding `tools/chNN.tests.js`; the runner discovers it by
 the chapter directory's prefix and needs no changes.

@@ -7,7 +7,27 @@
 
 // ---- Instrument 5: the bit builder ----
 
+// The page's own initial render, before any interaction. The harness seeds
+// value="25" from the markup, so this is exactly what a reader first sees.
+chk("the bit builder renders pin 25 before anyone touches it",
+    REG["ro-expr"].textContent, "1 << 25");
+chk("and its hex, rather than NaN", REG["ro-hex"].textContent, "0x02000000");
+chk("and the badge agrees", REG["pin-badge"].textContent, "25");
+
 REG["pin"].value = "25"; REG["pin"].fire("input");
+
+// ---- No figure may boot into an empty state ----
+// A reader who never clicks must still be shown the instructive case.
+
+chk("the address map boots with a region already chosen",
+    REG["map-detail"].textContent.length > 40, true);
+chk("and the region it chooses is SIO",
+    REG["map-detail"].textContent.indexOf("0xD0000018") > -1, true);
+chk("the behavior table boots with an address already chosen",
+    REG["beh-w"].textContent.length > 20, true);
+chk("and it chooses the one that breaks expectations",
+    REG["beh-r"].textContent.indexOf("Not promised") > -1, true);
+
 chk("pin 25 produces the right hex", REG["ro-hex"].textContent, "0x02000000");
 chk("pin 25 shows the right expression", REG["ro-expr"].textContent, "1 << 25");
 chk("pin 25 shows the right store", REG["ro-store"].textContent, "*0xD0000018 = 0x02000000");
@@ -38,21 +58,25 @@ chk("ladder resets", REG["ladder-count"].textContent, "1 of 5 shown");
 
 // ---- Instrument 3: the memory map ----
 
-chk("every mapped region is rendered", REG["map"].children.length, 16);
-REG["map"].children[15].fire("click");
+chk("every mapped region is rendered", REG["map"].children.length, 18);
+// SIO is second from the end now that the processor's own registers are listed.
+REG["map"].children[16].fire("click");
 chk("SIO detail derives 0xD0000018",
     REG["map-detail"].textContent.indexOf("0xD0000018") > -1, true);
+REG["map"].children[0].fire("click");
+chk("the list starts at address zero, where the processors start",
+    REG["map-detail"].textContent.indexOf("starting point for both Arm processors") > -1, true);
 
-// ---- Instrument 4: read/write behaviors ----
+// ---- Figure 5: read/write behaviors ----
 
 chk("all four behaviors are rendered", REG["beh"].children.length, 4);
 REG["beh"].children[0].fire("click");
-chk("SRAM reads back what you wrote", REG["beh-r"].textContent, "Exactly what you wrote.");
+chk("SRAM reads back what you stored", REG["beh-r"].textContent, "Exactly what you stored.");
 REG["beh"].children[2].fire("click");
 chk("GPIO_OUT_SET is described as an OR operation",
     REG["beh-w"].textContent.indexOf("gpio_out |= value") > -1, true);
 
-// ---- Instrument 6: the race. This is the chapter's central claim. ----
+// ---- Figure 7: the race. This is the chapter's central claim. ----
 
 // Read-modify-write: core 1 reads a stale value and erases core 0's write.
 REG["tab-rmw"].fire("click");
@@ -68,7 +92,7 @@ chk("switching scenario resets the hardware register",
     REG["corehw-val"].textContent, "0x00000000");
 REG["race-all"].fire("click");
 chk("atomic keeps both writes", REG["corehw-val"].textContent, "0x02000400");
-chk("atomic leaves both pins high", REG["corehw-sub"].textContent, "pin 10, 25 high");
+chk("atomic leaves both pins high", REG["corehw-sub"].textContent, "pins 10, 25 high");
 chk("atomic outcome is marked good", REG["race-outcome"].className.indexOf("good") > -1, true);
 
 // Stepping one instruction at a time must reach the same state as running all.
@@ -76,7 +100,7 @@ REG["tab-rmw"].fire("click");
 for (var j = 0; j < 6; j++) { REG["race-step"].fire("click"); }
 chk("stepwise matches run-all", REG["corehw-val"].textContent, "0x00000400");
 
-// ---- Instrument 6: keyboard operation of the tablist (WAI-ARIA tab pattern) ----
+// ---- Figure 7: keyboard operation of the tablist (WAI-ARIA tab pattern) ----
 
 REG["tab-rmw"].fire("click");
 chk("selected tab is in the tab order", REG["tab-rmw"].getAttribute("tabindex"), "0");
@@ -197,3 +221,137 @@ t("ladder reset after over-clicking still shows one rung", function(){
 t("ladder rows not duplicated", function(){
   if(REG["ladder"].children.length!==5) throw new Error("ladder has "+REG["ladder"].children.length+" rungs");
 });
+
+// ---- Figure 1: the first hex digit decides who answers ----
+
+chk("all sixteen first digits are offered", REG["digits"].children.length, 16);
+chk("the decoder boots on D, not on nothing",
+    REG["decode-who"].textContent, "SIO answers.");
+chk("and boots showing the address the chapter uses",
+    REG["decode-addr"].textContent, "0xD0000018");
+
+REG["digits"].children[2].fire("click");
+chk("digit 2 is claimed by SRAM", REG["decode-who"].textContent, "SRAM answers.");
+chk("choosing a digit rewrites the address",
+    REG["decode-addr"].textContent, "0x20000018");
+chk("exactly one digit is lit after a click", (function () {
+  var n = 0, c = REG["digits"].children;
+  for (var i = 0; i < c.length; i++) if (c[i].classList.contains("on")) n++;
+  return n;
+}()), 1);
+
+REG["digits"].children[3].fire("click");
+chk("an unmapped digit says so plainly",
+    REG["decode-who"].textContent, "Nobody answers.");
+chk("and warns it faults rather than silently doing nothing",
+    REG["decode-says"].textContent.indexOf("raises a fault") > -1, true);
+REG["digits"].children[13].fire("click");
+
+
+// ---- The bet: guess before the reveal ----
+
+chk("the bet offers three answers", REG["bet1-opts"].children.length, 3);
+chk("no reason is shown before a guess is made", REG["bet1-why"].textContent, "");
+
+REG["bet1-opts"].children[0].fire("click");
+chk("a wrong guess is marked wrong",
+    REG["bet1-opts"].children[0].classList.contains("wrong"), true);
+chk("the right answer is revealed alongside it",
+    REG["bet1-opts"].children[2].classList.contains("right"), true);
+chk("and the reason explains rather than scores",
+    REG["bet1-why"].textContent.indexOf("ordinary memory") > -1, true);
+
+REG["bet1-opts"].children[1].fire("click");
+chk("the bet cannot be re-answered once committed",
+    REG["bet1-opts"].children[1].classList.contains("wrong"), false);
+
+// ---- Figure 4: work one out yourself ----
+
+REG["we1-addr"].value = "0xD0000018";
+REG["we1-addr"].fire("input");
+chk("the right address is accepted", REG["we1-addr"].classList.contains("ok"), true);
+chk("and it says why it was right",
+    REG["we1-say"].textContent.indexOf("same one as for pin 25") > -1, true);
+
+REG["we1-addr"].value = "d0000018";
+REG["we1-addr"].fire("input");
+chk("hex is accepted without the 0x prefix",
+    REG["we1-addr"].classList.contains("ok"), true);
+
+REG["we1-addr"].value = "0xD0000010";
+REG["we1-addr"].fire("input");
+chk("a wrong address is marked wrong", REG["we1-addr"].classList.contains("no"), true);
+chk("and the hint points at the mistake",
+    REG["we1-say"].textContent.indexOf("does not depend on which pin") > -1, true);
+
+REG["we1-addr"].value = "";
+REG["we1-addr"].fire("input");
+chk("an emptied box is neither right nor wrong",
+    REG["we1-addr"].classList.contains("no")
+    || REG["we1-addr"].classList.contains("ok"), false);
+
+REG["we1-val"].value = "0x8";
+REG["we1-val"].fire("input");
+chk("1 << 3 is accepted as 0x8", REG["we1-val"].classList.contains("ok"), true);
+
+REG["we2-addr"].value = "0xD0000020";
+REG["we2-addr"].fire("input");
+chk("turning a pin off means the clear register",
+    REG["we2-addr"].classList.contains("ok"), true);
+REG["we2-val"].value = "0x4000";
+REG["we2-val"].fire("input");
+chk("1 << 14 is accepted as 0x4000", REG["we2-val"].classList.contains("ok"), true);
+
+REG["we2-val"].value = "0x400";
+REG["we2-val"].fire("input");
+chk("an off-by-one shift is rejected", REG["we2-val"].classList.contains("no"), true);
+
+// ---- Figure 8: the lines the reader is told to skip ----
+
+chk("the disassembly starts focused on the three lines that matter",
+    REG["dis"].classList.contains("dis-all"), false);
+REG["dis-toggle"].fire("click");
+chk("the skipped lines can be shown", REG["dis"].classList.contains("dis-all"), true);
+chk("and the control says so", REG["dis-toggle"].getAttribute("aria-expanded"), "true");
+chk("with a label that now offers the reverse",
+    REG["dis-toggle"].textContent, "Hide them again");
+REG["dis-toggle"].fire("click");
+chk("toggling back re-focuses", REG["dis"].classList.contains("dis-all"), false);
+chk("and restores the original label",
+    REG["dis-toggle"].textContent.indexOf("Show the 12 lines") > -1, true);
+
+// ---- Figure 4: one store, moment by moment ----
+// Every step stays on screen; the scrubber only moves the highlight. That is
+// deliberate (a disappearing animation would have to be held in memory), so
+// the test asserts the whole trace is present at every position.
+
+chk("all eight moments are rendered at once", REG["trace"].children.length, 8);
+chk("the trace opens on the first moment", REG["trace-at"].textContent, "1 of 8");
+chk("and the first moment is the highlighted one",
+    REG["trace"].children[0].classList.contains("now"), true);
+chk("nothing is marked already-seen at the start",
+    REG["trace"].children[0].classList.contains("seen"), false);
+
+REG["trace-scrub"].value = "4";
+REG["trace-scrub"].fire("input");
+chk("scrubbing moves the highlight", REG["trace"].children[4].classList.contains("now"), true);
+chk("and clears it from where it was",
+    REG["trace"].children[0].classList.contains("now"), false);
+chk("earlier moments read as already passed",
+    REG["trace"].children[0].classList.contains("seen"), true);
+chk("later moments do not", REG["trace"].children[7].classList.contains("seen"), false);
+chk("the counter follows", REG["trace-at"].textContent, "5 of 8");
+
+REG["trace-scrub"].value = "7";
+REG["trace-scrub"].fire("input");
+chk("the last moment is reachable", REG["trace-at"].textContent, "8 of 8");
+chk("exactly one moment is ever highlighted", (function () {
+  var n = 0, c = REG["trace"].children;
+  for (var i = 0; i < c.length; i++) if (c[i].classList.contains("now")) n++;
+  return n;
+}()), 1);
+
+REG["trace-scrub"].value = "0";
+REG["trace-scrub"].fire("input");
+chk("scrubbing backwards clears the seen marks",
+    REG["trace"].children[3].classList.contains("seen"), false);
