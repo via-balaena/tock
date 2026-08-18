@@ -75,6 +75,24 @@ reading would have found.
 Adding a chapter means adding `tools/chNN.tests.js`; the runner discovers it by
 the chapter directory's prefix and needs no changes.
 
+### Looking at it
+
+Neither kind of check can see the page. To actually render one on macOS:
+
+```
+qlmanage -t -s 1100 -o . learning/ch01-everything-is-memory/index.html
+```
+
+QuickLook runs the stylesheet but **not** the JavaScript, so this shows the page
+as a reader with scripting disabled would meet it -- which is worth seeing in its
+own right. It caught a readout value clipped inside its cell, and several figures
+rendering as empty colored boxes, neither of which any static check noticed.
+
+To frame one figure at a time, copy the file, add a stylesheet that hides
+`.wrap > *` and un-hides a single `figure.instrument:nth-of-type(N)`, and render
+that. Keep the whole body in the copy: the script expects every element to exist,
+and deleting the others makes it throw.
+
 ## What CI requires of these files
 
 The repository's own checks apply to anything committed here, and this content is

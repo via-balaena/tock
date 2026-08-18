@@ -149,6 +149,14 @@ h1 {
   text-wrap: pretty;
 }
 
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
 .byline {
   font-family: var(--display);
   font-size: .8rem;
@@ -479,8 +487,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   font-size: 1rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  overflow-x: auto;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .readout-v.hot { color: var(--hot); }
 
@@ -767,6 +774,11 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   <div class="eyebrow">Learning Tock from the ground up &middot; Chapter&nbsp;1</div>
   <h1>Everything Is Memory</h1>
   <p class="standfirst">On a microcontroller, a peripheral is not a device you talk to. It is a set of memory addresses that <em>do something</em> when you read or write them. Once that clicks, most of embedded programming stops being mysterious &mdash; and the reason an operating system like Tock has to exist at all becomes obvious.</p>
+  <noscript>
+    <p class="noscript-note">The six figures in this chapter are interactive and are built by
+    JavaScript, which appears to be disabled. The prose stands on its own, but the
+    figures below will be empty.</p>
+  </noscript>
   <div class="byline">Verified against Tock at commit <code>47287a64e</code> and the RP2350 datasheet (build 2025-07-29), targeting the Raspberry Pi Pico&nbsp;2. Every address, register description and code excerpt below is quoted from one of those two documents, not from memory.</div>
 </header>
 
@@ -872,11 +884,11 @@ bx    lr</code></pre>
     <div class="compare">
       <div class="panel">
         <h3>A write does</h3>
-        <div class="panel-line prose" id="beh-w">&mdash;</div>
+        <div class="panel-line prose" id="beh-w">Pick one of the addresses above.</div>
       </div>
       <div class="panel hot">
         <h3>A read returns</h3>
-        <div class="panel-line prose" id="beh-r">&mdash;</div>
+        <div class="panel-line prose" id="beh-r">Pick one of the addresses above.</div>
       </div>
     </div>
     <div class="map-detail" id="beh-d">Select an address to compare.</div>
@@ -925,7 +937,7 @@ bx    lr</code></pre>
         <span class="readout-v" id="ro-store">*0xD0000018 = 0x02000000</span>
       </div>
     </div>
-    <div class="map-detail" id="pin-note">&nbsp;</div>
+    <div class="map-detail" id="pin-note">Bit 25 drives GPIO 25 on this chip.</div>
   </div>
   <div class="instrument-note">Top row is bits 31&ndash;16, bottom row bits 15&ndash;0 &mdash; the layout datasheets use for register diagrams. The two dashed cells are bits with no pin behind them on this chip.</div>
 </figure>
