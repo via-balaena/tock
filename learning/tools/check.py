@@ -268,6 +268,48 @@ def focus_order_checks(component_css):
     return problems
 
 
+def register_table_checks(html):
+    """A register table states each offset three times, so keep them agreeing.
+
+    Figure 7 shows an offset in sixteens and the same offset in tens, and the
+    script holds the offsets again as numbers because the figure's whole point
+    is base + offset arithmetic. Three copies of one fact is exactly the shape
+    that drifts: the behavioural tests exercise the script's copy, and nothing
+    would notice the markup disagreeing with it. They were generated from one
+    table originally; this is what keeps them that way once the generator is
+    gone.
+    """
+    problems = []
+    rows = re.findall(r'<span class="reg-o">0x([0-9A-Fa-f]+)</span>\s*'
+                      r'<span class="reg-t">(\d+)</span>', html)
+    if not rows:
+        return problems
+    for hex_text, tens in rows:
+        if int(hex_text, 16) != int(tens):
+            problems.append("register offset 0x%s is shown as %s in tens, "
+                            "which is %d" % (hex_text, tens, int(hex_text, 16)))
+    shown = [int(h, 16) for h, _ in rows]
+    for step_from, step_to in zip(shown, shown[1:]):
+        if step_to - step_from != 4:
+            problems.append("register offsets step by %d from 0x%03X to 0x%03X, "
+                            "but a 32-bit register is 4 bytes wide and the "
+                            "figure's caption says so"
+                            % (step_to - step_from, step_from, step_to))
+    declared = re.search(r"var RGOFF = \[([^\]]*)\];", html)
+    if not declared:
+        problems.append("the register table is in the markup but the script "
+                        "declares no RGOFF to compute addresses from")
+        return problems
+    in_script = [int(x.strip(), 16) for x in declared.group(1).split(",")
+                 if x.strip()]
+    if in_script != shown:
+        problems.append("the register table shows offsets %s but the script "
+                        "computes addresses from %s"
+                        % (["0x%03X" % v for v in shown],
+                           ["0x%03X" % v for v in in_script]))
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -356,6 +398,7 @@ def static_checks(html, name):
 
     problems.extend(palette_checks(html))
     problems.extend(semantic_checks(html))
+    problems.extend(register_table_checks(html))
 
     return problems
 
