@@ -791,3 +791,20 @@ t("committing to a guess reveals the answer", function () {
     throw new Error("no explanation shown: " + REG["bet1-why"].textContent);
   }
 });
+
+// ---- The race figure's verdict text, which nothing had ever asserted ----
+// Only its class was checked, so the sentence that tells the reader a pin was
+// lost could have said anything. The reset prompt was unassertable at all
+// until the shim stopped dropping non-empty innerHTML.
+REG["tab-rmw"].fire("click");
+REG["race-reset"].fire("click");
+chk("resetting restores the prompt to step through",
+    REG["race-outcome"].textContent.indexOf("Press Step") > -1, true);
+REG["race-all"].fire("click");
+chk("and running the read-modify-write to the end reports the lost pin",
+    REG["race-outcome"].textContent.indexOf("Pin 25 never turned on") > -1, true);
+chk("and marks that outcome bad",
+    REG["race-outcome"].className.indexOf("bad") > -1, true);
+REG["race-reset"].fire("click");
+chk("resetting again clears the verdict rather than leaving it stale",
+    REG["race-outcome"].textContent.indexOf("Pin 25 never turned on"), -1);

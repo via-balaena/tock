@@ -57,10 +57,17 @@ function El(id) {
     set: function (v) { text = v === null || v === undefined ? "" : String(v); }
   });
 
-  // Chapters clear containers with `el.innerHTML = ""` before rebuilding.
+  // Chapters clear containers with `el.innerHTML = ""` before rebuilding, and
+  // occasionally assign real markup. Dropping the second case silently is the
+  // kind of permissiveness that lets a broken page pass: a browser would render
+  // it and expose its text, so the shim strips the tags and keeps the text,
+  // which is what an assertion about that element would reasonably read.
   Object.defineProperty(this, "innerHTML", {
-    get: function () { return ""; },
-    set: function (v) { if (v === "") self.children = []; }
+    get: function () { return text === "" ? "" : text; },
+    set: function (v) {
+      self.children = [];
+      text = v === "" ? "" : String(v).replace(/<[^>]*>/g, "");
+    }
   });
 }
 
