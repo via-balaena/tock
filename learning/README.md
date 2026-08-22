@@ -65,7 +65,7 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Four more static checks exist because each caught a live defect:
+Five more static checks exist because each caught a live defect:
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
   and are served both from this repository and as standalone uploads, so a raw
@@ -95,10 +95,37 @@ Four more static checks exist because each caught a live defect:
   arrow keys select the hole they focus, the ring never rendered once. Any
   `:focus-visible` rule overridden by a later rule of equal or higher
   specificity that sets the same property is refused.
+- **A name that hides the thing it names.** `aria-label` *replaces* an
+  element's content for anything reading the accessibility tree. Chapter 1's
+  digit cells were labelled "the first digit, bits 31 down to 28" and so
+  announced that forever, never the digit inside them -- the one thing that
+  figure exists to show changing. That is the third bug of this shape on one
+  page, after `role="img"` hid forty interactive pads and a focus ring lost the
+  cascade, which is why the question to ask of any label is what it now
+  prevents from being read. A control carrying an `aria-label` while the script
+  rewrites text inside it is refused. Name it with `aria-labelledby` pointing
+  at the live element, or mark that content `aria-hidden` where something else
+  already announces it -- the 1 and 0 under chapter 1's bit switches are a
+  second rendering of `aria-pressed`, and say so.
+
+Two more are preventive rather than forensic:
+
+- **`aria-labelledby` pointing at nothing.** A misspelt reference is not a
+  weaker name, it is no name at all: the browser finds no element, falls back
+  to nothing, and announces the control as "button". Every referenced id must
+  be declared somewhere on the page.
+- **A register table disagreeing with itself.** Figure 7 of chapter 1 states
+  each offset three times -- in sixteens, in tens, and again as a number in the
+  script, which needs it to compute base + offset. The behavioral assertions
+  exercise only the script's copy, so the markup could drift away from it
+  unnoticed. All three must agree, and each step between neighbouring offsets
+  must be a positive multiple of 4, because a 32-bit register is 4 bytes wide.
+  A listing with no script computing addresses is left alone, since printing
+  one statically is a perfectly good thing to do.
 
 **Pedagogy checks**, which exist because an audit of chapter 1 found roughly
 forty technical terms used without ever being defined, and a third of the prose
-sitting behind buttons a reader might never press. Three rules are enforced:
+sitting behind buttons a reader might never press. Four rules are enforced:
 
 1. Every load-bearing term is wrapped in `<dfn>` at or before its first bare use
    in the running prose, and carried in a `class="glossary"` list. The term list
@@ -117,7 +144,12 @@ sitting behind buttons a reader might never press. Three rules are enforced:
    wrong, since the RP2350 is a QFN package with flat pads and nothing
    protruding. Add to it whenever a reader trips; an author's own sense of
    what is obvious is measurably unreliable.
-4. At most 20% of the prose may be reachable only by clicking. Quotations,
+4. At most 20% of the prose may be reachable only by clicking. That share is
+   measured by tokenising the script's string literals rather than matching
+   them with a regex: a pattern that only accepts literals over some length
+   skips the short ones, and skipping one desynchronises the scan, so the
+   closing quote of a literal pairs with the next opening quote and the code
+   between them -- comments included -- gets counted as prose. Quotations,
    diagram labels and the sources list are exempt from the sentence limits: a
    datasheet quote cannot be rewritten to suit a house style.
 
@@ -147,7 +179,7 @@ the chapter directory's prefix and needs no changes.
 
 ### Looking at it
 
-Neither kind of check can see the page. To actually render one on macOS:
+None of these checks can see the page. To actually render one on macOS:
 
 ```
 qlmanage -t -s 1100 -o . learning/ch01-everything-is-memory/index.html

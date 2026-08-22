@@ -1032,7 +1032,7 @@ dfn {
 .hd[aria-pressed="true"] .hd-r { color: var(--hot); }
 
 /* An instruction for the control immediately below it, inside a figure. */
-.hexcue {
+.figcue {
   font-family: var(--body); font-size: .95rem; line-height: 1.55;
   color: var(--ink-soft); margin: 1.15rem 0 .55rem;
 }
@@ -2193,7 +2193,7 @@ dfn {
         </button>
       </div>
     </div>
-    <p class="hexcue">The four bits of the digit you picked, the one at bits <em class="hxrange is-on" id="hxr-0">31:28</em><em class="hxrange" id="hxr-1">27:24</em><em class="hxrange" id="hxr-2">23:20</em><em class="hxrange" id="hxr-3">19:16</em><em class="hxrange" id="hxr-4">15:12</em><em class="hxrange" id="hxr-5">11:8</em><em class="hxrange" id="hxr-6">7:4</em><em class="hxrange" id="hxr-7">3:0</em>. Each one is worth what it says, and the digit is whatever they add up to.</p>
+    <p class="figcue">The four bits of the digit you picked, the one at bits <em class="hxrange is-on" id="hxr-0">31:28</em><em class="hxrange" id="hxr-1">27:24</em><em class="hxrange" id="hxr-2">23:20</em><em class="hxrange" id="hxr-3">19:16</em><em class="hxrange" id="hxr-4">15:12</em><em class="hxrange" id="hxr-5">11:8</em><em class="hxrange" id="hxr-6">7:4</em><em class="hxrange" id="hxr-7">3:0</em>. Each one is worth what it says, and the digit is whatever they add up to.</p>
     <div class="nib" role="group" aria-label="The four bits of the chosen digit">
       <button type="button" class="nb" id="nb-8" aria-pressed="true" aria-label="the bit worth eight">
         <span class="nb-w">8</span>
@@ -2367,7 +2367,7 @@ dfn {
         </span>
       </span>
     </div>
-    <p class="hexcue">Four of these eight are for the high half: GPIO 32 to 47, plus the pins that talk to the flash chip and the USB socket. Each one sits directly after its twin. Take them away and watch what the offsets do.</p>
+    <p class="figcue">Four of these eight are for the high half: GPIO 32 to 47, plus the pins that talk to the flash chip and the USB socket. Each one sits directly after its twin. Take them away and watch what the offsets do.</p>
     <div class="controls">
       <button type="button" id="rg-twins" aria-pressed="false">
         <span class="tw-off">Take the four away</span>
@@ -2442,7 +2442,7 @@ dfn {
 </figure>
 
 <section class="col">
-  <p>Both of the patterns in that table are arithmetic you can check rather than trivia you have to trust.</p>
+  <p>Two patterns in that table are worth keeping, and both are arithmetic you can check rather than trivia you have to trust.</p>
   <p>Neighbours land 4 apart because a register is 32 bits wide, which is 4 bytes, and addresses count bytes. That is a free sanity check on any register listing you will ever read. With the twins taken away the four that remain are 8 apart, which is the same reason applied twice.</p>
   <p>Those higher GPIO numbers are worth a sentence, because they make a point the code cannot. The part on a Pico&nbsp;2 is an <code>RP2350A</code>: a 60-pin package with 30 GPIOs. Its sibling <code>RP2350B</code> is an 80-pin package with 48. Same silicon design, different plastic, and the datasheet spells out the consequence:</p>
   <blockquote class="quote">GPIOs 0 through 29 are available in all package variants. GPIOs 30 through 47 are available only in QFN-80 (RP2350B) package.</blockquote>
