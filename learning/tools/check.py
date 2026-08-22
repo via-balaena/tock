@@ -206,6 +206,59 @@ def opacity_checks(component_css):
     return problems
 
 
+def _specificity(selector):
+    """(ids, classes+pseudo-classes+attributes, elements). Good enough for the
+    flat, class-based selectors this series uses."""
+    ids = len(re.findall(r"#[\w-]+", selector))
+    classes = (len(re.findall(r"\.[\w-]+", selector))
+               + len(re.findall(r"\[[^\]]+\]", selector))
+               + len(re.findall(r":(?!:)[\w-]+", selector)))
+    elements = len(re.findall(r"(?:^|[\s>+~])([a-z][\w-]*)", selector))
+    return (ids, classes, elements)
+
+
+def focus_order_checks(component_css):
+    """A focus indicator that loses the cascade is not an indicator.
+
+    This is the second time an ordering bug shipped here. The first was a
+    component `:hover` losing to the shared `button:hover:not(:disabled)`, which
+    has its own check above. This one is subtler: `.pad:focus-visible .pad-box`
+    and `.pad.is-lit .pad-box` have *identical* specificity, so whichever is
+    written later wins -- and because the arrow keys select the hole they focus,
+    the selected style always applied and the focus ring never rendered once.
+    Nothing in the palette or ARIA checks can see it.
+    """
+    problems = []
+    rules = [(m.start(), m.group(1).strip(), m.group(2))
+             for m in re.finditer(r"(?:^|\n)([^\n{]+)\{([^}]*)\}", component_css)]
+    for pos, selector_list, body in rules:
+        if ":focus-visible" not in selector_list:
+            continue
+        props = set(re.findall(r"(?:^|;|\s)([a-z-]+)\s*:", body))
+        for selector in (x.strip() for x in selector_list.split(",")):
+            if ":focus-visible" not in selector:
+                continue
+            tail = selector.split()[-1]
+            spec = _specificity(selector)
+            for other_pos, other_list, other_body in rules:
+                if other_pos <= pos or ":focus-visible" in other_list:
+                    continue
+                other_props = set(re.findall(r"(?:^|;|\s)([a-z-]+)\s*:", other_body))
+                shared = props & other_props
+                if not shared:
+                    continue
+                for other in (x.strip() for x in other_list.split(",")):
+                    if other.split()[-1] != tail:
+                        continue
+                    if _specificity(other) >= spec:
+                        problems.append(
+                            "%r is overridden by %r, which comes later at the "
+                            "same or higher specificity and also sets %s - the "
+                            "focus indicator will never render"
+                            % (selector, other, ", ".join(sorted(shared))))
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -283,6 +336,10 @@ def static_checks(html, name):
 
     if "<title>" not in html:
         problems.append("no <title> - the artifact would be named by filename")
+
+    if marker in html and "</style>" in html:
+        problems.extend(focus_order_checks(
+            html.split(marker, 1)[1].split("</style>", 1)[0]))
 
     if marker in html and "</style>" in html:
         problems.extend(opacity_checks(
