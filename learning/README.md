@@ -232,15 +232,26 @@ held to them:
   is deliberately left to be checked, so `optimizer-demo.rs` is verified like
   any other source file. `.lcignore` is repository tooling config, so it carries
   the Tock header itself.
-- `make format-check` is Rust-only. A chapter may ship a `.rs` file so that a
-  figure showing compiler output can be reproduced -- chapter 1 has
-  `optimizer-demo.rs` -- but nothing under `learning/` is a workspace member,
-  so `cargo fmt` never reaches it. `learning/.gitignore` keeps the `.s` output
-  of building one out of the way.
+- `make format-check` is Rust-only, and it is two checks rather than one. A
+  chapter may ship a `.rs` file so that a figure showing compiler output can be
+  reproduced -- chapter 1 has `optimizer-demo.rs`. Nothing under `learning/` is
+  a workspace member, so `cargo fmt --check` never reaches it; but the second
+  half of `tools/ci/check_format.sh` scans every tracked `.rs` file for tab
+  characters with `git grep`, and that does reach it. Keep chapter sources
+  tab-free, and run `rustfmt --check` on them by hand, since nothing in CI
+  will. `learning/.gitignore` keeps the `.s` output of building one out of the
+  way.
 - `tools/ci/check-for-readmes.sh` only fires on directories containing a
   `Cargo.toml`; there are none here.
-- `tools/ci/toc.sh` only checks Markdown containing a `<!-- toc -->` marker, which
-  this series does not use.
+- `tools/ci/toc.sh` runs `markdown-toc` over every Markdown file carrying that
+  tool's insertion marker, and nothing here carries one. Note that it selects
+  files with a plain `grep`, so *writing* the marker into a file -- to describe
+  it, say -- is enough to make the script pick that file up, insert a table of
+  contents into it, and then report it as out of date. That is why this bullet
+  does not spell the marker out. Every other file in the tree that matches has
+  a matching stop marker and a real table of contents; this one had the opening
+  half and nothing else, which would have failed CI on any machine where
+  `markdown-toc` is installed.
 
 Run `make prepush` from the repository root before committing.
 
