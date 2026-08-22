@@ -382,10 +382,15 @@ def register_table_checks(html):
                             "but a 32-bit register is 4 bytes wide, so every "
                             "step should be a positive multiple of 4"
                             % (step, step_from, step_to))
+    # Only a table whose addresses the script computes has a third copy to
+    # keep in step. A purely static register listing is a legitimate thing to
+    # print, and the two columns above are still checked for it.
+    if "RGBASE" not in html:
+        return problems
     declared = re.search(r"var RGOFF = \[([^\]]*)\];", html)
     if not declared:
-        problems.append("the register table is in the markup but the script "
-                        "declares no RGOFF to compute addresses from")
+        problems.append("the script computes register addresses from RGBASE "
+                        "but declares no RGOFF of offsets to add to it")
         return problems
     in_script = [int(x.strip(), 16) for x in declared.group(1).split(",")
                  if x.strip()]

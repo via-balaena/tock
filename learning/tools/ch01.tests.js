@@ -923,6 +923,29 @@ t("the address never leaves eight digits, whatever is flipped", function () {
   }
 });
 
+// The figure's note tells the reader to watch the first digit while editing
+// any of the other seven, and says it never moves. That is the claim, so it
+// gets asserted directly rather than left implied by the address strings.
+t("editing any other digit leaves the first one alone", function () {
+  var places = [8, 4, 2, 1], i, j;
+  REG["hx-reset"].fire("click");
+  for (i = 1; i < 8; i++) {
+    REG["hd-" + i].fire("click");
+    for (j = 0; j < places.length; j++) {
+      REG["nb-" + places[j]].fire("click");
+      if (REG["hdd-0"].textContent !== "D") {
+        throw new Error("the first digit became " + REG["hdd-0"].textContent +
+                        " while editing digit " + i);
+      }
+      if (REG["hx-addr"].textContent.charAt(2) !== "D") {
+        throw new Error("the address lost its first digit: " +
+                        REG["hx-addr"].textContent);
+      }
+    }
+  }
+  REG["hx-reset"].fire("click");
+});
+
 t("the sum shown always adds up to the digit shown", function () {
   var places = [8, 4, 2, 1], i, j, k;
   for (i = 0; i < 8; i++) {
