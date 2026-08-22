@@ -164,7 +164,16 @@ chapter 1's prediction figure called `classList.add("")`, which a browser
 refuses, so clicking any answer threw before anything was revealed, and it
 survived five review rounds because the shim stored the empty key without
 complaint. When adding to the shim, copy the contract including what it
-rejects. This is also how the interactive figures are verified to actually
+rejects.
+
+Because the shim decides whether every other assertion means anything,
+`tools/harness.contract.js` checks the places it is meant to copy the DOM, and
+runs before any page script. Each case is a divergence that was found and
+closed: `className` and `classList` are two views of one attribute rather than
+two unrelated stores; `setAttribute` coerces its value to a string and a
+missing attribute reads back as `null`; `querySelectorAll` actually filters by
+the class it was given and refuses any selector shape it cannot honour, rather
+than returning every child and letting a wrong query look right. This is also how the interactive figures are verified to actually
 compute what the prose claims they compute -- the
 chapter 1 suite caught a `1 << 31` integer-overflow case that no amount of
 reading would have found.

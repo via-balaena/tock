@@ -10,7 +10,6 @@
 
 function El(id) {
   this.id = id || "";
-  this.className = "";
   this.value = "";
   this.disabled = false;
   this.type = "";
@@ -47,6 +46,19 @@ function El(id) {
       return !!classes[c];
     }
   };
+  // `className` and `classList` are two views of one attribute in the DOM.
+  // They were separate here, so a figure that set `el.className = "map-row"`
+  // and a check that asked `el.classList.contains("map-row")` disagreed, and
+  // any selector matching would have been answered from an empty set. Backing
+  // both with the same object removes a divergence rather than a symptom.
+  Object.defineProperty(this, "className", {
+    get: function () { return Object.keys(classes).join(" "); },
+    set: function (v) {
+      Object.keys(classes).forEach(function (k) { delete classes[k]; });
+      String(v === null || v === undefined ? "" : v)
+        .split(/\s+/).forEach(function (c) { if (c) { classes[c] = 1; } });
+    }
+  });
   // The DOM coerces whatever you assign to textContent into a string, so
   // `el.textContent = 25` reads back as "25". Without this a test comparing
   // against "25" fails against the number 25 for no reason a reader would care
@@ -71,11 +83,31 @@ function El(id) {
   });
 }
 
-El.prototype.setAttribute = function (k, v) { this._attrs[k] = v; };
-El.prototype.getAttribute = function (k) { return this._attrs[k]; };
+// Attribute values are strings in the DOM, whatever you pass, and a missing
+// attribute reads back as null rather than undefined. `setAttribute("data-bit",
+// i)` handed this shim a number where a browser would have stored "5".
+El.prototype.setAttribute = function (k, v) {
+  this._attrs[k] = v === null || v === undefined ? String(v) : String(v);
+};
+El.prototype.getAttribute = function (k) {
+  return Object.prototype.hasOwnProperty.call(this._attrs, k)
+    ? this._attrs[k] : null;
+};
 El.prototype.appendChild = function (c) { this.children.push(c); return c; };
 El.prototype.addEventListener = function (e, f) { (this._h[e] = this._h[e] || []).push(f); };
-El.prototype.querySelectorAll = function () { return this.children; };
+// Only the one selector shape the chapters use. Returning every child
+// regardless of the selector is the kind of permissiveness that makes a wrong
+// query look right; anything else refuses loudly instead.
+El.prototype.querySelectorAll = function (sel) {
+  var m = /^\.([\w-]+)$/.exec(String(sel || "").trim());
+  if (!m) {
+    throw new Error("querySelectorAll: this shim only supports a single "
+                    + "class selector, got " + sel);
+  }
+  return this.children.filter(function (c) {
+    return c.classList.contains(m[1]);
+  });
+};
 
 // Dispatch an event to this element's registered handlers.
 El.prototype.focus = function () { REG._focused = this.id; };

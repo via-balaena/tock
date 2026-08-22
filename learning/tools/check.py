@@ -606,6 +606,12 @@ def behavior_checks(html, tests_path):
 
     with open(os.path.join(TOOLS, "harness.js"), encoding="utf-8") as fh:
         harness = fh.read()
+    # The shim's own contract runs before any page script, so a shim that has
+    # drifted from the DOM fails loudly instead of quietly certifying a page.
+    contract_path = os.path.join(TOOLS, "harness.contract.js")
+    if os.path.exists(contract_path):
+        with open(contract_path, encoding="utf-8") as fh:
+            harness = harness + "\n" + fh.read()
     with open(tests_path, encoding="utf-8") as fh:
         tests = fh.read()
 
