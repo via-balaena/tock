@@ -4,7 +4,13 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 Copyright Jon Hillesheim 2026.
 
 This license covers the prose, diagrams, and interactive pages of the "Learning
-Tock from the Ground Up" series -- every file under learning/ except .lcignore.
+Tock from the Ground Up" series: this file, README.md, and everything in the
+chapter directories -- which is exactly the set learning/.lcignore excludes from
+Tock's own license check.
+
+The tooling is not covered. learning/tools/ and the two ignore files carry
+Tock's Apache-2.0 OR MIT header, because they are repository infrastructure
+rather than teaching material.
 
 You are free to:
 
