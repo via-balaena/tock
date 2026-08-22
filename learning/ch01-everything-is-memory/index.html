@@ -157,14 +157,6 @@ h1 {
   line-height: 1.5;
 }
 
-.byline {
-  font-family: var(--display);
-  font-size: .8rem;
-  letter-spacing: .04em;
-  color: var(--ink-faint);
-  border-top: 1px solid var(--rule);
-  padding-top: .9rem;
-}
 
 /* ---------- section headings ---------- */
 
@@ -624,8 +616,6 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 .step:not(.done):not(.is-next) .step-who { color: var(--ink-faint); }
 .step.done { color: var(--ink); }
 .step.is-next { color: var(--ink); background: var(--accent-soft); }
-.step.lost { background: var(--danger-soft); }
-.step-n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .step-who {
   font-family: var(--display);
   font-size: .7rem;
@@ -635,7 +625,6 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   color: var(--ink-soft);
 }
 .step-act { white-space: pre; overflow-x: auto; }
-.step.lost .step-act { color: var(--danger); font-weight: 500; }
 
 .outcome {
   padding: .8rem 1rem;
@@ -761,8 +750,7 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   .step { grid-template-columns: 1.6rem 1fr; row-gap: .1rem; }
   /* Preserve the alignment where it fits, but wrap rather than making the
      reader scroll each row on a phone. */
-  .step .step-what { grid-column: 2 / -1; white-space: pre-wrap; overflow-x: visible; }
-}
+  }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
@@ -899,7 +887,6 @@ dfn {
   line-height: 1.45;
 }
 .bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
-.bet-opt.picked { border-color: var(--accent); background: var(--accent-soft); }
 .bet-opt.right { border-color: var(--accent); border-width: 2px; }
 .bet-opt.wrong { border-color: var(--danger); background: var(--danger-soft); }
 .bet-why {
@@ -995,13 +982,6 @@ dfn {
 .d-hot-text { fill: var(--hot); font-weight: 700; }
 
 /* A bit strip the size of a word, dropped inside a sentence. */
-.spark {
-  display: inline-block;
-  height: 1em;
-  width: 5.6em;
-  vertical-align: -.15em;
-  color: var(--ink-faint);
-}
 
 /* Eraser eyes: the lines you are meant to skip, visibly skipped. */
 .reveal-all {

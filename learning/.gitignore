@@ -1,0 +1,9 @@
+# Licensed under the Apache License, Version 2.0 or the MIT License.
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# Copyright Jon Hillesheim 2026.
+
+# Build output from the demo sources a chapter ships so its figures can be
+# checked. Following the build line in optimizer-demo.rs drops a .s file next
+# to it, and that should not show up as untracked work. This file is repository
+# tooling configuration and keeps the Tock license, as learning/.lcignore does.
+*.s
