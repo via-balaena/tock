@@ -36,6 +36,15 @@ chk("the plain board is the one selected at the start",
 chk("and the wireless note is not shown until it is asked for",
     REG["four-note-w"].classList.contains("is-lit"), false);
 
+chk("the optimizer figure boots on a case rather than blank",
+    REG["case-wait"].classList.contains("is-off"), false);
+chk("and the other three are put away",
+    REG["case-flip"].classList.contains("is-off")
+    && REG["case-order"].classList.contains("is-off")
+    && REG["case-peek"].classList.contains("is-off"), true);
+chk("and the case it opens on is the one the prose just set up",
+    REG["opt-wait"].getAttribute("aria-pressed"), "true");
+
 chk("the pin figure boots driven high, not in a blank state",
     REG["lvl-fig"].classList.contains("is-on"), true);
 chk("and the sentence for that state is the lit one",
@@ -727,4 +736,30 @@ t("no step carries the bare `next` token", function () {
     }
     REG["race-step"].fire("click");
   }
+});
+
+
+// ---- Figure 12: what the optimizer does ----
+
+REG["opt-order"].fire("click");
+chk("picking a case shows it",
+    REG["case-order"].classList.contains("is-off"), false);
+chk("and puts the previous one away",
+    REG["case-wait"].classList.contains("is-off"), true);
+chk("the pressed state follows",
+    REG["opt-order"].getAttribute("aria-pressed"), "true");
+chk("and is withdrawn from the old one",
+    REG["opt-wait"].getAttribute("aria-pressed"), "false");
+
+t("every optimizer case shown in turn leaves exactly one on screen", function () {
+  var cases = ["wait", "flip", "order", "peek"];
+  cases.forEach(function (k) { REG["opt-" + k].fire("click"); });
+  cases.forEach(function (k) { REG["opt-" + k].fire("click"); });
+  var shown = 0, pressed = 0;
+  cases.forEach(function (k) {
+    if (!REG["case-" + k].classList.contains("is-off")) { shown++; }
+    if (REG["opt-" + k].getAttribute("aria-pressed") === "true") { pressed++; }
+  });
+  if (shown !== 1) { throw new Error(shown + " cases on screen"); }
+  if (pressed !== 1) { throw new Error(pressed + " buttons pressed"); }
 });

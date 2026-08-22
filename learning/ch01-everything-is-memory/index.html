@@ -1406,6 +1406,42 @@ dfn {
 .say.is-lit {
   color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
 }
+
+/* ---------- Figure 12: what the optimizer does ---------- */
+
+/* Cases are visible by default and hidden by script, so a reader with no
+   JavaScript meets all four rather than none. */
+.optcase.is-off { display: none; }
+.optcols {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: .9rem;
+}
+.optcol {
+  display: flex; flex-direction: column; gap: .5rem;
+  border: 1px solid var(--rule); border-top-width: 3px;
+  padding: .8rem .85rem; background: var(--surface); min-width: 0;
+}
+/* Only the border and the heading carry the verdict colour. Tinting the
+   background would put the body text on a ground nothing has validated. */
+.optcol.bad  { border-top-color: var(--danger); }
+.optcol.good { border-top-color: var(--accent); }
+.optcol-h {
+  font-family: var(--display); font-size: .78rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.optcol.bad  .optcol-h { color: var(--danger); }
+.optcol.good .optcol-h { color: var(--accent); }
+.optcol-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.optcol pre { font-size: .78rem; }
+.optsay { font-size: .92rem; line-height: 1.5; color: var(--ink); }
+.optwhy {
+  margin-top: .9rem; font-size: .92rem; line-height: 1.55;
+  color: var(--ink-soft); border-left: 2px solid var(--rule);
+  padding-left: .7rem;
+}
 </style>
 
 <div class="wrap">
@@ -2491,27 +2527,147 @@ dfn {
   <h2>The compiler does not know any of this</h2>
   <p>One thing still stands between your Rust and the silicon, and it is on your side normally.</p>
   <p>A <dfn>compiler</dfn> turns your source into machine instructions, and a good one does not translate line by line. It reasons about what your code means and then emits the cheapest instructions with the same meaning. The part that does that reasoning is the <dfn>optimizer</dfn>.</p>
-  <p>Here is how that goes wrong. Suppose you want to wait until the serial port has room for another byte, so you read its flag register in a loop until the "transmit buffer full" bit clears:</p>
+  <p>Here is how that goes wrong. Suppose you want to wait until the serial port has room for another byte, so you read its flag register in a loop until the "transmit buffer full" bit clears. Four ordinary-looking lines, and what the chip runs is not what you wrote.</p>
+  <p>The right-hand column of each pair adds one word: <dfn>volatile</dfn>. Read the left column first, because that is the one you would have written.</p>
 </section>
 
-<div class="instrument narrow">
-  <div class="instrument-body flush">
-<pre><code><span class="tok-c">// wait until the transmit buffer is no longer full</span>
-<span class="tok-k">while</span> (uartfr &amp; TXFF) != 0 {}</code></pre>
+<figure class="instrument wide-fig">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 12</span>
+    <span class="instrument-title">What the optimizer does to your code</span>
   </div>
-  <div class="instrument-note">Not invented for the example. <code>uartfr</code> is a real register on this chip and <code>TXFF</code> is its bit 5, and Tock's own serial driver asks exactly this question at <code>chips/rp2350/src/uart.rs</code>:438&ndash;440.</div>
-</div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a case. Compare the two columns line for line.</p>
+    <div class="seg" role="group" aria-label="Which case to show">
+      <button id="opt-wait" aria-pressed="true">Wait for the port</button>
+      <button id="opt-flip" aria-pressed="false">Flip a pin twice</button>
+      <button id="opt-order" aria-pressed="false">Two stores, in order</button>
+      <button id="opt-peek" aria-pressed="false">Read one and ignore it</button>
+    </div>
+    <div class="optcase" id="case-wait">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code><span class="tok-c">// wait for room in the transmit buffer</span>
+<span class="tok-k">while</span> (*uartfr &amp; TXFF) != 0 {}</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
+<span class="tok-n">ldrb  r0, [r0]</span>        <span class="tok-c">; read once, out here</span>
+lsls  r0, r0, #26     <span class="tok-c">; bit 5 -&gt; sign bit</span>
+it    pl
+poppl {r7, pc}        <span class="tok-c">; clear? return</span>
+<span class="tok-n">.LBB8_1:</span>
+<span class="tok-n">b     .LBB8_1</span>         <span class="tok-c">; set? spin for ever</span></code></pre>
+          <p class="optsay">The read happens once, before the loop. If the port was busy at that instant, this spins on that last line for ever and never looks again.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code><span class="tok-c">// the same loop, with the promise</span>
+<span class="tok-k">while</span> (read_volatile(uartfr) &amp; TXFF) != 0 {}</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movt  r0, #16391
+<span class="tok-n">.LBB9_1:</span>
+<span class="tok-n">ldr   r1, [r0]</span>        <span class="tok-c">; read it again</span>
+lsls  r1, r1, #26
+it    pl
+poppl {r7, pc}        <span class="tok-c">; clear? return</span>
+...                   <span class="tok-c">; unrolled; each reads</span>
+bmi   .LBB9_1         <span class="tok-c">; still set? go round</span></code></pre>
+          <p class="optsay">The read is inside the loop, so the loop sees the port change and ends.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> Nothing in the program writes to that address, so the optimizer concluded the value could not change and lifted the read out. Every step of that reasoning is correct for a variable.</p>
+    </div>
+    <div class="optcase" id="case-flip">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code>*gpio_out_xor = 1 &lt;&lt; 25;
+*gpio_out_xor = 1 &lt;&lt; 25;</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #40
+mov.w r1, #33554432   <span class="tok-c">; 0x02000000, bit 25</span>
+movt  r0, #53248      <span class="tok-c">; r0 = 0xD0000028</span>
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; one store</span></code></pre>
+          <p class="optsay">Two flips became one. The pin ends up in the opposite state to the one you asked for.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code>write_volatile(gpio_out_xor, 1 &lt;&lt; 25);
+write_volatile(gpio_out_xor, 1 &lt;&lt; 25);</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #40
+mov.w r1, #33554432
+movt  r0, #53248
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; one</span>
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; two</span></code></pre>
+          <p class="optsay">Both stores survive, so the pin flips twice and ends where it started.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> Storing the same value twice to a variable is the same as storing it once, so the first was dropped. On this register a store is a flip, and two flips are not one.</p>
+    </div>
+    <div class="optcase" id="case-order">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code>*gpio_out_set = 1;    <span class="tok-c">; first</span>
+*gpio_out_xor = 2;    <span class="tok-c">; second</span></code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movs  r1, #2
+movt  r0, #53248      <span class="tok-c">; r0 = 0xD0000018</span>
+<span class="tok-n">str   r1, [r0, #16]</span>   <span class="tok-c">; the xor - your 2nd</span>
+movs  r1, #1
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; the set - your 1st</span></code></pre>
+          <p class="optsay">The two stores came out in the opposite order to the one you wrote.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code>write_volatile(gpio_out_set, 1);
+write_volatile(gpio_out_xor, 2);</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movs  r1, #1
+movt  r0, #53248
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; the set, first</span>
+movs  r1, #2
+<span class="tok-n">str   r1, [r0, #16]</span>   <span class="tok-c">; the xor, second</span></code></pre>
+          <p class="optsay">Your order is kept.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> The two addresses are unrelated as far as the optimizer can tell, so it was free to pick an order. Hardware often is not free.</p>
+    </div>
+    <div class="optcase" id="case-peek">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code><span class="tok-k">let</span> _ = *uartfr;</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code><span class="tok-c">; nothing at all - the body is empty</span></code></pre>
+          <p class="optsay">The read vanished completely. On a register that clears a flag when you read it, that read was the whole point.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code><span class="tok-k">let</span> _ = read_volatile(uartfr);</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
+<span class="tok-n">ldr   r0, [r0]</span>        <span class="tok-c">; the read happens</span></code></pre>
+          <p class="optsay">The read happens.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> A load whose result you ignore changes nothing about a variable, so it was deleted outright. The table earlier in this chapter said it: on some peripherals a read is itself an action.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened where the compiler repeated it.</div>
+</figure>
 
 <section class="col">
-  <p>The optimizer looks at that and reasons, correctly, as follows. The loop body is empty. Nothing inside the loop writes to <code>uartfr</code>. Nothing else in the program writes to it either. So its value cannot change, so reading it repeatedly is waste &mdash; read it once, before the loop, and reuse the answer.</p>
-  <p>Every step of that reasoning is valid for a variable. Applied here it produces a program that either falls straight through or hangs forever, depending on what the flag happened to be the first time. And it does so with no warning, only at higher optimization levels, and usually not on the machine where you tested.</p>
-  <p>The same reasoning breaks writes in three more ways:</p>
-  <ul>
-    <li>Store a value and never read it back, and the store is dead code &mdash; delete it. But the store <em>was</em> the point.</li>
-    <li>Store twice, and only the last one matters &mdash; delete the first. But writing to <code>gpio_out_xor</code> twice is two flips, not one.</li>
-    <li>Store to two addresses in either order, since neither depends on the other. But hardware often demands a specific order.</li>
-  </ul>
-  <p>So the fix is not to outsmart the optimizer. It is to tell it the truth: this address is not a variable. That is what <dfn>volatile</dfn> means. Every access happens, as many times as written, in the order written. None may be invented, removed, or moved past another.</p>
+  <p>Every step of that reasoning is valid for a variable. Applied to a register it produces a program that fails with no warning, only at higher optimization levels, and usually not on the machine where you tested.</p>
+  <p class="note">One correction worth making out loud, because an earlier draft of this chapter got it wrong. A single store you never read back is <em>not</em> deleted. The compiler cannot prove that nothing else is watching that address, so it keeps it &mdash; the two listings for a lone store come out identical. It is repeated stores, reordered stores and ignored reads that go missing.</p>
+  <p>So the fix is not to outsmart the optimizer. It is to tell it the truth: this address is not a variable. That is what volatile means. Every access happens, as many times as written, in the order written. None may be invented, removed, or moved past another.</p>
   <p>In Tock you do not have to remember this, because it is welded into the register types:</p>
 </section>
 
@@ -2542,7 +2698,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head dis-head">
-    <span class="instrument-label">Figure 12</span>
+    <span class="instrument-label">Figure 13</span>
     <span class="instrument-title">The three lines that do the work</span>
   </div>
   <div class="instrument-body flush">
@@ -2590,7 +2746,7 @@ movs  r2, #0x1
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 13</span>
+    <span class="instrument-label">Figure 14</span>
     <span class="instrument-title">Strip the layers off <code>digitalWrite</code></span>
   </div>
   <div class="instrument-body">
@@ -2726,7 +2882,7 @@ movs  r2, #0x1
     <li>Flash, kernel, application and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>. Its RAM length read <code>264K</code> at the pinned commit; it was corrected to <code>520K</code> by <a href="https://github.com/tock/tock/pull/5086">PR&nbsp;5086</a>, merged 20&nbsp;August&nbsp;2026</li>
     <li>Boot block contents: a 28-byte <code>METADATA_BLOCK</code> and a 256-byte <code>FLASH_BOOTLOADER</code> &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
     <li><code>write_volatile</code> at the bottom of every register write &mdash; <a href="https://docs.rs/tock-registers/0.10.0/src/tock_registers/registers.rs.html">tock-registers 0.10.0</a>, <code>src/registers.rs</code>:63</li>
-    <li>Figure&nbsp;12's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
+    <li>Figure&nbsp;13's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
   </ul>
   <p class="note">The datasheets are linked from <a href="https://www.raspberrypi.com/documentation/microcontrollers/silicon.html">Raspberry Pi's silicon documentation page</a>. They are licensed no-derivatives, so this page quotes them briefly with attribution rather than reproducing them.</p>
   <p>One earlier draft of this chapter said SIO was reached by a route separate from the peripheral fabric. That was wrong. The datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The mistake came from recalling the RP2040, where SIO does sit on a single-cycle port off the processor. Different chip, different answer, and it is recorded here rather than quietly fixed.</p>
@@ -3283,7 +3439,7 @@ movs  r2, #0x1
   });
   selectTab("rmw");
 
-  /* ---------------- Figure 12: show the skipped lines ---------------- */
+  /* ---------------- Figure 13: show the skipped lines ---------------- */
 
   var disToggle = document.getElementById("dis-toggle");
   var disPre = document.getElementById("dis");
@@ -3295,7 +3451,7 @@ movs  r2, #0x1
       : "Show the 12 lines I'm skipping";
   });
 
-  /* ---------------- Figure 13: the ladder ---------------- */
+  /* ---------------- Figure 14: the ladder ---------------- */
 
   var RUNGS = [
     { who: "Arduino", code: "digitalWrite(25, HIGH);",
@@ -3307,7 +3463,7 @@ movs  r2, #0x1
     { who: "Register types", code: "write_volatile(self.value.get(), value)",
       where: "tock-registers 0.10.0, src/registers.rs:63 \u2014 where volatile is enforced for everyone" },
     { who: "The machine", code: "and   r1, r1, #0x1f\nlsl.w r1, r2, r1\nstr   r1, [r0, #0x18]",
-      where: "the real instructions from your own build \u2014 Figure 12" }
+      where: "the real instructions from your own build \u2014 Figure 13" }
   ];
 
   var ladder = document.getElementById("ladder");
@@ -3545,5 +3701,27 @@ movs  r2, #0x1
   document.getElementById("lvl-low")
     .addEventListener("click", function () { pickLevel(false); });
   pickLevel(true);
+  /* ---------------- Figure 12: what the optimizer does ---------------- */
+  // Four cases, each a pair of real compiler listings. The markup carries every
+  // sentence; this only decides which case is on screen.
+
+  var OPTCASES = ["wait", "flip", "order", "peek"];
+
+  function pickOpt(which) {
+    OPTCASES.forEach(function (k) {
+      var on = k === which;
+      document.getElementById("case-" + k).classList.toggle("is-off", !on);
+      document.getElementById("opt-" + k)
+        .setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  OPTCASES.forEach(function (k) {
+    document.getElementById("opt-" + k)
+      .addEventListener("click", function () { pickOpt(k); });
+  });
+  // Opens on the loop, which is the case the prose above just set up.
+  pickOpt("wait");
+
 }());
 </script>
