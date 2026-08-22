@@ -454,6 +454,14 @@ chk("a power hole is power", REG["cat-pwr"].classList.contains("is-lit"), true);
 chk("and names the rail", REG["pick-name"].textContent, "VBUS");
 chk("and is not ground", REG["cat-gnd"].classList.contains("is-lit"), false);
 
+// The datasheet's pinout figure labels this one "3V3(OUT)", not "3V3": it is a
+// supply the board hands out. Locked down because it is easy to "tidy" away.
+REG["pad-36"].fire("click");
+chk("pin 36 keeps the datasheet's own label",
+    REG["pick-name"].textContent, "3V3(OUT)");
+chk("and is power rather than ground",
+    REG["cat-pwr"].classList.contains("is-lit"), true);
+
 REG["pad-30"].fire("click");
 chk("the reset hole is its own kind",
     REG["cat-sys"].classList.contains("is-lit"), true);
