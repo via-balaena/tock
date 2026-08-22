@@ -2673,7 +2673,7 @@ movt  r0, #53248      <span class="tok-c">; r0 = 0xD0000018</span>
           <pre><code><span class="tok-k">let</span> _ = *uartfr;</code></pre>
           <span class="optcol-k">what the chip runs</span>
           <pre><code><span class="tok-c">; nothing at all - the body is empty</span></code></pre>
-          <p class="optsay">The read vanished completely. On a register that clears a flag when you read it, that read was the whole point.</p>
+          <p class="optsay">The read vanished completely. Reading the serial port's data register is how a byte gets received at all, so a read the compiler deletes is a byte that never arrives.</p>
         </div>
         <div class="optcol good">
           <span class="optcol-h">With volatile</span>
