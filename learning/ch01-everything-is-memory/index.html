@@ -995,6 +995,79 @@ dfn {
   white-space: nowrap;
 }
 
+/* Figure 15: a disassembly whose three working lines are controls. Built from
+   rows rather than one preformatted block, so each line can carry a run-order
+   badge in its own gutter without disturbing the alignment of the instruction
+   text. (Do not write that tag out here: the gate counts tags with a regex and
+   would see this comment as an unclosed one.) */
+.dis {
+  font-family: var(--mono); font-size: .84rem; line-height: 1.75;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .7rem .2rem; overflow-x: auto;
+}
+.disrow {
+  display: grid; grid-template-columns: 2.1rem 1fr;
+  align-items: baseline; width: 100%; text-align: left;
+  min-width: 30rem;
+}
+.dis-n {
+  font-family: var(--display); font-size: .68rem; font-weight: 700;
+  color: var(--ink-faint); text-align: center; letter-spacing: 0;
+}
+.dis-t { white-space: pre; color: var(--ink); }
+
+/* The three that are controls. */
+.disline {
+  background: none; border: 0; border-radius: 0;
+  padding: 0; margin: 0; cursor: pointer;
+  font-family: var(--mono); font-size: .84rem; line-height: 1.75;
+  text-transform: none; letter-spacing: 0;
+}
+.disline .dis-n {
+  color: var(--ink-faint); border: 1px solid var(--rule-strong);
+  border-radius: 2px; margin-right: .4rem;
+}
+.disline:hover:not(:disabled) .dis-t { color: var(--hot); }
+.disline:hover:not(:disabled) .dis-n { border-color: var(--hot); color: var(--hot); }
+.disline[aria-pressed="true"] .dis-t { color: var(--hot); font-weight: 600; }
+.disline[aria-pressed="true"] .dis-n {
+  background: var(--hot-fill); border-color: var(--hot-fill); color: var(--hot-ink);
+}
+
+/* Twelve lines of bookkeeping, hidden until asked for. */
+.dis .dis-skip { display: none; }
+.dis.dis-all .dis-skip { display: grid; }
+
+.dispanels { margin-top: 1.1rem; }
+.dispanel { display: none; }
+.dispanel.is-on { display: block; }
+.dispanel p { margin-bottom: .8rem; font-size: .97rem; line-height: 1.6; }
+.dispanel p:last-child { margin-bottom: 0; }
+.dispanel-h {
+  display: flex; align-items: center; gap: .45rem;
+  font-family: var(--display); font-size: .8rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--hot);
+  margin-bottom: .7rem;
+}
+.dispanel-h .dis-n {
+  background: var(--hot-fill); color: var(--hot-ink); border-radius: 2px;
+  min-width: 1.3rem;
+}
+.dispanel-h code {
+  font-size: .95rem; text-transform: none; letter-spacing: 0;
+  color: var(--hot);
+}
+/* The toggle's two labels live in the markup, like Figure 7's, so the script
+   holds no words. */
+#dis-toggle .tw-on { display: none; }
+#dis-toggle[aria-expanded="true"] .tw-off { display: none; }
+#dis-toggle[aria-expanded="true"] .tw-on { display: inline; }
+
+.disanswer {
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem;
+  color: var(--ink-soft);
+}
+
 /* Figure 4: a hex digit is four bits, and those four are worth 8, 4, 2 and 1. */
 .hexline {
   display: flex; align-items: flex-start; gap: .4rem;
@@ -1325,9 +1398,6 @@ dfn {
 .tablewrap { overflow-x: auto; }
 
 /* Show the reader only the lines that matter, and say so out loud. */
-.dis-skip { display: none; }
-.dis-all .dis-skip { display: inline; color: var(--ink-faint); }
-.dis-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
 
 /* ---------- shared by the three opening figures ---------- */
 
@@ -3039,44 +3109,75 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
 </section>
 
 <figure class="instrument">
-  <div class="instrument-head dis-head">
+  <div class="instrument-head">
     <span class="instrument-label">Figure 15</span>
     <span class="instrument-title">The three lines that do the work</span>
   </div>
-  <div class="instrument-body flush">
-<pre id="dis" class=""><code><span class="tok-c">; &lt;RPGpioPin as kernel::hil::gpio::Output&gt;::set</span>
-<span class="dis-skip">push  {r4, r6, r7, lr}
-add   r7, sp, #0x8
-mov   r4, r0
-bl    &lt;RPGpioPin::get_mode&gt;      <span class="tok-c">; check it was configured as an output</span>
-uxtb  r0, r0
-cmp   r0, #0x1
-bls   0x1000b680                 <span class="tok-c">; not an output? skip the store</span>
-bl    &lt;OUTLINED_FUNCTION_8&gt;      <span class="tok-c">; works out r0 and r1, below</span>
-</span><span class="tok-n">str   r1, [r0, #0x18]</span>            <span class="tok-c">; &lt;-- this is digitalWrite</span>
-<span class="dis-skip">pop   {r4, r6, r7, pc}
-
-; &lt;OUTLINED_FUNCTION_8&gt;
-ldrd  r0, r1, [r4, #8]           <span class="tok-c">; r0 = SIO's base, r1 = the pin number</span>
-movs  r2, #0x1
-</span><span class="tok-n">and   r1, r1, #0x1f</span>              <span class="tok-c">; keep the pin number in range</span>
-<span class="tok-n">lsl.w r1, r2, r1</span>                <span class="tok-c">; r1 = 1 &lt;&lt; pin</span>
-<span class="dis-skip">bx    lr</span></code></pre>
+  <div class="instrument-body">
+    <p class="dothis">Click a numbered line. The numbers are the order the processor runs them in, which is not the order they are printed in.</p>
+    <div class="dis" id="dis">
+      <span class="disrow"><span class="dis-n"></span><span class="dis-t"><span class="tok-c">; &lt;RPGpioPin as kernel::hil::gpio::Output&gt;::set</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">push  {r4, r6, r7, lr}</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">add   r7, sp, #0x8</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">mov   r4, r0</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bl    &lt;RPGpioPin::get_mode&gt;  <span class="tok-c">; check it was configured as an output</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">uxtb  r0, r0</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">cmp   r0, #0x1</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bls   0x1000b680  <span class="tok-c">; not an output? skip the store</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bl    &lt;OUTLINED_FUNCTION_8&gt;  <span class="tok-c">; works out r0 and r1, below</span></span></span>
+      <button type="button" class="disrow disline" id="dl-str" aria-pressed="false">
+        <span class="dis-n">3</span>
+        <span class="dis-t">str   r1, [r0, #0x18]  <span class="tok-c">; &lt;-- this is digitalWrite</span></span>
+      </button>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">pop   {r4, r6, r7, pc}</span></span>
+      <span class="disrow"><span class="dis-n"></span><span class="dis-t">&nbsp;</span></span>
+      <span class="disrow"><span class="dis-n"></span><span class="dis-t"><span class="tok-c">; &lt;OUTLINED_FUNCTION_8&gt;</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">ldrd  r0, r1, [r4, #8]  <span class="tok-c">; r0 = SIO's base, r1 = the pin number</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">movs  r2, #0x1</span></span>
+      <button type="button" class="disrow disline" id="dl-and" aria-pressed="true">
+        <span class="dis-n">1</span>
+        <span class="dis-t">and   r1, r1, #0x1f  <span class="tok-c">; keep the pin number in range</span></span>
+      </button>
+      <button type="button" class="disrow disline" id="dl-lsl" aria-pressed="false">
+        <span class="dis-n">2</span>
+        <span class="dis-t">lsl.w r1, r2, r1  <span class="tok-c">; r1 = 1 &lt;&lt; pin</span></span>
+      </button>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bx    lr</span></span>
+    </div>
+    <div class="dispanels" aria-live="polite">
+      <div class="dispanel is-on" id="dp-and">
+        <span class="dispanel-h"><span class="dis-n">1</span><code>and r1, r1, #0x1f</code> &mdash; keeping the pin in range</span>
+        <p>A <dfn>mask</dfn> is an operation that keeps some bits of a number and forces the rest to zero. This one keeps the bottom five bits, which can only express 0 to 31.</p>
+        <p>Why mask at all? Because <code>self.pin</code> is an ordinary number, and nothing in its type stops it being 40. A 32-bit value has only 32 shift positions, so the compiler has to decide what an impossible shift means rather than leave it to chance.</p>
+        <p>Rust decides it twice, depending on how you build. With overflow checks on, shifting by 32 or more panics outright: <em>attempt to shift left with overflow</em>. With them off, which is how a kernel ships, the shift amount is masked to its bottom five bits instead &mdash; and this <code>and</code> is that masking.</p>
+        <p>So this instruction is one of two lowerings of the same source line, and which one you get is a build setting rather than a fact about the chip.</p>
+        <p class="disanswer"><strong>Which question does it answer?</strong> None of them. It is a safety net, and belongs to neither the address nor the value.</p>
+      </div>
+      <div class="dispanel" id="dp-lsl">
+        <span class="dispanel-h"><span class="dis-n">2</span><code>lsl.w r1, r2, r1</code> &mdash; the shift</span>
+        <p><code>r2</code> holds 1 and <code>r1</code> holds the pin number, so the result is <code>1 &lt;&lt; pin</code>. The whole of question 3, as one instruction.</p>
+        <p>Nothing here knows which pin it is. The number was put in that register by one of the lines this listing hides, and the shift treats 25 and 3 exactly alike.</p>
+        <p class="disanswer"><strong>Which question does it answer?</strong> Question 3 &mdash; which pin, of the thirty.</p>
+      </div>
+      <div class="dispanel" id="dp-str">
+        <span class="dispanel-h"><span class="dis-n">3</span><code>str r1, [r0, #0x18]</code> &mdash; the store</span>
+        <p>Look at the shape of the address. It is not one number. It is <strong>a base held in a processor register plus an offset built into the instruction</strong>: <code>r0</code> holds <code class="addr">0xD0000000</code> and <code>0x18</code> is the offset of <code>gpio_out_set</code>.</p>
+        <p>That is why register blocks are written as a base plus a table of offsets, the way Figure&nbsp;7 showed them. It is the shape the processor was built to address, so it costs nothing extra.</p>
+        <p>This is the instruction. Everything else on this page is arranging for it.</p>
+        <p class="disanswer"><strong>Which question does it answer?</strong> Questions 1 and 2, in the two halves of one addressing mode.</p>
+      </div>
+    </div>
   </div>
   <div class="instrument-note">
-    <button class="reveal-all" id="dis-toggle" aria-expanded="false" aria-controls="dis">Show the 12 lines I'm skipping</button>
+    <button class="reveal-all" id="dis-toggle" aria-expanded="false" aria-controls="dis">
+      <span class="tw-off">Show the 12 lines I'm skipping</span>
+      <span class="tw-on">Hide them again</span>
+    </button>
     &mdash; they are function bookkeeping, plus the check that you configured the pin as an output. That check is not free, incidentally: <code>get_mode</code> reads two more peripheral registers to answer it. Everything in this chapter applies to those reads too.
   </div>
 </figure>
 
 <section class="col">
-  <p>Take them in the order the processor runs them.</p>
-  <p><code>and r1, r1, #0x1f</code> is a <dfn>mask</dfn>: an operation that keeps some bits of a number and forces the rest to zero. Here it keeps the bottom five bits, which can only express 0 to 31.</p>
-  <p>Why mask at all? Because <code>self.pin</code> is an ordinary number, and nothing in its type stops it being 40. A 32-bit value has only 32 shift positions, so the compiler has to decide what an impossible shift means rather than leave it to chance.</p>
-  <p>Rust decides it twice, depending on how you build. With overflow checks on, shifting by 32 or more panics outright: <em>attempt to shift left with overflow</em>. With them off, which is how a kernel ships, the shift amount is masked to its bottom five bits instead &mdash; and this <code>and</code> is that masking. So the instruction here is one of two lowerings of the same source line, and which one you get is a build setting rather than a fact about the chip.</p>
-  <p><code>lsl.w r1, r2, r1</code> is the shift. <code>r2</code> holds 1, <code>r1</code> holds the pin number, and the result is <code>1 &lt;&lt; pin</code> &mdash; question 3, as one instruction.</p>
-  <p><code>str r1, [r0, #0x18]</code> is the store, and look at its shape. The address is not one number. It is <strong>a base held in a processor register plus an offset built into the instruction</strong>: <code>r0</code> holds <code class="addr">0xD0000000</code> and <code>0x18</code> is the offset of <code>gpio_out_set</code>.</p>
-  <p>Questions 1 and 2, in the two halves of one addressing mode. That is why register blocks are written as a base plus a table of offsets: it is the shape the processor was built to address, so it costs nothing extra.</p>
   <p class="note">Reproduce it yourself, if you have the toolchain: build <code>boards/raspberry_pi_pico_2</code>, then run <code>llvm-objdump -d --demangle</code> on the resulting binary and search for <code>Output&gt;::set</code>. Ask for demangling rather than guessing at the raw symbol name, because how Rust encodes names into symbols depends on compiler settings this board does not pin down. Addresses shift between builds. If you have not set up a cross-compiler yet, skip this &mdash; nothing later depends on it.</p>
 </section>
 
@@ -3790,9 +3891,6 @@ movs  r2, #0x1
   disToggle.addEventListener("click", function () {
     var open = disPre.classList.toggle("dis-all");
     disToggle.setAttribute("aria-expanded", open ? "true" : "false");
-    disToggle.textContent = open
-      ? "Hide them again"
-      : "Show the 12 lines I'm skipping";
   });
 
   /* ---------------- Figure 16: the ladder ---------------- */
@@ -4189,6 +4287,29 @@ movs  r2, #0x1
   document.getElementById("rg-twins")
     .addEventListener("click", rgToggleTwins);
   rgDraw();
+
+  /* ---------------- Figure 15: the three lines, one at a time ---------------- */
+
+  /* Same architecture as Figures 4 and 7: every sentence is in the markup and
+     this only moves the highlight, so the figure still reads with no JS. */
+
+  var DISLINES = ["and", "lsl", "str"];
+
+  function pickDis(which) {
+    DISLINES.forEach(function (k) {
+      var on = k === which;
+      document.getElementById("dl-" + k)
+        .setAttribute("aria-pressed", on ? "true" : "false");
+      document.getElementById("dp-" + k).classList.toggle("is-on", on);
+    });
+  }
+
+  DISLINES.forEach(function (k) {
+    document.getElementById("dl-" + k)
+      .addEventListener("click", function () { pickDis(k); });
+  });
+  /* Opens on the mask, which is the first of the three to run. */
+  pickDis("and");
 
 }());
 </script>

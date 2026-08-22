@@ -600,6 +600,103 @@ def demo_asm_checks(html, chapter_dir):
     return problems
 
 
+def boot_state_checks(html):
+    """The figure a reader meets with scripting off is the markup's own state.
+
+    Every one-of-many figure here declares its opening state twice: in the
+    markup, so the page reads with no JavaScript, and in the script, which
+    reproduces it on load. The behavioural tests only ever see the second,
+    because the script has run by the time they look, so the markup half can
+    drift unnoticed. Figure 15 shipped a listing whose opening line was not the
+    one its panel showed, and only a screenshot caught it.
+
+    The invariant checked is the one that cannot be argued with: where a set of
+    buttons and a set of panels inside one figure share suffixes --
+    `dl-and`/`dp-and`, `hd-0`/`hxr-0`, `rg-2`/`rgn-2` -- the pressed button and
+    the shown panel must be the same one.
+
+    Three things the scan has to allow for, each of which produced a false
+    alarm first. Independent toggles are not a one-of-many group, so a set with
+    no matching panels is skipped -- Figure 4's four bit switches are meant to
+    be three-quarters pressed. A group may carry an extra control on the same
+    prefix, so the panels need only be a subset of the buttons, which is what
+    lets Figure 7's `rg-twins` sit beside `rg-0`..`rg-7`. And a set where no
+    panel is marked shown is the other legitimate pattern: Figure 14's cases
+    are all visible until the script puts four away, so no scripting means all
+    five rather than none. Figures are scanned one at a time, because `hd-*`
+    and `rgn-*` both run 0 to 7 and have nothing to do with each other.
+    """
+    problems = []
+    body = html[html.index("</style>") + 8:] if "</style>" in html else html
+    markup = body.split("<script>")[0]
+
+    for figure in re.findall(r"<figure\b.*?</figure>", markup, re.S):
+        pressed, shown = {}, {}
+        for match in re.finditer(r'<button[^>]*\bid="([\w-]+?)-(\w+)"[^>]*'
+                                 r'aria-pressed="(\w+)"', figure):
+            prefix, suffix, value = match.groups()
+            pressed.setdefault(prefix, {})[suffix] = value == "true"
+        for match in re.finditer(r'<[a-z]+[^>]*\bclass="([^"]*)"[^>]*'
+                                 r'\bid="([\w-]+?)-(\w+)"', figure):
+            classes, prefix, suffix = match.groups()
+            if prefix in pressed:
+                continue
+            shown.setdefault(prefix, {})[suffix] = "is-on" in classes.split()
+
+        for bprefix, buttons in sorted(pressed.items()):
+            if len(buttons) < 2:
+                continue
+            for pprefix, panels in sorted(shown.items()):
+                if len(panels) < 2 or not set(panels) <= set(buttons):
+                    continue
+                lit = sorted(s for s, on in panels.items() if on)
+                if not lit:
+                    continue      # the inverted pattern: everything visible
+                down = sorted(s for s, on in buttons.items()
+                              if on and s in panels)
+                if len(lit) != 1 or down != lit:
+                    problems.append(
+                        "with no JavaScript, %s-* shows %s while %s-* has %s "
+                        "pressed - the markup's opening state has drifted from "
+                        "the one the script reproduces"
+                        % (pprefix, lit, bprefix, down or ["nothing"]))
+    return problems
+
+
+def run_order_checks(html):
+    """Figure 15's run-order badge is stated twice; keep the two agreeing.
+
+    Each of the three live lines carries a number, and so does the heading of
+    the panel that explains it. Nothing else ties them together, and the whole
+    point of the badge is that this order is *not* the order the lines are
+    printed in -- so a reader has no way to catch a wrong one by eye.
+    """
+    problems = []
+    if 'class="disline"' not in html and "disline" not in html:
+        return problems
+    lines, panels = {}, {}
+    for match in re.finditer(r'id="dl-(\w+)"[^>]*>\s*<span class="dis-n">([^<]*)</span>',
+                             html):
+        lines[match.group(1)] = match.group(2).strip()
+    for match in re.finditer(r'id="dp-(\w+)">\s*<span class="dispanel-h">'
+                             r'<span class="dis-n">([^<]*)</span>', html):
+        panels[match.group(1)] = match.group(2).strip()
+    if not lines:
+        return problems
+    for slug in sorted(lines):
+        if slug not in panels:
+            problems.append("the line dl-%s has no panel dp-%s to explain it"
+                            % (slug, slug))
+        elif lines[slug] != panels[slug]:
+            problems.append("dl-%s is numbered %r in the listing and %r in its "
+                            "panel" % (slug, lines[slug], panels[slug]))
+    want = set(str(i + 1) for i in range(len(lines)))
+    if set(lines.values()) != want:
+        problems.append("the run-order badges are %s, which is not %s"
+                        % (sorted(lines.values()), sorted(want)))
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -693,6 +790,8 @@ def static_checks(html, name):
     problems.extend(palette_checks(html))
     problems.extend(semantic_checks(html))
     problems.extend(register_table_checks(html))
+    problems.extend(boot_state_checks(html))
+    problems.extend(run_order_checks(html))
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))

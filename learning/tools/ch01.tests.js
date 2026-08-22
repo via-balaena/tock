@@ -361,12 +361,12 @@ chk("the disassembly starts focused on the three lines that matter",
 REG["dis-toggle"].fire("click");
 chk("the skipped lines can be shown", REG["dis"].classList.contains("dis-all"), true);
 chk("and the control says so", REG["dis-toggle"].getAttribute("aria-expanded"), "true");
-chk("with a label that now offers the reverse",
-    REG["dis-toggle"].textContent, "Hide them again");
+chk("and the label the markup shows follows aria-expanded",
+    REG["dis-toggle"].getAttribute("aria-expanded"), "true");
 REG["dis-toggle"].fire("click");
 chk("toggling back re-focuses", REG["dis"].classList.contains("dis-all"), false);
-chk("and restores the original label",
-    REG["dis-toggle"].textContent.indexOf("Show the 12 lines") > -1, true);
+chk("and the label goes back with it",
+    REG["dis-toggle"].getAttribute("aria-expanded"), "false");
 
 // ---- Figure 9: one store, moment by moment ----
 // Every step stays on screen; the scrubber only moves the highlight. That is
@@ -1058,3 +1058,67 @@ t("hiding the twins never leaves a hidden row selected", function () {
   }
   REG["rg-twins"].fire("click");
 });
+
+
+// ---- Figure 15: the three lines, one at a time ----
+// The figure opens on the first line the processor runs, which is not the
+// first line printed -- that inversion is the thing it exists to show.
+
+chk("the disassembly figure boots on a line rather than blank",
+    REG["dl-and"].getAttribute("aria-pressed"), "true");
+chk("and it is the mask, the first of the three to run",
+    REG["dp-and"].classList.contains("is-on"), true);
+chk("the other two panels are away",
+    REG["dp-lsl"].classList.contains("is-on") ||
+    REG["dp-str"].classList.contains("is-on"), false);
+chk("and their lines are not pressed",
+    REG["dl-str"].getAttribute("aria-pressed"), "false");
+
+REG["dl-str"].fire("click");
+chk("clicking the store shows the store's panel",
+    REG["dp-str"].classList.contains("is-on"), true);
+chk("and puts the mask's away",
+    REG["dp-and"].classList.contains("is-on"), false);
+chk("and the pressed state follows the click",
+    REG["dl-str"].getAttribute("aria-pressed"), "true");
+chk("and leaves the line it came from",
+    REG["dl-and"].getAttribute("aria-pressed"), "false");
+
+REG["dl-lsl"].fire("click");
+chk("the shift can be reached too",
+    REG["dp-lsl"].classList.contains("is-on"), true);
+chk("and it is the only one on screen",
+    REG["dp-and"].classList.contains("is-on") ||
+    REG["dp-str"].classList.contains("is-on"), false);
+
+t("every line clicked in turn leaves exactly one pressed and one panel open",
+  function () {
+    var keys = ["and", "lsl", "str"], i, j;
+    for (i = 0; i < keys.length; i++) {
+      REG["dl-" + keys[i]].fire("click");
+      var pressed = 0, shown = 0;
+      for (j = 0; j < keys.length; j++) {
+        if (REG["dl-" + keys[j]].getAttribute("aria-pressed") === "true") { pressed++; }
+        if (REG["dp-" + keys[j]].classList.contains("is-on")) { shown++; }
+      }
+      if (pressed !== 1) { throw new Error(pressed + " pressed at " + keys[i]); }
+      if (shown !== 1) { throw new Error(shown + " panels at " + keys[i]); }
+      if (REG["dp-" + keys[i]].classList.contains("is-on") !== true) {
+        throw new Error("the panel shown is not the line clicked: " + keys[i]);
+      }
+    }
+  });
+
+t("hiding and showing the bookkeeping does not disturb the chosen line",
+  function () {
+    REG["dl-lsl"].fire("click");
+    REG["dis-toggle"].fire("click");
+    REG["dis-toggle"].fire("click");
+    if (REG["dl-lsl"].getAttribute("aria-pressed") !== "true") {
+      throw new Error("the chosen line was lost when the listing was toggled");
+    }
+    if (REG["dp-lsl"].classList.contains("is-on") !== true) {
+      throw new Error("its panel closed when the listing was toggled");
+    }
+  });
+REG["dl-and"].fire("click");

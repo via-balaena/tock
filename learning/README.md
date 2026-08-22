@@ -125,6 +125,17 @@ Two more are preventive rather than forensic:
   order shown; the figure may elide, and says what it elides, but it may not
   invent. The compile costs about 0.05s and is skipped where `rustc` or the
   target is missing.
+- **A figure that opens differently with scripting off.** Every one-of-many
+  figure states its opening state twice: in the markup, so the page reads
+  without JavaScript, and in the script, which reproduces it on load. The
+  behavioural tests only ever see the second, because the script has run by the
+  time they look. So where a set of buttons and a set of panels inside one
+  figure share suffixes, the pressed button and the shown panel must be the
+  same one. Figure 15 shipped with a listing whose opening line was not the one
+  its panel explained, and only a screenshot caught it. Sets with no matching
+  panels are left alone, since independent toggles are not a group; so are sets
+  where nothing is marked shown, which is the other legitimate pattern --
+  Figure 14's cases are all visible until the script puts four away.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions
