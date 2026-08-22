@@ -2084,7 +2084,7 @@ movs  r2, #0x1
 
 <div class="sources">
   <h3>Everything above, checked against source</h3>
-  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory.</p>
+  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;2 reports the correction rather than the pin.</p>
   <ul>
     <li>Address decode on bits 31:28, the segment table, and unmapped ranges raising a bus error &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8</li>
     <li>SIO base <code class="addr">0xD0000000</code>, IO_BANK0 <code class="addr">0x40028000</code>, PADS <code class="addr">0x40038000</code> &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/gpio.rs">chips/rp2350/src/gpio.rs</a>:1164&ndash;1169</li>
@@ -2102,7 +2102,7 @@ movs  r2, #0x1
     <li>GPIO&nbsp;25 as the user LED, and 23, 24, 25 and 29 being used by the board &mdash; Pico&nbsp;2 datasheet, "A few RP2350 GPIO pins are used for internal board functions"</li>
     <li>GPIO&nbsp;25 as the radio chip-select on wireless boards, and the LED being pin 0 of the radio &mdash; Raspberry Pi's <code>pico-sdk/src/boards/include/boards/pico2_w.h</code>, and <code>boards/raspberry_pi_pico_w/src/main.rs</code>:126, which is Tock's board for the earlier RP2040 Pico&nbsp;W &mdash; Tock has no Pico&nbsp;2&nbsp;W board yet, so the Pico&nbsp;2&nbsp;W claim rests on Raspberry Pi's own header</li>
     <li><code>Output::set</code> as the portable interface every chip implements &mdash; <a href="https://github.com/tock/tock/blob/master/kernel/src/hil/gpio.rs">kernel/src/hil/gpio.rs</a>:151&ndash;154</li>
-    <li>Flash, kernel, application and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code></li>
+    <li>Flash, kernel, application and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>. Its RAM length read <code>264K</code> at the pinned commit; it was corrected to <code>520K</code> by <a href="https://github.com/tock/tock/pull/5086">PR&nbsp;5086</a>, merged 20&nbsp;August&nbsp;2026</li>
     <li>Boot block contents: a 28-byte <code>METADATA_BLOCK</code> and a 256-byte <code>FLASH_BOOTLOADER</code> &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
     <li><code>write_volatile</code> at the bottom of every register write &mdash; <a href="https://docs.rs/tock-registers/0.10.0/src/tock_registers/registers.rs.html">tock-registers 0.10.0</a>, <code>src/registers.rs</code>:63</li>
     <li>Figure&nbsp;9's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
@@ -2195,8 +2195,8 @@ movs  r2, #0x1
       detail: "The kernel itself. Code, so it never changes at runtime. The header in the boot block points here, which is how the chip finds it." },
     { addr: "0x10040000", name: "Flash \u2014 applications", size: "256 KB", hot: false,
       detail: "Your compiled applications, one after another. Note that they sit in a different part of flash from the kernel; that separation is where isolation starts." },
-    { addr: "0x20000000", name: "SRAM", size: "264 KB of 520 KB", hot: false,
-      detail: "The general read/write memory: kernel data and every application's memory come out of this one block. Look hard at the size. The RP2350 has 520 KB, but Tock's linker script for this board declares 264 KB, a number inherited unchanged from the RP2040 Pico board where 264 KB was correct. So half the chip's memory is never handed out to anything on this port. Nothing prevents the kernel touching it; the port simply does not know it is there. A linker script is a claim about the hardware, and claims can be wrong." },
+    { addr: "0x20000000", name: "SRAM", size: "520 KB", hot: false,
+      detail: "The general read/write memory: kernel data and every application's memory come out of this one block. Look hard at the size, because for the whole life of this port so far it was wrong. The RP2350 has 520 KB, but Tock's linker script for this board declared 264 KB \u2014 a number inherited unchanged from the RP2040 Pico board, where 264 KB was correct. Half the chip's memory was never handed out to anything: nothing prevented the kernel touching it, the port simply did not know it was there. It was corrected to 520 KB on 20 August 2026, three days after the commit this chapter is pinned to, which makes this stripe the one place on the page reporting a tree newer than the pin. A linker script is a claim about the hardware, and claims can be wrong." },
     { addr: "0x40010000", name: "CLOCKS", size: "\u2014", hot: true,
       detail: "Decides how fast the chip runs. Get this wrong early in boot and nothing else works." },
     { addr: "0x40020000", name: "RESETS", size: "\u2014", hot: true,
