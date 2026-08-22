@@ -1024,7 +1024,7 @@ dfn {
   text-transform: none; letter-spacing: 0;
 }
 .disline .dis-n {
-  color: var(--ink-faint); border: 1px solid var(--rule-strong);
+  color: var(--ink-faint); border: 1px solid var(--ink-faint);
   border-radius: 2px; margin-right: .4rem;
 }
 .disline:hover:not(:disabled) .dis-t { color: var(--hot); }
@@ -3114,7 +3114,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
     <span class="instrument-title">The three lines that do the work</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a numbered line. The numbers are the order the processor runs them in, which is not the order they are printed in.</p>
+    <p class="dothis">Click a numbered line. The numbers are the order these three run in, which is not the order they are printed in.</p>
     <div class="dis" id="dis">
       <span class="disrow"><span class="dis-n"></span><span class="dis-t"><span class="tok-c">; &lt;RPGpioPin as kernel::hil::gpio::Output&gt;::set</span></span></span>
       <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">push  {r4, r6, r7, lr}</span></span>
@@ -3144,7 +3144,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
       </button>
       <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bx    lr</span></span>
     </div>
-    <div class="dispanels" aria-live="polite">
+    <div class="dispanels">
       <div class="dispanel is-on" id="dp-and">
         <span class="dispanel-h"><span class="dis-n">1</span><code>and r1, r1, #0x1f</code> &mdash; keeping the pin in range</span>
         <p>A <dfn>mask</dfn> is an operation that keeps some bits of a number and forces the rest to zero. This one keeps the bottom five bits, which can only express 0 to 31.</p>
