@@ -38,9 +38,10 @@ chk("and the wireless note is not shown until it is asked for",
 
 chk("the optimizer figure boots on a case rather than blank",
     REG["case-wait"].classList.contains("is-off"), false);
-chk("and the other three are put away",
+chk("and the other four are put away",
     REG["case-flip"].classList.contains("is-off")
     && REG["case-order"].classList.contains("is-off")
+    && REG["case-once"].classList.contains("is-off")
     && REG["case-peek"].classList.contains("is-off"), true);
 chk("and the case it opens on is the one the prose just set up",
     REG["opt-wait"].getAttribute("aria-pressed"), "true");
@@ -752,7 +753,7 @@ chk("and is withdrawn from the old one",
     REG["opt-wait"].getAttribute("aria-pressed"), "false");
 
 t("every optimizer case shown in turn leaves exactly one on screen", function () {
-  var cases = ["wait", "flip", "order", "peek"];
+  var cases = ["wait", "flip", "order", "once", "peek"];
   cases.forEach(function (k) { REG["opt-" + k].fire("click"); });
   cases.forEach(function (k) { REG["opt-" + k].fire("click"); });
   var shown = 0, pressed = 0;
@@ -763,3 +764,12 @@ t("every optimizer case shown in turn leaves exactly one on screen", function ()
   if (shown !== 1) { throw new Error(shown + " cases on screen"); }
   if (pressed !== 1) { throw new Error(pressed + " buttons pressed"); }
 });
+
+// The lone-store case is the chapter's own correction made checkable: both
+// columns must stay, because the compiler does not delete that store.
+REG["opt-once"].fire("click");
+chk("the lone-store case can be reached",
+    REG["case-once"].classList.contains("is-off"), false);
+chk("and it is the only one on screen",
+    REG["case-wait"].classList.contains("is-off")
+    && REG["case-peek"].classList.contains("is-off"), true);
