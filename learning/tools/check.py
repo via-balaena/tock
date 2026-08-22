@@ -431,6 +431,58 @@ def register_table_checks(html):
     return problems
 
 
+def _rust_lines(text):
+    """Source lines with comments and indentation removed, blanks dropped."""
+    out = []
+    for line in text.splitlines():
+        line = re.sub(r"//.*", "", line).strip()
+        if line:
+            out.append(re.sub(r"\s+", " ", line))
+    return out
+
+
+def demo_source_checks(html, chapter_dir):
+    """A figure quoting source must quote the source it shipped.
+
+    Figure 14 shows five pairs of Rust beside the assembly each compiles to,
+    and its whole claim is that the instructions are real output from the file
+    committed beside the page. That claim is only worth anything while the two
+    agree. They have drifted once already: the identifiers on the page had been
+    renamed for house style and so were not what went through the compiler.
+
+    Comments are stripped from both sides before comparing, because the page
+    adds a word or two to say what to look at. That is also what catches a
+    comment written in the wrong language -- `; first` is a comment in assembly
+    and a syntax error in Rust, so it survives the stripping and fails to
+    match, which is how it was found.
+    """
+    problems = []
+    demo = os.path.join(chapter_dir, "optimizer-demo.rs")
+    if not os.path.exists(demo):
+        return problems
+    with open(demo, encoding="utf-8") as fh:
+        haystack = _rust_lines(fh.read())
+    blocks = re.findall(r'<div class="optcol [^"]*">\s*'
+                        r'<span class="optcol-h">[^<]*</span>\s*'
+                        r"<pre><code>(.*?)</code></pre>", html, re.S)
+    if not blocks:
+        return problems
+    for block in blocks:
+        text = re.sub("<[^>]+>", "", block)
+        for entity, char in (("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">")):
+            text = text.replace(entity, char)
+        needle = _rust_lines(text)
+        if not needle:
+            continue
+        run = any(haystack[i:i + len(needle)] == needle
+                  for i in range(len(haystack) - len(needle) + 1))
+        if not run:
+            problems.append("Figure 14 shows %r, which is not in "
+                            "optimizer-demo.rs - the figure claims that file "
+                            "is what was compiled" % " / ".join(needle)[:90])
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -524,6 +576,7 @@ def static_checks(html, name):
     problems.extend(palette_checks(html))
     problems.extend(semantic_checks(html))
     problems.extend(register_table_checks(html))
+    problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
 
     return problems

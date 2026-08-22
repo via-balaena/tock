@@ -2331,7 +2331,7 @@ dfn {
 
 <section class="col">
   <p class="note"><strong>A warning about the word "register."</strong> It has two unrelated meanings and this chapter needs both. A <em>peripheral register</em> is what we just described: hardware sitting at an address. A <em>processor register</em> is one of a handful of tiny scratch slots inside the processor itself, called <code>r0</code>, <code>r1</code> and so on, holding whatever it is working on this instant. Same word, different things. Where it matters below, the text says which one.</p>
-  <p>Here is SIO's output section, exactly as Tock's chip crate declares it, with the address arithmetic alongside it.</p>
+  <p>Here is SIO's output section: the offsets and their order exactly as Tock's chip crate declares them, with the address arithmetic worked alongside.</p>
 </section>
 
 <figure class="instrument">
@@ -2443,7 +2443,7 @@ dfn {
 
 <section class="col">
   <p>Two patterns in that table are worth keeping, and both are arithmetic you can check rather than trivia you have to trust.</p>
-  <p>Neighbours land 4 apart because a register is 32 bits wide, which is 4 bytes, and addresses count bytes. That is a free sanity check on any register listing you will ever read. With the twins taken away the four that remain are 8 apart, which is the same reason applied twice.</p>
+  <p>Neighbours land 4 apart because a register is 32 bits wide, which is 4 bytes, and addresses count bytes. Every offset is a multiple of 4 for that reason, and that is the sanity check worth keeping. Do not expect every step to be exactly 4, though: a block can leave gaps, and this same file leaves several further down. With the twins taken away the four that remain are 8 apart, which is the same reason applied twice.</p>
   <p>Those higher GPIO numbers are worth a sentence, because they make a point the code cannot. The part on a Pico&nbsp;2 is an <code>RP2350A</code>: a 60-pin package with 30 GPIOs. Its sibling <code>RP2350B</code> is an 80-pin package with 48. Same silicon design, different plastic, and the datasheet spells out the consequence:</p>
   <blockquote class="quote">GPIOs 0 through 29 are available in all package variants. GPIOs 30 through 47 are available only in QFN-80 (RP2350B) package.</blockquote>
   <p>Hold on to that. It comes back in question 3, where it explains something that otherwise looks like a mistake.</p>
@@ -2670,7 +2670,7 @@ dfn {
   <p class="note">Two bits of notation in that one line. The datasheet writes register names in capitals, <code>GPIO_OUT</code>, while the Rust code writes them in lower case, <code>gpio_out</code> &mdash; same register, two houses' conventions. And <code>wdata</code> just means "the data you wrote". So the line reads: <em>OR the value you wrote into gpio_out</em>.</p>
   <p>That is an instruction to the hardware, written as an operation on a <em>different</em> register. The number you store is not kept anywhere. It is used as an argument and thrown away.</p>
   <p>Which explains a detail that would otherwise be baffling: storing a value with no bits set does nothing whatsoever. No real storage location on earth silently discards a write like that.</p>
-  <p>Its two neighbours work the same way. <code>gpio_out_clr</code> is <code>GPIO_OUT &amp;= ~wdata</code>, meaning "turn these bits off." <code>gpio_out_xor</code> is <code>GPIO_OUT ^= wdata</code>, meaning "flip these bits."</p>
+  <p>The other two in that group work the same way. <code>gpio_out_clr</code> is <code>GPIO_OUT &amp;= ~wdata</code>, meaning "turn these bits off." <code>gpio_out_xor</code> is <code>GPIO_OUT ^= wdata</code>, meaning "flip these bits."</p>
   <p>Meanwhile <code>gpio_out</code> itself, eight bytes earlier, <em>is</em> genuine storage, and the datasheet says so in a sentence that also warns you off the obvious misreading:</p>
   <blockquote class="quote">Set output level (1/0 &rarr; high/low) for GPIO0&hellip;31. Reading back gives the last value written, NOT the input value from the pins.</blockquote>
 </section>
@@ -2928,8 +2928,8 @@ movt  r0, #53248
       <div class="optcols">
         <div class="optcol bad">
           <span class="optcol-h">As you would write it</span>
-          <pre><code>*gpio_out_set = 1;    <span class="tok-c">; first</span>
-*gpio_out_xor = 2;    <span class="tok-c">; second</span></code></pre>
+          <pre><code>*gpio_out_set = 1;    <span class="tok-c">// first</span>
+*gpio_out_xor = 2;    <span class="tok-c">// second</span></code></pre>
           <span class="optcol-k">what the chip runs</span>
           <pre><code>movs  r0, #24
 movs  r1, #2
@@ -3002,7 +3002,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
       <p class="optwhy"><strong>What the optimizer was thinking.</strong> A load whose result you ignore changes nothing about a variable, so it was deleted outright. The street-analogy table earlier said it: on some peripherals a read is itself an action.</p>
     </div>
   </div>
-  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened where the compiler repeated it. The source is <code>optimizer-demo.rs</code>, beside this page, and the left column of each pair is exactly what it contains.</div>
+  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened where the compiler repeated it. The source is <code>optimizer-demo.rs</code>, beside this page. The Rust in each pair is the code that file compiles, with a short comment added here to say what to compare.</div>
 </figure>
 
 <section class="col">
