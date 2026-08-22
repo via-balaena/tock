@@ -125,6 +125,15 @@ Two more are preventive rather than forensic:
   order shown; the figure may elide, and says what it elides, but it may not
   invent. The compile costs about 0.05s and is skipped where `rustc` or the
   target is missing.
+- **A foreground and a background set by the same rule.** The palette checks
+  compare *tokens* against a list of pairings, so a rule inventing a pairing
+  that is not on that list goes unseen. Two did in one day: a badge painted
+  `--hot-ink` on `--hot` at 3.50:1, and before that `--surface` on
+  `--rule-strong` at 3.34:1 -- the second introduced while fixing the first,
+  which is what makes this worth automating rather than remembering. Where one
+  rule sets both, no cascade analysis is needed to know the two will meet, so
+  that slice is checked outright. A background inherited from an ancestor is
+  still a manual check.
 - **A figure that opens differently with scripting off.** Every one-of-many
   figure states its opening state twice: in the markup, so the page reads
   without JavaScript, and in the script, which reproduces it on load. The
@@ -267,7 +276,50 @@ held to them:
   half and nothing else, which would have failed CI on any machine where
   `markdown-toc` is installed.
 
-Run `make prepush` from the repository root before committing.
+### Before committing
+
+Run everything that can be run:
+
+```
+learning/tools/preflight.sh
+```
+
+That is the chapter gate, Tock's licence checker, `cargo fmt --check`, the tab
+scan that reaches chapter sources even though `cargo fmt` does not,
+`check-for-readmes.sh`, a check that nothing here carries markdown-toc's
+insertion marker, and `rustfmt --check` on any `.rs` a chapter ships.
+
+Then the part no script can do. Every item below is here because skipping it
+let a real defect reach a commit in this repository, and the list is ordered so
+the cheapest come first:
+
+1. **Render every state you changed** -- both themes, and once at phone width.
+   A figure's opening state shipped wrong twice and only a screenshot caught
+   it. Remember that QuickLook does not run scripts, so what it shows is the
+   no-JavaScript reader's view; strip the `<noscript>` block from the preview
+   copy to see the ordinary one.
+2. **Read back the accessible name of every control you touched.** An
+   `aria-label` replaces content rather than adding to it, and a figure once
+   announced its own label forever instead of the digit it existed to show.
+3. **Measure every colour pair your change paints.** `check.py` now catches a
+   foreground and background set by one rule, but a background inherited from
+   an ancestor is still yours to check by hand.
+4. **Read the changed prose in order, as a reader.** Four passes of inspecting
+   markup missed a hint pointing at a code block that had been deleted, and a
+   sentence contradicted forty paragraphs later by the same chapter.
+5. **Sweep for what your change may have stranded**: prose that says "above" or
+   "the listing" or "the table"; class names now used by two components;
+   absolutes like *exactly*, *always*, *never*, *any ... you will ever*.
+6. **Mutation-test what you added.** For an assertion, break the code and see
+   it fail. For a *check*, put the defect back first -- a checker's lines are
+   silent on a healthy page, so mutating one against clean input proves
+   nothing. A check that has never failed has never been tested.
+7. **Run whatever the page quotes.** Figure 14's listings are compared against
+   a real compile on every gate run because they once drifted; anything else a
+   chapter claims to have run, run.
+
+Run `make prepush` from the repository root too, if you have touched anything
+outside `learning/`.
 
 ## Viewing a chapter
 

@@ -697,6 +697,39 @@ def run_order_checks(html):
     return problems
 
 
+# A colour and a background set by the *same rule* are certain to meet: no
+# cascade analysis is needed to know that. This is the narrow, decidable slice
+# of the problem the palette checks cannot see, and it is the one that bit
+# twice in a day -- a badge painted --hot-ink on --hot at 3.50:1, and before
+# that --surface on --rule-strong at 3.34:1. Both pairings looked fine in the
+# token list; neither pairing was in it.
+BORDERISH = ("border-color", "border", "outline", "outline-color",
+             "box-shadow", "border-left-color", "border-top-color",
+             "border-right-color", "border-bottom-color")
+
+
+def same_rule_contrast_checks(component_css, tokens):
+    """Any rule painting both a foreground and a background must be legible."""
+    problems = []
+    for match in re.finditer(r"(?:^|\n)([^\n{]+)\{([^}]*)\}", component_css):
+        selector, decls = match.group(1).strip(), match.group(2)
+        fg = re.search(r"(?:^|;|\s)color\s*:\s*var\((--[a-z0-9-]+)\)", decls)
+        bg = re.search(r"(?:^|;|\s)background(?:-color)?\s*:\s*var\((--[a-z0-9-]+)\)",
+                       decls)
+        if not fg or not bg:
+            continue
+        for label, theme in tokens:
+            a, b = theme.get(fg.group(1)), theme.get(bg.group(1))
+            if not a or not b:
+                continue
+            got = _contrast(a, b)
+            if got < 4.5:
+                problems.append(
+                    "%s theme: %r paints %s on %s at %.2f:1, and text needs "
+                    "4.5:1" % (label, selector, fg.group(1), bg.group(1), got))
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -786,6 +819,20 @@ def static_checks(html, name):
     if marker in html and "</style>" in html:
         problems.extend(state_scope_checks(
             html.split(marker, 1)[1].split("</style>", 1)[0]))
+
+    if marker in html and "</style>" in html:
+        try:
+            themes = [
+                ("light", _tokens(html[html.index(":root {"):
+                                       html.index("@media (prefers-color-scheme: dark)")])),
+                ("dark", _tokens(html[html.index("@media (prefers-color-scheme: dark)"):
+                                      html.index(':root[data-theme="dark"]')])),
+            ]
+        except ValueError:
+            themes = []
+        if themes:
+            problems.extend(same_rule_contrast_checks(
+                html.split(marker, 1)[1].split("</style>", 1)[0], themes))
 
     problems.extend(palette_checks(html))
     problems.extend(semantic_checks(html))
