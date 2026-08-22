@@ -166,6 +166,46 @@ def semantic_checks(html):
     return problems
 
 
+# Partial opacity is invisible to every contrast check above, because those
+# compare *tokens* while opacity composites an element and its background over
+# whatever sits behind it. Chapter 1 shipped eleven rules that dimmed text this
+# way, measured between 1.57:1 and 3.97:1 against a 4.5:1 requirement, and the
+# palette checks passed all of them. It cannot be tuned around either: contrast
+# falls as soon as alpha does, and holding 4.5:1 needs an alpha near 0.93,
+# which is not dimming. So de-emphasise with a colour token, and keep opacity
+# for things that cannot contain words.
+OPACITY_EXEMPT = {
+    # WCAG 1.4.3 exempts inactive controls from contrast requirements.
+    "button:disabled",
+}
+# SVG shapes cannot contain text -- <text> is deliberately not in this list.
+SHAPE_ELEMENTS = ("rect", "circle", "line", "path", "polygon", "polyline",
+                  "ellipse")
+
+
+def opacity_checks(component_css):
+    """Refuse partial opacity on anything that could be carrying words."""
+    problems = []
+    for match in re.finditer(r"(?:^|\n)([^\n{]+)\{([^}]*)\}", component_css):
+        selector_list, body = match.group(1).strip(), match.group(2)
+        found = re.search(r"(?:^|;|\s)opacity\s*:\s*([0-9.]+)", body)
+        if not found:
+            continue
+        value = float(found.group(1))
+        if value <= 0 or value >= 1:
+            continue
+        for selector in (s.strip() for s in selector_list.split(",")):
+            if not selector or selector in OPACITY_EXEMPT:
+                continue
+            if selector.split()[-1].split(":")[0] in SHAPE_ELEMENTS:
+                continue
+            problems.append(
+                "%r sets opacity %s, which the contrast checks cannot see and "
+                "which drops text toward its background - de-emphasise with a "
+                "colour token instead" % (selector, found.group(1)))
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -243,6 +283,10 @@ def static_checks(html, name):
 
     if "<title>" not in html:
         problems.append("no <title> - the artifact would be named by filename")
+
+    if marker in html and "</style>" in html:
+        problems.extend(opacity_checks(
+            html.split(marker, 1)[1].split("</style>", 1)[0]))
 
     problems.extend(palette_checks(html))
     problems.extend(semantic_checks(html))

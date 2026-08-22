@@ -676,3 +676,55 @@ t("switching board back and forth does not disturb the chosen hole", function ()
   }
   if (!REG["pad-14"].classList.contains("is-lit")) { throw new Error("lost the highlight"); }
 });
+
+// The script writes `step next` for the instruction about to run. The
+// stylesheet used to say `.step.now`, so the highlight was never applied and
+// nothing showed which line Step would execute. Pin the class name here,
+// because the mismatch is invisible: both halves look correct on their own.
+t("the step about to run is marked, and it moves with Step", function () {
+  REG["tab-rmw"].fire("click");
+  REG["race-reset"].fire("click");
+  var rows = REG["race-steps"].children;
+  if (rows.length < 3) { throw new Error("no steps rendered"); }
+  if (rows[0].className.split(" ").indexOf("is-next") === -1) {
+    throw new Error("first step not marked next: " + rows[0].className);
+  }
+  REG["race-step"].fire("click");
+  rows = REG["race-steps"].children;
+  if (rows[0].className.split(" ").indexOf("done") === -1) {
+    throw new Error("first step not marked done: " + rows[0].className);
+  }
+  if (rows[1].className.split(" ").indexOf("is-next") === -1) {
+    throw new Error("marker did not advance: " + rows[1].className);
+  }
+});
+
+t("exactly one step is ever marked next", function () {
+  REG["tab-rmw"].fire("click");
+  REG["race-reset"].fire("click");
+  for (var press = 0; press < 4; press++) {
+    var rows = REG["race-steps"].children, n = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].className.split(" ").indexOf("is-next") > -1) { n++; }
+    }
+    if (n > 1) { throw new Error(n + " steps marked next after " + press + " presses"); }
+    REG["race-step"].fire("click");
+  }
+});
+
+t("no step carries the bare `next` token", function () {
+  // `.next` is the end-of-chapter panel: 4rem margin, a rule, a 34rem
+  // max-width and display:flex. A step wearing it renders as a narrow centred
+  // box instead of a row, which is what shipped until this was caught.
+  REG["tab-rmw"].fire("click");
+  REG["race-reset"].fire("click");
+  for (var press = 0; press < 3; press++) {
+    var rows = REG["race-steps"].children;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].className.split(" ").indexOf("next") > -1) {
+        throw new Error("step " + i + " collides with the .next panel");
+      }
+    }
+    REG["race-step"].fire("click");
+  }
+});

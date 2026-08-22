@@ -304,11 +304,9 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   align-items: start;
   padding: .85rem 0;
   border-bottom: 1px dashed var(--rule);
-  opacity: .28;
-  transition: opacity .35s ease;
 }
 .rung:last-child { border-bottom: 0; }
-.rung.on { opacity: 1; }
+.rung:not(.on) > * { visibility: hidden; }
 
 .rung-who {
   font-family: var(--display);
@@ -561,8 +559,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   line-height: 1.5;
 }
 
-.bit.nopin { opacity: .32; border-style: dashed; }
-.bitlabel.nopin { opacity: .45; }
+.bit.nopin { border-style: dashed; }
 
 
 /* ---------- race machine ---------- */
@@ -614,18 +611,19 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 1.1rem; }
 .step {
   display: grid;
-  grid-template-columns: 2rem 5.5rem 1fr;
+  grid-template-columns: 5.5rem 1fr;
   gap: .7rem;
   align-items: baseline;
   padding: .42rem .5rem;
   border-bottom: 1px solid var(--rule);
-  opacity: .3;
-  transition: opacity .2s, background .2s;
+  transition: color .2s, background .2s;
   font-family: var(--mono);
   font-size: .82rem;
 }
-.step.done { opacity: 1; }
-.step.now { opacity: 1; background: var(--accent-soft); }
+.step:not(.done):not(.is-next),
+.step:not(.done):not(.is-next) .step-who { color: var(--ink-faint); }
+.step.done { color: var(--ink); }
+.step.is-next { color: var(--ink); background: var(--accent-soft); }
 .step.lost { background: var(--danger-soft); }
 .step-n { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .step-who {
@@ -636,8 +634,8 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-.step-what { white-space: pre; overflow-x: auto; }
-.step.lost .step-what { color: var(--danger); font-weight: 500; }
+.step-act { white-space: pre; overflow-x: auto; }
+.step.lost .step-act { color: var(--danger); font-weight: 500; }
 
 .outcome {
   padding: .8rem 1rem;
@@ -855,7 +853,7 @@ dfn {
   font-weight: 600;
 }
 .roadmap-step.done { color: var(--ink-soft); }
-.roadmap-n { font-weight: 700; opacity: .7; }
+.roadmap-n { font-weight: 700; }
 
 /* An imperative naming the control, immediately above the figure it drives. */
 .dothis {
@@ -1006,7 +1004,6 @@ dfn {
 }
 
 /* Eraser eyes: the lines you are meant to skip, visibly skipped. */
-.faded { opacity: .34; }
 .reveal-all {
   font-family: var(--display);
   font-size: .82rem;
@@ -1071,12 +1068,10 @@ dfn {
   gap: .8rem;
   padding: .55rem .6rem;
   border-left: 3px solid transparent;
-  opacity: .42;
   align-items: start;
 }
-.trace-row.seen { opacity: .72; }
+.trace-row.seen { border-left-color: var(--rule-strong); }
 .trace-row.now {
-  opacity: 1;
   border-left-color: var(--hot);
   background: var(--hot-soft);
 }
@@ -1206,7 +1201,7 @@ dfn {
 
 /* Show the reader only the lines that matter, and say so out loud. */
 .dis-skip { display: none; }
-.dis-all .dis-skip { display: inline; opacity: .38; }
+.dis-all .dis-skip { display: inline; color: var(--ink-faint); }
 .dis-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
 
 /* ---------- shared by the three opening figures ---------- */
@@ -2134,7 +2129,7 @@ dfn {
       <div class="bitgrid" id="bits-lo" style="margin-top:.7rem"></div>
       <div class="bitlabels" id="labels-lo"></div>
     </div>
-    <div class="readout">
+    <div class="readout" aria-live="polite">
       <div class="readout-cell">
         <span class="readout-k">Written as code</span>
         <span class="readout-v" id="ro-expr">1 &lt;&lt; 25</span>
@@ -2463,7 +2458,7 @@ dfn {
           <span class="core-val" id="core1-val">&mdash;</span>
           <span class="core-sub" id="core1-sub">idle</span>
         </div>
-        <div class="core hw" id="corehw">
+        <div class="core hw" id="corehw" aria-live="polite">
           <span class="core-name">The real gpio_out</span>
           <span class="core-val" id="corehw-val">0x00000000</span>
           <span class="core-sub" id="corehw-sub">no pins high</span>
@@ -3207,7 +3202,7 @@ movs  r2, #0x1
     stepsEl.innerHTML = "";
     steps.forEach(function (s, i) {
       var row = document.createElement("div");
-      row.className = "step" + (i < at ? " done" : "") + (i === at ? " next" : "");
+      row.className = "step" + (i < at ? " done" : "") + (i === at ? " is-next" : "");
       var who = document.createElement("span");
       who.className = "step-who";
       who.textContent = s.who;
