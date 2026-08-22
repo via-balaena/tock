@@ -130,7 +130,11 @@ sitting behind buttons a reader might never press. Four rules are enforced:
 1. Every load-bearing term is wrapped in `<dfn>` at or before its first bare use
    in the running prose, and carried in a `class="glossary"` list. The term list
    is `MUST_DEFINE` in `check.py`, keyed by chapter prefix, so chapter 2 inherits
-   chapter 1's vocabulary instead of redefining it.
+   chapter 1's vocabulary instead of redefining it. Separately, the `<dfn>` tags
+   and the glossary must name exactly the same set in both directions, which is
+   what stops a term defined inline but absent from `MUST_DEFINE` from going
+   missing at the end -- `compiler` had, while the chapter's own text promised
+   every word it uses is collected there.
 2. No sentence introduces more than two new technical terms, and none runs past
    34 words. The novel-term limit is the one with a mechanism behind it --
    cognitive load theory measures difficulty as how many unfamiliar things must

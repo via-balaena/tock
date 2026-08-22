@@ -878,6 +878,20 @@ def pedagogy_checks(html, chapter):
                 if term.lower() not in listed:
                     problems.append("%r is not in the glossary" % term)
 
+    # 2b. Anything defined inline is in the glossary, and every glossary entry
+    #     is defined inline. The rule above only pushes MUST_DEFINE terms into
+    #     the glossary, so a term the author marked with <dfn> off that list
+    #     could go missing from it -- `compiler` did, while the chapter's own
+    #     text promised every word it uses is collected there.
+    if found_any:
+        marked = set(defined)
+        for term in sorted(marked - listed):
+            problems.append("%r is marked <dfn> but is not in the glossary"
+                            % term)
+        for term in sorted(listed - marked):
+            problems.append("%r is in the glossary but is never marked <dfn>"
+                            % term)
+
     # 3. A word a reader has already tripped over does not come back.
     for word, why in BANNED_WORDS.items():
         hit = re.search(r"\b%ss?\b" % re.escape(word), prose, re.I)
