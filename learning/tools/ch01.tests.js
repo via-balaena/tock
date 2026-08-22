@@ -583,3 +583,96 @@ REG["lvl-low"].fire("click");
 REG["lvl-low"].fire("click");
 chk("pressing low twice leaves it off",
     REG["lvl-fig"].classList.contains("is-on"), false);
+
+// ---- Adversarial sequences over the three opening figures ----
+// The older figures carry these; the new ones did not. Each one drives the
+// figure into a state no reader would reach deliberately, then checks the
+// invariant that must hold anyway.
+
+t("every hole clicked in turn leaves exactly one lit and one tab stop", function () {
+  for (var i = 1; i <= 40; i++) { REG["pad-" + i].fire("click"); }
+  var lit = 0, stops = 0;
+  for (var j = 1; j <= 40; j++) {
+    if (REG["pad-" + j].classList.contains("is-lit")) { lit++; }
+    if (REG["pad-" + j].getAttribute("tabindex") === "0") { stops++; }
+  }
+  if (lit !== 1) { throw new Error(lit + " lit"); }
+  if (stops !== 1) { throw new Error(stops + " tab stops"); }
+});
+
+t("arrow keys walked the length of both columns stay in range", function () {
+  REG["pad-1"].fire("click");
+  for (var i = 0; i < 60; i++) {
+    REG[REG._focused || "pad-1"].fire("keydown", { key: "ArrowDown" });
+  }
+  var n = parseInt(REG["pick-num"].textContent, 10);
+  if (!(n >= 1 && n <= 40)) { throw new Error("walked off the board to " + n); }
+  for (var k = 0; k < 60; k++) {
+    REG[REG._focused || "pad-1"].fire("keydown", { key: "ArrowUp" });
+  }
+  n = parseInt(REG["pick-num"].textContent, 10);
+  if (!(n >= 1 && n <= 40)) { throw new Error("walked off the board to " + n); }
+});
+
+t("hammering left and right never leaves the board", function () {
+  REG["pad-1"].fire("click");
+  var keys = ["ArrowRight", "ArrowLeft", "ArrowRight", "Home", "End", "ArrowLeft"];
+  for (var i = 0; i < 40; i++) {
+    var at = REG._focused || "pad-1";
+    REG[at].fire("keydown", { key: keys[i % keys.length] });
+    var n = parseInt(REG["pick-num"].textContent, 10);
+    if (!(n >= 1 && n <= 40)) { throw new Error("left the board at step " + i); }
+  }
+});
+
+t("every word clicked in turn leaves exactly one lit and one zone lit", function () {
+  var words = ["pin", "voltage", "gpio", "bit", "byte", "address",
+               "peripheral", "register", "store"];
+  words.forEach(function (w) { REG["btn-" + w].fire("click"); });
+  words.forEach(function (w) { REG["btn-" + w].fire("click"); });
+  var lit = 0;
+  words.forEach(function (w) {
+    if (REG["dt-" + w].classList.contains("is-lit")) { lit++; }
+  });
+  if (lit !== 1) { throw new Error(lit + " words lit"); }
+  var zones = 0;
+  ["board", "chip", "number"].forEach(function (z) {
+    if (REG["zone-" + z].classList.contains("is-lit")) { zones++; }
+  });
+  if (zones !== 1) { throw new Error(zones + " zones lit"); }
+});
+
+t("a word is never lit and dimmed at the same time", function () {
+  ["pin", "byte", "store"].forEach(function (w) {
+    REG["btn-" + w].fire("click");
+    ["pin", "voltage", "gpio", "bit", "byte", "address",
+     "peripheral", "register", "store"].forEach(function (k) {
+      var g = REG["svg-" + k];
+      if (g.classList.contains("is-lit") && g.classList.contains("is-dim")) {
+        throw new Error(k + " is both lit and dimmed after choosing " + w);
+      }
+    });
+  });
+});
+
+t("the pin toggled repeatedly ends where the last press says", function () {
+  for (var i = 0; i < 25; i++) {
+    REG[i % 2 ? "lvl-low" : "lvl-high"].fire("click");
+  }
+  // 25 presses: the last is i=24, which is even, so high.
+  if (!REG["lvl-fig"].classList.contains("is-on")) { throw new Error("ended low"); }
+  if (REG["lvl-store"].textContent !== "*0xD0000018 = 0x02000000") {
+    throw new Error("store line disagrees: " + REG["lvl-store"].textContent);
+  }
+});
+
+t("switching board back and forth does not disturb the chosen hole", function () {
+  REG["pad-14"].fire("click");
+  for (var i = 0; i < 10; i++) {
+    REG[i % 2 ? "board-w" : "board-plain"].fire("click");
+  }
+  if (REG["pick-name"].textContent !== "GP10") {
+    throw new Error("hole changed to " + REG["pick-name"].textContent);
+  }
+  if (!REG["pad-14"].classList.contains("is-lit")) { throw new Error("lost the highlight"); }
+});
