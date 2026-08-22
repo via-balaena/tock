@@ -65,7 +65,7 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Two more static checks exist because each caught a live defect:
+Four more static checks exist because each caught a live defect:
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
   and are served both from this repository and as standalone uploads, so a raw
@@ -79,6 +79,22 @@ Two more static checks exist because each caught a live defect:
   than *resolved rules* -- both colors involved were individually fine. Any
   class-based `:hover` that sets `color` must therefore out-specify the shared
   rule; `:not(:disabled)` is the convention.
+- **Partial opacity on anything that can hold text.** Opacity composites an
+  element *and its background* over whatever sits behind it, so dimmed text
+  lands near the background however good the tokens are. Chapter 1 shipped
+  eleven such rules, measured between 1.57:1 and 3.97:1 against a 4.5:1
+  requirement, and the palette checks passed every one because they compare
+  tokens rather than what the CSS paints. It cannot be tuned around either:
+  contrast falls as soon as alpha does. De-emphasise with a colour token and
+  keep opacity for SVG shapes, which cannot hold words and are exempt, along
+  with disabled controls.
+- **A focus indicator that loses the cascade.** The sibling of the hover trap,
+  and subtler, because the specificities are *equal* rather than different:
+  `.pad:focus-visible .pad-box` and `.pad.is-lit .pad-box` both score (0,3,0),
+  so source order decides. The selection rule was written later, and since the
+  arrow keys select the hole they focus, the ring never rendered once. Any
+  `:focus-visible` rule overridden by a later rule of equal or higher
+  specificity that sets the same property is refused.
 
 **Pedagogy checks**, which exist because an audit of chapter 1 found roughly
 forty technical terms used without ever being defined, and a third of the prose
@@ -107,8 +123,17 @@ sitting behind buttons a reader might never press. Three rules are enforced:
 
 **Behavioral checks**: the page's own `<script>` is executed headlessly under
 JavaScriptCore against the DOM shim in `tools/harness.js`, then the chapter's
-assertions run against the resulting state. This is how the interactive figures
-are verified to actually compute what the prose claims they compute -- the
+assertions run against the resulting state. The shim deliberately copies the
+DOM's *refusals*, not only its behaviour: it rejects an empty or
+space-containing `classList` token, and its `innerHTML` setter strips tags and
+keeps the text rather than discarding anything that is not the empty string.
+A permissive shim is worse than none, because it makes a broken widget pass --
+chapter 1's prediction figure called `classList.add("")`, which a browser
+refuses, so clicking any answer threw before anything was revealed, and it
+survived five review rounds because the shim stored the empty key without
+complaint. When adding to the shim, copy the contract including what it
+rejects. This is also how the interactive figures are verified to actually
+compute what the prose claims they compute -- the
 chapter 1 suite caught a `1 << 31` integer-overflow case that no amount of
 reading would have found.
 
@@ -148,7 +173,11 @@ held to them:
   this series is licensed CC BY-SA 4.0 instead, `learning/.lcignore` excludes these
   files from that check. That file is repository tooling config, so it carries the
   Tock header itself.
-- `make format-check` is Rust-only and does not apply.
+- `make format-check` is Rust-only. A chapter may ship a `.rs` file so that a
+  figure showing compiler output can be reproduced -- chapter 1 has
+  `optimizer-demo.rs` -- but nothing under `learning/` is a workspace member,
+  so `cargo fmt` never reaches it. `learning/.gitignore` keeps the `.s` output
+  of building one out of the way.
 - `tools/ci/check-for-readmes.sh` only fires on directories containing a
   `Cargo.toml`; there are none here.
 - `tools/ci/toc.sh` only checks Markdown containing a `<!-- toc -->` marker, which

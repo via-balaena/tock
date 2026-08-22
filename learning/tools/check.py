@@ -208,7 +208,16 @@ def opacity_checks(component_css):
 
 def _specificity(selector):
     """(ids, classes+pseudo-classes+attributes, elements). Good enough for the
-    flat, class-based selectors this series uses."""
+    flat, class-based selectors this series uses.
+
+    `:not()` contributes nothing itself -- only its argument counts -- so the
+    functional part is dropped before counting, leaving the inner selector to be
+    counted normally. Without this, `button:hover:not(:disabled)` scored
+    (0,3,1) instead of (0,2,1), which would inflate every selector guarding
+    itself against the shared hover rule. `:where()` would need the opposite
+    treatment and is not used here.
+    """
+    selector = selector.replace(":not", "")
     ids = len(re.findall(r"#[\w-]+", selector))
     classes = (len(re.findall(r"\.[\w-]+", selector))
                + len(re.findall(r"\[[^\]]+\]", selector))
