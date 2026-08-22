@@ -3002,7 +3002,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
       <p class="optwhy"><strong>What the optimizer was thinking.</strong> A load whose result you ignore changes nothing about a variable, so it was deleted outright. The street-analogy table earlier said it: on some peripherals a read is itself an action.</p>
     </div>
   </div>
-  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened where the compiler repeated it. The source is <code>optimizer-demo.rs</code>, beside this page. The Rust in each pair is the code that file compiles, with a short comment added here to say what to compare.</div>
+  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened: the jump into it, and the copies the compiler made of its body, are left out. Everything shown is otherwise exactly what came back, in the order it came back. The source is <code>optimizer-demo.rs</code>, beside this page. The Rust in each pair is the code that file compiles, with a short comment added here to say what to compare.</div>
 </figure>
 
 <section class="col">

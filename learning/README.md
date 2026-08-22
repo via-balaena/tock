@@ -114,6 +114,17 @@ Two more are preventive rather than forensic:
   weaker name, it is no name at all: the browser finds no element, falls back
   to nothing, and announces the control as "button". Every referenced id must
   be declared somewhere on the page.
+- **A figure quoting compiler output it did not observe.** Figure 14 of
+  chapter 1 shows five pairs of Rust beside the assembly each compiles to, and
+  says so. Two checks hold that to account. The first compares the Rust against
+  `optimizer-demo.rs`, shipped beside the page, with comments stripped from
+  both sides -- they had drifted once already, when identifiers on the page
+  were renamed for house style and stopped being what went through the
+  compiler. The second actually runs the build the page documents and requires
+  every instruction shown to appear in that function's real output, in the
+  order shown; the figure may elide, and says what it elides, but it may not
+  invent. The compile costs about 0.05s and is skipped where `rustc` or the
+  target is missing.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions

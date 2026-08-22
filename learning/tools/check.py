@@ -38,6 +38,7 @@ import json
 import os
 import re
 import subprocess
+import shutil
 import sys
 import tempfile
 
@@ -483,6 +484,122 @@ def demo_source_checks(html, chapter_dir):
     return problems
 
 
+TARGET = "thumbv8m.main-none-eabi"
+
+
+def _asm_functions(source_path):
+    """Compile the demo and return {function name: [instruction lines]}.
+
+    Returns None when the toolchain is not available, so the check skips
+    rather than failing on a machine that cannot build for the Pico 2.
+    """
+    if not shutil.which("rustc"):
+        return None
+    out = tempfile.mkdtemp()
+    try:
+        proc = subprocess.run(
+            ["rustc", "--target", TARGET, "--crate-type", "lib", "-O",
+             "--emit", "asm", "-o", os.path.join(out, "demo.s"), source_path],
+            capture_output=True, text=True, cwd=os.path.dirname(source_path))
+        if proc.returncode != 0:
+            return None
+        with open(os.path.join(out, "demo.s"), encoding="utf-8") as fh:
+            text = fh.read()
+    finally:
+        shutil.rmtree(out, ignore_errors=True)
+
+    funcs, current = {}, None
+    for line in text.splitlines():
+        bare = line.strip()
+        name = re.match(r"^([A-Za-z_][\w]*):$", bare)
+        if name:
+            current = name.group(1)
+            funcs[current] = []
+            continue
+        if current is None:
+            continue
+        if bare.startswith(".Lfunc_end"):
+            current = None
+            continue
+        if bare.startswith(".") and not bare.endswith(":"):
+            continue
+        if bare:
+            funcs[current].append(re.sub(r"\s+", " ", bare))
+    return funcs
+
+
+def _shown_lines(block):
+    """The instruction lines a figure shows, comments and padding removed."""
+    text = re.sub("<[^>]+>", "", block)
+    for entity, char in (("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">")):
+        text = text.replace(entity, char)
+    out = []
+    for line in text.splitlines():
+        line = re.sub(r";.*", "", line).strip()
+        if not line or line.startswith("..."):
+            continue
+        out.append(re.sub(r"\s+", " ", line))
+    return out
+
+
+def demo_asm_checks(html, chapter_dir):
+    """Figure 14 says its listings are real compiler output. Compile and see.
+
+    Every line the figure shows for a case must appear in that function's
+    actual output, in the order shown. Lines the figure elides are fine -- it
+    says which -- but a line it shows that the compiler never emitted, or shows
+    out of order, is the figure claiming something it did not observe.
+    """
+    problems = []
+    demo = os.path.join(chapter_dir, "optimizer-demo.rs")
+    if not os.path.exists(demo) or "optcol" not in html:
+        return problems
+    funcs = _asm_functions(demo)
+    if funcs is None:
+        return problems
+    with open(demo, encoding="utf-8") as fh:
+        rust = fh.read()
+
+    pairs = re.findall(
+        r'<div class="optcol [^"]*">\s*<span class="optcol-h">[^<]*</span>\s*'
+        r"<pre><code>(.*?)</code></pre>.*?<pre><code>(.*?)</code></pre>",
+        html, re.S)
+    if not pairs:
+        problems.append("Figure 14 has no source/assembly pairs to check")
+        return problems
+    for src_block, asm_block in pairs:
+        needle = _rust_lines(re.sub("<[^>]+>", "", src_block)
+                             .replace("&amp;", "&").replace("&lt;", "<")
+                             .replace("&gt;", ">"))
+        owner = None
+        for match in re.finditer(r"pub unsafe fn (\w+)\(\) \{(.*?)\n\}",
+                                 rust, re.S):
+            body = _rust_lines(match.group(2))
+            if needle and body[:len(needle)] == needle:
+                owner = match.group(1)
+                break
+        if owner is None:
+            problems.append("Figure 14 shows Rust that matches no function in "
+                            "optimizer-demo.rs: %r" % " / ".join(needle)[:70])
+            continue
+        real = funcs.get(owner)
+        if real is None:
+            problems.append("%s is in the demo but not in its compiled output"
+                            % owner)
+            continue
+        at = 0
+        for shown in _shown_lines(asm_block):
+            while at < len(real) and real[at] != shown:
+                at += 1
+            if at >= len(real):
+                problems.append("Figure 14 shows %r for %s, which is not in "
+                                "that function's output in that order"
+                                % (shown, owner))
+                break
+            at += 1
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -577,6 +694,7 @@ def static_checks(html, name):
     problems.extend(semantic_checks(html))
     problems.extend(register_table_checks(html))
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
+    problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
 
     return problems
