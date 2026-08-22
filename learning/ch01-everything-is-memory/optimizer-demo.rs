@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright Jon Hillesheim 2026.
 //
-// The source behind Figure 12 of chapter 1. Build it with the toolchain this
-// tree pins, for the target a Pico 2 uses, and compare:
+// The source behind Figure 12 of chapter 1. Run this from inside this
+// repository, so that rust-toolchain.toml supplies the pinned nightly and the
+// thumbv8m.main-none-eabi target a Pico 2 needs. Copied somewhere else it
+// fails with "can't find crate for `core`".
 //
 //     rustc --target thumbv8m.main-none-eabi --crate-type lib -O \
-//           --emit asm -o demo.s demo.rs
+//           --emit asm -o demo.s optimizer-demo.rs
 //
 // Each pair is the same operation written twice: once the way you would
 // reach for, and once with the volatile promise. The addresses are the ones
