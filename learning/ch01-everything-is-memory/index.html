@@ -2527,7 +2527,7 @@ dfn {
   <h2>The compiler does not know any of this</h2>
   <p>One thing still stands between your Rust and the silicon, and it is on your side normally.</p>
   <p>A <dfn>compiler</dfn> turns your source into machine instructions, and a good one does not translate line by line. It reasons about what your code means and then emits the cheapest instructions with the same meaning. The part that does that reasoning is the <dfn>optimizer</dfn>.</p>
-  <p>Here is how that goes wrong. Suppose you want to wait until the serial port has room for another byte, so you read its flag register in a loop until the "transmit buffer full" bit clears. Four ordinary-looking lines, and what the chip runs is not what you wrote.</p>
+  <p>Here is how that goes wrong. Suppose you want to wait until the serial port has room for another byte, so you read its flag register in a loop until the "transmit buffer full" bit clears. It is one ordinary-looking line, and what the chip runs is not what you wrote.</p>
   <p class="note">Not invented for the example. <code>uartfr</code> is a real register on this chip, <code>TXFF</code> is its bit 5, and Tock's own serial driver asks exactly this question at <code>chips/rp2350/src/uart.rs</code>:438&ndash;440.</p>
   <p>The right-hand column of each pair adds one word, <dfn>volatile</dfn>, which tells the compiler this address is not a variable. Read the left column first, because that is the one you would have written.</p>
 </section>
@@ -2688,7 +2688,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
       <p class="optwhy"><strong>What the optimizer was thinking.</strong> A load whose result you ignore changes nothing about a variable, so it was deleted outright. The table earlier in this chapter said it: on some peripherals a read is itself an action.</p>
     </div>
   </div>
-  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened where the compiler repeated it.</div>
+  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened where the compiler repeated it. The source is <code>optimizer-demo.rs</code>, beside this page, and the left column of each pair is exactly what it contains.</div>
 </figure>
 
 <section class="col">
@@ -2910,7 +2910,7 @@ movs  r2, #0x1
     <li>Flash, kernel, application and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>. Its RAM length read <code>264K</code> at the pinned commit; it was corrected to <code>520K</code> by <a href="https://github.com/tock/tock/pull/5086">PR&nbsp;5086</a>, merged 20&nbsp;August&nbsp;2026</li>
     <li>Boot block contents: a 28-byte <code>METADATA_BLOCK</code> and a 256-byte <code>FLASH_BOOTLOADER</code> &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
     <li><code>write_volatile</code> at the bottom of every register write &mdash; <a href="https://docs.rs/tock-registers/0.10.0/src/tock_registers/registers.rs.html">tock-registers 0.10.0</a>, <code>src/registers.rs</code>:63</li>
-    <li>Figure&nbsp;12's listings &mdash; <code>rustc --target thumbv8m.main-none-eabi --crate-type lib -O --emit asm</code> on the nightly this tree pins in <code>rust-toolchain.toml</code>, against <code class="addr">0x40070018</code> (<code>uartfr</code>), <code class="addr">0xD0000018</code> (<code>gpio_out_set</code>) and <code class="addr">0xD0000028</code> (<code>gpio_out_xor</code>). A lone plain store compiles to the same instruction as a volatile one, which is why this chapter no longer claims a store you never read back is deleted</li>
+    <li>Figure&nbsp;12's listings &mdash; built from <code>learning/ch01-everything-is-memory/optimizer-demo.rs</code> in this repository with <code>rustc --target thumbv8m.main-none-eabi --crate-type lib -O --emit asm</code>, on the nightly this tree pins in <code>rust-toolchain.toml</code>, against <code class="addr">0x40070018</code> (<code>uartfr</code>), <code class="addr">0xD0000018</code> (<code>gpio_out_set</code>) and <code class="addr">0xD0000028</code> (<code>gpio_out_xor</code>). A lone plain store compiles to the same instruction as a volatile one, which is why this chapter no longer claims a store you never read back is deleted</li>
     <li>Figure&nbsp;13's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
   </ul>
   <p class="note">The datasheets are linked from <a href="https://www.raspberrypi.com/documentation/microcontrollers/silicon.html">Raspberry Pi's silicon documentation page</a>. They are licensed no-derivatives, so this page quotes them briefly with attribution rather than reproducing them.</p>
