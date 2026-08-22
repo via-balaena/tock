@@ -507,6 +507,95 @@ def _sentences(text):
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+", plain) if s.strip()]
 
 
+def _string_literals(source):
+    """Every string literal in a piece of JavaScript, in order.
+
+    A regex that only matches literals of some minimum length cannot do this.
+    It skips the short ones, so the scan desynchronises: the closing quote of a
+    skipped literal becomes the opening quote of the next match, and everything
+    between them -- code, and more to the point comments -- is captured as
+    though it were prose. Chapter 1's script has 598 literals under twelve
+    characters, and the count it produced included whole comment blocks. It read
+    as prose hidden behind a click, which is a real rule being enforced with a
+    measurement that was not measuring it.
+
+    Comments are removed first, then every literal is consumed in order so the
+    quotes stay paired. Regular-expression literals are stepped over, since one
+    containing a quote would desynchronise the scan the same way.
+    """
+    out = []
+    i, n = 0, len(source)
+    # A `/` opens a regex only where a value is expected. Tracking the previous
+    # significant character is enough for the code this series writes.
+    prev = ""
+    while i < n:
+        c = source[i]
+        if c == "/" and i + 1 < n and source[i + 1] == "/":
+            i = source.find("\n", i)
+            if i < 0:
+                break
+            continue
+        if c == "/" and i + 1 < n and source[i + 1] == "*":
+            end = source.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+            continue
+        if c == "/" and prev in "=(,[:;!&|?{}\n" or (c == "/" and prev == ""):
+            j = i + 1
+            while j < n and source[j] not in "/\n":
+                j = j + 2 if source[j] == "\\" else j + 1
+            i = j + 1
+            while i < n and source[i].isalpha():
+                i += 1
+            prev = "/"
+            continue
+        if c in "\"'`":
+            j = i + 1
+            buf = []
+            while j < n and source[j] != c:
+                if source[j] == "\\" and j + 1 < n:
+                    buf.append(source[j + 1])
+                    j += 2
+                else:
+                    buf.append(source[j])
+                    j += 1
+            out.append("".join(buf))
+            i = j + 1
+            prev = c
+            continue
+        if not c.isspace():
+            prev = c
+        i += 1
+    return out
+
+
+# The scanner above decides how much of a chapter's prose counts as hidden
+# behind a click, so a quiet mistake in it silently retunes a pedagogy rule
+# rather than breaking anything. These are the cases that would have caught the
+# desynchronisation it replaced, and they run on every invocation.
+LITERAL_CASES = [
+    ('var a = "one"; var b = "two";', ["one", "two"]),
+    ('var a = "0"; /* a comment with "quotes" */ var b = "after";',
+     ["0", "after"]),
+    ("var a = 'it\\'s'; var b = \"next\";", ["it's", "next"]),
+    ('// a line comment with "a quote\nvar a = "real";', ["real"]),
+    ('var re = /"/; var a = "after the regex";', ["after the regex"]),
+    ('s.replace(/<[^>]*>/g, ""); var a = "ok";', ["", "ok"]),
+    ('var a = "he said \\"hi\\""; var b = "z";', ['he said "hi"', "z"]),
+    ('var d = 6 / 2; var a = "division is not a regex";',
+     ["division is not a regex"]),
+]
+
+
+def literal_scanner_checks():
+    problems = []
+    for source, want in LITERAL_CASES:
+        got = _string_literals(source)
+        if got != want:
+            problems.append("the string-literal scanner reads %r as %r, "
+                            "not %r" % (source, got, want))
+    return problems
+
+
 def pedagogy_checks(html, chapter):
     problems = []
     prose = _strip_for_prose(html)
@@ -597,8 +686,9 @@ def pedagogy_checks(html, chapter):
     #    explanation the chapter depends on.
     script = "".join(re.findall(r"<script.*?</script>", html, flags=re.S))
     gated = 0
-    for literal in re.findall(r'"((?:[^"\\]|\\.){12,})"', script):
-        if " " in literal and re.search(r"[a-z]{3} [a-z]{3}", literal):
+    for literal in _string_literals(script):
+        if (len(literal) >= 12 and " " in literal
+                and re.search(r"[a-z]{3} [a-z]{3}", literal)):
             gated += len(re.findall(r"[A-Za-z0-9']+", literal))
     visible = len(re.findall(r"[A-Za-z0-9']+", re.sub(r"<[^>]+>", " ", prose)))
     if visible:
@@ -618,6 +708,12 @@ def main():
                       and os.path.isdir(os.path.join(ROOT, d)))
     if not chapters:
         print("no chapter directories found under %s" % ROOT)
+        return 1
+
+    broken = literal_scanner_checks()
+    if broken:
+        for problem in broken:
+            print("  FAIL  %s" % problem)
         return 1
 
     failures = 0

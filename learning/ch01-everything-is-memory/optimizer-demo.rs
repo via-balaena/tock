@@ -7,7 +7,7 @@
 // recommend against CC licences for software, and this way the file can simply
 // be reused.
 //
-// The source behind Figure 12 of chapter 1. Run this from inside this
+// The source behind Figure 14 of chapter 1. Run this from inside this
 // repository, so that rust-toolchain.toml supplies the pinned nightly and the
 // thumbv8m.main-none-eabi target a Pico 2 needs. Copied somewhere else it
 // fails with "can't find crate for `core`".

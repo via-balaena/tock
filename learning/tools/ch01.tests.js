@@ -115,7 +115,7 @@ REG["map"].children[0].fire("click");
 chk("the list starts at address zero, where the processors start",
     REG["map-detail"].textContent.indexOf("starting point for both Arm processors") > -1, true);
 
-// ---- Figure 5: read/write behaviors ----
+// ---- Figure 11: read/write behaviors ----
 
 chk("all four behaviors are rendered", REG["beh"].children.length, 4);
 REG["beh"].children[0].fire("click");
@@ -124,7 +124,7 @@ REG["beh"].children[2].fire("click");
 chk("GPIO_OUT_SET is described as an OR operation",
     REG["beh-w"].textContent.indexOf("gpio_out |= value") > -1, true);
 
-// ---- Figure 7: the race. This is the chapter's central claim. ----
+// ---- Figure 13: the race. This is the chapter's central claim. ----
 
 // Read-modify-write: core 1 reads a stale value and erases core 0's write.
 REG["tab-rmw"].fire("click");
@@ -148,7 +148,7 @@ REG["tab-rmw"].fire("click");
 for (var j = 0; j < 6; j++) { REG["race-step"].fire("click"); }
 chk("stepwise matches run-all", REG["corehw-val"].textContent, "0x00000400");
 
-// ---- Figure 7: keyboard operation of the tablist (WAI-ARIA tab pattern) ----
+// ---- Figure 13: keyboard operation of the tablist (WAI-ARIA tab pattern) ----
 
 REG["tab-rmw"].fire("click");
 chk("selected tab is in the tab order", REG["tab-rmw"].getAttribute("tabindex"), "0");
@@ -270,7 +270,7 @@ t("ladder rows not duplicated", function(){
   if(REG["ladder"].children.length!==5) throw new Error("ladder has "+REG["ladder"].children.length+" rungs");
 });
 
-// ---- Figure 1: the first hex digit decides who answers ----
+// ---- Figure 5: the first hex digit decides who answers ----
 
 chk("all sixteen first digits are offered", REG["digits"].children.length, 16);
 chk("the decoder boots on D, not on nothing",
@@ -313,7 +313,7 @@ REG["bet1-opts"].children[1].fire("click");
 chk("the bet cannot be re-answered once committed",
     REG["bet1-opts"].children[1].classList.contains("wrong"), false);
 
-// ---- Figure 4: work one out yourself ----
+// ---- Figure 10: work one out yourself ----
 
 REG["we1-addr"].value = "0xD0000018";
 REG["we1-addr"].fire("input");
@@ -354,7 +354,7 @@ REG["we2-val"].value = "0x400";
 REG["we2-val"].fire("input");
 chk("an off-by-one shift is rejected", REG["we2-val"].classList.contains("no"), true);
 
-// ---- Figure 8: the lines the reader is told to skip ----
+// ---- Figure 15: the lines the reader is told to skip ----
 
 chk("the disassembly starts focused on the three lines that matter",
     REG["dis"].classList.contains("dis-all"), false);
@@ -368,7 +368,7 @@ chk("toggling back re-focuses", REG["dis"].classList.contains("dis-all"), false)
 chk("and restores the original label",
     REG["dis-toggle"].textContent.indexOf("Show the 12 lines") > -1, true);
 
-// ---- Figure 4: one store, moment by moment ----
+// ---- Figure 9: one store, moment by moment ----
 // Every step stays on screen; the scrubber only moves the highlight. That is
 // deliberate (a disappearing animation would have to be held in memory), so
 // the test asserts the whole trace is present at every position.
@@ -740,7 +740,7 @@ t("no step carries the bare `next` token", function () {
 });
 
 
-// ---- Figure 12: what the optimizer does ----
+// ---- Figure 14: what the optimizer does ----
 
 REG["opt-order"].fire("click");
 chk("picking a case shows it",
@@ -808,3 +808,230 @@ chk("and marks that outcome bad",
 REG["race-reset"].fire("click");
 chk("resetting again clears the verdict rather than leaving it stale",
     REG["race-outcome"].textContent.indexOf("Pin 25 never turned on"), -1);
+
+
+
+// ---- Figure 4: one digit is four bits ----
+// The boot state first, because that is the one a reader meets and the one
+// QuickLook and a scripting-off reader both see.
+
+chk("the hex figure boots on the address the chapter uses",
+    REG["hx-addr"].textContent, "0xD0000018");
+chk("and on the first digit, which is the one question 1 is about",
+    REG["hd-0"].getAttribute("aria-pressed"), "true");
+chk("and the other seven are not pressed",
+    REG["hd-7"].getAttribute("aria-pressed"), "false");
+chk("the eight digit cells show the eight digits", (function () {
+  var s = "";
+  for (var i = 0; i < 8; i++) { s += REG["hdd-" + i].textContent; }
+  return s;
+}()), "D0000018");
+chk("D is shown broken into the bits that make it",
+    REG["hx-sum"].textContent, "8 + 4 + 1");
+chk("and the sum is stated as a number", REG["hx-val"].textContent, "13");
+chk("and that number is named as the digit", REG["hx-char"].textContent, "D");
+chk("the ordinary-tens reading is the real one, not a rounded one",
+    REG["hx-dec"].textContent, "3,489,660,952");
+
+// The four bits of D: 8 on, 4 on, 2 off, 1 on.
+chk("the bit worth 8 boots on", REG["nb-8"].getAttribute("aria-pressed"), "true");
+chk("the bit worth 4 boots on", REG["nb-4"].getAttribute("aria-pressed"), "true");
+chk("the bit worth 2 boots off", REG["nb-2"].getAttribute("aria-pressed"), "false");
+chk("the bit worth 1 boots on", REG["nb-1"].getAttribute("aria-pressed"), "true");
+chk("and each bit's own readout agrees with it",
+    REG["nbb-8"].textContent + REG["nbb-4"].textContent +
+    REG["nbb-2"].textContent + REG["nbb-1"].textContent, "1101");
+
+// Flipping a bit must move the digit above it and nothing else.
+REG["nb-2"].fire("click");
+chk("switching the 2 bit on turns D into F", REG["hx-char"].textContent, "F");
+chk("and rewrites the whole address", REG["hx-addr"].textContent, "0xF0000018");
+chk("and the sum names all four", REG["hx-sum"].textContent, "8 + 4 + 2 + 1");
+chk("and the tens reading follows", REG["hx-dec"].textContent, "4,026,531,864");
+REG["nb-2"].fire("click");
+chk("flipping the same bit back restores the digit",
+    REG["hx-addr"].textContent, "0xD0000018");
+
+// A digit of zero is the case a naive `sum || "0"` gets wrong.
+REG["nb-8"].fire("click");
+REG["nb-4"].fire("click");
+REG["nb-1"].fire("click");
+chk("a digit with no bits on reads as zero rather than blank",
+    REG["hx-sum"].textContent, "0");
+chk("and the digit itself is 0", REG["hx-char"].textContent, "0");
+chk("and the address loses its leading digit, not its length",
+    REG["hx-addr"].textContent, "0x00000018");
+chk("and the tens reading is the small number it should be",
+    REG["hx-dec"].textContent, "24");
+
+// The last digit is the one that exercises no-commas and the low place values.
+REG["hd-7"].fire("click");
+chk("picking another digit moves the pressed state",
+    REG["hd-7"].getAttribute("aria-pressed"), "true");
+chk("and takes it away from the old one",
+    REG["hd-0"].getAttribute("aria-pressed"), "false");
+chk("the four bits now describe the digit just picked",
+    REG["hx-sum"].textContent, "8");
+chk("and that digit is 8", REG["hx-char"].textContent, "8");
+// 8 is already on for this digit, so F is the other three switched on.
+REG["nb-4"].fire("click");
+REG["nb-2"].fire("click");
+REG["nb-1"].fire("click");
+chk("F can be built from the bottom digit up", REG["hx-char"].textContent, "F");
+chk("and lands in the last place of the address",
+    REG["hx-addr"].textContent, "0x0000001F");
+
+REG["hx-reset"].fire("click");
+chk("reset restores the address", REG["hx-addr"].textContent, "0xD0000018");
+chk("and restores the digit under the cursor",
+    REG["hd-0"].getAttribute("aria-pressed"), "true");
+chk("and the bits with it", REG["hx-sum"].textContent, "8 + 4 + 1");
+
+chk("the bit row names the digit it belongs to",
+    REG["hxr-0"].classList.contains("is-on"), true);
+chk("and only that one", REG["hxr-3"].classList.contains("is-on"), false);
+
+t("every digit picked in turn leaves exactly one pressed and one named",
+  function () {
+    for (var i = 0; i < 8; i++) {
+      REG["hd-" + i].fire("click");
+      var n = 0, r = 0;
+      for (var j = 0; j < 8; j++) {
+        if (REG["hd-" + j].getAttribute("aria-pressed") === "true") { n++; }
+        if (REG["hxr-" + j].classList.contains("is-on")) { r++; }
+      }
+      if (n !== 1) { throw new Error(n + " pressed after picking " + i); }
+      if (r !== 1) { throw new Error(r + " ranges shown after picking " + i); }
+      if (REG["hxr-" + i].classList.contains("is-on") !== true) {
+        throw new Error("the range shown is not the digit picked: " + i);
+      }
+    }
+  });
+
+t("the address never leaves eight digits, whatever is flipped", function () {
+  var places = [8, 4, 2, 1], i, j;
+  for (i = 0; i < 8; i++) {
+    REG["hd-" + i].fire("click");
+    for (j = 0; j < places.length; j++) {
+      REG["nb-" + places[j]].fire("click");
+      var a = REG["hx-addr"].textContent;
+      if (a.length !== 10 || a.slice(0, 2) !== "0x") {
+        throw new Error("address became " + a);
+      }
+      if (!/^0x[0-9A-F]{8}$/.test(a)) { throw new Error("stray digit: " + a); }
+    }
+  }
+});
+
+t("the sum shown always adds up to the digit shown", function () {
+  var places = [8, 4, 2, 1], i, j, k;
+  for (i = 0; i < 8; i++) {
+    REG["hd-" + i].fire("click");
+    for (j = 0; j < places.length; j++) {
+      REG["nb-" + places[j]].fire("click");
+      var parts = REG["hx-sum"].textContent.split(" + ");
+      var total = 0;
+      for (k = 0; k < parts.length; k++) { total += parseInt(parts[k], 10); }
+      if (String(total) !== REG["hx-val"].textContent) {
+        throw new Error(REG["hx-sum"].textContent + " != " +
+                        REG["hx-val"].textContent);
+      }
+      if ("0123456789ABCDEF".charAt(total) !== REG["hx-char"].textContent) {
+        throw new Error(total + " shown as " + REG["hx-char"].textContent);
+      }
+    }
+  }
+});
+REG["hx-reset"].fire("click");
+
+
+// ---- Figure 7: base plus offset ----
+
+chk("the register figure boots on the one this chapter stores to",
+    REG["rg-addr"].textContent, "0xD0000018");
+chk("and shows that address as an offset, not just as a whole",
+    REG["rg-off"].textContent, "0x018");
+chk("and the row for it is the pressed one",
+    REG["rg-2"].getAttribute("aria-pressed"), "true");
+chk("and its name is the one shown",
+    REG["rgn-2"].classList.contains("is-on"), true);
+chk("and no other name is shown alongside it",
+    REG["rgn-0"].classList.contains("is-on"), false);
+
+REG["rg-0"].fire("click");
+chk("the first register is 0x10 past the base", REG["rg-off"].textContent, "0x010");
+chk("which lands at 0xD0000010", REG["rg-addr"].textContent, "0xD0000010");
+chk("and the name shown follows the click",
+    REG["rgn-0"].classList.contains("is-on"), true);
+chk("and the name that was shown is put away",
+    REG["rgn-2"].classList.contains("is-on"), false);
+
+REG["rg-7"].fire("click");
+chk("the last register is 0x2C past the base", REG["rg-off"].textContent, "0x02C");
+chk("which lands at 0xD000002C", REG["rg-addr"].textContent, "0xD000002C");
+
+// Taking the twins away is how the figure shows the stride of 8.
+chk("both halves are shown before anything is asked",
+    REG["rg-1"].classList.contains("is-gone"), false);
+REG["rg-twins"].fire("click");
+chk("taking the twins away hides them",
+    REG["rg-1"].classList.contains("is-gone"), true);
+chk("and leaves the four that are left alone",
+    REG["rg-0"].classList.contains("is-gone"), false);
+chk("and the button records that it is on",
+    REG["rg-twins"].getAttribute("aria-pressed"), "true");
+chk("a hidden row does not stay selected",
+    REG["rg-7"].getAttribute("aria-pressed"), "false");
+chk("the selection falls back to the register it is the twin of",
+    REG["rg-6"].getAttribute("aria-pressed"), "true");
+chk("and the arithmetic follows it", REG["rg-addr"].textContent, "0xD0000028");
+
+REG["rg-twins"].fire("click");
+chk("putting them back shows them again",
+    REG["rg-1"].classList.contains("is-gone"), false);
+chk("and the button records that it is off",
+    REG["rg-twins"].getAttribute("aria-pressed"), "false");
+chk("and the selection is not disturbed a second time",
+    REG["rg-6"].getAttribute("aria-pressed"), "true");
+
+t("every register clicked in turn leaves exactly one pressed and one named",
+  function () {
+    for (var i = 0; i < 8; i++) {
+      REG["rg-" + i].fire("click");
+      var pressed = 0, named = 0;
+      for (var j = 0; j < 8; j++) {
+        if (REG["rg-" + j].getAttribute("aria-pressed") === "true") { pressed++; }
+        if (REG["rgn-" + j].classList.contains("is-on")) { named++; }
+      }
+      if (pressed !== 1) { throw new Error(pressed + " pressed at row " + i); }
+      if (named !== 1) { throw new Error(named + " named at row " + i); }
+    }
+  });
+
+t("base plus offset is arithmetic, not a lookup table", function () {
+  var want = ["0xD0000010", "0xD0000014", "0xD0000018", "0xD000001C",
+              "0xD0000020", "0xD0000024", "0xD0000028", "0xD000002C"];
+  for (var i = 0; i < 8; i++) {
+    REG["rg-" + i].fire("click");
+    if (REG["rg-addr"].textContent !== want[i]) {
+      throw new Error("row " + i + " gave " + REG["rg-addr"].textContent);
+    }
+  }
+});
+
+t("hiding the twins never leaves a hidden row selected", function () {
+  for (var i = 0; i < 8; i++) {
+    if (REG["rg-twins"].getAttribute("aria-pressed") === "true") {
+      REG["rg-twins"].fire("click");
+    }
+    REG["rg-" + i].fire("click");
+    REG["rg-twins"].fire("click");
+    for (var j = 0; j < 8; j++) {
+      if (REG["rg-" + j].getAttribute("aria-pressed") === "true" &&
+          REG["rg-" + j].classList.contains("is-gone")) {
+        throw new Error("row " + j + " is selected and hidden");
+      }
+    }
+  }
+  REG["rg-twins"].fire("click");
+});

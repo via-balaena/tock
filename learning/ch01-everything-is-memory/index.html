@@ -769,25 +769,6 @@ dfn {
   border-bottom: 2px solid var(--accent);
   padding-bottom: 1px;
 }
-.def {
-  border-left: 3px solid var(--accent);
-  background: var(--accent-soft);
-  padding: .85rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: .45rem;
-  font-size: .98rem;
-  line-height: 1.55;
-}
-.def-word {
-  font-family: var(--display);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
 /* What the reader will be able to do. Stated before the work, not after. */
 .goals {
   border: 1px solid var(--rule);
@@ -995,6 +976,153 @@ dfn {
   border-bottom: 1px dashed var(--accent);
   padding: 0 0 1px;
   cursor: pointer;
+}
+
+/* Figure 4: a hex digit is four bits, and those four are worth 8, 4, 2 and 1. */
+.hexline {
+  display: flex; align-items: flex-start; gap: .4rem;
+  overflow-x: auto; padding-bottom: .35rem;
+}
+.hexline-0x {
+  font-family: var(--mono); font-size: 1.45rem; font-weight: 600;
+  color: var(--ink-faint); padding-top: .45rem; flex: none;
+}
+.hexdigits { display: flex; gap: .25rem; flex: none; }
+.hd {
+  display: flex; flex-direction: column; align-items: center; gap: .1rem;
+  min-width: 3.2rem; padding: .4rem .3rem .35rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  text-transform: none; letter-spacing: 0;
+}
+.hd-d {
+  font-family: var(--mono); font-size: 1.45rem; font-weight: 700;
+  line-height: 1.1; color: var(--ink);
+}
+.hd-r {
+  font-family: var(--mono); font-size: .65rem; font-weight: 500;
+  color: var(--ink-faint); font-variant-numeric: tabular-nums;
+}
+/* Eight ranges, one shown, so the four bits below are visibly the four bits of
+   the digit above rather than of some digit. Markup, so it survives no JS. */
+.hxrange { display: none; }
+.hxrange.is-on {
+  display: inline; font-family: var(--mono); font-style: normal;
+  font-weight: 600; color: var(--hot);
+}
+.hd:hover:not(:disabled) { border-color: var(--rule-strong); }
+.hd[aria-pressed="true"] { background: var(--hot-soft); border-color: var(--hot); }
+.hd[aria-pressed="true"] .hd-d { color: var(--hot); }
+.hd[aria-pressed="true"] .hd-r { color: var(--hot); }
+
+/* An instruction for the control immediately below it, inside a figure. */
+.hexcue {
+  font-family: var(--body); font-size: .95rem; line-height: 1.55;
+  color: var(--ink-soft); margin: 1.15rem 0 .55rem;
+}
+
+.nib { display: flex; gap: .45rem; flex-wrap: wrap; }
+.nb {
+  display: flex; flex-direction: column; align-items: center; gap: .1rem;
+  min-width: 4rem; padding: .45rem .5rem .4rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  text-transform: none; letter-spacing: 0;
+}
+.nb-w {
+  font-family: var(--mono); font-size: 1.2rem; font-weight: 700;
+  line-height: 1.15; color: var(--ink);
+}
+.nb-b {
+  font-family: var(--mono); font-size: .8rem; font-weight: 600;
+  color: var(--ink-faint);
+}
+.nb:hover:not(:disabled) { border-color: var(--rule-strong); }
+.nb[aria-pressed="true"] {
+  background: var(--hot-fill); border-color: var(--hot-fill);
+}
+.nb[aria-pressed="true"] .nb-w { color: var(--hot-ink); }
+.nb[aria-pressed="true"] .nb-b { color: var(--hot-ink); }
+
+/* Figure 7: the base, the offset, and the twins that set the stride. */
+.sum {
+  display: flex; flex-direction: column; gap: .25rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .75rem .9rem; margin-bottom: 1.15rem;
+}
+.sum-row { display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
+.sum-op {
+  font-family: var(--mono); font-size: 1.05rem; color: var(--ink-faint);
+  flex: none; width: 1ch;
+}
+.sum-v {
+  font-family: var(--mono); font-size: 1.05rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+  min-width: 11ch; text-align: right;
+}
+.sum-v.hot { color: var(--hot); }
+.sum-k {
+  font-family: var(--body); font-size: .88rem; color: var(--ink-soft);
+  font-variant-numeric: lining-nums;
+}
+.sum-row.is-total {
+  border-top: 1px solid var(--rule-strong);
+  padding-top: .4rem; margin-top: .25rem;
+}
+/* Eight names, one shown. Keeping them in the markup means the script holds no
+   words at all, and the figure still names the right register with no JS. */
+.rgname { display: none; }
+.rgname.is-on { display: inline; }
+
+#rg-twins { text-transform: none; letter-spacing: 0; }
+#rg-twins .tw-on { display: none; }
+#rg-twins[aria-pressed="true"] .tw-off { display: none; }
+#rg-twins[aria-pressed="true"] .tw-on { display: inline; }
+
+.regs-wrap { overflow-x: auto; padding-bottom: .4rem; margin-top: 1.1rem; }
+.regs { display: flex; flex-direction: column; gap: 3px; min-width: 40rem; }
+.regs-head, .reg {
+  display: grid;
+  grid-template-columns: 4.6rem 3.6rem 10.5rem 1fr 9.5rem;
+  gap: .6rem; align-items: baseline; text-align: left;
+}
+.regs-head {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  padding: 0 calc(.6rem + 1px) .3rem;
+}
+.reg {
+  width: 100%; padding: .45rem .6rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  color: var(--ink); text-transform: none; letter-spacing: 0;
+}
+.reg-o, .reg-t { font-variant-numeric: tabular-nums; color: var(--ink); }
+.reg-n { font-weight: 600; color: var(--ink); }
+.reg-w, .reg-p {
+  font-family: var(--body); font-size: .88rem; color: var(--ink-soft);
+  font-variant-numeric: lining-nums;
+}
+/* The twins, marked without moving the grid. */
+.reg.twin { box-shadow: inset 3px 0 0 var(--rule-strong); }
+.reg:hover:not(:disabled) { border-color: var(--rule-strong); }
+.reg[aria-pressed="true"] {
+  background: var(--hot-soft); border-color: var(--hot);
+}
+.reg[aria-pressed="true"] .reg-o { color: var(--hot); }
+.reg[aria-pressed="true"] .reg-t { color: var(--hot); }
+.reg[aria-pressed="true"] .reg-n { color: var(--hot); }
+.reg[aria-pressed="true"] .reg-w { color: var(--hot); }
+.reg[aria-pressed="true"] .reg-p { color: var(--hot); }
+.reg.is-gone { display: none; }
+
+/* On a phone the point of Figure 4 is that there are eight digits, so all
+   eight have to be on screen at once rather than five and a scroll. */
+@media (max-width: 30rem) {
+  .hexline { gap: .3rem; }
+  .hexline-0x { font-size: 1.1rem; padding-top: .38rem; }
+  .hexdigits { gap: .15rem; }
+  .hd { min-width: 2.15rem; padding: .35rem .16rem .3rem; }
+  .hd-d { font-size: 1.15rem; }
+  .hd-r { font-size: .53rem; }
 }
 
 /* One hex digit chooses who answers. The chapter's central mechanism. */
@@ -1387,7 +1515,7 @@ dfn {
   color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
 }
 
-/* ---------- Figure 12: what the optimizer does ---------- */
+/* ---------- Figure 14: what the optimizer does ---------- */
 
 /* Cases are visible by default and hidden by script, so a reader with no
    JavaScript meets all four rather than none. */
@@ -1983,15 +2111,96 @@ dfn {
   <p>A microcontroller reuses the same machinery for something else entirely. Only part of its range is memory. Other stretches are wired to real hardware, and storing a number in those stretches <em>operates</em> that hardware.</p>
   <p>Which stretch is which was decided once, by the chip designers, and burned into the silicon. So the very first thing the chip has to work out is: <strong>who does this address belong to?</strong></p>
   <p>It works that out by looking at a single digit.</p>
+  <p>That digit is written in a counting system you may not have met. Numbers here are counted in sixteens rather than in tens, which is called <dfn>hexadecimal</dfn>, and the <code>0x</code> in front is the flag that says so.</p>
+  <p>Sixteens need sixteen digits, so the usual ten run on into six letters: <code>0&nbsp;1&nbsp;2&nbsp;3&nbsp;4&nbsp;5&nbsp;6&nbsp;7&nbsp;8&nbsp;9&nbsp;A&nbsp;B&nbsp;C&nbsp;D&nbsp;E&nbsp;F</code>. <code>A</code> is ten, and <code>F</code> is fifteen.</p>
+  <p>Here is what makes it worth the trouble. One hex digit is exactly four bits, always, so an eight-digit address is exactly 32 bits and each digit owns a fixed slice of them. Take one apart.</p>
 </section>
 
-<div class="col">
-  <div class="def">
-    <span class="def-word">Why addresses get written in 0x</span>
-    <p>Addresses here look like <code class="addr">0xD0000018</code>. The <code>0x</code> is a flag meaning "what follows is counted in sixteens, not tens." That is <dfn>hexadecimal</dfn>. Its digits run <code>0&nbsp;1&nbsp;2&nbsp;3&nbsp;4&nbsp;5&nbsp;6&nbsp;7&nbsp;8&nbsp;9&nbsp;A&nbsp;B&nbsp;C&nbsp;D&nbsp;E&nbsp;F</code>, so <code>A</code> means ten and <code>F</code> means fifteen.</p>
-    <p>The reason anyone puts up with this: one hex digit is always exactly four bits. So eight hex digits are exactly 32 bits, and each digit owns a fixed slice of the number. In ordinary tens, that address is 3,489,660,952 &mdash; a number that tells you nothing. In sixteens, its first digit is the answer to question&nbsp;1.</p>
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">Every digit is four bits</span>
   </div>
-</div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a digit. Then flip its four bits below and watch that digit change.</p>
+    <div class="hexline">
+      <span class="hexline-0x">0x</span>
+      <div class="hexdigits" role="group" aria-label="The eight digits of the address">
+        <button type="button" class="hd" id="hd-0" aria-pressed="true" aria-label="the first digit, bits 31 down to 28">
+          <span class="hd-d" id="hdd-0">D</span>
+          <span class="hd-r">31:28</span>
+        </button>
+        <button type="button" class="hd" id="hd-1" aria-pressed="false" aria-label="the second digit, bits 27 down to 24">
+          <span class="hd-d" id="hdd-1">0</span>
+          <span class="hd-r">27:24</span>
+        </button>
+        <button type="button" class="hd" id="hd-2" aria-pressed="false" aria-label="the third digit, bits 23 down to 20">
+          <span class="hd-d" id="hdd-2">0</span>
+          <span class="hd-r">23:20</span>
+        </button>
+        <button type="button" class="hd" id="hd-3" aria-pressed="false" aria-label="the fourth digit, bits 19 down to 16">
+          <span class="hd-d" id="hdd-3">0</span>
+          <span class="hd-r">19:16</span>
+        </button>
+        <button type="button" class="hd" id="hd-4" aria-pressed="false" aria-label="the fifth digit, bits 15 down to 12">
+          <span class="hd-d" id="hdd-4">0</span>
+          <span class="hd-r">15:12</span>
+        </button>
+        <button type="button" class="hd" id="hd-5" aria-pressed="false" aria-label="the sixth digit, bits 11 down to 8">
+          <span class="hd-d" id="hdd-5">0</span>
+          <span class="hd-r">11:8</span>
+        </button>
+        <button type="button" class="hd" id="hd-6" aria-pressed="false" aria-label="the seventh digit, bits 7 down to 4">
+          <span class="hd-d" id="hdd-6">1</span>
+          <span class="hd-r">7:4</span>
+        </button>
+        <button type="button" class="hd" id="hd-7" aria-pressed="false" aria-label="the eighth digit, bits 3 down to 0">
+          <span class="hd-d" id="hdd-7">8</span>
+          <span class="hd-r">3:0</span>
+        </button>
+      </div>
+    </div>
+    <p class="hexcue">The four bits of the digit you picked, the one at bits <em class="hxrange is-on" id="hxr-0">31:28</em><em class="hxrange" id="hxr-1">27:24</em><em class="hxrange" id="hxr-2">23:20</em><em class="hxrange" id="hxr-3">19:16</em><em class="hxrange" id="hxr-4">15:12</em><em class="hxrange" id="hxr-5">11:8</em><em class="hxrange" id="hxr-6">7:4</em><em class="hxrange" id="hxr-7">3:0</em>. Each one is worth what it says, and the digit is whatever they add up to.</p>
+    <div class="nib" role="group" aria-label="The four bits of the chosen digit">
+      <button type="button" class="nb" id="nb-8" aria-pressed="true" aria-label="the bit worth eight">
+        <span class="nb-w">8</span>
+        <span class="nb-b" id="nbb-8">1</span>
+      </button>
+      <button type="button" class="nb" id="nb-4" aria-pressed="true" aria-label="the bit worth four">
+        <span class="nb-w">4</span>
+        <span class="nb-b" id="nbb-4">1</span>
+      </button>
+      <button type="button" class="nb" id="nb-2" aria-pressed="false" aria-label="the bit worth two">
+        <span class="nb-w">2</span>
+        <span class="nb-b" id="nbb-2">0</span>
+      </button>
+      <button type="button" class="nb" id="nb-1" aria-pressed="true" aria-label="the bit worth one">
+        <span class="nb-w">1</span>
+        <span class="nb-b" id="nbb-1">1</span>
+      </button>
+    </div>
+    <div aria-live="polite">
+      <div class="pickout">
+        <span class="pickout-k">bits that are on</span>
+        <span class="pickout-v" id="hx-sum">8 + 4 + 1</span>
+        <span class="pickout-k">adding up to</span>
+        <span class="pickout-v" id="hx-val">13</span>
+        <span class="pickout-k">written as one digit</span>
+        <span class="pickout-v hot" id="hx-char">D</span>
+      </div>
+      <div class="pickout">
+        <span class="pickout-k">the whole address</span>
+        <span class="pickout-v hot" id="hx-addr">0xD0000018</span>
+        <span class="pickout-k">the same number in ordinary tens</span>
+        <span class="pickout-v" id="hx-dec">3,489,660,952</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button type="button" id="hx-reset">Reset the address</button>
+    </div>
+  </div>
+  <div class="instrument-note">Watch the first digit while you edit any of the other seven. It never moves. That separation is what lets the chip route a store by reading four bits, before the rest of the address means anything at all. Now look at what the ordinary-tens number does while you work: it changes completely and tells you nothing.</div>
+</figure>
 
 <section class="col">
   <p>That is not a simplification invented for teaching. It is what the hardware does, and the datasheet says so in one line:</p>
@@ -2001,7 +2210,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-label">Figure 5</span>
     <span class="instrument-title">One digit decides who answers</span>
   </div>
   <div class="instrument-body">
@@ -2025,7 +2234,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-label">Figure 6</span>
     <span class="instrument-title">The whole address space of your board</span>
   </div>
   <div class="instrument-body">
@@ -2033,7 +2242,7 @@ dfn {
     <div class="map" id="map"></div>
     <div class="map-detail prose" id="map-detail"></div>
   </div>
-  <div class="instrument-note">Notice the first digit of every address in that list, then compare it with Figure&nbsp;4. Nothing here is arbitrary: the stripes start where they do <em>because</em> that is the digit the decode reads.</div>
+  <div class="instrument-note">Notice the first digit of every address in that list, then compare it with Figure&nbsp;5. Nothing here is arbitrary: the stripes start where they do <em>because</em> that is the digit the decode reads.</div>
 </figure>
 
 <section class="col">
@@ -2089,27 +2298,119 @@ dfn {
 
 <section class="col">
   <p class="note"><strong>A warning about the word "register."</strong> It has two unrelated meanings and this chapter needs both. A <em>peripheral register</em> is what we just described: hardware sitting at an address. A <em>processor register</em> is one of a handful of tiny scratch slots inside the processor itself, called <code>r0</code>, <code>r1</code> and so on, holding whatever it is working on this instant. Same word, different things. Where it matters below, the text says which one.</p>
-  <p>Here is SIO's output section, exactly as Tock's chip crate declares it. Read the left column as offsets from SIO's base.</p>
+  <p>Here is SIO's output section, exactly as Tock's chip crate declares it, with the address arithmetic alongside it.</p>
 </section>
 
-<div class="instrument narrow">
-  <div class="instrument-body flush">
-<pre><code>(0x010 =&gt; gpio_out)            <span class="tok-c">// output value, GPIO 0..31</span>
-(0x014 =&gt; gpio_hi_out)         <span class="tok-c">// output value, GPIO 32..47 + QSPI, USB</span>
-<span class="tok-n">(0x018 =&gt; gpio_out_set)</span>        <span class="tok-c">// set bits,    GPIO 0..31</span>
-(0x01C =&gt; gpio_hi_out_set)     <span class="tok-c">// set bits,    GPIO 32..47 + QSPI, USB</span>
-(0x020 =&gt; gpio_out_clr)        <span class="tok-c">// clear bits,  GPIO 0..31</span>
-(0x024 =&gt; gpio_hi_out_clr)     <span class="tok-c">// clear bits,  GPIO 32..47 + QSPI, USB</span>
-(0x028 =&gt; gpio_out_xor)        <span class="tok-c">// flip bits,   GPIO 0..31</span>
-(0x02C =&gt; gpio_hi_out_xor)     <span class="tok-c">// flip bits,   GPIO 32..47 + QSPI, USB</span></code></pre>
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">Base plus offset, one register at a time</span>
   </div>
-  <div class="instrument-note"><code>chips/rp2350/src/gpio.rs</code>, lines 88&ndash;108. Every register is here, in order, with none dropped; the comments are rewritten to fit the column rather than quoted.</div>
-</div>
+  <div class="instrument-body">
+    <p class="dothis">Click a register. Watch its address get built out of two halves.</p>
+    <div class="sum" aria-live="polite">
+      <span class="sum-row">
+        <span class="sum-op">&nbsp;</span>
+        <span class="sum-v">0xD0000000</span>
+        <span class="sum-k">where SIO starts, the base address</span>
+      </span>
+      <span class="sum-row">
+        <span class="sum-op">+</span>
+        <span class="sum-v" id="rg-off">0x018</span>
+        <span class="sum-k">how far past it, the offset</span>
+      </span>
+      <span class="sum-row is-total">
+        <span class="sum-op">=</span>
+        <span class="sum-v hot" id="rg-addr">0xD0000018</span>
+        <span class="sum-k">
+          <span class="rgname" id="rgn-0">gpio_out</span>
+          <span class="rgname" id="rgn-1">gpio_hi_out</span>
+          <span class="rgname is-on" id="rgn-2">gpio_out_set</span>
+          <span class="rgname" id="rgn-3">gpio_hi_out_set</span>
+          <span class="rgname" id="rgn-4">gpio_out_clr</span>
+          <span class="rgname" id="rgn-5">gpio_hi_out_clr</span>
+          <span class="rgname" id="rgn-6">gpio_out_xor</span>
+          <span class="rgname" id="rgn-7">gpio_hi_out_xor</span>
+        </span>
+      </span>
+    </div>
+    <p class="hexcue">Four of these eight are for the high half: GPIO 32 to 47, plus the pins that talk to the flash chip and the USB socket. Each one sits directly after its twin. Take them away and watch what the offsets do.</p>
+    <div class="controls">
+      <button type="button" id="rg-twins" aria-pressed="false">
+        <span class="tw-off">Take the four away</span>
+        <span class="tw-on">Put them back</span>
+      </button>
+    </div>
+    <div class="regs-wrap">
+      <div class="regs">
+        <div class="regs-head">
+          <span>offset</span><span>in tens</span><span>name</span><span>what a 1 bit does</span><span>which pins</span>
+        </div>
+        <button type="button" class="reg" id="rg-0" aria-pressed="false">
+          <span class="reg-o">0x010</span>
+          <span class="reg-t">16</span>
+          <span class="reg-n">gpio_out</span>
+          <span class="reg-w">sets every pin at once, high where the bit is 1</span>
+          <span class="reg-p">0&ndash;31</span>
+        </button>
+        <button type="button" class="reg twin" id="rg-1" aria-pressed="false">
+          <span class="reg-o">0x014</span>
+          <span class="reg-t">20</span>
+          <span class="reg-n">gpio_hi_out</span>
+          <span class="reg-w">the same, for the high half</span>
+          <span class="reg-p">32&ndash;47, flash, USB</span>
+        </button>
+        <button type="button" class="reg" id="rg-2" aria-pressed="true">
+          <span class="reg-o">0x018</span>
+          <span class="reg-t">24</span>
+          <span class="reg-n">gpio_out_set</span>
+          <span class="reg-w">raises only the pins whose bit is 1</span>
+          <span class="reg-p">0&ndash;31</span>
+        </button>
+        <button type="button" class="reg twin" id="rg-3" aria-pressed="false">
+          <span class="reg-o">0x01C</span>
+          <span class="reg-t">28</span>
+          <span class="reg-n">gpio_hi_out_set</span>
+          <span class="reg-w">the same, for the high half</span>
+          <span class="reg-p">32&ndash;47, flash, USB</span>
+        </button>
+        <button type="button" class="reg" id="rg-4" aria-pressed="false">
+          <span class="reg-o">0x020</span>
+          <span class="reg-t">32</span>
+          <span class="reg-n">gpio_out_clr</span>
+          <span class="reg-w">lowers only the pins whose bit is 1</span>
+          <span class="reg-p">0&ndash;31</span>
+        </button>
+        <button type="button" class="reg twin" id="rg-5" aria-pressed="false">
+          <span class="reg-o">0x024</span>
+          <span class="reg-t">36</span>
+          <span class="reg-n">gpio_hi_out_clr</span>
+          <span class="reg-w">the same, for the high half</span>
+          <span class="reg-p">32&ndash;47, flash, USB</span>
+        </button>
+        <button type="button" class="reg" id="rg-6" aria-pressed="false">
+          <span class="reg-o">0x028</span>
+          <span class="reg-t">40</span>
+          <span class="reg-n">gpio_out_xor</span>
+          <span class="reg-w">flips only the pins whose bit is 1</span>
+          <span class="reg-p">0&ndash;31</span>
+        </button>
+        <button type="button" class="reg twin" id="rg-7" aria-pressed="false">
+          <span class="reg-o">0x02C</span>
+          <span class="reg-t">44</span>
+          <span class="reg-n">gpio_hi_out_xor</span>
+          <span class="reg-w">the same, for the high half</span>
+          <span class="reg-p">32&ndash;47, flash, USB</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="instrument-note">The offsets and the order are <code>chips/rp2350/src/gpio.rs</code>, lines 88&ndash;108, with none dropped; the last two columns are written for this page rather than quoted. Tock's driver for this chip neither reads nor writes any of the four <code>gpio_hi_</code> registers.</div>
+</figure>
 
 <section class="col">
-  <p>Two things in that listing are worth stopping on, and both are checkable arithmetic rather than trivia.</p>
-  <p><strong>The offsets go up by 4.</strong> Each register is 32 bits wide, which is 4 bytes, and addresses count bytes. So neighbours land 4 apart. That is a free sanity check on any register listing you read for the rest of your life.</p>
-  <p><strong>The four you care about are 8 apart, because a twin sits between each pair.</strong> Every register covering pins 0&ndash;31 is followed by a <code>gpio_hi_</code> one covering everything above: GPIO 32&ndash;47, and also the connections that talk to the flash chip and the USB socket. They are not padding, and Tock's driver for this chip never touches them.</p>
+  <p>Both of the patterns in that table are arithmetic you can check rather than trivia you have to trust.</p>
+  <p>Neighbours land 4 apart because a register is 32 bits wide, which is 4 bytes, and addresses count bytes. That is a free sanity check on any register listing you will ever read. With the twins taken away the four that remain are 8 apart, which is the same reason applied twice.</p>
   <p>Those higher GPIO numbers are worth a sentence, because they make a point the code cannot. The part on a Pico&nbsp;2 is an <code>RP2350A</code>: a 60-pin package with 30 GPIOs. Its sibling <code>RP2350B</code> is an 80-pin package with 48. Same silicon design, different plastic, and the datasheet spells out the consequence:</p>
   <blockquote class="quote">GPIOs 0 through 29 are available in all package variants. GPIOs 30 through 47 are available only in QFN-80 (RP2350B) package.</blockquote>
   <p>Hold on to that. It comes back in question 3, where it explains something that otherwise looks like a mistake.</p>
@@ -2130,7 +2431,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-label">Figure 8</span>
     <span class="instrument-title">Build the number that moves one pin</span>
   </div>
   <div class="instrument-body">
@@ -2223,7 +2524,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-label">Figure 9</span>
     <span class="instrument-title">One store, from instruction to light</span>
   </div>
   <div class="instrument-body">
@@ -2248,7 +2549,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-label">Figure 10</span>
     <span class="instrument-title">Work one out yourself</span>
   </div>
   <div class="instrument-body">
@@ -2293,7 +2594,7 @@ dfn {
 </figure>
 
 <section class="col">
-  <p>Now the payoff from question 2. Drag Figure&nbsp;6 up to pin 30 or 31 and the square goes dashed, because Tock's crate for this chip defines <code>GPIO0</code> through <code>GPIO29</code> and stops.</p>
+  <p>Now the payoff from question 2. Drag Figure&nbsp;8 up to pin 30 or 31 and the square goes dashed, because Tock's crate for this chip defines <code>GPIO0</code> through <code>GPIO29</code> and stops.</p>
   <p>Those two bits are perfectly real. The store would succeed and drive nothing, because this package brings out no such pin. On the 80-pin part they drive GPIO&nbsp;30 and GPIO&nbsp;31 exactly as you would expect.</p>
   <p>So the lesson is sharper than "the register has spare bits."</p>
   <p><strong>How wide a register is and how many pins exist are two separate facts.</strong> Only one of them is visible from the code.</p>
@@ -2343,7 +2644,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-label">Figure 11</span>
     <span class="instrument-title">Four addresses, four different bargains</span>
   </div>
   <div class="instrument-body">
@@ -2397,7 +2698,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 10</span>
+    <span class="instrument-label">Figure 12</span>
     <span class="instrument-title">Same layout, two different bases</span>
   </div>
   <div class="instrument-body">
@@ -2454,7 +2755,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 11</span>
+    <span class="instrument-label">Figure 13</span>
     <span class="instrument-title">Two cores, one register</span>
   </div>
   <div class="instrument-body">
@@ -2514,7 +2815,7 @@ dfn {
 
 <figure class="instrument wide-fig">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 12</span>
+    <span class="instrument-label">Figure 14</span>
     <span class="instrument-title">What the optimizer does to your code</span>
   </div>
   <div class="instrument-body">
@@ -2706,7 +3007,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
 
 <figure class="instrument">
   <div class="instrument-head dis-head">
-    <span class="instrument-label">Figure 13</span>
+    <span class="instrument-label">Figure 15</span>
     <span class="instrument-title">The three lines that do the work</span>
   </div>
   <div class="instrument-body flush">
@@ -2754,7 +3055,7 @@ movs  r2, #0x1
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 14</span>
+    <span class="instrument-label">Figure 16</span>
     <span class="instrument-title">Strip the layers off <code>digitalWrite</code></span>
   </div>
   <div class="instrument-body">
@@ -2867,7 +3168,7 @@ movs  r2, #0x1
 
 <div class="sources">
   <h3>Everything above, checked against source</h3>
-  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;5 reports the correction rather than the pin.</p>
+  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;6 reports the correction rather than the pin.</p>
   <ul>
     <li>Address decode on bits 31:28, the segment table, and unmapped ranges raising a bus error &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8</li>
     <li>SIO base <code class="addr">0xD0000000</code>, IO_BANK0 <code class="addr">0x40028000</code>, PADS <code class="addr">0x40038000</code> &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/gpio.rs">chips/rp2350/src/gpio.rs</a>:1164&ndash;1169</li>
@@ -2890,12 +3191,12 @@ movs  r2, #0x1
     <li>Flash, kernel, application and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>. Its RAM length read <code>264K</code> at the pinned commit; it was corrected to <code>520K</code> by <a href="https://github.com/tock/tock/pull/5086">PR&nbsp;5086</a>, merged 20&nbsp;August&nbsp;2026</li>
     <li>Boot block contents: a 28-byte <code>METADATA_BLOCK</code> and a 256-byte <code>FLASH_BOOTLOADER</code> &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
     <li><code>write_volatile</code> at the bottom of every register write &mdash; <a href="https://docs.rs/tock-registers/0.10.0/src/tock_registers/registers.rs.html">tock-registers 0.10.0</a>, <code>src/registers.rs</code>:63</li>
-    <li>Figure&nbsp;12's listings &mdash; built from <code>learning/ch01-everything-is-memory/optimizer-demo.rs</code> in this repository with <code>rustc --target thumbv8m.main-none-eabi --crate-type lib -O --emit asm</code>, on the nightly this tree pins in <code>rust-toolchain.toml</code>, against <code class="addr">0x40070018</code> (<code>uartfr</code>), <code class="addr">0xD0000018</code> (<code>gpio_out_set</code>) and <code class="addr">0xD0000028</code> (<code>gpio_out_xor</code>). A lone plain store compiles to the same instruction as a volatile one, which is why this chapter no longer claims a store you never read back is deleted</li>
-    <li>Figure&nbsp;13's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
+    <li>Figure&nbsp;14's listings &mdash; built from <code>learning/ch01-everything-is-memory/optimizer-demo.rs</code> in this repository with <code>rustc --target thumbv8m.main-none-eabi --crate-type lib -O --emit asm</code>, on the nightly this tree pins in <code>rust-toolchain.toml</code>, against <code class="addr">0x40070018</code> (<code>uartfr</code>), <code class="addr">0xD0000018</code> (<code>gpio_out_set</code>) and <code class="addr">0xD0000028</code> (<code>gpio_out_xor</code>). A lone plain store compiles to the same instruction as a volatile one, which is why this chapter no longer claims a store you never read back is deleted</li>
+    <li>Figure&nbsp;15's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
   </ul>
   <p class="note">The datasheets are linked from <a href="https://www.raspberrypi.com/documentation/microcontrollers/silicon.html">Raspberry Pi's silicon documentation page</a>. They are licensed no-derivatives, so this page quotes them briefly with attribution rather than reproducing them.</p>
   <p>One earlier draft of this chapter said SIO was reached by a route separate from the peripheral fabric. That was wrong. The datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The mistake came from recalling the RP2040, where SIO does sit on a single-cycle port off the processor. Different chip, different answer, and it is recorded here rather than quietly fixed.</p>
-  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here, and so does <code>optimizer-demo.rs</code>, the file Figure&nbsp;12 is built from &mdash; it is code, so you may reuse it without the ShareAlike condition.</p>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here, and so does <code>optimizer-demo.rs</code>, the file Figure&nbsp;14 is built from &mdash; it is code, so you may reuse it without the ShareAlike condition.</p>
 </div>
 
 </div>
@@ -2907,7 +3208,7 @@ movs  r2, #0x1
     return "0x" + ((v >>> 0).toString(16).toUpperCase().padStart(8, "0"));
   }
 
-  /* ---------------- Figure 4: the first digit decides ---------------- */
+  /* ---------------- Figure 5: the first digit decides ---------------- */
 
   var SEGMENTS = [
     { d: "0", who: "ROM",
@@ -2970,7 +3271,7 @@ movs  r2, #0x1
   });
   pickDigit(SEGMENTS[13]);
 
-  /* ---------------- Figure 5: the address map ---------------- */
+  /* ---------------- Figure 6: the address map ---------------- */
 
   var REGIONS = [
     { addr: "0x00000000", name: "ROM", size: "\u2014", hot: false,
@@ -3000,7 +3301,7 @@ movs  r2, #0x1
     { addr: "0x40070000", name: "UART0", size: "\u2014", hot: true,
       detail: "The serial port Tock's console uses. Kernel messages left the chip one byte at a time through a register in here." },
     { addr: "0x40078000", name: "UART1", size: "\u2014", hot: true,
-      detail: "A second, identical serial port. Same layout, different base \u2014 the pattern from Figure 10." },
+      detail: "A second, identical serial port. Same layout, different base \u2014 the pattern from Figure 12." },
     { addr: "0x400B0000", name: "TIMER0", size: "\u2014", hot: true,
       detail: "A counter that never stops, ticking once a microsecond. Reading it gives the current time, which has nothing to do with anything you wrote." },
     { addr: "0x40108000", name: "TICKS", size: "\u2014", hot: true,
@@ -3049,7 +3350,7 @@ movs  r2, #0x1
     }
   }());
 
-  /* ---------------- The bet, before Figure 9 ---------------- */
+  /* ---------------- The bet, before Figure 11 ---------------- */
 
   var BET = [
     { t: "0x02000000 \u2014 the value you stored", ok: false,
@@ -3082,7 +3383,7 @@ movs  r2, #0x1
     betOpts.appendChild(b);
   });
 
-  /* ---------------- Figure 9: four behaviors ---------------- */
+  /* ---------------- Figure 11: four behaviors ---------------- */
 
   var BEHAVIOURS = [
     { addr: "0x20000100", name: "SRAM", tag: "ordinary memory",
@@ -3140,7 +3441,7 @@ movs  r2, #0x1
     selectBeh(rows[2], BEHAVIOURS[2]);
   }());
 
-  /* ---------------- Figure 6: build the value ---------------- */
+  /* ---------------- Figure 8: build the value ---------------- */
 
   var bitsHi = document.getElementById("bits-hi");
   var bitsLo = document.getElementById("bits-lo");
@@ -3211,7 +3512,7 @@ movs  r2, #0x1
   pinInput.addEventListener("input", drawBits);
   drawBits();
 
-  /* ---------------- Figure 7: one store, moment by moment ---------------- */
+  /* ---------------- Figure 9: one store, moment by moment ---------------- */
 
   var TRACE = [
     { at: "The processor",
@@ -3268,7 +3569,7 @@ movs  r2, #0x1
   traceScrub.addEventListener("input", drawTrace);
   drawTrace();
 
-  /* ---------------- Figure 8: work one out ---------------- */
+  /* ---------------- Figure 10: work one out ---------------- */
 
   function normHex(s) {
     return String(s || "").trim().toLowerCase().replace(/^0x/, "").replace(/^0+(?=.)/, "");
@@ -3305,7 +3606,7 @@ movs  r2, #0x1
     "Right \u2014 1 << 14 is 0x4000.",
     "Same rule as before: 1 shifted left 14 places. Four bits per hex digit may help.");
 
-  /* ---------------- Figure 11: two cores, one register ---------------- */
+  /* ---------------- Figure 13: two cores, one register ---------------- */
 
   var SCENARIOS = {
     rmw: {
@@ -3448,7 +3749,7 @@ movs  r2, #0x1
   });
   selectTab("rmw");
 
-  /* ---------------- Figure 13: show the skipped lines ---------------- */
+  /* ---------------- Figure 15: show the skipped lines ---------------- */
 
   var disToggle = document.getElementById("dis-toggle");
   var disPre = document.getElementById("dis");
@@ -3460,7 +3761,7 @@ movs  r2, #0x1
       : "Show the 12 lines I'm skipping";
   });
 
-  /* ---------------- Figure 14: the ladder ---------------- */
+  /* ---------------- Figure 16: the ladder ---------------- */
 
   var RUNGS = [
     { who: "Arduino", code: "digitalWrite(25, HIGH);",
@@ -3472,7 +3773,7 @@ movs  r2, #0x1
     { who: "Register types", code: "write_volatile(self.value.get(), value)",
       where: "tock-registers 0.10.0, src/registers.rs:63 \u2014 where volatile is enforced for everyone" },
     { who: "The machine", code: "and   r1, r1, #0x1f\nlsl.w r1, r2, r1\nstr   r1, [r0, #0x18]",
-      where: "the real instructions from your own build \u2014 Figure 13" }
+      where: "the real instructions from your own build \u2014 Figure 15" }
   ];
 
   var ladder = document.getElementById("ladder");
@@ -3710,7 +4011,7 @@ movs  r2, #0x1
   document.getElementById("lvl-low")
     .addEventListener("click", function () { pickLevel(false); });
   pickLevel(true);
-  /* ---------------- Figure 12: what the optimizer does ---------------- */
+  /* ---------------- Figure 14: what the optimizer does ---------------- */
   // Four cases, each a pair of real compiler listings. The markup carries every
   // sentence; this only decides which case is on screen.
 
@@ -3731,6 +4032,129 @@ movs  r2, #0x1
   });
   // Opens on the loop, which is the case the prose above just set up.
   pickOpt("wait");
+
+  /* ---------------- Figure 4: one digit is four bits ---------------- */
+
+  /* Every word in this figure lives in the markup. The script moves the
+     highlight and recomputes numbers, which is why the figure still reads
+     correctly with scripting switched off. */
+
+  var HEXCHARS = "0123456789ABCDEF";
+  var HXPLACES = [8, 4, 2, 1];
+  var HXBOOT = [13, 0, 0, 0, 0, 0, 1, 8];
+  var hxNib = HXBOOT.slice();
+  var hxAt = 0;
+
+  function hxCommas(n) {
+    var s = String(n), out = "", i;
+    for (i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 === 0) { out += ","; }
+      out += s.charAt(i);
+    }
+    return out;
+  }
+
+  function hxDraw() {
+    var i, ch, on, addr = "", value = 0, sum = "", n = hxNib[hxAt];
+    for (i = 0; i < 8; i++) {
+      ch = HEXCHARS.charAt(hxNib[i]);
+      addr += ch;
+      document.getElementById("hdd-" + i).textContent = ch;
+      document.getElementById("hd-" + i)
+        .setAttribute("aria-pressed", i === hxAt ? "true" : "false");
+      document.getElementById("hxr-" + i).classList.toggle("is-on", i === hxAt);
+      value = value * 16 + hxNib[i];
+    }
+    for (i = 0; i < 4; i++) {
+      on = Math.floor(n / HXPLACES[i]) % 2 === 1;
+      document.getElementById("nb-" + HXPLACES[i])
+        .setAttribute("aria-pressed", on ? "true" : "false");
+      document.getElementById("nbb-" + HXPLACES[i]).textContent = on ? "1" : "0";
+      if (on) { sum += (sum === "" ? "" : " + ") + HXPLACES[i]; }
+    }
+    document.getElementById("hx-sum").textContent = sum === "" ? "0" : sum;
+    document.getElementById("hx-val").textContent = n;
+    document.getElementById("hx-char").textContent = HEXCHARS.charAt(n);
+    document.getElementById("hx-addr").textContent = "0x" + addr;
+    document.getElementById("hx-dec").textContent = hxCommas(value);
+  }
+
+  function hxPickDigit(i) { hxAt = i; hxDraw(); }
+
+  function hxFlipBit(place) {
+    var n = hxNib[hxAt];
+    hxNib[hxAt] = (Math.floor(n / place) % 2 === 1) ? n - place : n + place;
+    hxDraw();
+  }
+
+  function hxWire(i) {
+    document.getElementById("hd-" + i)
+      .addEventListener("click", function () { hxPickDigit(i); });
+  }
+  function hxWireBit(place) {
+    document.getElementById("nb-" + place)
+      .addEventListener("click", function () { hxFlipBit(place); });
+  }
+  for (var hxI = 0; hxI < 8; hxI++) { hxWire(hxI); }
+  for (var hxJ = 0; hxJ < 4; hxJ++) { hxWireBit(HXPLACES[hxJ]); }
+  document.getElementById("hx-reset").addEventListener("click", function () {
+    hxNib = HXBOOT.slice();
+    hxAt = 0;
+    hxDraw();
+  });
+  hxDraw();
+
+  /* ---------------- Figure 7: base plus offset ---------------- */
+
+  /* The offsets are numbers because the figure's whole point is the
+     arithmetic on them; every name and sentence is in the markup. Both are
+     written from one table in the generator, so they cannot drift apart. */
+
+  var RGBASE = 0xD0000000;
+  var RGOFF = [0x010, 0x014, 0x018, 0x01C, 0x020, 0x024, 0x028, 0x02C];
+  var RGTWIN = [false, true, false, true, false, true, false, true];
+  var rgAt = 2;
+  var rgHidden = false;
+
+  function rgHex(v, width) {
+    var s = v.toString(16).toUpperCase();
+    while (s.length < width) { s = "0" + s; }
+    return "0x" + s;
+  }
+
+  function rgDraw() {
+    var i, row;
+    for (i = 0; i < RGOFF.length; i++) {
+      row = document.getElementById("rg-" + i);
+      row.setAttribute("aria-pressed", i === rgAt ? "true" : "false");
+      row.classList.toggle("is-gone", rgHidden && RGTWIN[i]);
+      document.getElementById("rgn-" + i).classList.toggle("is-on", i === rgAt);
+    }
+    document.getElementById("rg-off").textContent = rgHex(RGOFF[rgAt], 3);
+    document.getElementById("rg-addr").textContent =
+      rgHex(RGBASE + RGOFF[rgAt], 8);
+    document.getElementById("rg-twins")
+      .setAttribute("aria-pressed", rgHidden ? "true" : "false");
+  }
+
+  function rgPick(i) { rgAt = i; rgDraw(); }
+
+  function rgToggleTwins() {
+    rgHidden = !rgHidden;
+    /* A hidden row cannot stay selected, so the selection falls back to the
+       one it is the twin of -- which is the row directly above it. */
+    if (rgHidden && RGTWIN[rgAt]) { rgAt = rgAt - 1; }
+    rgDraw();
+  }
+
+  function rgWire(i) {
+    document.getElementById("rg-" + i)
+      .addEventListener("click", function () { rgPick(i); });
+  }
+  for (var rgI = 0; rgI < RGOFF.length; rgI++) { rgWire(rgI); }
+  document.getElementById("rg-twins")
+    .addEventListener("click", rgToggleTwins);
+  rgDraw();
 
 }());
 </script>
