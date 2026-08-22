@@ -131,7 +131,10 @@ Two more are preventive rather than forensic:
   behavioural tests only ever see the second, because the script has run by the
   time they look. So where a set of buttons and a set of panels inside one
   figure share suffixes, the pressed button and the shown panel must be the
-  same one. Figure 15 shipped with a listing whose opening line was not the one
+  same one. That shape fits three of chapter 1's sixteen figures; most of the
+  rest build their contents at load and so have no markup state to compare
+  against, which is a different problem and the `<noscript>` note is what
+  answers it. Figure 15 shipped with a listing whose opening line was not the one
   its panel explained, and only a screenshot caught it. Sets with no matching
   panels are left alone, since independent toggles are not a group; so are sets
   where nothing is marked shown, which is the other legitimate pattern --
