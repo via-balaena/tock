@@ -19,13 +19,29 @@ function El(id) {
   this._h = {};
   var self = this;
   var classes = {};
+  // DOMTokenList refuses an empty token -- "The token provided must not be
+  // empty" -- and a browser throws where a permissive shim would carry on. That
+  // divergence hid a real bug: chapter 1's prediction widget called
+  // classList.add("") on its first iteration, so clicking any option threw
+  // before anything was revealed, and every headless test still passed. The
+  // shim now enforces the same contract the browser does.
+  function token(c) {
+    if (c === "" || c === null || c === undefined) {
+      throw new Error("classList: the token provided must not be empty");
+    }
+    if (String(c).indexOf(" ") > -1) {
+      throw new Error("classList: the token provided must not contain spaces");
+    }
+    return c;
+  }
   this.classList = {
-    add: function (c) { classes[c] = 1; },
-    remove: function (c) { delete classes[c]; },
-    contains: function (c) { return !!classes[c]; },
+    add: function (c) { classes[token(c)] = 1; },
+    remove: function (c) { delete classes[token(c)]; },
+    contains: function (c) { return !!classes[token(c)]; },
     // Returns whether the class is present afterwards, as the real
     // classList.toggle does -- page code is entitled to use the result.
     toggle: function (c, v) {
+      token(c);
       if (v === undefined) { classes[c] ? delete classes[c] : classes[c] = 1; }
       else { v ? classes[c] = 1 : delete classes[c]; }
       return !!classes[c];

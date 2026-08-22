@@ -773,3 +773,21 @@ chk("the lone-store case can be reached",
 chk("and it is the only one on screen",
     REG["case-wait"].classList.contains("is-off")
     && REG["case-peek"].classList.contains("is-off"), true);
+
+// ---- The prediction widget, which no test had ever clicked ----
+// Its handler called classList.add("") on the first option, which a browser
+// refuses. Nothing downstream ran, so clicking revealed nothing at all.
+t("committing to a guess reveals the answer", function () {
+  var opts = REG["bet1-opts"].children;
+  if (opts.length < 3) { throw new Error("no options rendered"); }
+  opts[0].fire("click");                       // the first option is a wrong one
+  if (!opts[0].classList.contains("wrong")) {
+    throw new Error("the option picked was not marked wrong");
+  }
+  if (!opts[2].classList.contains("right")) {
+    throw new Error("the correct option was not revealed");
+  }
+  if (REG["bet1-why"].textContent.length < 20) {
+    throw new Error("no explanation shown: " + REG["bet1-why"].textContent);
+  }
+});

@@ -3074,7 +3074,7 @@ movs  r2, #0x1
       betDone = true;
       var all = betOpts.querySelectorAll(".bet-opt");
       for (var i = 0; i < all.length; i++) {
-        all[i].classList.add(BET[i].ok ? "right" : "");
+        if (BET[i].ok) { all[i].classList.add("right"); }
       }
       b.classList.add(opt.ok ? "right" : "wrong");
       betWhy.textContent = opt.why;
