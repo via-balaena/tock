@@ -1,6 +1,11 @@
-// Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
-// SPDX-License-Identifier: CC-BY-SA-4.0
+// Licensed under the Apache License, Version 2.0 or the MIT License.
+// SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright Jon Hillesheim 2026.
+//
+// This is source code rather than teaching prose, so it carries the licence of
+// the kernel it demonstrates instead of the series' CC BY-SA. Creative Commons
+// recommend against CC licences for software, and this way the file can simply
+// be reused.
 //
 // The source behind Figure 12 of chapter 1. Run this from inside this
 // repository, so that rust-toolchain.toml supplies the pinned nightly and the

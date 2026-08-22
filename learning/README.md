@@ -170,9 +170,12 @@ held to them:
 
 - `make licensecheck` walks every file in the tree and requires Tock's own SPDX
   string, which it hardcodes (`tools/ci/license-checker/src/main.rs:100`). Because
-  this series is licensed CC BY-SA 4.0 instead, `learning/.lcignore` excludes these
-  files from that check. That file is repository tooling config, so it carries the
-  Tock header itself.
+  the chapters are CC BY-SA 4.0 instead, `learning/.lcignore` excludes this
+  README, the LICENSE and each `ch*/index.html` from that check -- and nothing
+  else. Anything else a chapter ships is ordinary code under Tock's license and
+  is deliberately left to be checked, so `optimizer-demo.rs` is verified like
+  any other source file. `.lcignore` is repository tooling config, so it carries
+  the Tock header itself.
 - `make format-check` is Rust-only. A chapter may ship a `.rs` file so that a
   figure showing compiler output can be reproduced -- chapter 1 has
   `optimizer-demo.rs` -- but nothing under `learning/` is a workspace member,

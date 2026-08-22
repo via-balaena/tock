@@ -9,4 +9,7 @@
 # configuration and keeps the Tock license.
 README.md
 LICENSE
-ch*/
+# The chapter pages are CC BY-SA. Anything else a chapter ships -- demo
+# sources whose output a figure quotes, for instance -- is ordinary code
+# under Tock's licence, and is deliberately left to be checked.
+ch*/index.html
