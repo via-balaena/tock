@@ -206,6 +206,35 @@ def opacity_checks(component_css):
     return problems
 
 
+def state_scope_checks(component_css):
+    """A state token must not be the only thing anchoring a rule.
+
+    `.is-on .lamp` says "any .lamp inside anything that is on", so the rule
+    reaches into every component on the page that happens to use that token.
+    Chapter 1 had four of them from the high/low circuit, and then Figure 4 and
+    Figure 7 started using `.is-on` for "this is the one being shown". Nothing
+    collided, because none of the new elements contains a `.lamp`, `.ray`,
+    `.volt` or `.wire` -- but that is luck, and it is the same shape as the
+    `.next` collision that rendered every step of the race figure as a narrow
+    centred box. Anchor the rule on the component as well: `.lvl.is-on .lamp`.
+
+    Only descendant combinators matter here. `.hxrange.is-on` is a compound
+    selector, so it cannot match anything but an `.hxrange`.
+    """
+    problems = []
+    for match in re.finditer(r"(?:^|\n)([^\n{]+)\{", component_css):
+        for selector in (s.strip() for s in match.group(1).split(",")):
+            parts = selector.split()
+            if len(parts) < 2:
+                continue
+            if re.fullmatch(r"\.(is|has)-[\w-]+", parts[0]):
+                problems.append(
+                    "%r is anchored only on a state token, so it reaches into "
+                    "every component that uses %s - name the component too"
+                    % (selector, parts[0]))
+    return problems
+
+
 def _specificity(selector):
     """(ids, classes+pseudo-classes+attributes, elements). Good enough for the
     flat, class-based selectors this series uses.
@@ -486,6 +515,10 @@ def static_checks(html, name):
 
     if marker in html and "</style>" in html:
         problems.extend(opacity_checks(
+            html.split(marker, 1)[1].split("</style>", 1)[0]))
+
+    if marker in html and "</style>" in html:
+        problems.extend(state_scope_checks(
             html.split(marker, 1)[1].split("</style>", 1)[0]))
 
     problems.extend(palette_checks(html))

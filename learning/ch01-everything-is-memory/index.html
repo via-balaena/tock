@@ -1513,15 +1513,15 @@ dfn {
 /* ---------- Figure 3: high or low ---------- */
 
 .wire { stroke: var(--rule-strong); fill: none; stroke-width: 2.5; }
-.is-on .wire { stroke: var(--hot-fill); }
+.lvl.is-on .wire { stroke: var(--hot-fill); }
 .lamp { fill: var(--surface-sunk); stroke: var(--rule-strong); stroke-width: 1.5; }
-.is-on .lamp { fill: var(--hot-fill); stroke: var(--hot); }
+.lvl.is-on .lamp { fill: var(--hot-fill); stroke: var(--hot); }
 .ray { stroke: var(--hot-fill); stroke-width: 2; stroke-linecap: round; opacity: 0; }
-.is-on .ray { opacity: 1; }
+.lvl.is-on .ray { opacity: 1; }
 .volt {
   font-family: var(--mono); font-size: 13px; font-weight: 500; fill: var(--ink-faint);
 }
-.is-on .volt { fill: var(--hot); }
+.lvl.is-on .volt { fill: var(--hot); }
 
 .lvlsay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1rem; }
 .say {
@@ -2059,7 +2059,7 @@ dfn {
       <button id="lvl-high" aria-pressed="true">Drive it high</button>
       <button id="lvl-low" aria-pressed="false">Drive it low</button>
     </div>
-    <div id="lvl-fig" class="is-on">
+    <div id="lvl-fig" class="lvl is-on">
     <div class="svg-scroll">
   <svg viewBox="0 0 560 176" role="img" aria-label="One pin wired through a
   light and a resistor to ground. Driving the pin to 3.3 volts makes current flow
@@ -2618,7 +2618,7 @@ dfn {
           value =
           <input id="we2-val" type="text" inputmode="text" spellcheck="false" aria-label="the value that selects pin 14" placeholder="0x&hellip;">
         </div>
-        <p class="verdict" id="we2-say">Turning a pin off is a different register, not a different value. The listing above has it.</p>
+        <p class="verdict" id="we2-say">Turning a pin off is a different register, not a different value. Figure&nbsp;7 has it.</p>
       </div>
 
     </div>
@@ -2999,7 +2999,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
           <p class="optsay">The read happens.</p>
         </div>
       </div>
-      <p class="optwhy"><strong>What the optimizer was thinking.</strong> A load whose result you ignore changes nothing about a variable, so it was deleted outright. The table earlier in this chapter said it: on some peripherals a read is itself an action.</p>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> A load whose result you ignore changes nothing about a variable, so it was deleted outright. The street-analogy table earlier said it: on some peripherals a read is itself an action.</p>
     </div>
   </div>
   <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened where the compiler repeated it. The source is <code>optimizer-demo.rs</code>, beside this page, and the left column of each pair is exactly what it contains.</div>
@@ -3634,7 +3634,7 @@ movs  r2, #0x1
     "Shift 1 left by 3 places. Bit 3 is the fourth bit, counting bit 0 at the right.");
   wire("we2-addr", ["d0000020"], "we2-say",
     "Right \u2014 that is gpio_out_clr, at offset 0x020.",
-    "Turning a pin off means a different register, not a different value. Look for the one whose comment says clear.");
+    "Turning a pin off means a different register, not a different value. Figure 7 lists the one that lowers a pin.");
   wire("we2-val", ["4000"], "we2-say",
     "Right \u2014 1 << 14 is 0x4000.",
     "Same rule as before: 1 shifted left 14 places. Four bits per hex digit may help.");
