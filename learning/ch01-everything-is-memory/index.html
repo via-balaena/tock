@@ -1208,6 +1208,199 @@ dfn {
 .dis-skip { display: none; }
 .dis-all .dis-skip { display: inline; opacity: .38; }
 .dis-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+
+/* ---------- shared by the three opening figures ---------- */
+
+.instrument-body svg {
+  width: 100%; height: auto; max-width: 100%;
+  color: var(--ink); overflow: visible; display: block;
+}
+.ctr { text-anchor: middle; }
+.svg-scroll { overflow-x: auto; overflow-y: hidden; margin: .2rem 0 .4rem; }
+.wide-fig .svg-scroll svg { min-width: 34rem; }
+
+/* A control that is one of a set, where exactly one is current. */
+.seg {
+  display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem;
+}
+.seg button { font-size: .85rem; }
+.seg button[aria-pressed="true"] {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+}
+
+/* A short labelled readout strip. */
+.pickout {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .55rem .75rem; margin: .9rem 0;
+}
+.pickout-k {
+  font-family: var(--display); font-size: .68rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.pickout-v {
+  font-family: var(--mono); font-size: .98rem; font-weight: 500;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.pickout-v.hot { color: var(--hot); }
+
+/* ---------- Figure 1: the nine words ---------- */
+
+.zone-bg { fill: var(--surface-sunk); stroke: var(--rule); stroke-width: 1; }
+.zone-t {
+  font-family: var(--display); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .06em; fill: var(--ink-faint);
+}
+.zone.is-lit .zone-bg { fill: var(--hot-soft); stroke: var(--hot); }
+.zone.is-lit .zone-t { fill: var(--hot); }
+
+.cast-el { transition: opacity .12s ease; }
+.cast-el.is-dim { opacity: .42; }
+.cast-t {
+  font-family: var(--display); font-size: 11px; font-weight: 600;
+  fill: var(--ink-faint);
+}
+.cast-mono { font-family: var(--mono); font-size: 13px; fill: var(--ink); }
+.cast-el.is-lit .cast-t { fill: var(--hot); font-weight: 700; }
+.cast-el.is-lit .cast-mono { fill: var(--hot); }
+
+.hole { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1.5; }
+.lit-hole { fill: var(--surface); stroke: var(--rule-strong); }
+.cast-el.is-lit .lit-hole { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 2.5; }
+.dashed { fill: none; stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.cast-el.is-lit .dashed { stroke: var(--hot); }
+.outline { fill: none; stroke: var(--rule-strong); stroke-width: 1.5; }
+.cast-el.is-lit .outline { stroke: var(--hot); stroke-width: 2.5; }
+.slot { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.cast-el.is-lit .lit-slot { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 2; }
+.sq { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.cast-el.is-lit .lit-sq { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 1.5; }
+.arrow { stroke: var(--rule-strong); }
+.cast-el.is-lit .arrow { stroke: var(--hot); }
+
+.where-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: .6rem; margin: 1rem 0 1.2rem;
+}
+.where {
+  font-size: .88rem; line-height: 1.45; color: var(--ink-faint);
+  padding: .5rem .65rem; border-left: 2px solid var(--rule);
+}
+.where.is-lit {
+  color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
+}
+
+.glossary.cast { align-items: start; }
+.cast-word {
+  font-family: var(--mono); font-size: .88rem; font-weight: 500;
+  color: var(--accent); background: none; border: 1px solid transparent;
+  text-transform: none; letter-spacing: 0;
+  padding: .05rem .3rem; margin: -.05rem -.3rem; cursor: pointer;
+  border-radius: 2px; text-align: left;
+}
+.cast-word:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.cast-word dfn { font-style: normal; }
+.glossary.cast dt.is-lit .cast-word {
+  color: var(--hot); border-color: var(--hot); background: var(--hot-soft);
+}
+.glossary.cast dd.is-lit { color: var(--ink); }
+
+/* ---------- Figure 2: the board ---------- */
+
+.pcb { fill: var(--surface-sunk); stroke: var(--rule-strong); stroke-width: 1.5; }
+.pcb-usb { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1.5; }
+.pcb-mark { fill: var(--ink-faint); }
+.pcb-chip { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 2; }
+.pcb-chip-t { fill: var(--ink-soft); }
+
+.pad { cursor: pointer; }
+.pad-box { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.pad-name { font-family: var(--mono); font-size: 10.5px; fill: var(--ink-soft); }
+.pad-num {
+  font-family: var(--display); font-size: 10px; font-weight: 600;
+  fill: var(--ink-faint);
+}
+.pad-hole { fill: var(--ground); stroke: var(--rule-strong); stroke-width: 1.5; }
+
+.k-gnd .pad-box { fill: var(--surface-sunk); }
+.k-gnd .pad-name { fill: var(--ink-faint); }
+.k-pwr .pad-box { stroke: var(--danger); }
+.k-pwr .pad-name { fill: var(--danger); }
+.k-sys .pad-box { stroke: var(--danger); stroke-dasharray: 3 2; }
+.k-sys .pad-name { fill: var(--danger); }
+.k-gpio .pad-box { stroke: var(--accent); }
+.k-gpio .pad-name { fill: var(--accent); }
+.k-tock .pad-box { stroke: var(--accent); stroke-dasharray: 3 2; }
+.k-tock .pad-name { fill: var(--accent); }
+
+.pad:hover .pad-box { stroke: var(--hot); stroke-width: 2; }
+.pad.is-lit .pad-box {
+  fill: var(--hot-soft); stroke: var(--hot); stroke-width: 2.5;
+}
+.pad.is-lit .pad-name { fill: var(--hot); font-weight: 700; }
+.pad.is-lit .pad-num { fill: var(--hot); }
+.pad.is-lit .pad-hole { fill: var(--hot-fill); stroke: var(--hot); }
+.pad.is-kin .pad-box { fill: var(--hot-soft); }
+
+.cats { display: flex; flex-direction: column; gap: .45rem; margin-top: 1.1rem; }
+.cat {
+  font-size: .9rem; line-height: 1.45; color: var(--ink-faint);
+  padding: .45rem .65rem; border-left: 2px solid var(--rule);
+}
+.cat.is-lit {
+  color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
+}
+
+.four {
+  margin-top: 1.3rem; padding: .9rem 1rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.four-h { font-size: .92rem; line-height: 1.5; color: var(--ink-soft); }
+.four-cols {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: .7rem; margin-top: .8rem;
+}
+.four-col {
+  display: flex; flex-direction: column; gap: .25rem;
+  padding: .6rem .7rem; background: var(--surface);
+  border: 1px solid var(--rule); opacity: .4;
+}
+.four-col.is-lit { opacity: 1; border-color: var(--hot); }
+.four-name {
+  font-family: var(--display); font-size: .72rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.four-col.is-lit .four-name { color: var(--hot); }
+.four-line { font-size: .86rem; line-height: 1.4; color: var(--ink-soft); }
+.four-line b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.four-line.hot b { color: var(--hot); }
+.four-note {
+  margin-top: .8rem; font-size: .88rem; line-height: 1.5; color: var(--ink-soft);
+  border-left: 2px solid var(--hot); padding-left: .65rem; display: none;
+}
+.four-note.is-lit { display: block; }
+
+/* ---------- Figure 3: high or low ---------- */
+
+.wire { stroke: var(--rule-strong); fill: none; stroke-width: 2.5; }
+.is-on .wire { stroke: var(--hot-fill); }
+.lamp { fill: var(--surface-sunk); stroke: var(--rule-strong); stroke-width: 1.5; }
+.is-on .lamp { fill: var(--hot-fill); stroke: var(--hot); }
+.ray { stroke: var(--hot-fill); stroke-width: 2; stroke-linecap: round; opacity: 0; }
+.is-on .ray { opacity: 1; }
+.volt {
+  font-family: var(--mono); font-size: 13px; font-weight: 500; fill: var(--ink-faint);
+}
+.is-on .volt { fill: var(--hot); }
+
+.lvlsay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1rem; }
+.say {
+  font-size: .92rem; line-height: 1.5; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.say.is-lit {
+  color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
+}
 </style>
 
 <div class="wrap">
@@ -1237,96 +1430,509 @@ dfn {
 </section>
 
 <section class="col">
-  <h2>Nine words, before we start</h2>
-  <p>These get used constantly from here on. None of them is hard. They are gathered here so that later, when something complicated is happening, no sentence has to stop and explain a noun.</p>
-  <p>Skim them. You do not need to remember them &mdash; each one is repeated in context when it matters, and the <a href="#glossary">glossary</a> at the end has all of them plus the rest.</p>
+  <h2>The nine words, and where each one is</h2>
+  <p>These get used constantly from here on. None is hard, and you do not have to remember them &mdash; each is repeated in context when it matters.</p>
+  <p>What is worth having now is a <em>place</em> for each one, because they name things in three different places.</p>
+  <p class="note">Every word the chapter uses, including these, is collected in the <a href="#glossary">glossary</a> at the end.</p>
 </section>
 
-<div class="col">
-  <dl class="glossary" id="cast">
-    <dt><dfn>pin</dfn></dt>
-    <dd>One numbered connection between the chip and the outside world. On a Pico&nbsp;2 these come out as numbered holes along the board's two long edges.</dd>
-
-    <dt><dfn>voltage</dfn></dt>
-    <dd>Electrical pressure, measured in volts. On this board the two that matter are 3.3&nbsp;V and 0&nbsp;V.</dd>
-
-    <dt><dfn>GPIO</dfn></dt>
-    <dd>General-purpose input/output. A pin the chip has no fixed plan for, so you decide what it means.</dd>
-
-    <dt><dfn>bit</dfn></dt>
-    <dd>A single 0 or 1. The smallest thing a computer holds.</dd>
-
-    <dt><dfn>byte</dfn></dt>
-    <dd>Eight bits kept together. The unit that locations are counted in.</dd>
-
-    <dt><dfn>address</dfn></dt>
-    <dd>A number that names one location. Like a house number along a very long street.</dd>
-
-    <dt><dfn>store</dfn></dt>
-    <dd>What a processor does when it puts a number at an address. One machine instruction.</dd>
-
-    <dt><dfn>register</dfn></dt>
-    <dd>A fixed-width slot of hardware, 32 bits wide here, that lives at an address and that some part of the chip is watching.</dd>
-
-    <dt><dfn>peripheral</dfn></dt>
-    <dd>A lump of dedicated hardware beside the processor with one job: drive pins, count time, send bytes down a wire.</dd>
-  </dl>
-</div>
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">The nine words, and where each one is</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a word. The picture shows you where that thing actually is.</p>
+  <svg viewBox="0 0 560 258" role="img" aria-label="The nine words grouped by where the thing they name actually is: out on the board, in a number travelling between, or inside the chip.">
+    <g id="zone-board" class="zone">
+      <rect class="zone-bg" x="8" y="26" width="168" height="212" rx="6"></rect>
+      <text class="zone-t" x="20" y="48">Out on the board</text>
+      <rect class="d-box-sunk" x="26" y="64" width="26" height="140" rx="3"></rect>
+    </g>
+    <g id="svg-gpio" class="cast-el">
+      <rect class="dashed" x="18" y="58" width="42" height="152" rx="5"></rect>
+      <text class="cast-t" x="20" y="228">GPIO: 26 of these</text>
+    </g>
+    <circle class="hole" cx="39" cy="88" r="7"></circle>
+    <circle class="hole" cx="39" cy="180" r="7"></circle>
+    <g id="svg-pin" class="cast-el">
+      <circle class="hole lit-hole" cx="39" cy="134" r="7"></circle>
+      <text class="cast-t" x="60" y="126">one pin</text>
+    </g>
+    <g id="svg-voltage" class="cast-el">
+      <line class="d-line" x1="46" y1="134" x2="96" y2="134" stroke-width="2.5"></line>
+      <polygon class="d-hot" points="98,124 98,144 118,134"></polygon>
+      <line class="d-line" x1="118" y1="123" x2="118" y2="145" stroke-width="2.5"></line>
+      <line class="d-line" x1="118" y1="134" x2="150" y2="134" stroke-width="2.5"></line>
+      <line class="d-line" x1="150" y1="126" x2="150" y2="142" stroke-width="2.5"></line>
+      <line class="d-thin" x1="143" y1="148" x2="157" y2="148"></line>
+      <text class="cast-t" x="62" y="104">3.3 V</text>
+      <text class="cast-t" x="126" y="168">0 V</text>
+    </g>
+    <g id="zone-number" class="zone">
+      <rect class="zone-bg" x="192" y="26" width="168" height="212" rx="6"></rect>
+      <text class="zone-t" x="204" y="48">In between, as numbers</text>
+    </g>
+    <g id="svg-address" class="cast-el">
+      <text class="cast-mono" x="204" y="80">0xD0000018</text>
+      <text class="cast-t" x="204" y="96">a whole address</text>
+    </g>
+    <rect class="sq" x="204" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="221" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="238" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="255" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="272" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="289" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="306" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="323" y="130" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="204" y="148" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="221" y="148" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="238" y="148" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="272" y="148" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="289" y="148" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="306" y="148" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="323" y="148" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="204" y="166" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="221" y="166" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="238" y="166" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="255" y="166" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="272" y="166" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="289" y="166" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="306" y="166" width="14" height="14" rx="2"></rect>
+    <rect class="sq" x="323" y="166" width="14" height="14" rx="2"></rect>
+    <g id="svg-byte" class="cast-el">
+      <rect class="sq lit-sq" x="204" y="112" width="14" height="14" rx="2"></rect>
+      <rect class="sq lit-sq" x="221" y="112" width="14" height="14" rx="2"></rect>
+      <rect class="sq lit-sq" x="238" y="112" width="14" height="14" rx="2"></rect>
+      <rect class="sq lit-sq" x="255" y="112" width="14" height="14" rx="2"></rect>
+      <rect class="sq lit-sq" x="272" y="112" width="14" height="14" rx="2"></rect>
+      <rect class="sq lit-sq" x="289" y="112" width="14" height="14" rx="2"></rect>
+      <rect class="sq lit-sq" x="306" y="112" width="14" height="14" rx="2"></rect>
+      <rect class="sq lit-sq" x="323" y="112" width="14" height="14" rx="2"></rect>
+      <text class="cast-t" x="204" y="204">one byte: a row of eight</text>
+    </g>
+    <g id="svg-bit" class="cast-el">
+      <rect class="sq lit-sq" x="255" y="148" width="14" height="14" rx="2"></rect>
+      <text class="cast-t" x="204" y="224">one bit: a single square</text>
+    </g>
+    <g id="zone-chip" class="zone">
+      <rect class="zone-bg" x="376" y="26" width="176" height="212" rx="6"></rect>
+      <text class="zone-t" x="388" y="48">Inside the chip</text>
+      <rect class="d-box" x="388" y="58" width="144" height="150" rx="4"></rect>
+      <rect class="d-box-sunk" x="400" y="70" width="58" height="28" rx="3"></rect>
+      <text class="d-small ctr" x="429" y="88">core</text>
+    </g>
+    <g id="svg-store" class="cast-el">
+      <path class="d-line arrow" d="M429 100 L429 124" stroke-width="2.5" marker-end="url(#cast-ar)"></path>
+      <text class="cast-t" x="438" y="117">store</text>
+    </g>
+    <g id="svg-peripheral" class="cast-el">
+      <rect class="outline" x="400" y="126" width="120" height="76" rx="4"></rect>
+      <text class="cast-t" x="408" y="142">a peripheral</text>
+    </g>
+    <rect class="slot" x="410" y="150" width="100" height="12" rx="2"></rect>
+    <rect class="slot" x="410" y="186" width="100" height="12" rx="2"></rect>
+    <g id="svg-register" class="cast-el">
+      <rect class="slot lit-slot" x="410" y="168" width="100" height="12" rx="2"></rect>
+      <text class="cast-t" x="400" y="224">one register, 32 bits wide</text>
+    </g>
+    <defs><marker id="cast-ar" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="currentColor"></path></marker></defs>
+  </svg>
+    <div class="where-row">
+      <p class="where" id="where-board">Three of them name something you could point at on the board in front of you.</p>
+      <p class="where" id="where-number">Three name part of a number, which is the only thing that ever travels between the other two.</p>
+      <p class="where" id="where-chip">Three name something sealed inside the chip, which you will never see.</p>
+    </div>
+    <dl class="glossary cast" id="cast">
+      <dt id="dt-pin"><button class="cast-word" id="btn-pin" aria-pressed="true"><dfn>pin</dfn></button></dt>
+      <dd id="dd-pin">One numbered connection between the chip and the outside world. On a Pico&nbsp;2 these come out as numbered holes along the board's two long edges.</dd>
+      <dt id="dt-voltage"><button class="cast-word" id="btn-voltage" aria-pressed="false"><dfn>voltage</dfn></button></dt>
+      <dd id="dd-voltage">Electrical pressure, measured in volts. On this board the two that matter are 3.3&nbsp;V and 0&nbsp;V.</dd>
+      <dt id="dt-gpio"><button class="cast-word" id="btn-gpio" aria-pressed="false"><dfn>GPIO</dfn></button></dt>
+      <dd id="dd-gpio">General-purpose input/output. A pin the chip has no fixed plan for, so you decide what it means.</dd>
+      <dt id="dt-bit"><button class="cast-word" id="btn-bit" aria-pressed="false"><dfn>bit</dfn></button></dt>
+      <dd id="dd-bit">A single 0 or 1. The smallest thing a computer holds.</dd>
+      <dt id="dt-byte"><button class="cast-word" id="btn-byte" aria-pressed="false"><dfn>byte</dfn></button></dt>
+      <dd id="dd-byte">Eight bits kept together. The unit that locations are counted in.</dd>
+      <dt id="dt-address"><button class="cast-word" id="btn-address" aria-pressed="false"><dfn>address</dfn></button></dt>
+      <dd id="dd-address">A number that names one location. Like a house number along a very long street.</dd>
+      <dt id="dt-peripheral"><button class="cast-word" id="btn-peripheral" aria-pressed="false"><dfn>peripheral</dfn></button></dt>
+      <dd id="dd-peripheral">A lump of dedicated hardware beside the processor with one job: drive pins, count time, send bytes down a wire.</dd>
+      <dt id="dt-register"><button class="cast-word" id="btn-register" aria-pressed="false"><dfn>register</dfn></button></dt>
+      <dd id="dd-register">A fixed-width slot of hardware, 32 bits wide here, that lives at an address and that some part of the chip is watching.</dd>
+      <dt id="dt-store"><button class="cast-word" id="btn-store" aria-pressed="false"><dfn>store</dfn></button></dt>
+      <dd id="dd-store">What a processor does when it puts a number at an address. One machine instruction.</dd>
+    </dl>
+  </div>
+  <div class="instrument-note">Notice that nothing in the right-hand column is reachable. You cannot touch a register or watch a store happen. The whole of the rest of this chapter is about reaching that column using only the middle one.</div>
+</figure>
 
 <section class="col">
   <h2>Start with the metal</h2>
   <p>Start with what is physically in front of you, because it is smaller and plainer than people expect.</p>
-  <p>The chip is a black square about 7&nbsp;mm on a side. It has nothing sticking out of it. Its connections are flat metal pads around the underside of its edge, soldered flat to the board, and you will probably never touch one.</p>
-  <p>What you touch is the board. A Pico&nbsp;2 is a circuit board 21&nbsp;mm by 51&nbsp;mm with forty numbered holes running down its two long edges, and most of those holes are wired straight through to the chip. Twenty-six of the chip's thirty GPIO connections come out there.</p>
-  <p>Each of those is a pin. The chip can do exactly two things to one:</p>
-  <ul>
-    <li>connect it to 3.3&nbsp;volts, which everyone calls <strong>high</strong></li>
-    <li>connect it to 0&nbsp;volts, which everyone calls <strong>low</strong></li>
-  </ul>
-  <p>That is the whole vocabulary. High or low, on about thirty pins. Every blinking light, every spinning motor, every message down a wire is built from that one choice, repeated quickly.</p>
-  <p>So here is the concrete thing this chapter explains. Put a small light between one pin and 0&nbsp;volts. Drive that pin high and current flows through the light, so it glows.</p>
+  <p>The chip is a black square about 7&nbsp;mm on a side, soldered flat, with nothing sticking out of it. What you actually touch is the board it sits on.</p>
 </section>
 
-<figure class="svgfig col">
-  <svg viewBox="0 0 560 232" role="img" aria-label="A chip pin wired through a light and a resistor to ground. Driving the pin to 3.3 volts makes current flow and the light glow; driving it to 0 volts leaves it dark.">
-    <text class="d-label" x="14" y="20">The only choice the chip has about one pin</text>
-    <rect class="d-hot-box" x="14" y="31" width="9" height="9"></rect>
-    <text class="d-mono" x="31" y="40">drive it to 3.3 V &rarr; current flows &rarr; the light is on</text>
-    <rect class="d-box-sunk" x="14" y="50" width="9" height="9"></rect>
-    <text class="d-mono" x="31" y="59">drive it to 0 V &rarr; no current &rarr; the light is dark</text>
-
-    <rect class="d-box" x="14" y="84" width="118" height="96" rx="3"></rect>
-    <text class="d-label" x="73" y="124" text-anchor="middle">RP2350</text>
-    <text class="d-small" x="73" y="142" text-anchor="middle">the chip</text>
-
-    <line class="d-thin" x1="132" y1="102" x2="152" y2="102"></line>
-    <line class="d-thin" x1="132" y1="118" x2="152" y2="118"></line>
-    <line class="d-thin" x1="132" y1="162" x2="152" y2="162"></line>
-    <text class="d-small" x="157" y="106">GPIO 23</text>
-    <text class="d-small" x="157" y="122">GPIO 24</text>
-    <text class="d-small" x="157" y="166">GPIO 26</text>
-
-    <line class="d-line" x1="132" y1="140" x2="240" y2="140" stroke-width="2.5"></line>
-    <text class="d-label d-hot-text" x="157" y="136">GPIO 25</text>
-
-    <polygon class="d-hot" points="242,128 242,152 266,140"></polygon>
-    <line class="d-line" x1="266" y1="127" x2="266" y2="153" stroke-width="2.5"></line>
-    <line class="d-line" x1="266" y1="140" x2="302" y2="140" stroke-width="2.5"></line>
-    <text class="d-small" x="254" y="172" text-anchor="middle">light</text>
-
-    <rect class="d-box" x="302" y="129" width="46" height="22"></rect>
-    <text class="d-small" x="325" y="172" text-anchor="middle">resistor</text>
-    <line class="d-line" x1="348" y1="140" x2="406" y2="140" stroke-width="2.5"></line>
-
-    <line class="d-line" x1="406" y1="123" x2="406" y2="157" stroke-width="2.5"></line>
-    <line class="d-line" x1="398" y1="163" x2="414" y2="163"></line>
-    <line class="d-line" x1="402" y1="169" x2="410" y2="169"></line>
-    <text class="d-small" x="420" y="144">0 V &mdash; ground</text>
-
-    <line class="d-thin" x1="232" y1="146" x2="232" y2="196" stroke-dasharray="3 3"></line>
-    <text class="d-small" x="232" y="212" text-anchor="middle">everything in this chapter is about setting the voltage here</text>
+<figure class="instrument wide-fig">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">The board on your desk, actual size</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click any hole. Find the one your light will go in.</p>
+    <div class="seg" role="group" aria-label="Which board you have">
+      <button id="board-plain" aria-pressed="true">Pico 2</button>
+      <button id="board-w" aria-pressed="false">Pico 2 W</button>
+    </div>
+    <div class="pickout">
+      <span class="pickout-k">hole</span>
+      <span class="pickout-v" id="pick-num">1</span>
+      <span class="pickout-k">carries</span>
+      <span class="pickout-v hot" id="pick-name">GP0</span>
+    </div>
+    <div class="svg-scroll">
+  <svg viewBox="0 0 560 562" role="img" aria-label="The forty holes along the edges of a Raspberry Pi Pico 2, drawn to scale. Twenty-six carry a GPIO, eight are ground, five are power, one resets the chip.">
+    <rect class="pcb" x="186" y="60" width="188" height="456.6" rx="9"></rect>
+    <rect class="pcb-usb" x="257" y="47" width="46" height="26" rx="4"></rect>
+    <text class="d-small pcb-mark" x="280" y="82" text-anchor="middle">USB</text>
+    <rect class="pcb-chip" x="248.7" y="257.0" width="62.7" height="62.7" rx="3"></rect>
+    <text class="d-small pcb-chip-t" x="280.0" y="286.3" text-anchor="middle">RP2350</text>
+    <text class="d-small pcb-chip-t" x="280.0" y="300.3" text-anchor="middle">7 mm</text>
+    <line class="d-thin" x1="186" y1="542.6" x2="275.524" y2="542.6"></line>
+    <line class="d-thin" x1="186" y1="538.6" x2="186" y2="546.6"></line>
+    <line class="d-thin" x1="275.524" y1="538.6" x2="275.524" y2="546.6"></line>
+    <text class="d-small" x="283.524" y="546.6">1 cm, actual size on a full-width screen</text>
+    <text class="d-small" x="8" y="546.6">21 &#215; 51 mm, forty holes at 2.54 mm pitch</text>
+    <g class="pad k-tock" id="pad-1" role="button" tabindex="0" aria-label="Pin 1, GP0">
+      <rect class="pad-box" x="14" y="73.0" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="86.0" text-anchor="middle">GP0</text>
+      <text class="pad-num" x="172" y="86.0" text-anchor="end">1</text>
+      <circle class="pad-hole" cx="196" cy="82.0" r="6"></circle>
+    </g>
+    <g class="pad k-tock" id="pad-2" role="button" tabindex="0" aria-label="Pin 2, GP1">
+      <rect class="pad-box" x="14" y="95.7" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="108.7" text-anchor="middle">GP1</text>
+      <text class="pad-num" x="172" y="108.7" text-anchor="end">2</text>
+      <circle class="pad-hole" cx="196" cy="104.7" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-3" role="button" tabindex="0" aria-label="Pin 3, GND">
+      <rect class="pad-box" x="14" y="118.5" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="131.5" text-anchor="middle">GND</text>
+      <text class="pad-num" x="172" y="131.5" text-anchor="end">3</text>
+      <circle class="pad-hole" cx="196" cy="127.5" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-4" role="button" tabindex="0" aria-label="Pin 4, GP2">
+      <rect class="pad-box" x="14" y="141.2" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="154.2" text-anchor="middle">GP2</text>
+      <text class="pad-num" x="172" y="154.2" text-anchor="end">4</text>
+      <circle class="pad-hole" cx="196" cy="150.2" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-5" role="button" tabindex="0" aria-label="Pin 5, GP3">
+      <rect class="pad-box" x="14" y="164.0" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="177.0" text-anchor="middle">GP3</text>
+      <text class="pad-num" x="172" y="177.0" text-anchor="end">5</text>
+      <circle class="pad-hole" cx="196" cy="173.0" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-6" role="button" tabindex="0" aria-label="Pin 6, GP4">
+      <rect class="pad-box" x="14" y="186.7" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="199.7" text-anchor="middle">GP4</text>
+      <text class="pad-num" x="172" y="199.7" text-anchor="end">6</text>
+      <circle class="pad-hole" cx="196" cy="195.7" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-7" role="button" tabindex="0" aria-label="Pin 7, GP5">
+      <rect class="pad-box" x="14" y="209.4" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="222.4" text-anchor="middle">GP5</text>
+      <text class="pad-num" x="172" y="222.4" text-anchor="end">7</text>
+      <circle class="pad-hole" cx="196" cy="218.4" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-8" role="button" tabindex="0" aria-label="Pin 8, GND">
+      <rect class="pad-box" x="14" y="232.2" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="245.2" text-anchor="middle">GND</text>
+      <text class="pad-num" x="172" y="245.2" text-anchor="end">8</text>
+      <circle class="pad-hole" cx="196" cy="241.2" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-9" role="button" tabindex="0" aria-label="Pin 9, GP6">
+      <rect class="pad-box" x="14" y="254.9" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="267.9" text-anchor="middle">GP6</text>
+      <text class="pad-num" x="172" y="267.9" text-anchor="end">9</text>
+      <circle class="pad-hole" cx="196" cy="263.9" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-10" role="button" tabindex="0" aria-label="Pin 10, GP7">
+      <rect class="pad-box" x="14" y="277.7" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="290.7" text-anchor="middle">GP7</text>
+      <text class="pad-num" x="172" y="290.7" text-anchor="end">10</text>
+      <circle class="pad-hole" cx="196" cy="286.7" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-11" role="button" tabindex="0" aria-label="Pin 11, GP8">
+      <rect class="pad-box" x="14" y="300.4" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="313.4" text-anchor="middle">GP8</text>
+      <text class="pad-num" x="172" y="313.4" text-anchor="end">11</text>
+      <circle class="pad-hole" cx="196" cy="309.4" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-12" role="button" tabindex="0" aria-label="Pin 12, GP9">
+      <rect class="pad-box" x="14" y="323.1" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="336.1" text-anchor="middle">GP9</text>
+      <text class="pad-num" x="172" y="336.1" text-anchor="end">12</text>
+      <circle class="pad-hole" cx="196" cy="332.1" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-13" role="button" tabindex="0" aria-label="Pin 13, GND">
+      <rect class="pad-box" x="14" y="345.9" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="358.9" text-anchor="middle">GND</text>
+      <text class="pad-num" x="172" y="358.9" text-anchor="end">13</text>
+      <circle class="pad-hole" cx="196" cy="354.9" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-14" role="button" tabindex="0" aria-label="Pin 14, GP10">
+      <rect class="pad-box" x="14" y="368.6" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="381.6" text-anchor="middle">GP10</text>
+      <text class="pad-num" x="172" y="381.6" text-anchor="end">14</text>
+      <circle class="pad-hole" cx="196" cy="377.6" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-15" role="button" tabindex="0" aria-label="Pin 15, GP11">
+      <rect class="pad-box" x="14" y="391.3" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="404.3" text-anchor="middle">GP11</text>
+      <text class="pad-num" x="172" y="404.3" text-anchor="end">15</text>
+      <circle class="pad-hole" cx="196" cy="400.3" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-16" role="button" tabindex="0" aria-label="Pin 16, GP12">
+      <rect class="pad-box" x="14" y="414.1" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="427.1" text-anchor="middle">GP12</text>
+      <text class="pad-num" x="172" y="427.1" text-anchor="end">16</text>
+      <circle class="pad-hole" cx="196" cy="423.1" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-17" role="button" tabindex="0" aria-label="Pin 17, GP13">
+      <rect class="pad-box" x="14" y="436.8" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="449.8" text-anchor="middle">GP13</text>
+      <text class="pad-num" x="172" y="449.8" text-anchor="end">17</text>
+      <circle class="pad-hole" cx="196" cy="445.8" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-18" role="button" tabindex="0" aria-label="Pin 18, GND">
+      <rect class="pad-box" x="14" y="459.6" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="472.6" text-anchor="middle">GND</text>
+      <text class="pad-num" x="172" y="472.6" text-anchor="end">18</text>
+      <circle class="pad-hole" cx="196" cy="468.6" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-19" role="button" tabindex="0" aria-label="Pin 19, GP14">
+      <rect class="pad-box" x="14" y="482.3" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="495.3" text-anchor="middle">GP14</text>
+      <text class="pad-num" x="172" y="495.3" text-anchor="end">19</text>
+      <circle class="pad-hole" cx="196" cy="491.3" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-20" role="button" tabindex="0" aria-label="Pin 20, GP15">
+      <rect class="pad-box" x="14" y="505.0" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="80" y="518.0" text-anchor="middle">GP15</text>
+      <text class="pad-num" x="172" y="518.0" text-anchor="end">20</text>
+      <circle class="pad-hole" cx="196" cy="514.0" r="6"></circle>
+    </g>
+    <g class="pad k-pwr" id="pad-40" role="button" tabindex="0" aria-label="Pin 40, VBUS">
+      <rect class="pad-box" x="414" y="73.0" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="86.0" text-anchor="middle">VBUS</text>
+      <text class="pad-num" x="388" y="86.0" text-anchor="start">40</text>
+      <circle class="pad-hole" cx="364" cy="82.0" r="6"></circle>
+    </g>
+    <g class="pad k-pwr" id="pad-39" role="button" tabindex="0" aria-label="Pin 39, VSYS">
+      <rect class="pad-box" x="414" y="95.7" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="108.7" text-anchor="middle">VSYS</text>
+      <text class="pad-num" x="388" y="108.7" text-anchor="start">39</text>
+      <circle class="pad-hole" cx="364" cy="104.7" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-38" role="button" tabindex="0" aria-label="Pin 38, GND">
+      <rect class="pad-box" x="414" y="118.5" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="131.5" text-anchor="middle">GND</text>
+      <text class="pad-num" x="388" y="131.5" text-anchor="start">38</text>
+      <circle class="pad-hole" cx="364" cy="127.5" r="6"></circle>
+    </g>
+    <g class="pad k-pwr" id="pad-37" role="button" tabindex="0" aria-label="Pin 37, 3V3_EN">
+      <rect class="pad-box" x="414" y="141.2" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="154.2" text-anchor="middle">3V3_EN</text>
+      <text class="pad-num" x="388" y="154.2" text-anchor="start">37</text>
+      <circle class="pad-hole" cx="364" cy="150.2" r="6"></circle>
+    </g>
+    <g class="pad k-pwr" id="pad-36" role="button" tabindex="0" aria-label="Pin 36, 3V3">
+      <rect class="pad-box" x="414" y="164.0" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="177.0" text-anchor="middle">3V3</text>
+      <text class="pad-num" x="388" y="177.0" text-anchor="start">36</text>
+      <circle class="pad-hole" cx="364" cy="173.0" r="6"></circle>
+    </g>
+    <g class="pad k-pwr" id="pad-35" role="button" tabindex="0" aria-label="Pin 35, ADC_VREF">
+      <rect class="pad-box" x="414" y="186.7" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="199.7" text-anchor="middle">ADC_VREF</text>
+      <text class="pad-num" x="388" y="199.7" text-anchor="start">35</text>
+      <circle class="pad-hole" cx="364" cy="195.7" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-34" role="button" tabindex="0" aria-label="Pin 34, GP28">
+      <rect class="pad-box" x="414" y="209.4" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="222.4" text-anchor="middle">GP28</text>
+      <text class="pad-num" x="388" y="222.4" text-anchor="start">34</text>
+      <circle class="pad-hole" cx="364" cy="218.4" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-33" role="button" tabindex="0" aria-label="Pin 33, AGND">
+      <rect class="pad-box" x="414" y="232.2" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="245.2" text-anchor="middle">AGND</text>
+      <text class="pad-num" x="388" y="245.2" text-anchor="start">33</text>
+      <circle class="pad-hole" cx="364" cy="241.2" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-32" role="button" tabindex="0" aria-label="Pin 32, GP27">
+      <rect class="pad-box" x="414" y="254.9" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="267.9" text-anchor="middle">GP27</text>
+      <text class="pad-num" x="388" y="267.9" text-anchor="start">32</text>
+      <circle class="pad-hole" cx="364" cy="263.9" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-31" role="button" tabindex="0" aria-label="Pin 31, GP26">
+      <rect class="pad-box" x="414" y="277.7" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="290.7" text-anchor="middle">GP26</text>
+      <text class="pad-num" x="388" y="290.7" text-anchor="start">31</text>
+      <circle class="pad-hole" cx="364" cy="286.7" r="6"></circle>
+    </g>
+    <g class="pad k-sys" id="pad-30" role="button" tabindex="0" aria-label="Pin 30, RUN">
+      <rect class="pad-box" x="414" y="300.4" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="313.4" text-anchor="middle">RUN</text>
+      <text class="pad-num" x="388" y="313.4" text-anchor="start">30</text>
+      <circle class="pad-hole" cx="364" cy="309.4" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-29" role="button" tabindex="0" aria-label="Pin 29, GP22">
+      <rect class="pad-box" x="414" y="323.1" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="336.1" text-anchor="middle">GP22</text>
+      <text class="pad-num" x="388" y="336.1" text-anchor="start">29</text>
+      <circle class="pad-hole" cx="364" cy="332.1" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-28" role="button" tabindex="0" aria-label="Pin 28, GND">
+      <rect class="pad-box" x="414" y="345.9" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="358.9" text-anchor="middle">GND</text>
+      <text class="pad-num" x="388" y="358.9" text-anchor="start">28</text>
+      <circle class="pad-hole" cx="364" cy="354.9" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-27" role="button" tabindex="0" aria-label="Pin 27, GP21">
+      <rect class="pad-box" x="414" y="368.6" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="381.6" text-anchor="middle">GP21</text>
+      <text class="pad-num" x="388" y="381.6" text-anchor="start">27</text>
+      <circle class="pad-hole" cx="364" cy="377.6" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-26" role="button" tabindex="0" aria-label="Pin 26, GP20">
+      <rect class="pad-box" x="414" y="391.3" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="404.3" text-anchor="middle">GP20</text>
+      <text class="pad-num" x="388" y="404.3" text-anchor="start">26</text>
+      <circle class="pad-hole" cx="364" cy="400.3" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-25" role="button" tabindex="0" aria-label="Pin 25, GP19">
+      <rect class="pad-box" x="414" y="414.1" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="427.1" text-anchor="middle">GP19</text>
+      <text class="pad-num" x="388" y="427.1" text-anchor="start">25</text>
+      <circle class="pad-hole" cx="364" cy="423.1" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-24" role="button" tabindex="0" aria-label="Pin 24, GP18">
+      <rect class="pad-box" x="414" y="436.8" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="449.8" text-anchor="middle">GP18</text>
+      <text class="pad-num" x="388" y="449.8" text-anchor="start">24</text>
+      <circle class="pad-hole" cx="364" cy="445.8" r="6"></circle>
+    </g>
+    <g class="pad k-gnd" id="pad-23" role="button" tabindex="0" aria-label="Pin 23, GND">
+      <rect class="pad-box" x="414" y="459.6" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="472.6" text-anchor="middle">GND</text>
+      <text class="pad-num" x="388" y="472.6" text-anchor="start">23</text>
+      <circle class="pad-hole" cx="364" cy="468.6" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-22" role="button" tabindex="0" aria-label="Pin 22, GP17">
+      <rect class="pad-box" x="414" y="482.3" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="495.3" text-anchor="middle">GP17</text>
+      <text class="pad-num" x="388" y="495.3" text-anchor="start">22</text>
+      <circle class="pad-hole" cx="364" cy="491.3" r="6"></circle>
+    </g>
+    <g class="pad k-gpio" id="pad-21" role="button" tabindex="0" aria-label="Pin 21, GP16">
+      <rect class="pad-box" x="414" y="505.0" width="132" height="18" rx="3"></rect>
+      <text class="pad-name" x="480" y="518.0" text-anchor="middle">GP16</text>
+      <text class="pad-num" x="388" y="518.0" text-anchor="start">21</text>
+      <circle class="pad-hole" cx="364" cy="514.0" r="6"></circle>
+    </g>
   </svg>
-  <figcaption>The whole physical goal: one pin, one light, one decision. On a plain Pico&nbsp;2 this circuit is already built onto the board, with the light wired to GPIO&nbsp;25.</figcaption>
+    </div>
+    <div class="cats">
+      <p class="cat" id="cat-gpio"><strong>26 holes carry a GPIO you may drive.</strong> Any of these will light a small lamp. This is the ordinary case.</p>
+      <p class="cat" id="cat-tock"><strong>2 of those are already spoken for.</strong> Tock sends its own console output through GPIO&nbsp;0 and GPIO&nbsp;1, so driving either one cuts off the kernel while you watch.</p>
+      <p class="cat" id="cat-gnd"><strong>8 holes are 0 volts.</strong> Seven are plain ground; the eighth is a quieter ground kept for the four pins that measure voltages. Your lamp needs one of these at its far end.</p>
+      <p class="cat" id="cat-pwr"><strong>5 holes are power, not signal.</strong> Some feed the board and some are fed by it. None of them answers to a store.</p>
+      <p class="cat" id="cat-sys"><strong>1 hole resets the chip.</strong> Pull it to 0 volts and the RP2350 stops and starts again.</p>
+    </div>
+    <div class="four">
+      <p class="four-h">Four of the chip&rsquo;s thirty GPIOs never reach a hole at all. The board kept them, and what it kept them for is the difference between the two boards:</p>
+      <div class="four-cols">
+        <div class="four-col" id="variant-plain">
+          <span class="four-name">Pico 2</span>
+          <span class="four-line"><b>GPIO 23</b> on-board power-save control</span>
+          <span class="four-line"><b>GPIO 24</b> senses whether USB power is present</span>
+          <span class="four-line hot"><b>GPIO 25</b> the little green light</span>
+          <span class="four-line"><b>GPIO 29</b> measures the input voltage</span>
+        </div>
+        <div class="four-col" id="variant-w">
+          <span class="four-name">Pico 2 W</span>
+          <span class="four-line"><b>GPIO 23</b> switches the radio on</span>
+          <span class="four-line"><b>GPIO 24</b> carries data to the radio</span>
+          <span class="four-line hot"><b>GPIO 25</b> selects the radio</span>
+          <span class="four-line"><b>GPIO 29</b> clocks the radio</span>
+        </div>
+      </div>
+      <p class="four-note" id="four-note-w">On the wireless board the light is not on the RP2350 at all. It hangs off the radio chip, and the only way to reach it is to ask the radio.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Drawn to scale from the Pico&nbsp;2 datasheet, &sect;3 and its own pinout figure. Both boards are 21&nbsp;&#215;&nbsp;51&nbsp;mm and both carry the same forty signals in the same forty places; only the four that never reach a hole differ. If you have a board, hold it against the drawing.</div>
+</figure>
+
+<section class="col">
+  <p>Each of those holes is a pin, and the chip can do exactly two things to one. That is the whole vocabulary. Every blinking light, every spinning motor, every message down a wire is built from that one choice, repeated quickly.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">The only two things the chip can do to a pin</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Turn it on and off. Watch which parts of the picture change, and which do not.</p>
+    <div class="seg" role="group" aria-label="What the pin is driven to">
+      <button id="lvl-high" aria-pressed="true">Drive it high</button>
+      <button id="lvl-low" aria-pressed="false">Drive it low</button>
+    </div>
+    <div id="lvl-fig" class="is-on">
+  <svg viewBox="0 0 560 176" role="img" aria-label="One pin wired through a
+  light and a resistor to ground. Driving the pin to 3.3 volts makes current flow
+  and the light glow; driving it to 0 volts leaves it dark.">
+    <rect class="d-box" x="14" y="60" width="118" height="96" rx="3"></rect>
+    <text class="d-label ctr" x="73" y="100">RP2350</text>
+    <text class="d-small ctr" x="73" y="118">the chip</text>
+
+    <line class="wire" id="wire-out" x1="132" y1="116" x2="240" y2="116"></line>
+    <text class="d-label d-hot-text" x="150" y="108">GPIO 25</text>
+    <text class="volt" id="volt-label" x="186" y="144" text-anchor="middle">3.3 V</text>
+
+    <polygon class="lamp" id="lamp" points="242,104 242,128 266,116"></polygon>
+    <line class="wire" id="wire-lamp" x1="266" y1="103" x2="266" y2="129"></line>
+    <g id="lamp-rays">
+      <line class="ray" x1="252" y1="92" x2="252" y2="80"></line>
+      <line class="ray" x1="238" y1="98" x2="229" y2="89"></line>
+      <line class="ray" x1="266" y1="98" x2="275" y2="89"></line>
+    </g>
+    <text class="d-small ctr" x="254" y="150">light</text>
+
+    <line class="wire" id="wire-res" x1="266" y1="116" x2="302" y2="116"></line>
+    <rect class="d-box" x="302" y="105" width="46" height="22"></rect>
+    <text class="d-small ctr" x="325" y="150">resistor</text>
+    <line class="wire" id="wire-gnd" x1="348" y1="116" x2="406" y2="116"></line>
+
+    <line class="d-line" x1="406" y1="99" x2="406" y2="133" stroke-width="2.5"></line>
+    <line class="d-line" x1="398" y1="139" x2="414" y2="139"></line>
+    <line class="d-line" x1="402" y1="145" x2="410" y2="145"></line>
+    <text class="d-small" x="420" y="120">0 V &#8212; ground</text>
+  </svg>
+    </div>
+    <div class="lvlsay">
+      <p class="say" id="say-high"><strong>High.</strong> The pin is connected to 3.3&nbsp;volts. Current runs from the pin, through the lamp, to ground, and the lamp glows.</p>
+      <p class="say" id="say-low"><strong>Low.</strong> The pin is connected to 0&nbsp;volts. Both ends of the lamp are now at the same voltage, so no current runs and the lamp is dark.</p>
+    </div>
+    <div class="pickout">
+      <span class="pickout-k">what did that</span>
+      <span class="pickout-v hot" id="lvl-store">*0xD0000018 = 0x02000000</span>
+    </div>
+  </div>
+  <div class="instrument-note">That bottom line is the entire subject of this chapter, and by the end of it you will be able to read every character of it. Notice that the two states differ by one number, stored to one place.</div>
 </figure>
 
 <section class="col">
@@ -1370,7 +1976,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-label">Figure 4</span>
     <span class="instrument-title">One digit decides who answers</span>
   </div>
   <div class="instrument-body">
@@ -1394,7 +2000,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-label">Figure 5</span>
     <span class="instrument-title">The whole address space of your board</span>
   </div>
   <div class="instrument-body">
@@ -1402,7 +2008,7 @@ dfn {
     <div class="map" id="map"></div>
     <div class="map-detail prose" id="map-detail"></div>
   </div>
-  <div class="instrument-note">Notice the first digit of every address in that list, then compare it with Figure&nbsp;1. Nothing here is arbitrary: the stripes start where they do <em>because</em> that is the digit the decode reads.</div>
+  <div class="instrument-note">Notice the first digit of every address in that list, then compare it with Figure&nbsp;4. Nothing here is arbitrary: the stripes start where they do <em>because</em> that is the digit the decode reads.</div>
 </figure>
 
 <section class="col">
@@ -1497,7 +2103,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-label">Figure 6</span>
     <span class="instrument-title">Build the number that moves one pin</span>
   </div>
   <div class="instrument-body">
@@ -1588,7 +2194,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-label">Figure 7</span>
     <span class="instrument-title">One store, from instruction to light</span>
   </div>
   <div class="instrument-body">
@@ -1613,7 +2219,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-label">Figure 8</span>
     <span class="instrument-title">Work one out yourself</span>
   </div>
   <div class="instrument-body">
@@ -1658,7 +2264,7 @@ dfn {
 </figure>
 
 <section class="col">
-  <p>Now the payoff from question 2. Drag Figure&nbsp;3 up to pin 30 or 31 and the square goes dashed, because Tock's crate for this chip defines <code>GPIO0</code> through <code>GPIO29</code> and stops.</p>
+  <p>Now the payoff from question 2. Drag Figure&nbsp;6 up to pin 30 or 31 and the square goes dashed, because Tock's crate for this chip defines <code>GPIO0</code> through <code>GPIO29</code> and stops.</p>
   <p>Those two bits are perfectly real. The store would succeed and drive nothing, because this package brings out no such pin. On the 80-pin part they drive GPIO&nbsp;30 and GPIO&nbsp;31 exactly as you would expect.</p>
   <p>So the lesson is sharper than "the register has spare bits."</p>
   <p><strong>How wide a register is and how many pins exist are two separate facts.</strong> Only one of them is visible from the code.</p>
@@ -1708,7 +2314,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-label">Figure 9</span>
     <span class="instrument-title">Four addresses, four different bargains</span>
   </div>
   <div class="instrument-body">
@@ -1762,7 +2368,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-label">Figure 10</span>
     <span class="instrument-title">Same layout, two different bases</span>
   </div>
   <div class="instrument-body">
@@ -1819,7 +2425,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-label">Figure 11</span>
     <span class="instrument-title">Two cores, one register</span>
   </div>
   <div class="instrument-body">
@@ -1923,7 +2529,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head dis-head">
-    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-label">Figure 12</span>
     <span class="instrument-title">The three lines that do the work</span>
   </div>
   <div class="instrument-body flush">
@@ -1971,7 +2577,7 @@ movs  r2, #0x1
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 10</span>
+    <span class="instrument-label">Figure 13</span>
     <span class="instrument-title">Strip the layers off <code>digitalWrite</code></span>
   </div>
   <div class="instrument-body">
@@ -2084,7 +2690,7 @@ movs  r2, #0x1
 
 <div class="sources">
   <h3>Everything above, checked against source</h3>
-  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;2 reports the correction rather than the pin.</p>
+  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;5 reports the correction rather than the pin.</p>
   <ul>
     <li>Address decode on bits 31:28, the segment table, and unmapped ranges raising a bus error &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8</li>
     <li>SIO base <code class="addr">0xD0000000</code>, IO_BANK0 <code class="addr">0x40028000</code>, PADS <code class="addr">0x40038000</code> &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/gpio.rs">chips/rp2350/src/gpio.rs</a>:1164&ndash;1169</li>
@@ -2100,12 +2706,14 @@ movs  r2, #0x1
     <li>A pin's high level being the IOVDD rail, and all GPIOs sharing it &mdash; RP2350 datasheet &sect;6.1.1. That rail is 3.3&nbsp;V on a Pico&nbsp;2: <em>"3V3 is the main 3.3&nbsp;V supply to RP2350 and its I/O"</em> &mdash; Pico&nbsp;2 datasheet</li>
     <li>Default drive strength of 4&nbsp;mA &mdash; RP2350 datasheet, <code>PADS_BANK0: GPIOx</code>, field <code>DRIVE</code>, reset <code>0x1</code></li>
     <li>GPIO&nbsp;25 as the user LED, and 23, 24, 25 and 29 being used by the board &mdash; Pico&nbsp;2 datasheet, "A few RP2350 GPIO pins are used for internal board functions"</li>
-    <li>GPIO&nbsp;25 as the radio chip-select on wireless boards, and the LED being pin 0 of the radio &mdash; Raspberry Pi's <code>pico-sdk/src/boards/include/boards/pico2_w.h</code>, and <code>boards/raspberry_pi_pico_w/src/main.rs</code>:126, which is Tock's board for the earlier RP2040 Pico&nbsp;W &mdash; Tock has no Pico&nbsp;2&nbsp;W board yet, so the Pico&nbsp;2&nbsp;W claim rests on Raspberry Pi's own header</li>
+    <li>GPIO&nbsp;25 as the radio chip-select on wireless boards, and the LED being pin 0 of the radio &mdash; Pico&nbsp;2&nbsp;W datasheet &sect;3.1: <em>"GPIO25 &mdash; OP wireless SPI CS"</em>, <em>"GPIO23 &mdash; OP wireless power on signal"</em>, <em>"GPIO24 &mdash; OP/IP wireless SPI data/IRQ"</em>, <em>"GPIO29 &mdash; OP/IP wireless SPI CLK/ADC mode (ADC3) to measure VSYS/3"</em>, and <em>"WL_GPIO0 &mdash; OP connected to user LED"</em>. Raspberry Pi's <code>pico-sdk/src/boards/include/boards/pico2_w.h</code> agrees. Tock has no Pico&nbsp;2&nbsp;W board yet, so no claim here rests on the kernel tree</li>
+    <li>Figure&nbsp;2's forty holes, and the seven that are not GPIO or ground (<code>VBUS</code>&nbsp;40, <code>VSYS</code>&nbsp;39, <code>3V3_EN</code>&nbsp;37, <code>3V3</code>&nbsp;36, <code>ADC_VREF</code>&nbsp;35, <code>AGND</code>&nbsp;33, <code>RUN</code>&nbsp;30) &mdash; Pico&nbsp;2 datasheet &sect;3.1 and its pinout figure. The Pico&nbsp;2&nbsp;W datasheet lists the same seven at the same numbers, which is why one drawing serves both</li>
+    <li>The board being 51&nbsp;&#215;&nbsp;21&nbsp;&#215;&nbsp;1&nbsp;mm with its forty pins on a 2.54&nbsp;mm pitch, which is what makes Figure&nbsp;2 drawable to scale &mdash; Pico&nbsp;2 datasheet &sect;3: <em>"a single sided 51&#215;21 mm 1 mm thick PCB"</em>, <em>"the 40 main user pins on a 2.54 mm (0.1&#8243;) pitch grid"</em></li>
     <li><code>Output::set</code> as the portable interface every chip implements &mdash; <a href="https://github.com/tock/tock/blob/master/kernel/src/hil/gpio.rs">kernel/src/hil/gpio.rs</a>:151&ndash;154</li>
     <li>Flash, kernel, application and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>. Its RAM length read <code>264K</code> at the pinned commit; it was corrected to <code>520K</code> by <a href="https://github.com/tock/tock/pull/5086">PR&nbsp;5086</a>, merged 20&nbsp;August&nbsp;2026</li>
     <li>Boot block contents: a 28-byte <code>METADATA_BLOCK</code> and a 256-byte <code>FLASH_BOOTLOADER</code> &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
     <li><code>write_volatile</code> at the bottom of every register write &mdash; <a href="https://docs.rs/tock-registers/0.10.0/src/tock_registers/registers.rs.html">tock-registers 0.10.0</a>, <code>src/registers.rs</code>:63</li>
-    <li>Figure&nbsp;9's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
+    <li>Figure&nbsp;12's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
   </ul>
   <p class="note">The datasheets are linked from <a href="https://www.raspberrypi.com/documentation/microcontrollers/silicon.html">Raspberry Pi's silicon documentation page</a>. They are licensed no-derivatives, so this page quotes them briefly with attribution rather than reproducing them.</p>
   <p>One earlier draft of this chapter said SIO was reached by a route separate from the peripheral fabric. That was wrong. The datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The mistake came from recalling the RP2040, where SIO does sit on a single-cycle port off the processor. Different chip, different answer, and it is recorded here rather than quietly fixed.</p>
@@ -2121,7 +2729,7 @@ movs  r2, #0x1
     return "0x" + ((v >>> 0).toString(16).toUpperCase().padStart(8, "0"));
   }
 
-  /* ---------------- Figure 1: the first digit decides ---------------- */
+  /* ---------------- Figure 4: the first digit decides ---------------- */
 
   var SEGMENTS = [
     { d: "0", who: "ROM",
@@ -2184,7 +2792,7 @@ movs  r2, #0x1
   });
   pickDigit(SEGMENTS[13]);
 
-  /* ---------------- Figure 2: the address map ---------------- */
+  /* ---------------- Figure 5: the address map ---------------- */
 
   var REGIONS = [
     { addr: "0x00000000", name: "ROM", size: "\u2014", hot: false,
@@ -2214,7 +2822,7 @@ movs  r2, #0x1
     { addr: "0x40070000", name: "UART0", size: "\u2014", hot: true,
       detail: "The serial port Tock's console uses. Kernel messages left the chip one byte at a time through a register in here." },
     { addr: "0x40078000", name: "UART1", size: "\u2014", hot: true,
-      detail: "A second, identical serial port. Same layout, different base \u2014 the pattern from Figure 7." },
+      detail: "A second, identical serial port. Same layout, different base \u2014 the pattern from Figure 10." },
     { addr: "0x400B0000", name: "TIMER0", size: "\u2014", hot: true,
       detail: "A counter that never stops, ticking once a microsecond. Reading it gives the current time, which has nothing to do with anything you wrote." },
     { addr: "0x40108000", name: "TICKS", size: "\u2014", hot: true,
@@ -2263,7 +2871,7 @@ movs  r2, #0x1
     }
   }());
 
-  /* ---------------- The bet, before Figure 5 ---------------- */
+  /* ---------------- The bet, before Figure 8 ---------------- */
 
   var BET = [
     { t: "0x02000000 \u2014 the value you stored", ok: false,
@@ -2296,7 +2904,7 @@ movs  r2, #0x1
     betOpts.appendChild(b);
   });
 
-  /* ---------------- Figure 5: four behaviors ---------------- */
+  /* ---------------- Figure 8: four behaviors ---------------- */
 
   var BEHAVIOURS = [
     { addr: "0x20000100", name: "SRAM", tag: "ordinary memory",
@@ -2354,7 +2962,7 @@ movs  r2, #0x1
     selectBeh(rows[2], BEHAVIOURS[2]);
   }());
 
-  /* ---------------- Figure 3: build the value ---------------- */
+  /* ---------------- Figure 6: build the value ---------------- */
 
   var bitsHi = document.getElementById("bits-hi");
   var bitsLo = document.getElementById("bits-lo");
@@ -2425,7 +3033,7 @@ movs  r2, #0x1
   pinInput.addEventListener("input", drawBits);
   drawBits();
 
-  /* ---------------- Figure 4: one store, moment by moment ---------------- */
+  /* ---------------- Figure 7: one store, moment by moment ---------------- */
 
   var TRACE = [
     { at: "The processor",
@@ -2482,7 +3090,7 @@ movs  r2, #0x1
   traceScrub.addEventListener("input", drawTrace);
   drawTrace();
 
-  /* ---------------- Figure 4: work one out ---------------- */
+  /* ---------------- Figure 7: work one out ---------------- */
 
   function normHex(s) {
     return String(s || "").trim().toLowerCase().replace(/^0x/, "").replace(/^0+(?=.)/, "");
@@ -2519,7 +3127,7 @@ movs  r2, #0x1
     "Right \u2014 1 << 14 is 0x4000.",
     "Same rule as before: 1 shifted left 14 places. Four bits per hex digit may help.");
 
-  /* ---------------- Figure 7: two cores, one register ---------------- */
+  /* ---------------- Figure 10: two cores, one register ---------------- */
 
   var SCENARIOS = {
     rmw: {
@@ -2662,7 +3270,7 @@ movs  r2, #0x1
   });
   selectTab("rmw");
 
-  /* ---------------- Figure 8: show the skipped lines ---------------- */
+  /* ---------------- Figure 11: show the skipped lines ---------------- */
 
   var disToggle = document.getElementById("dis-toggle");
   var disPre = document.getElementById("dis");
@@ -2674,7 +3282,7 @@ movs  r2, #0x1
       : "Show the 12 lines I'm skipping";
   });
 
-  /* ---------------- Figure 9: the ladder ---------------- */
+  /* ---------------- Figure 12: the ladder ---------------- */
 
   var RUNGS = [
     { who: "Arduino", code: "digitalWrite(25, HIGH);",
@@ -2686,7 +3294,7 @@ movs  r2, #0x1
     { who: "Register types", code: "write_volatile(self.value.get(), value)",
       where: "tock-registers 0.10.0, src/registers.rs:63 \u2014 where volatile is enforced for everyone" },
     { who: "The machine", code: "and   r1, r1, #0x1f\nlsl.w r1, r2, r1\nstr   r1, [r0, #0x18]",
-      where: "the real instructions from your own build \u2014 Figure 9" }
+      where: "the real instructions from your own build \u2014 Figure 12" }
   ];
 
   var ladder = document.getElementById("ladder");
@@ -2730,5 +3338,170 @@ movs  r2, #0x1
   });
   drawLadder();
 
+
+  /* ---------------- Figure 1: the nine words ---------------- */
+  // Every sentence this figure says lives in the markup. The script only moves
+  // a highlight between things that are already on screen, so a reader with
+  // scripting off still meets all nine words and the whole diagram.
+
+  var CAST = ["pin", "voltage", "gpio", "peripheral", "register", "store",
+              "bit", "byte", "address"];
+  var CAST_ZONE = {
+    pin: "board", voltage: "board", gpio: "board",
+    peripheral: "chip", register: "chip", store: "chip",
+    bit: "number", byte: "number", address: "number"
+  };
+  var CAST_ZONES = ["board", "chip", "number"];
+
+  function pickCast(word) {
+    CAST.forEach(function (k) {
+      var on = k === word;
+      var g = document.getElementById("svg-" + k);
+      g.classList.toggle("is-lit", on);
+      g.classList.toggle("is-dim", !on);
+      document.getElementById("dt-" + k).classList.toggle("is-lit", on);
+      document.getElementById("dd-" + k).classList.toggle("is-lit", on);
+      document.getElementById("btn-" + k)
+        .setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    CAST_ZONES.forEach(function (z) {
+      var on = CAST_ZONE[word] === z;
+      document.getElementById("zone-" + z).classList.toggle("is-lit", on);
+      document.getElementById("where-" + z).classList.toggle("is-lit", on);
+    });
+  }
+
+  CAST.forEach(function (k) {
+    document.getElementById("btn-" + k)
+      .addEventListener("click", function () { pickCast(k); });
+  });
+  pickCast("pin");
+
+  /* ---------------- Figure 2: the board ---------------- */
+  // Pin number, what the hole carries, and which of five kinds it is. The
+  // sentence explaining each kind is in the markup, one per kind; picking a
+  // hole lights the one that applies rather than writing a new one.
+
+  var PADS = [
+    [1, "GP0", "tock"],
+    [2, "GP1", "tock"],
+    [3, "GND", "gnd"],
+    [4, "GP2", "gpio"],
+    [5, "GP3", "gpio"],
+    [6, "GP4", "gpio"],
+    [7, "GP5", "gpio"],
+    [8, "GND", "gnd"],
+    [9, "GP6", "gpio"],
+    [10, "GP7", "gpio"],
+    [11, "GP8", "gpio"],
+    [12, "GP9", "gpio"],
+    [13, "GND", "gnd"],
+    [14, "GP10", "gpio"],
+    [15, "GP11", "gpio"],
+    [16, "GP12", "gpio"],
+    [17, "GP13", "gpio"],
+    [18, "GND", "gnd"],
+    [19, "GP14", "gpio"],
+    [20, "GP15", "gpio"],
+    [21, "GP16", "gpio"],
+    [22, "GP17", "gpio"],
+    [23, "GND", "gnd"],
+    [24, "GP18", "gpio"],
+    [25, "GP19", "gpio"],
+    [26, "GP20", "gpio"],
+    [27, "GP21", "gpio"],
+    [28, "GND", "gnd"],
+    [29, "GP22", "gpio"],
+    [30, "RUN", "sys"],
+    [31, "GP26", "gpio"],
+    [32, "GP27", "gpio"],
+    [33, "AGND", "gnd"],
+    [34, "GP28", "gpio"],
+    [35, "ADC_VREF", "pwr"],
+    [36, "3V3", "pwr"],
+    [37, "3V3_EN", "pwr"],
+    [38, "GND", "gnd"],
+    [39, "VSYS", "pwr"],
+    [40, "VBUS", "pwr"]
+  ];
+
+  function padRow(n) {
+    for (var i = 0; i < PADS.length; i++) {
+      if (PADS[i][0] === n) { return PADS[i]; }
+    }
+    return PADS[0];
+  }
+
+  function pickPad(n) {
+    var row = padRow(n);
+    var kind = row[2];
+    PADS.forEach(function (p) {
+      var g = document.getElementById("pad-" + p[0]);
+      g.classList.toggle("is-lit", p[0] === n);
+      g.classList.toggle("is-kin", p[2] === kind && p[0] !== n);
+    });
+    document.getElementById("pick-num").textContent = n;
+    document.getElementById("pick-name").textContent = row[1];
+    // A console pin is still a GPIO, so both facts light for one.
+    document.getElementById("cat-gpio")
+      .classList.toggle("is-lit", kind === "gpio" || kind === "tock");
+    document.getElementById("cat-tock").classList.toggle("is-lit", kind === "tock");
+    document.getElementById("cat-gnd").classList.toggle("is-lit", kind === "gnd");
+    document.getElementById("cat-pwr").classList.toggle("is-lit", kind === "pwr");
+    document.getElementById("cat-sys").classList.toggle("is-lit", kind === "sys");
+  }
+
+  PADS.forEach(function (p) {
+    var g = document.getElementById("pad-" + p[0]);
+    g.addEventListener("click", function () { pickPad(p[0]); });
+    g.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        pickPad(p[0]);
+      }
+    });
+  });
+
+  function pickBoard(wireless) {
+    document.getElementById("variant-plain").classList.toggle("is-lit", !wireless);
+    document.getElementById("variant-w").classList.toggle("is-lit", wireless);
+    document.getElementById("four-note-w").classList.toggle("is-lit", wireless);
+    document.getElementById("board-plain")
+      .setAttribute("aria-pressed", wireless ? "false" : "true");
+    document.getElementById("board-w")
+      .setAttribute("aria-pressed", wireless ? "true" : "false");
+  }
+
+  document.getElementById("board-plain")
+    .addEventListener("click", function () { pickBoard(false); });
+  document.getElementById("board-w")
+    .addEventListener("click", function () { pickBoard(true); });
+
+  // Opens on hole 1, which is a GPIO and is also one of the two Tock has
+  // already taken -- so the figure's first state shows the nesting rather than
+  // the ordinary case, and a reader who never clicks still learns the trap.
+  pickPad(1);
+  pickBoard(false);
+
+  /* ---------------- Figure 3: high or low ---------------- */
+
+  function pickLevel(on) {
+    document.getElementById("lvl-fig").classList.toggle("is-on", on);
+    document.getElementById("say-high").classList.toggle("is-lit", on);
+    document.getElementById("say-low").classList.toggle("is-lit", !on);
+    document.getElementById("volt-label").textContent = on ? "3.3 V" : "0 V";
+    document.getElementById("lvl-store").textContent =
+      on ? "*0xD0000018 = 0x02000000" : "*0xD0000020 = 0x02000000";
+    document.getElementById("lvl-high")
+      .setAttribute("aria-pressed", on ? "true" : "false");
+    document.getElementById("lvl-low")
+      .setAttribute("aria-pressed", on ? "false" : "true");
+  }
+
+  document.getElementById("lvl-high")
+    .addEventListener("click", function () { pickLevel(true); });
+  document.getElementById("lvl-low")
+    .addEventListener("click", function () { pickLevel(false); });
+  pickLevel(true);
 }());
 </script>

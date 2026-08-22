@@ -5,6 +5,44 @@
 // Assertions for ch01-everything-is-memory. Run via:
 //     python3 learning/tools/check.py
 
+// ---- The three opening figures: the state a reader meets on load ----
+// These run first, before anything is clicked, because the finding they
+// enforce is that a figure must teach something to a reader who never clicks.
+
+chk("the nine-words figure boots with a word already chosen",
+    REG["dt-pin"].classList.contains("is-lit"), true);
+chk("and the zone that word lives in is lit with it",
+    REG["zone-board"].classList.contains("is-lit"), true);
+chk("and so is the sentence for that zone",
+    REG["where-board"].classList.contains("is-lit"), true);
+chk("the other two zones are not lit",
+    REG["zone-chip"].classList.contains("is-lit")
+    || REG["zone-number"].classList.contains("is-lit"), false);
+chk("the chosen word's drawing is lit rather than dimmed",
+    REG["svg-pin"].classList.contains("is-lit"), true);
+chk("and the words not chosen are dimmed rather than hidden",
+    REG["svg-register"].classList.contains("is-dim"), true);
+
+chk("the board boots with a hole already chosen",
+    REG["pad-1"].classList.contains("is-lit"), true);
+chk("and the readout names that hole", REG["pick-num"].textContent, "1");
+chk("and says what it carries", REG["pick-name"].textContent, "GP0");
+chk("the board boots showing that hole 1 is a GPIO",
+    REG["cat-gpio"].classList.contains("is-lit"), true);
+chk("and that it is one of the two Tock has taken",
+    REG["cat-tock"].classList.contains("is-lit"), true);
+chk("the plain board is the one selected at the start",
+    REG["variant-plain"].classList.contains("is-lit"), true);
+chk("and the wireless note is not shown until it is asked for",
+    REG["four-note-w"].classList.contains("is-lit"), false);
+
+chk("the pin figure boots driven high, not in a blank state",
+    REG["lvl-fig"].classList.contains("is-on"), true);
+chk("and the sentence for that state is the lit one",
+    REG["say-high"].classList.contains("is-lit"), true);
+chk("and the store that caused it is on screen",
+    REG["lvl-store"].textContent, "*0xD0000018 = 0x02000000");
+
 // ---- Instrument 5: the bit builder ----
 
 // The page's own initial render, before any interaction. The harness seeds
@@ -355,3 +393,139 @@ REG["trace-scrub"].value = "0";
 REG["trace-scrub"].fire("input");
 chk("scrubbing backwards clears the seen marks",
     REG["trace"].children[3].classList.contains("seen"), false);
+
+// ---- Figure 1: the nine words ----
+
+REG["btn-register"].fire("click");
+chk("picking a word lights its entry",
+    REG["dt-register"].classList.contains("is-lit"), true);
+chk("and clears the previous one",
+    REG["dt-pin"].classList.contains("is-lit"), false);
+chk("and its definition is lit too",
+    REG["dd-register"].classList.contains("is-lit"), true);
+chk("and the drawing follows",
+    REG["svg-register"].classList.contains("is-lit"), true);
+chk("and the drawing for the old word dims",
+    REG["svg-pin"].classList.contains("is-dim"), true);
+chk("the zone changes with the word",
+    REG["zone-chip"].classList.contains("is-lit"), true);
+chk("and the old zone goes out",
+    REG["zone-board"].classList.contains("is-lit"), false);
+chk("the sentence for the new zone is lit",
+    REG["where-chip"].classList.contains("is-lit"), true);
+chk("the pressed state is announced",
+    REG["btn-register"].getAttribute("aria-pressed"), "true");
+chk("and withdrawn from the old one",
+    REG["btn-pin"].getAttribute("aria-pressed"), "false");
+
+// A word in the third zone, to prove the zone mapping is not two-valued.
+REG["btn-byte"].fire("click");
+chk("a number word lights the number zone",
+    REG["zone-number"].classList.contains("is-lit"), true);
+chk("and neither of the others",
+    REG["zone-board"].classList.contains("is-lit")
+    || REG["zone-chip"].classList.contains("is-lit"), false);
+
+// Exactly one word is ever lit, however many times it is clicked.
+REG["btn-byte"].fire("click");
+REG["btn-byte"].fire("click");
+var castLit = 0;
+["pin", "voltage", "gpio", "bit", "byte", "address",
+ "peripheral", "register", "store"].forEach(function (w) {
+  if (REG["dt-" + w].classList.contains("is-lit")) { castLit++; }
+});
+chk("exactly one word is lit after repeated clicks", castLit, 1);
+
+// ---- Figure 2: the board ----
+
+REG["pad-3"].fire("click");
+chk("a ground hole reports itself as ground",
+    REG["cat-gnd"].classList.contains("is-lit"), true);
+chk("and is no longer described as a GPIO",
+    REG["cat-gpio"].classList.contains("is-lit"), false);
+chk("the readout follows the click", REG["pick-name"].textContent, "GND");
+chk("the other ground holes are marked as kin",
+    REG["pad-8"].classList.contains("is-kin"), true);
+chk("but the chosen one is lit rather than kin",
+    REG["pad-3"].classList.contains("is-kin"), false);
+
+REG["pad-40"].fire("click");
+chk("a power hole is power", REG["cat-pwr"].classList.contains("is-lit"), true);
+chk("and names the rail", REG["pick-name"].textContent, "VBUS");
+chk("and is not ground", REG["cat-gnd"].classList.contains("is-lit"), false);
+
+REG["pad-30"].fire("click");
+chk("the reset hole is its own kind",
+    REG["cat-sys"].classList.contains("is-lit"), true);
+chk("and it is the only one of its kind",
+    REG["pad-30"].classList.contains("is-kin"), false);
+
+// AGND is analog ground, and must still read as a 0 V hole rather than power.
+REG["pad-33"].fire("click");
+chk("the analog ground hole counts as ground",
+    REG["cat-gnd"].classList.contains("is-lit"), true);
+chk("and not as power", REG["cat-pwr"].classList.contains("is-lit"), false);
+
+// The keyboard path has to work, since the pads are not real buttons.
+REG["pad-20"].fire("keydown", { key: "Enter" });
+chk("Enter selects a hole", REG["pick-name"].textContent, "GP15");
+REG["pad-21"].fire("keydown", { key: " " });
+chk("Space selects a hole", REG["pick-name"].textContent, "GP16");
+REG["pad-22"].fire("keydown", { key: "a" });
+chk("an unrelated key changes nothing", REG["pick-name"].textContent, "GP16");
+
+// Exactly one hole is ever lit.
+REG["pad-9"].fire("click");
+var padLit = 0;
+for (var pi = 1; pi <= 40; pi++) {
+  if (REG["pad-" + pi].classList.contains("is-lit")) { padLit++; }
+}
+chk("exactly one hole is lit", padLit, 1);
+
+REG["board-w"].fire("click");
+chk("choosing the wireless board lights its column",
+    REG["variant-w"].classList.contains("is-lit"), true);
+chk("and puts the other one out",
+    REG["variant-plain"].classList.contains("is-lit"), false);
+chk("and reveals the note about where its light lives",
+    REG["four-note-w"].classList.contains("is-lit"), true);
+chk("and says so to a screen reader",
+    REG["board-w"].getAttribute("aria-pressed"), "true");
+REG["board-plain"].fire("click");
+chk("switching back restores the plain board",
+    REG["variant-plain"].classList.contains("is-lit"), true);
+chk("and hides the wireless note again",
+    REG["four-note-w"].classList.contains("is-lit"), false);
+
+// Which board you have does not change which holes exist.
+chk("the board choice leaves the header alone",
+    REG["pad-9"].classList.contains("is-lit"), true);
+
+// ---- Figure 3: high or low ----
+
+REG["lvl-low"].fire("click");
+chk("driving low turns the circuit off",
+    REG["lvl-fig"].classList.contains("is-on"), false);
+chk("and lights the sentence for low",
+    REG["say-low"].classList.contains("is-lit"), true);
+chk("and puts out the one for high",
+    REG["say-high"].classList.contains("is-lit"), false);
+chk("the voltage shown is 0 V", REG["volt-label"].textContent, "0 V");
+chk("and turning a pin off is a different register, not a different value",
+    REG["lvl-store"].textContent, "*0xD0000020 = 0x02000000");
+
+REG["lvl-high"].fire("click");
+chk("driving high turns it back on",
+    REG["lvl-fig"].classList.contains("is-on"), true);
+chk("and restores the voltage", REG["volt-label"].textContent, "3.3 V");
+chk("and the set register", REG["lvl-store"].textContent,
+    "*0xD0000018 = 0x02000000");
+
+// The same button twice must not toggle.
+REG["lvl-high"].fire("click");
+chk("pressing high twice leaves it on",
+    REG["lvl-fig"].classList.contains("is-on"), true);
+REG["lvl-low"].fire("click");
+REG["lvl-low"].fire("click");
+chk("pressing low twice leaves it off",
+    REG["lvl-fig"].classList.contains("is-on"), false);
