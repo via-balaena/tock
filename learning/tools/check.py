@@ -268,6 +268,90 @@ def focus_order_checks(component_css):
     return problems
 
 
+def _live_text_ids(script, page_ids):
+    """Ids whose text the script rewrites, including ones it builds by hand.
+
+    The chapters address most of their generated elements as
+    `getElementById("hdd-" + i)`, so looking only for a literal id finds
+    nothing. A concatenated first argument is treated as a prefix and matched
+    against the ids the page actually declares. The `[^;]` window is what keeps
+    `getElementById("x").setAttribute(...)` from counting: the statement ends
+    before any `.textContent` further down could be reached.
+    """
+    exact, prefixes = set(), set()
+    for match in re.finditer(r'getElementById\(\s*"((?:[^"\\]|\\.)*)"\s*(\+)?',
+                             script):
+        if not re.match(r"[^;]{0,120}?\.textContent\s*=",
+                        script[match.end():match.end() + 160], re.S):
+            continue
+        (prefixes if match.group(2) else exact).add(match.group(1))
+    live = set(i for i in page_ids if i in exact)
+    for prefix in prefixes:
+        live |= set(i for i in page_ids if i.startswith(prefix))
+    return live
+
+
+def live_name_checks(html):
+    """A control whose content is the answer must not be renamed over the top.
+
+    `aria-label` *replaces* an element's content for anything reading the
+    accessibility tree. Put one on a control whose content the script keeps
+    rewriting and the label wins permanently, so the value never reaches a
+    screen reader. Figure 4's digit cells shipped announcing "the first digit,
+    bits 31 down to 28" and never once said which digit was in them, which is
+    the entire thing the figure exists to show. It is the same shape as the
+    `role="img"` bug on the board drawing: an accessibility attribute that
+    suppresses what it was added to help with.
+
+    `aria-labelledby` pointing at the live element is the fix, so it is what
+    this allows. Only the initial markup is scanned, since an attribute the
+    script sets is absent for the first render.
+    """
+    problems = []
+    body = html[html.index("</style>") + 8:] if "</style>" in html else html
+    markup = body.split("<script>")[0]
+    script = "".join(re.findall(r"<script.*?</script>", html, flags=re.S))
+    live = _live_text_ids(script, set(re.findall(r'\bid="([^"]+)"', html)))
+
+    # A misspelt reference is not a weaker name, it is no name at all: the
+    # browser finds no element, falls back to nothing, and the control is
+    # announced as "button". Cheap to check and impossible to see by reading.
+    declared = set(re.findall(r'\bid="([^"]+)"', html))
+    for match in re.finditer(r'aria-labelledby="([^"]+)"', markup):
+        missing = [i for i in match.group(1).split() if i not in declared]
+        if missing:
+            problems.append("aria-labelledby points at %s, which no element "
+                            "declares - the control ends up with no name at all"
+                            % ", ".join(missing))
+
+    if not live:
+        return problems
+
+    controls = r"<(button|a|summary)\b([^>]*)>(.*?)</\1>"
+    for match in re.finditer(controls, markup, re.S):
+        tag, attrs, inner = match.groups()
+        if "aria-label=" not in attrs:
+            continue
+        # An id the author has explicitly taken out of the accessibility
+        # tree is not being hidden by the label by accident. Figure 4's bit
+        # cells show 1 or 0, which is a second rendering of aria-pressed, and
+        # they say so with aria-hidden rather than relying on this checker to
+        # guess that the label happens to be harmless there.
+        declared = re.findall(r'<[^>]*\bid="([^"]+)"[^>]*>', inner)
+        opted_out = set(re.findall(
+            r'<[^>]*\bid="([^"]+)"[^>]*\baria-hidden="true"[^>]*>'
+            r'|<[^>]*\baria-hidden="true"[^>]*\bid="([^"]+)"[^>]*>', inner))
+        excluded = set(x for pair in opted_out for x in pair if x)
+        hidden = sorted((set(declared) & live) - excluded)
+        if hidden:
+            problems.append(
+                "<%s%s> carries an aria-label, which replaces its content for "
+                "a screen reader, but the script rewrites %s inside it - name "
+                "it with aria-labelledby pointing at the live element instead"
+                % (tag, attrs[:48], ", ".join(hidden)))
+    return problems
+
+
 def register_table_checks(html):
     """A register table states each offset three times, so keep them agreeing.
 
@@ -289,12 +373,15 @@ def register_table_checks(html):
             problems.append("register offset 0x%s is shown as %s in tens, "
                             "which is %d" % (hex_text, tens, int(hex_text, 16)))
     shown = [int(h, 16) for h, _ in rows]
+    # A multiple of 4, not exactly 4: a real register block can carry reserved
+    # gaps, and this rule should still hold for the table that shows one.
     for step_from, step_to in zip(shown, shown[1:]):
-        if step_to - step_from != 4:
+        step = step_to - step_from
+        if step <= 0 or step % 4:
             problems.append("register offsets step by %d from 0x%03X to 0x%03X, "
-                            "but a 32-bit register is 4 bytes wide and the "
-                            "figure's caption says so"
-                            % (step_to - step_from, step_from, step_to))
+                            "but a 32-bit register is 4 bytes wide, so every "
+                            "step should be a positive multiple of 4"
+                            % (step, step_from, step_to))
     declared = re.search(r"var RGOFF = \[([^\]]*)\];", html)
     if not declared:
         problems.append("the register table is in the markup but the script "
@@ -399,6 +486,7 @@ def static_checks(html, name):
     problems.extend(palette_checks(html))
     problems.extend(semantic_checks(html))
     problems.extend(register_table_checks(html))
+    problems.extend(live_name_checks(html))
 
     return problems
 

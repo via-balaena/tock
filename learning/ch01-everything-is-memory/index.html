@@ -978,6 +978,23 @@ dfn {
   cursor: pointer;
 }
 
+/* Text only a screen reader reads. Not `display: none`, which would take it
+   out of the accessibility tree too. Needed because an `aria-label` on a
+   control whose *content is the answer* silently replaces that content: the
+   digit cells announced "the first digit, bits 31 down to 28" and never said
+   which digit was there, which is the whole point of the figure. Naming them
+   with `aria-labelledby` pointing at the live digit fixes that, and needs one
+   hidden span per cell to carry the part that is not on screen. */
+.vh {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* Figure 4: a hex digit is four bits, and those four are worth 8, 4, 2 and 1. */
 .hexline {
   display: flex; align-items: flex-start; gap: .4rem;
@@ -2126,37 +2143,53 @@ dfn {
     <div class="hexline">
       <span class="hexline-0x">0x</span>
       <div class="hexdigits" role="group" aria-label="The eight digits of the address">
-        <button type="button" class="hd" id="hd-0" aria-pressed="true" aria-label="the first digit, bits 31 down to 28">
+        <button type="button" class="hd" id="hd-0" aria-pressed="true"
+                aria-labelledby="hdn-0 hdd-0">
+          <span class="vh" id="hdn-0">the first digit, bits 31 to 28, currently</span>
           <span class="hd-d" id="hdd-0">D</span>
-          <span class="hd-r">31:28</span>
+          <span class="hd-r" aria-hidden="true">31:28</span>
         </button>
-        <button type="button" class="hd" id="hd-1" aria-pressed="false" aria-label="the second digit, bits 27 down to 24">
+        <button type="button" class="hd" id="hd-1" aria-pressed="false"
+                aria-labelledby="hdn-1 hdd-1">
+          <span class="vh" id="hdn-1">the second digit, bits 27 to 24, currently</span>
           <span class="hd-d" id="hdd-1">0</span>
-          <span class="hd-r">27:24</span>
+          <span class="hd-r" aria-hidden="true">27:24</span>
         </button>
-        <button type="button" class="hd" id="hd-2" aria-pressed="false" aria-label="the third digit, bits 23 down to 20">
+        <button type="button" class="hd" id="hd-2" aria-pressed="false"
+                aria-labelledby="hdn-2 hdd-2">
+          <span class="vh" id="hdn-2">the third digit, bits 23 to 20, currently</span>
           <span class="hd-d" id="hdd-2">0</span>
-          <span class="hd-r">23:20</span>
+          <span class="hd-r" aria-hidden="true">23:20</span>
         </button>
-        <button type="button" class="hd" id="hd-3" aria-pressed="false" aria-label="the fourth digit, bits 19 down to 16">
+        <button type="button" class="hd" id="hd-3" aria-pressed="false"
+                aria-labelledby="hdn-3 hdd-3">
+          <span class="vh" id="hdn-3">the fourth digit, bits 19 to 16, currently</span>
           <span class="hd-d" id="hdd-3">0</span>
-          <span class="hd-r">19:16</span>
+          <span class="hd-r" aria-hidden="true">19:16</span>
         </button>
-        <button type="button" class="hd" id="hd-4" aria-pressed="false" aria-label="the fifth digit, bits 15 down to 12">
+        <button type="button" class="hd" id="hd-4" aria-pressed="false"
+                aria-labelledby="hdn-4 hdd-4">
+          <span class="vh" id="hdn-4">the fifth digit, bits 15 to 12, currently</span>
           <span class="hd-d" id="hdd-4">0</span>
-          <span class="hd-r">15:12</span>
+          <span class="hd-r" aria-hidden="true">15:12</span>
         </button>
-        <button type="button" class="hd" id="hd-5" aria-pressed="false" aria-label="the sixth digit, bits 11 down to 8">
+        <button type="button" class="hd" id="hd-5" aria-pressed="false"
+                aria-labelledby="hdn-5 hdd-5">
+          <span class="vh" id="hdn-5">the sixth digit, bits 11 to 8, currently</span>
           <span class="hd-d" id="hdd-5">0</span>
-          <span class="hd-r">11:8</span>
+          <span class="hd-r" aria-hidden="true">11:8</span>
         </button>
-        <button type="button" class="hd" id="hd-6" aria-pressed="false" aria-label="the seventh digit, bits 7 down to 4">
+        <button type="button" class="hd" id="hd-6" aria-pressed="false"
+                aria-labelledby="hdn-6 hdd-6">
+          <span class="vh" id="hdn-6">the seventh digit, bits 7 to 4, currently</span>
           <span class="hd-d" id="hdd-6">1</span>
-          <span class="hd-r">7:4</span>
+          <span class="hd-r" aria-hidden="true">7:4</span>
         </button>
-        <button type="button" class="hd" id="hd-7" aria-pressed="false" aria-label="the eighth digit, bits 3 down to 0">
+        <button type="button" class="hd" id="hd-7" aria-pressed="false"
+                aria-labelledby="hdn-7 hdd-7">
+          <span class="vh" id="hdn-7">the eighth digit, bits 3 to 0, currently</span>
           <span class="hd-d" id="hdd-7">8</span>
-          <span class="hd-r">3:0</span>
+          <span class="hd-r" aria-hidden="true">3:0</span>
         </button>
       </div>
     </div>
@@ -2164,19 +2197,19 @@ dfn {
     <div class="nib" role="group" aria-label="The four bits of the chosen digit">
       <button type="button" class="nb" id="nb-8" aria-pressed="true" aria-label="the bit worth eight">
         <span class="nb-w">8</span>
-        <span class="nb-b" id="nbb-8">1</span>
+        <span class="nb-b" id="nbb-8" aria-hidden="true">1</span>
       </button>
       <button type="button" class="nb" id="nb-4" aria-pressed="true" aria-label="the bit worth four">
         <span class="nb-w">4</span>
-        <span class="nb-b" id="nbb-4">1</span>
+        <span class="nb-b" id="nbb-4" aria-hidden="true">1</span>
       </button>
       <button type="button" class="nb" id="nb-2" aria-pressed="false" aria-label="the bit worth two">
         <span class="nb-w">2</span>
-        <span class="nb-b" id="nbb-2">0</span>
+        <span class="nb-b" id="nbb-2" aria-hidden="true">0</span>
       </button>
       <button type="button" class="nb" id="nb-1" aria-pressed="true" aria-label="the bit worth one">
         <span class="nb-w">1</span>
-        <span class="nb-b" id="nbb-1">1</span>
+        <span class="nb-b" id="nbb-1" aria-hidden="true">1</span>
       </button>
     </div>
     <div aria-live="polite">
