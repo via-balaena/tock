@@ -482,6 +482,52 @@ chk("Space selects a hole", REG["pick-name"].textContent, "GP16");
 REG["pad-22"].fire("keydown", { key: "a" });
 chk("an unrelated key changes nothing", REG["pick-name"].textContent, "GP16");
 
+// Roving tabindex: one tab stop for the figure, not forty.
+REG["pad-9"].fire("click");
+var stops = 0;
+for (var ti = 1; ti <= 40; ti++) {
+  if (REG["pad-" + ti].getAttribute("tabindex") === "0") { stops++; }
+}
+chk("the board is one tab stop, not forty", stops, 1);
+chk("and the stop is on the chosen hole",
+    REG["pad-9"].getAttribute("tabindex"), "0");
+
+// Arrow keys walk the holes the way they are physically arranged.
+REG["pad-1"].fire("keydown", { key: "ArrowDown" });
+chk("Down moves to the next hole down the left edge",
+    REG["pick-num"].textContent, "2");
+REG["pad-2"].fire("keydown", { key: "ArrowUp" });
+chk("Up moves back", REG["pick-num"].textContent, "1");
+REG["pad-1"].fire("keydown", { key: "ArrowUp" });
+chk("Up at the top edge stays put", REG["pick-num"].textContent, "1");
+// The far end of each column is the trap: without a clamp, stepping past the
+// bottom of the left column lands on pin 21, which is the bottom of the RIGHT
+// column, so the highlight silently jumps the board.
+REG["pad-20"].fire("keydown", { key: "ArrowDown" });
+chk("Down at the bottom of the left column stays, rather than crossing to 21",
+    REG["pick-num"].textContent, "20");
+REG["pad-21"].fire("keydown", { key: "ArrowDown" });
+chk("Down at the bottom of the right column stays",
+    REG["pick-num"].textContent, "21");
+REG["pad-40"].fire("keydown", { key: "ArrowUp" });
+chk("Up at the top of the right column stays",
+    REG["pick-num"].textContent, "40");
+REG["pad-1"].fire("keydown", { key: "ArrowRight" });
+chk("Right crosses to the hole opposite, which is 40 not 21",
+    REG["pick-num"].textContent, "40");
+REG["pad-40"].fire("keydown", { key: "ArrowLeft" });
+chk("and Left crosses back", REG["pick-num"].textContent, "1");
+REG["pad-21"].fire("keydown", { key: "ArrowLeft" });
+chk("pin 21 sits opposite pin 20, not pin 1",
+    REG["pick-num"].textContent, "20");
+REG["pad-1"].fire("keydown", { key: "End" });
+chk("End goes to the bottom of the column", REG["pick-num"].textContent, "20");
+REG["pad-20"].fire("keydown", { key: "Home" });
+chk("Home goes back to the top", REG["pick-num"].textContent, "1");
+REG["pad-40"].fire("keydown", { key: "End" });
+chk("End on the right column ends at 21", REG["pick-num"].textContent, "21");
+chk("moving with the keyboard also moves focus", REG._focused, "pad-21");
+
 // Exactly one hole is ever lit.
 REG["pad-9"].fire("click");
 var padLit = 0;
