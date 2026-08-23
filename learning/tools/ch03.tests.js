@@ -204,3 +204,46 @@ chk("goal 2, why a driver cannot corrupt the kernel, is delivered by figure 2",
     REG["cdp-1"].textContent.indexOf("forbids the word") > -1, true);
 chk("goal 3, which layer knows the chip, is delivered by figure 4",
     REG["hpp-4"].textContent.indexOf("first layer that knows") > -1, true);
+
+// ---- what the first review pass found ----
+// The chapter stated a guarantee and never stated its edge. Tock's own
+// documentation calls a capsule semi-trusted; nothing on the page said what the
+// second half of that word covers, which made chapter 4's "not trusted at all"
+// a weaker contrast than it should be.
+chk("the boundary of the guarantee is on the page",
+    REG["pairs-trust"].textContent.indexOf("taken away") > -1
+      && REG["pairs-trust"].textContent.indexOf("left alone") > -1, true);
+chk("and the half that is left alone names both ways a capsule still ends it",
+    REG["pairs-trust"].textContent.indexOf("panic") > -1
+      && REG["pairs-trust"].textContent.indexOf("refuse to return") > -1, true);
+// A fourth question, on the section a reader is most likely to skip.
+chk("the loop question starts hidden", REG["qdn"].classList.contains("is-off"), true);
+REG["qd-0"].fire("click");
+chk("a wrong answer to it still reveals", REG["qdn"].classList.contains("is-off"), false);
+chk("and marks the right one", REG["qd-2"].classList.contains("is-right"), true);
+chk("its answer says why nothing stops it",
+    REG["qdn"].textContent.indexOf("timeslice governs a process") > -1, true);
+
+// The four lint levels were a table written as a paragraph -- four items each
+// with a behaviour, which is the shape chapter 1 converted seven times.
+chk("the lint levels are a table",
+    REG["pairs-levels"].textContent.indexOf("allow") > -1
+      && REG["pairs-levels"].textContent.indexOf("warn") > -1
+      && REG["pairs-levels"].textContent.indexOf("deny") > -1
+      && REG["pairs-levels"].textContent.indexOf("forbid") > -1, true);
+chk("and it says which one can be turned back off",
+    REG["pairs-levels"].textContent.indexOf("turn it back off") > -1, true);
+
+// The bounds check is not there because the length is known. It is there
+// because indexing past the end panics, which finding 1 is the cost of.
+chk("the NUM_LEDS panel gives the real reason for the bounds check",
+    REG["sgp-2"].textContent.indexOf("it panics") > -1, true);
+chk("and no longer claims the known length is the cause",
+    REG["sgp-2"].textContent.indexOf("Because the length is known"), -1);
+
+// "That line is real" has to survive being checked verbatim; the real one is a
+// module-level const, not a let binding inside a function.
+chk("the third candidate is the declaration that is actually in the tree",
+    REG["cd-2"].textContent.indexOf("const SIO_BASE") > -1, true);
+chk("and the panel cites it by line",
+    REG["cdp-2"].textContent.indexOf("gpio.rs:1168") > -1, true);

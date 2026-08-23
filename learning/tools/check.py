@@ -1780,7 +1780,7 @@ WORD_NUMBERS = {"one": 1, "two": 2, "three": 3, "four": 4,
 PROMISE_PAT = re.compile(
     r"\b(chapters?\s+(?:\d+|one|two|three|four|five|six|seven)"
     r"|later\b|you will (?:see|meet)\b|for now\b|not yet\b"
-    r"|rest of this series\b)", re.I)
+    r"|next chapter\b|rest of this series\b)", re.I)
 
 
 def _chapter_sentences(html):
@@ -1882,7 +1882,9 @@ def promise_checks(root, chapters):
             problems.append("%s says %s owes something but not what" % (eid, owed))
             continue
         if owed not in text_of:
-            notes.append("%s owes %s: %s" % (owed, where, kept))
+            note = "%s owes %s: %s" % (owed, where, kept)
+            if note not in notes:
+                notes.append(note)
             continue
         if not any(kept in s for s in text_of[owed]):
             problems.append(
@@ -1902,6 +1904,12 @@ def promise_checks(root, chapters):
                 # A chapter naming its own number is identifying itself, not
                 # referring to anything.
                 if _named_chapter(phrase) == prefix:
+                    continue
+                # "the next chapter" alongside an explicit number in the same
+                # sentence is the same promise said twice, and the numbered half
+                # is the one worth logging. On its own it still has to be.
+                if (phrase.lower() == "next chapter"
+                        and re.search(r"chapters?\s+\d", sentence, re.I)):
                     continue
                 if any(says in sentence and phrase.lower() in says.lower()
                        for says in logged[prefix]):

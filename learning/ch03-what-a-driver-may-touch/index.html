@@ -505,7 +505,9 @@ dfn {
   font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
   padding: .5rem .7rem; border-left: 2px solid var(--rule);
 }
-.mop b { font-family: var(--mono); font-weight: 500; font-size: .88rem; }
+.mop b, .dbgp b, .loopp b, .costp b, .vtp b {
+  font-family: var(--mono); font-weight: 500; font-size: .88rem;
+}
 .mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 
 /* ---------- Figure 1: the parts of a declaration ---------- */
@@ -730,7 +732,7 @@ dfn {
     <div class="blksay">
       <p class="blkp is-on" id="sgp-0">The driver for the LEDs on every board Tock runs on. Not one per chip &mdash; one, in <b>capsules/core/src/led.rs</b>, 158 lines including its own documentation.</p>
       <p class="blkp is-off" id="sgp-1"><b>L</b> stands for whatever type the board hands over. The bound after the colon is everything this driver knows about it: that it implements <b>led::Led</b>, a trait of five methods &mdash; init, on, off, toggle, read. Which chip <b>L</b> belongs to is not knowable here.</p>
-      <p class="blkp is-off" id="sgp-2">How many there are, fixed when the board is compiled. Because the length is known, an index past the end is an ordinary comparison the driver writes itself, one line above the call.</p>
+      <p class="blkp is-off" id="sgp-2">How many there are, fixed when the board is compiled. The driver checks against it by hand, one line above the call: <b>if data &gt;= NUM_LEDS</b>. It has to, because indexing past the end of an array in safe Rust does not corrupt anything &mdash; it panics. What a panic in a capsule costs is the last section of this chapter.</p>
       <p class="blkp is-off" id="sgp-3">The one field: a reference to an array of references. This is the whole of what the driver can reach, and there is not a number in it.</p>
     </div>
   </div>
@@ -740,8 +742,20 @@ dfn {
 <section class="col">
   <h2>What a capsule cannot say</h2>
   <p>At the top of the crate that driver lives in there is a single line: <code>#![forbid(unsafe_code)]</code>.</p>
-  <p>Rust has four settings for a rule like this, and they are not equally strong. <code>allow</code> and <code>warn</code> do what they say. <code>deny</code> makes it an error, but code further down can turn it back off. <code>forbid</code> makes it an error <em>and</em> makes turning it off an error too.</p>
-  <p>So a capsule containing the word <code>unsafe</code> is not something a reviewer catches. It does not build.</p>
+  <p>Rust has four settings for a rule like this, and they are not equally strong.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary inline" id="pairs-levels">
+    <dt>allow</dt><dd>say nothing</dd>
+    <dt>warn</dt><dd>say something, and build anyway</dd>
+    <dt>deny</dt><dd>an error &mdash; but code further down can turn it back off</dd>
+    <dt>forbid</dt><dd>an error, and turning it off is an error too</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <p>Capsule crates use the last one. So a capsule containing the word <code>unsafe</code> is not something a reviewer catches. It does not build.</p>
 </section>
 
 <figure class="instrument">
@@ -764,16 +778,16 @@ dfn {
 }</pre></button>
       <button type="button" class="loop" id="cd-2" aria-pressed="false">
         <span class="loop-k">third</span>
-<pre>let sio = unsafe {
-  StaticRef::new(
-    0xD0000000
-      as *const SIORegisters)
-};</pre></button>
+<pre>const SIO_BASE:
+  StaticRef&lt;SIORegisters&gt; =
+    unsafe { StaticRef::new(
+      0xD0000000
+        as *const SIORegisters) };</pre></button>
     </div>
     <div class="loopsay">
       <p class="loopp is-on" id="cdp-0">Legal, and this is what the driver really does. Nothing here is an address: <b>leds</b> is the field from Figure 1, and <b>on</b> is one of the five methods the trait promised.</p>
       <p class="loopp is-off" id="cdp-1">Refused &mdash; and not by a person. This is chapter 1's store written out by hand, and turning a number into something you can store through means dereferencing a raw pointer, which requires <b>unsafe</b>. The crate forbids the word, so the build stops here.</p>
-      <p class="loopp is-off" id="cdp-2">Also refused, and this is the interesting one, because those are the exact words that make the LED work. That line is real. It is in <b>chips/rp2350/src/gpio.rs</b>, and what makes it legal there and illegal here is only which crate it sits in.</p>
+      <p class="loopp is-off" id="cdp-2">Also refused, and this is the interesting one, because those are the exact words that make the LED work. That is the line, verbatim, from <b>chips/rp2350/src/gpio.rs:1168</b>, and what makes it legal there and illegal here is only which crate it sits in.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the last two are not bad style. They are the real lines that light the LED &mdash; they simply live somewhere else.</div>
@@ -811,7 +825,7 @@ dfn {
       <p class="costp is-off" id="arp-4">Three, and all three are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, and main. They are the entry points something outside Rust calls.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice which pile is largest. The drivers are two and a half times the size of the kernel, and they are the part with nothing dangerous in them.</div>
+  <div class="instrument-note">Notice which row is the odd one. There are more driver files than kernel and chip files put together, and they are the only ones whose middle number is zero.</div>
 </figure>
 
 <section class="col">
@@ -830,7 +844,7 @@ dfn {
       <button type="button" id="hp-0" aria-pressed="true"><span class="seq-n">1</span><span><b>LedDriver::command(1, 0)</b> <span class="seq-src">capsules/core/src/led.rs:102</span></span></button>
       <button type="button" id="hp-1" aria-pressed="false"><span class="seq-n">2</span><span><b>self.leds[data].on()</b> <span class="seq-src">led.rs:115</span></span></button>
       <button type="button" id="hp-2" aria-pressed="false"><span class="seq-n">3</span><span><b>LedHigh::on()</b> <span class="seq-src">kernel/src/hil/led.rs:62</span></span></button>
-      <button type="button" id="hp-3" aria-pressed="false"><span class="seq-n">4</span><span><b>self.pin.set()</b> <span class="seq-src">kernel/src/hil/gpio.rs:151</span></span></button>
+      <button type="button" id="hp-3" aria-pressed="false"><span class="seq-n">4</span><span><b>self.pin.set()</b> <span class="seq-src">kernel/src/hil/gpio.rs:154</span></span></button>
       <button type="button" id="hp-4" aria-pressed="false"><span class="seq-n">5</span><span><b>RPGpioPin::set()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1480</span></span></button>
       <button type="button" id="hp-5" aria-pressed="false"><span class="seq-n">6</span><span><b>gpio_out_set.set(1 &lt;&lt; 25)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1485</span></span></button>
     </div>
@@ -933,7 +947,7 @@ dfn {
 
 <section class="col">
   <h2>One capsule, any chip</h2>
-  <p>Figure 1 said the driver knows only that its type implements a trait. That is what makes the next comparison possible.</p>
+  <p>Figure 1 said the driver knows only that its type implements a trait. That is what <dfn>generic</dfn> means in practice, and it is what makes the next comparison possible: there is no second copy of this driver for the second board.</p>
 </section>
 
 <figure class="instrument">
@@ -956,6 +970,25 @@ dfn {
   </div>
   <div class="instrument-note">Notice what did not change. Different architecture, different polarity, different number of LEDs &mdash; and capsules/core/src/led.rs is the same file, byte for byte.</div>
 </figure>
+
+<section class="col">
+  <h2>What this does not buy</h2>
+  <p>Tock's own documentation calls a capsule <em>semi-trusted</em>, and the second half of that word is doing work.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary inline" id="pairs-trust">
+    <dt>taken away</dt><dd>it cannot reach memory it was never handed, so no bug in a capsule can corrupt the kernel or another capsule's state</dd>
+    <dt>left alone</dt><dd>it is compiled into the same binary and runs in the same address space, so it can still panic, and it can still refuse to return</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <p>Either one ends the machine. There is a single <code>#[panic_handler]</code> in the whole binary and its return type is <code>!</code>, meaning it never returns. The comment above that decision says why: the system "is no longer in a well-defined state".</p>
+  <p>On this board it then takes GPIO&nbsp;25 for itself and blinks it forever &mdash; the same pin Figure 6 handed to the driver, driven now by the handler instead.</p>
+  <p>A loop is no better. A timeslice governs a process, not kernel code, so a capsule that never returns is never left.</p>
+  <p>Memory safety, then, and not good behaviour. That is the whole of what a type system was ever going to give, and it is why chapter 4 is about code the kernel does not compile at all.</p>
+</section>
 
 <section class="col">
   <h2>Check yourself</h2>
@@ -981,8 +1014,17 @@ dfn {
     <p class="q-answer is-off" id="qbn">Step 5. Steps 3 and 4 are in the kernel's HIL and are shared by every chip; step 5 is the first line in a file that exists only for this one.</p>
   </div>
   <div class="q">
-    <p class="q-ask">A board author hands the same pin to two capsules. What stops it?</p>
+    <p class="q-ask">A capsule hits a loop it never leaves. What stops it?</p>
     <div class="q-opts" role="group" aria-label="Answers to the third question">
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The scheduler preempts it</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The kernel restarts the capsule</button>
+      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">Nothing does</button>
+    </div>
+    <p class="q-answer is-off" id="qdn">Nothing. A timeslice governs a process; a capsule is <em>called</em> by the kernel and runs until it returns. This is the half of "semi-trusted" that the type system does not cover.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A board author hands the same pin to two capsules. What stops it?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the fourth question">
       <button type="button" class="q-opt" id="qc-0" aria-pressed="false">The compiler refuses</button>
       <button type="button" class="q-opt" id="qc-1" aria-pressed="false">The kernel faults at run time</button>
       <button type="button" class="q-opt" id="qc-2" aria-pressed="false">Nothing checked by a machine</button>
@@ -994,7 +1036,7 @@ dfn {
 <section class="col">
   <h2>What you can say now</h2>
   <p>A driver in Tock is a struct whose fields are the whole of its reach, in a crate where the word that would let it reach further does not compile. The address it eventually moves is named twelve floors down, once, by a line that quotes the datasheet.</p>
-  <p>That answers the question for code that ships inside the kernel binary and is trusted not to be able to do harm. It says nothing about code that is not trusted at all.</p>
+  <p>That answers the question for code that ships inside the kernel binary and is trusted only that far. It says nothing about code that is not trusted at all.</p>
 </section>
 
 <div class="col next">
@@ -1011,7 +1053,7 @@ dfn {
     <li>The five methods of the <code>Led</code> trait &mdash; <code>kernel/src/hil/led.rs</code>:19&ndash;32</li>
     <li><code>#![forbid(unsafe_code)]</code> opening all five capsule crates &mdash; <code>capsules/core/src/lib.rs</code>:5, and the same line 5 of <code>extra</code>, <code>system</code>, <code>aes_gcm</code> and <code>ecdsa_sw</code></li>
     <li><code>LedHigh</code> calling <code>set</code> and <code>LedLow</code> calling <code>clear</code> for the same <code>on()</code> &mdash; <code>kernel/src/hil/led.rs</code>:57&ndash;95</li>
-    <li>The wording of the <code>Output::set</code> contract quoted in Figure 4 &mdash; <code>kernel/src/hil/gpio.rs</code>:151&ndash;155</li>
+    <li>The wording of the <code>Output::set</code> contract quoted in Figure 4 &mdash; <code>kernel/src/hil/gpio.rs</code>:152&ndash;154, in the <code>Output</code> trait declared at :151</li>
     <li>The chip layer checking the pin's mode before storing &mdash; <code>chips/rp2350/src/gpio.rs</code>:1480&ndash;1490</li>
     <li>All twelve addresses in Figure 5, with their line numbers &mdash; <code>chips/rp2350/src/</code>, the <code>StaticRef::new</code> call in each of <code>clocks.rs</code>, <code>resets.rs</code>, <code>gpio.rs</code>, <code>xosc.rs</code>, <code>uart.rs</code>, <code>timer.rs</code> and <code>ticks.rs</code></li>
     <li>The two-line safety contract &mdash; the <code># Safety</code> section on <code>StaticRef::new</code>, <code>kernel/src/utilities/static_ref.rs</code>:29&ndash;35</li>
@@ -1019,6 +1061,11 @@ dfn {
     <li>The Pico 2 board's three <code>unsafe</code> being <code>panic_fmt</code>, <code>get_peripherals</code> and <code>main</code> &mdash; <code>src/io.rs</code>:89 and <code>src/main.rs</code>:237, :253</li>
     <li>The HiFive1's three active-low LEDs on a SiFive part &mdash; <code>boards/hifive1/src/main.rs</code>:242&ndash;246</li>
     <li><code>forbid</code> being the level that also refuses to be turned off later &mdash; the Rust reference on lint levels</li>
+    <li>Capsules being <em>semi-trusted</em> rather than contained &mdash; <code>doc/ExternalDependencies.md</code>:161, "capsules are a mechanism to provide semi-trusted infrastructure to a Tock board"</li>
+    <li>One panic handler for the binary, returning <code>!</code>, and the three capsule crates compiled into it &mdash; <code>boards/raspberry_pi_pico_2/src/io.rs</code>:88&ndash;89 and <code>Cargo.toml</code>:19&ndash;21</li>
+    <li>The handler blinking the LEDs it is given forever, and why it may not return &mdash; <code>kernel/src/debug.rs</code>:280&ndash;284 and <code>panic_blink_forever</code> at :387</li>
+    <li>The Pico 2's handler constructing its own <code>LedHigh</code> on GPIO&nbsp;25 rather than going through the capsule &mdash; <code>boards/raspberry_pi_pico_2/src/io.rs</code>:90&ndash;96</li>
+    <li>A timeslice governing a process rather than kernel code &mdash; the contract on <code>Kernel::do_process</code>, <code>kernel/src/kernel.rs</code>:450&ndash;460</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
 </section>
@@ -1118,6 +1165,7 @@ dfn {
     quiz("qa-", 3, 1, "qan");
     quiz("qb-", 3, 2, "qbn");
     quiz("qc-", 3, 2, "qcn");
+    quiz("qd-", 3, 2, "qdn");
   }());
 
 }());

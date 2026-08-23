@@ -313,5 +313,12 @@
     "says": "the level that also refuses to be turned off later",
     "about": null,
     "why": "Later in the same source file, not a later chapter: forbid outlives an allow written below it."
+  },
+  {
+    "id": "ch03-semi-trusted-points-at-ch4",
+    "in": "ch03",
+    "says": "it is why chapter 4 is about code the kernel does not compile at all",
+    "about": "ch04",
+    "kept_by": "process"
   }
 ]
