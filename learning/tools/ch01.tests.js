@@ -1391,3 +1391,32 @@ chk("the ten familiar digits are not marked as the new part",
     REG["hk-9"].classList.contains("hexkey-letter"), false);
 chk("and the six letters are", REG["hk-10"].classList.contains("hexkey-letter"), true);
 chk("F is the last of them", REG["hk-15"].classList.contains("hexkey-letter"), true);
+
+// ---- prose that used to be a table ----
+// Three passages set two or three things against each other in sentences. They
+// are term/meaning grids now, so the parallel is seen rather than parsed.
+// Asserted on text, not on children: the shim only tracks nodes a script
+// appended, and every one of these grids is markup.
+(function () {
+  var i, ids = ["pairs-notation", "pairs-family", "pairs-register"], found = 0;
+  for (i = 0; i < ids.length; i++) { if (REG[ids[i]]) { found++; } }
+  chk("all three sentence-tables are grids", found, 3);
+}());
+(function () {
+  var t = REG["pairs-family"].textContent, i, names =
+      ["gpio_out_set", "gpio_out_clr", "gpio_out_xor"], shown = 0;
+  for (i = 0; i < 3; i++) { if (t.indexOf(names[i]) > -1) { shown++; } }
+  // The prose used to cover set and then say "the other two"; the grid shows
+  // the family, so the parallel between them is on screen.
+  chk("the register family shows all three siblings", shown, 3);
+}());
+chk("and each is given the datasheet's operation",
+    REG["pairs-family"].textContent.indexOf("GPIO_OUT ^= wdata") > -1, true);
+(function () {
+  var t = REG["pairs-register"].textContent;
+  chk("both meanings of register are set against each other",
+      t.indexOf("peripheral register") > -1 && t.indexOf("processor register") > -1,
+      true);
+}());
+chk("the notation key names all three pieces",
+    REG["pairs-notation"].textContent.indexOf("wdata") > -1, true);
