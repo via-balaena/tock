@@ -23,7 +23,7 @@ arc closes where the first chapter said it would.
 |---|-------|--------|--------|
 | 1 | [Everything Is Memory](ch01-everything-is-memory/) | One store, from `str` to 3.3 V on a pin, and why nothing stops it landing anywhere | published |
 | 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
-| 3 | What a driver may touch | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip | planned |
+| 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip | published |
 | 4 | What a process is | Kernel against application -- how an app is loaded, what its memory looks like, and why it is not simply more kernel | planned |
 | 5 | The memory protection unit | The hardware fence the kernel programs around a process before letting it run | planned |
 | 6 | Asking the kernel | The eight syscall classes, upcalls and allowed buffers: the only door through that fence | planned |

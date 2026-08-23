@@ -1,0 +1,1124 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>What a Driver May Touch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #616D72;
+  --rule:        #D3DBD8;
+  --rule-strong: #7D918A;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #77858C;
+    --rule:        #252F34;
+    --rule-strong: #556A73;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #77858C;
+  --rule:        #252F34;
+  --rule-strong: #556A73;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+p { margin: 0; }
+strong { font-weight: 600; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+.addr { color: var(--hot); font-weight: 500; }
+
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible,
+summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
+
+/* A small muted aside: provenance lines, caveats, footnotes. */
+/* An instrument whose content is a single code block, so the block can sit
+   flush against the frame instead of inside the usual padding. */
+
+/* An instrument that should hold the reading column's width rather than
+   breaking out wide. */
+
+/* ---------- code block ---------- */
+
+pre {
+  font-family: var(--mono);
+  font-size: .84rem;
+  line-height: 1.6;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  padding: .9rem 1rem;
+  overflow-x: auto;
+  margin: 0;
+  border-radius: 2px;
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+.next ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .35rem; }
+.next li::marker { font-family: var(--mono); color: var(--hot); }
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Beginner scaffolding. Everything below exists to lower reading cost:
+   a word defined where it is first used, a stated goal, an instruction above
+   each figure, a guess before each reveal, and a way to check yourself after.
+   --------------------------------------------------------------------------- */
+
+/* A word being defined, right where the reader meets it. */
+dfn {
+  font-style: normal;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+/* What the reader will be able to do. Stated before the work, not after. */
+.goals {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.goals h2 {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.goals ol { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals .cost {
+  font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem;
+}
+
+/* An imperative naming the control, immediately above the figure it drives. */
+.dothis {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--accent);
+  display: flex;
+  gap: .5rem;
+  align-items: baseline;
+}
+.dothis::before {
+  content: "\2192";
+  font-weight: 700;
+}
+
+/* Check yourself. Question visible, answer one click away. */
+.selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+/* Figure 12 keeps one <details> inside a .selfcheck, so these rules are still
+   load-bearing even though the six questions below no longer use any. Deleting
+   them along with the questions stripped that reveal of its box, and only a
+   render showed it. */
+.selfcheck details {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .75rem .95rem;
+}
+.selfcheck summary { cursor: pointer; font-weight: 600; line-height: 1.5; }
+.selfcheck summary::marker { color: var(--accent); }
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way Figure 14's cases are,
+   so a reader with no scripting gets all six answers rather than none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+/* The words, collected. */
+.glossary {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: .55rem 1.1rem;
+  margin: 0;
+  font-size: .97rem;
+  line-height: 1.55;
+}
+.glossary dt {
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: .12rem;
+}
+.glossary dd { margin: 0; color: var(--ink-soft); }
+
+/* Term against meaning, inline in the prose. Reuses the glossary's grid,
+   because that is the same shape and the reader meets it again at the end.
+   Three passages used to say this in sentences -- "X is A, meaning B. Y is C,
+   meaning D." -- which is a table asking to be held in the head. */
+.glossary.inline {
+  margin: .8rem 0;
+  grid-template-columns: minmax(6.5rem, auto) 1fr;
+  gap: .4rem 1rem;
+  font-size: .93rem;
+}
+/* The end-of-chapter glossary is a reference and is set quietly. These carry
+   the argument, so they read at the weight of the prose around them rather
+   than below it. */
+.glossary.inline dd { color: var(--ink); }
+
+/* ---------- shared by the three opening figures ---------- */
+
+.instrument-body svg {
+  width: 100%; height: auto; max-width: 100%;
+  color: var(--ink); overflow: visible; display: block;
+}
+
+.glossary.cast { align-items: start; }
+
+/* ---------- Figure 7: two boards, one capsule ---------- */
+.mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }
+.mo-fig.two { grid-template-columns: repeat(2, 1fr); }
+.mo {
+  border: 1px solid var(--rule); background: var(--surface-sunk);
+  padding: .7rem .8rem; border-radius: 2px;
+  /* Centred on purpose: three equal cards read as a timeline. A button is
+     centred by default, so saying it here is the difference between a decision
+     and an accident -- and the phone rule below overrides it, because a
+     full-width stacked card centred reads as a mistake. */
+  text-align: center;
+}
+.mo.is-on { border-color: var(--hot); background: var(--hot-soft); }
+.mo-when {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.mo.is-on .mo-when { color: var(--hot); }
+.mo-who { font-family: var(--mono); font-size: .9rem; color: var(--ink); }
+.mosay { display: flex; flex-direction: column; gap: .45rem; }
+.mop {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.mop b { font-family: var(--mono); font-weight: 500; font-size: .88rem; }
+.mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+
+/* ---------- Figure 1: the parts of a declaration ---------- */
+.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
+/* Words of a program image, so they are addresses and must not be uppercased. */
+.blk button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.blk button[aria-pressed="true"] {
+  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
+}
+.blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
+.blkp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.blkp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+/* Seven explanations at once is a wall. The script shows one; with no
+   scripting none of that runs and all seven stay readable. */
+.blkp.is-off { display: none; }
+.blkp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- Figure 6: the board's two lines ---------- */
+.vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
+.vt button {
+  display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.vt button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.vt-at { color: var(--hot); }
+.vtsay { display: flex; flex-direction: column; gap: .45rem; }
+.vtp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.vtp.is-off { display: none; }
+
+/* ---------- Figure 2: three candidate lines ---------- */
+.loops { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; margin: .2rem 0 1rem; }
+.loops.three { grid-template-columns: repeat(3, 1fr); }
+.loop {
+  border: 1px solid var(--rule); background: var(--surface-sunk);
+  padding: .6rem .7rem; text-align: left; width: 100%;
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+}
+.loop[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.loop-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .35rem;
+}
+.loop[aria-pressed="true"] .loop-k { color: var(--hot); }
+.loop pre { margin: 0; font-family: var(--mono); font-size: .78rem; line-height: 1.5; color: var(--ink); white-space: pre; overflow-x: auto; }
+.loopsay { display: flex; flex-direction: column; gap: .45rem; }
+.loopp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.loopp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.loopp.is-off { display: none; }
+@media (max-width: 30rem) {
+  .loops { grid-template-columns: 1fr; }
+  .vt button { grid-template-columns: 1fr; gap: .1rem; }
+}
+
+/* ---------- Figure 3: counting the word ---------- */
+.costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
+/* These are lines of Rust, so their case is the content. */
+.costs button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  /* Lines of Rust. The longest wraps, and a button centres by default. */
+  text-align: left;
+  padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+.costgrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
+}
+.costcell {
+  border: 1px solid var(--rule); background: var(--surface-sunk); padding: .55rem .7rem;
+}
+.costcell-k {
+  font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
+.costcell-v.hot { color: var(--hot); }
+.costsay { display: flex; flex-direction: column; gap: .45rem; }
+.costp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.costp.is-off { display: none; }
+@media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
+
+/* ---------- Figure 4: six steps ---------- */
+.seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
+.seq button {
+  display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
+  align-items: baseline; text-align: left; width: 100%;
+  font-family: var(--body); font-size: .95rem; font-weight: 400; line-height: 1.5;
+  text-transform: none; letter-spacing: 0;
+  padding: .42rem .6rem; background: transparent;
+  border: 1px solid transparent; border-left: 2px solid var(--rule);
+  border-radius: 0; color: var(--ink-faint);
+}
+.seq button[aria-pressed="true"] {
+  color: var(--ink); background: var(--hot-soft); border-left-color: var(--hot);
+}
+.seq-n { font-family: var(--mono); font-size: .8rem; color: var(--ink-faint); }
+.seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
+.seq b { font-family: var(--mono); font-weight: 500; }
+.seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
+
+/* ---------- Figure 5: twelve addresses ---------- */
+.dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
+.dbg button {
+  display: grid; grid-template-columns: minmax(6.6rem, auto) minmax(6.6rem, auto) 1fr;
+  gap: .7rem; align-items: baseline;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .35rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.dbg button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.sr-at { color: var(--ink-faint); }
+.sr-ad { color: var(--hot); font-weight: 500; }
+.dbgsay { display: flex; flex-direction: column; gap: .45rem; }
+.dbgp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.dbgp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.dbgp.is-off { display: none; }
+
+@media (max-width: 30rem) {
+  .mo-fig { grid-template-columns: 1fr; }
+  .mo { text-align: left; }
+  /* Twelve rows of three fixed columns do not fit a phone; the address is what
+     the reader is scanning for, so it keeps the line and the rest wraps under. */
+  .dbg button { grid-template-columns: 1fr auto; gap: .1rem .6rem; }
+  .sr-at { grid-column: 1 / -1; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 3</p>
+  <h1>What a Driver May Touch</h1>
+  <p class="standfirst">Chapter 2 left the kernel running and holding the whole chip. Every address, every peripheral, nothing standing in the way. Then you add a driver. This chapter is about how much of that the driver gets, and the answer turns out to be one field.</p>
+  <noscript>
+    <style>.dothis, .ifjs { display: none; }</style>
+    <p class="noscript-note">JavaScript appears to be off. Every explanation
+    this chapter relies on is in the prose and the drawn diagrams, and the lines
+    telling you to click things are hidden rather than left pointing at
+    nothing.</p>
+  </noscript>
+</header>
+
+<section class="col">
+  <div class="goals">
+    <h2>What you'll be able to do at the end</h2>
+    <ul>
+      <li>Name the one thing that decides everything a driver can reach.</li>
+      <li>Explain why a bug in a driver cannot corrupt the kernel, and point at the line that makes that true.</li>
+      <li>Follow a call from the LED driver down to the store from chapter 1, and say which layer first knows what chip this is.</li>
+    </ul>
+    <p class="cost">Plan on forty minutes. Chapters 1 and 2 are assumed: what an address is, what a store does, and how the kernel got started.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Six words, before we start</h2>
+  <p>Each is one sentence now and repeated in context below. None is hard.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary cast">
+    <dt><dfn>capsule</dfn></dt><dd>Tock's word for a driver. An ordinary Rust struct with no special powers.</dd>
+    <dt><dfn>board</dfn></dt><dd>The crate that says which chip and which drivers one particular product has, and wires them to each other.</dd>
+    <dt><dfn>trait</dfn></dt><dd>A list of things a type promises it can do. The compiler checks the promise.</dd>
+    <dt><dfn>HIL</dfn></dt><dd>Hardware interface layer: a trait naming what a piece of hardware can do, without naming a chip.</dd>
+    <dt><dfn>generic</dfn></dt><dd>Code written against a trait instead of against one type, so a single copy serves every chip.</dd>
+    <dt><dfn>unsafe</dfn></dt><dd>The keyword marking Rust the compiler cannot check. Everything without it, it can.</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <h2>The kernel has everything. A driver should not.</h2>
+  <p>Chapter 2 ended with Tock running and holding the entire machine: every address, every peripheral, and nothing in the way &mdash; which is exactly where chapter 1 left off.</p>
+  <p>That is defensible for the kernel. It is thirty-two thousand lines, and every one of them is read by people who work on Tock itself.</p>
+  <p>Drivers are a different proposition. There are eighty-eight thousand lines of them, they are written one board at a time, and they are what a newcomer writes first. So the question chapter 2 ended on: when you add a driver, what should it be <em>allowed to touch</em>?</p>
+  <p>The usual answer is a rule and a code review. Here is what you may do; please do not do the other thing. Tock's answer is different, and it is the subject of this chapter. A driver reaches less than the kernel not because it agreed to, but because there is no way to write down the thing it would reach.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">The whole reach of a driver</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a part of the declaration. The panel says what it lets in, and what it leaves out.</p>
+<pre>pub struct LedDriver&lt;'a, L: led::Led, const NUM_LEDS: usize&gt; {
+    leds: &amp;'a [&amp;'a L; NUM_LEDS],
+}</pre>
+    <div class="blk" role="group" aria-label="The parts of the LedDriver declaration">
+      <button type="button" id="sg-0" aria-pressed="true">LedDriver</button>
+      <button type="button" id="sg-1" aria-pressed="false">L: led::Led</button>
+      <button type="button" id="sg-2" aria-pressed="false">NUM_LEDS</button>
+      <button type="button" id="sg-3" aria-pressed="false">leds</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="sgp-0">The driver for the LEDs on every board Tock runs on. Not one per chip &mdash; one, in <b>capsules/core/src/led.rs</b>, 158 lines including its own documentation.</p>
+      <p class="blkp is-off" id="sgp-1"><b>L</b> stands for whatever type the board hands over. The bound after the colon is everything this driver knows about it: that it implements <b>led::Led</b>, a trait of five methods &mdash; init, on, off, toggle, read. Which chip <b>L</b> belongs to is not knowable here.</p>
+      <p class="blkp is-off" id="sgp-2">How many there are, fixed when the board is compiled. Because the length is known, an index past the end is an ordinary comparison the driver writes itself, one line above the call.</p>
+      <p class="blkp is-off" id="sgp-3">The one field: a reference to an array of references. This is the whole of what the driver can reach, and there is not a number in it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that there is one field. Everything this driver does to the machine, it does through that.</div>
+</figure>
+
+<section class="col">
+  <h2>What a capsule cannot say</h2>
+  <p>At the top of the crate that driver lives in there is a single line: <code>#![forbid(unsafe_code)]</code>.</p>
+  <p>Rust has four settings for a rule like this, and they are not equally strong. <code>allow</code> and <code>warn</code> do what they say. <code>deny</code> makes it an error, but code further down can turn it back off. <code>forbid</code> makes it an error <em>and</em> makes turning it off an error too.</p>
+  <p>So a capsule containing the word <code>unsafe</code> is not something a reviewer catches. It does not build.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">Three lines, one of them legal here</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Guess which one compiles inside a capsule, then click it.</p>
+    <div class="loops three" role="group" aria-label="Three candidate lines">
+      <button type="button" class="loop" id="cd-0" aria-pressed="true">
+        <span class="loop-k">first</span>
+<pre>self.leds[index].on();</pre></button>
+      <button type="button" class="loop" id="cd-1" aria-pressed="false">
+        <span class="loop-k">second</span>
+<pre>unsafe {
+  write_volatile(
+    0xD0000018 as *mut u32,
+    1 &lt;&lt; 25);
+}</pre></button>
+      <button type="button" class="loop" id="cd-2" aria-pressed="false">
+        <span class="loop-k">third</span>
+<pre>let sio = unsafe {
+  StaticRef::new(
+    0xD0000000
+      as *const SIORegisters)
+};</pre></button>
+    </div>
+    <div class="loopsay">
+      <p class="loopp is-on" id="cdp-0">Legal, and this is what the driver really does. Nothing here is an address: <b>leds</b> is the field from Figure 1, and <b>on</b> is one of the five methods the trait promised.</p>
+      <p class="loopp is-off" id="cdp-1">Refused &mdash; and not by a person. This is chapter 1's store written out by hand, and turning a number into something you can store through means dereferencing a raw pointer, which requires <b>unsafe</b>. The crate forbids the word, so the build stops here.</p>
+      <p class="loopp is-off" id="cdp-2">Also refused, and this is the interesting one, because those are the exact words that make the LED work. That line is real. It is in <b>chips/rp2350/src/gpio.rs</b>, and what makes it legal there and illegal here is only which crate it sits in.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the last two are not bad style. They are the real lines that light the LED &mdash; they simply live somewhere else.</div>
+</figure>
+
+<section class="col">
+  <h2>So where is the <code>unsafe</code>?</h2>
+  <p>Somewhere, something has to turn a number from the datasheet into a thing a program can use. Rust cannot check that step, because nothing in the language knows what is at <code class="addr">0xD0000000</code>. The question is only how much code that step is allowed to contaminate.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">Counting the word, part of the tree at a time</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a part of the tree. The counts are of the word <code>unsafe</code> in the Tock source at this chapter's pinned commit.</p>
+    <div class="costs" role="group" aria-label="Parts of the Tock source tree">
+      <button type="button" id="ar-0" aria-pressed="true">capsules</button>
+      <button type="button" id="ar-1" aria-pressed="false">kernel</button>
+      <button type="button" id="ar-2" aria-pressed="false">chips/rp2350</button>
+      <button type="button" id="ar-3" aria-pressed="false">arch/cortex-m</button>
+      <button type="button" id="ar-4" aria-pressed="false">the Pico 2 board</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">Rust files</span><span class="costcell-v" id="ar-files">269</span></div>
+      <div class="costcell"><span class="costcell-k">in code</span><span class="costcell-v hot" id="ar-code">0</span></div>
+      <div class="costcell"><span class="costcell-k">counting comments</span><span class="costcell-v" id="ar-all">5</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="arp-0">Eighty-eight thousand lines of drivers, and the word appears five times &mdash; every one of them inside a comment. Five crates make up this directory, and all five open with <b>#![forbid(unsafe_code)]</b>.</p>
+      <p class="costp is-off" id="arp-1">The scheduler, the memory allocator, the syscall layer, the code that starts and stops processes. This is the part that is small on purpose, and the part everyone reads.</p>
+      <p class="costp is-off" id="arp-2">Ten files describing one chip. Twelve of the eighteen are the same line with a different number in it, and Figure 5 is those twelve.</p>
+      <p class="costp is-off" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 2, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
+      <p class="costp is-off" id="arp-4">Three, and all three are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, and main. They are the entry points something outside Rust calls.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice which pile is largest. The drivers are two and a half times the size of the kernel, and they are the part with nothing dangerous in them.</div>
+</figure>
+
+<section class="col">
+  <h2>The chain, end to end</h2>
+  <p>A process asks for its first LED to be turned on. How that request crosses from the process into the kernel is chapter 6; pick it up on the kernel's side, in the capsule, and follow it down.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">Six steps from a request to a wire</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a step. The last one is the instruction chapter 1 spent its whole length on.</p>
+    <div class="seq" role="group" aria-label="Six steps from the capsule to the pin">
+      <button type="button" id="hp-0" aria-pressed="true"><span class="seq-n">1</span><span><b>LedDriver::command(1, 0)</b> <span class="seq-src">capsules/core/src/led.rs:102</span></span></button>
+      <button type="button" id="hp-1" aria-pressed="false"><span class="seq-n">2</span><span><b>self.leds[data].on()</b> <span class="seq-src">led.rs:115</span></span></button>
+      <button type="button" id="hp-2" aria-pressed="false"><span class="seq-n">3</span><span><b>LedHigh::on()</b> <span class="seq-src">kernel/src/hil/led.rs:62</span></span></button>
+      <button type="button" id="hp-3" aria-pressed="false"><span class="seq-n">4</span><span><b>self.pin.set()</b> <span class="seq-src">kernel/src/hil/gpio.rs:151</span></span></button>
+      <button type="button" id="hp-4" aria-pressed="false"><span class="seq-n">5</span><span><b>RPGpioPin::set()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1480</span></span></button>
+      <button type="button" id="hp-5" aria-pressed="false"><span class="seq-n">6</span><span><b>gpio_out_set.set(1 &lt;&lt; 25)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1485</span></span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="hpp-0">Command number 1 means on; the 0 is which LED. The capsule matches on the number and does nothing else with it.</p>
+      <p class="dbgp is-off" id="hpp-1">The bounds check is the line above: <b>if data &gt;= NUM_LEDS</b>, and out of range returns an error code. Nothing here names a chip yet.</p>
+      <p class="dbgp is-off" id="hpp-2">The layer that knows this LED lights when its pin goes high. On a board wired the other way the type is <b>LedLow</b>, and this same method calls <b>clear</b> instead.</p>
+      <p class="dbgp is-off" id="hpp-3">A trait method with no body: three lines of documentation saying what an implementation must do. "Set the GPIO pin high. If the pin is not an output or input/output, this call is ignored."</p>
+      <p class="dbgp is-off" id="hpp-4">The first layer that knows this is an RP2350. It checks the pin is configured as an output, and if it is not, does nothing &mdash; which is the promise the trait made one step up.</p>
+      <p class="dbgp is-off" id="hpp-5">Base <b>0xD0000000</b>, offset <b>0x018</b>, bit 25 set and no other. The store from chapter 1, reached without anybody above this line knowing a number.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice where the chip appears. Five of the six steps could be running on anything; the sixth is the whole of what is particular to this hardware.</div>
+</figure>
+
+<section class="col">
+  <h2>Twelve lines hold every address</h2>
+  <p>Below the chip layer there is one more floor, and it is the last one. Each peripheral on the RP2350 gets a single declaration that turns its base address into a typed reference, and that declaration is where <code>unsafe</code> appears.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">Every address on this chip, in one list</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a line. One of the twelve is the one chapter 1 was about.</p>
+    <div class="dbg" role="group" aria-label="The twelve StaticRef declarations in the RP2350 chip crate">
+      <button type="button" id="sr-0" aria-pressed="false"><span class="sr-at">clocks.rs:864</span><span class="sr-ad">0x40010000</span><span>ClocksRegisters</span></button>
+      <button type="button" id="sr-1" aria-pressed="false"><span class="sr-at">resets.rs:204</span><span class="sr-ad">0x40020000</span><span>ResetsRegisters</span></button>
+      <button type="button" id="sr-2" aria-pressed="false"><span class="sr-at">gpio.rs:1165</span><span class="sr-ad">0x40028000</span><span>GpioRegisters</span></button>
+      <button type="button" id="sr-3" aria-pressed="false"><span class="sr-at">gpio.rs:1167</span><span class="sr-ad">0x40038000</span><span>GpioPadRegisters</span></button>
+      <button type="button" id="sr-4" aria-pressed="false"><span class="sr-at">xosc.rs:89</span><span class="sr-ad">0x40048000</span><span>XoscRegisters</span></button>
+      <button type="button" id="sr-5" aria-pressed="false"><span class="sr-at">clocks.rs:866</span><span class="sr-ad">0x40050000</span><span>PllRegisters</span></button>
+      <button type="button" id="sr-6" aria-pressed="false"><span class="sr-at">clocks.rs:868</span><span class="sr-ad">0x40058000</span><span>PllRegisters</span></button>
+      <button type="button" id="sr-7" aria-pressed="false"><span class="sr-at">uart.rs:344</span><span class="sr-ad">0x40070000</span><span>UartRegisters</span></button>
+      <button type="button" id="sr-8" aria-pressed="false"><span class="sr-at">uart.rs:347</span><span class="sr-ad">0x40078000</span><span>UartRegisters</span></button>
+      <button type="button" id="sr-9" aria-pressed="false"><span class="sr-at">timer.rs:169</span><span class="sr-ad">0x400B0000</span><span>TimerRegisters</span></button>
+      <button type="button" id="sr-10" aria-pressed="false"><span class="sr-at">ticks.rs:138</span><span class="sr-ad">0x40108000</span><span>TicksRegisters</span></button>
+      <button type="button" id="sr-11" aria-pressed="true"><span class="sr-at">gpio.rs:1169</span><span class="sr-ad">0xD0000000</span><span>SIORegisters</span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-off" id="srp-0">The clock generators. Chapter 1 called this the block that decides how fast the chip runs.</p>
+      <p class="dbgp is-off" id="srp-1">Holds other blocks switched off. Most of the chip is dead until something clears its bit here.</p>
+      <p class="dbgp is-off" id="srp-2">Decides what each pin is for: plain output, or a serial line, or one of several other things.</p>
+      <p class="dbgp is-off" id="srp-3">The electrical side of each pin &mdash; how hard it drives, and which way it is pulled when nothing is driving it.</p>
+      <p class="dbgp is-off" id="srp-4">The crystal oscillator: a real quartz crystal on the board, and the most accurate timing the chip has.</p>
+      <p class="dbgp is-off" id="srp-5">Multiplies the crystal up to the speed the processors run at.</p>
+      <p class="dbgp is-off" id="srp-6">A second multiplier, held at 48 MHz for USB so its timing survives retuning the main clock.</p>
+      <p class="dbgp is-off" id="srp-7">The serial port Tock's console uses. Kernel messages leave the chip one byte at a time through here.</p>
+      <p class="dbgp is-off" id="srp-8">A second, identical serial port. Same layout, different base.</p>
+      <p class="dbgp is-off" id="srp-9">A counter that never stops, ticking once a microsecond.</p>
+      <p class="dbgp is-off" id="srp-10">Divides a clock down to the slower rates the timers and the watchdog need.</p>
+      <p class="dbgp is-on" id="srp-11">This one. Chapter 1 spent its whole length inside this block, and <b>gpio_out_set</b> sits <b>0x018</b> past this base. Every layer above this line works in types; this line is where the number stops being a number.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that these are declarations, not code that runs. Twelve constants, each naming one number the datasheet gave.</div>
+</figure>
+
+<section class="col">
+  <p>The function those twelve lines call is <code>StaticRef::new</code>, and it is declared <code>unsafe</code> because it cannot check its own argument. What it asks of the caller instead is written above it, in two lines:</p>
+</section>
+
+<div class="col">
+  <dl class="glossary inline" id="pairs-contract">
+    <dt>ptr</dt><dd>must be aligned, non-null, and dereferencable as <code>T</code></dd>
+    <dt>*ptr</dt><dd>must be valid for the program duration</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <p>Twelve callers make that promise once each, and what backs it is the datasheet. Everything above them &mdash; the chip layer, the HIL, the capsule &mdash; works in types and never has to make it again.</p>
+</section>
+
+<section class="col">
+  <h2>Who decides what a capsule gets</h2>
+  <p>A capsule cannot ask for anything. It is handed what it has, in the board's <code>main()</code>, and it has that for the rest of the run.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Two lines about pin 25, forty lines apart</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each line. The second one is a comment, and it is doing real work.</p>
+    <div class="vt" role="group" aria-label="Two lines in the Pico 2 board's main.rs">
+      <button type="button" id="wr-0" aria-pressed="true">
+        <span class="vt-at">:385</span><span>LedHigh::new(pins.get_pin(RPGpio::GPIO25))</span></button>
+      <button type="button" id="wr-1" aria-pressed="false">
+        <span class="vt-at">:373</span><span>// 25 =&gt; peripherals.pins.get_pin(RPGpio::GPIO25),</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="wrp-0">The board hands the LED driver exactly one pin, and it is GPIO 25 &mdash; the pin chapter 1 lit. The driver did not ask for it, cannot ask for a different one, and will never know its number.</p>
+      <p class="vtp is-off" id="wrp-1">Forty lines earlier, the general-purpose GPIO driver is given its own list of pins a process may drive directly. Pin 25 is in that list, commented out, with <b>// LED pin</b> written above it. The board author took it back by hand.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the two boundaries here are not equally strong. The compiler enforces what a capsule can reach; which capsule gets which pin is a decision in one file, and that comment is the whole of what enforces it.</div>
+</figure>
+
+<section class="col">
+  <h2>One capsule, any chip</h2>
+  <p>Figure 1 said the driver knows only that its type implements a trait. That is what makes the next comparison possible.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">The same 158 lines, on two different machines</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a board. Everything that differs between them is in the type.</p>
+    <div class="mo-fig two" role="group" aria-label="Two boards using the same LED capsule">
+      <button type="button" class="mo is-on" id="bd-0" aria-pressed="true">
+        <span class="mo-when">Arm</span><span class="mo-who">Pico 2</span></button>
+      <button type="button" class="mo" id="bd-1" aria-pressed="false">
+        <span class="mo-when">RISC-V</span><span class="mo-who">HiFive1</span></button>
+    </div>
+    <div class="mosay">
+      <p class="mop is-on" id="bdp-0"><b>LedDriver&lt;'static, LedHigh&lt;'static, RPGpioPin&gt;, 1&gt;</b> &mdash; a Cortex-M33, one LED, wired to light when the pin goes high.</p>
+      <p class="mop" id="bdp-1"><b>LedDriver&lt;'static, LedLow&lt;'static, sifive::gpio::GpioPin&gt;, 3&gt;</b> &mdash; a RISC-V processor, three LEDs, wired to light when the pin goes <em>low</em>. A different instruction set, and the capsule does not notice.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice what did not change. Different architecture, different polarity, different number of LEDs &mdash; and capsules/core/src/led.rs is the same file, byte for byte.</div>
+</figure>
+
+<section class="col">
+  <h2>Check yourself</h2>
+</section>
+
+<div class="col selfcheck">
+  <div class="q">
+    <p class="q-ask">A capsule holds one field: <code>&amp;'a [&amp;'a L; NUM_LEDS]</code>. Could it read back the value of <code>gpio_out_set</code>?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the first question">
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false">Yes, by dereferencing the address</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">No, and two separate things stop it</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">Only if the board allows it</button>
+    </div>
+    <p class="q-answer is-off" id="qan">No. Nothing in scope is an address, and getting one would need <code>unsafe</code>, which the crate forbids. Chapter 1 adds a second reason: that register is write-only, so even the chip layer is promised nothing by reading it.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">Which of the six steps in Figure 4 first knows the chip is an RP2350?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the second question">
+      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">Step 1, the capsule</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Step 3, LedHigh</button>
+      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Step 5, RPGpioPin</button>
+    </div>
+    <p class="q-answer is-off" id="qbn">Step 5. Steps 3 and 4 are in the kernel's HIL and are shared by every chip; step 5 is the first line in a file that exists only for this one.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A board author hands the same pin to two capsules. What stops it?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the third question">
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">The compiler refuses</button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">The kernel faults at run time</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">Nothing checked by a machine</button>
+    </div>
+    <p class="q-answer is-off" id="qcn">Nothing. Both capsules hold a shared reference, which is legal Rust, and both would drive the pin. Figure 6's commented-out line is a person preventing it, and this is the weaker of the chapter's two guarantees.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>What you can say now</h2>
+  <p>A driver in Tock is a struct whose fields are the whole of its reach, in a crate where the word that would let it reach further does not compile. The address it eventually moves is named twelve floors down, once, by a line that quotes the datasheet.</p>
+  <p>That answers the question for code that ships inside the kernel binary and is trusted not to be able to do harm. It says nothing about code that is not trusted at all.</p>
+</section>
+
+<div class="col next">
+  <p class="eyebrow forward">Next</p>
+  <h3 style="margin-top:0">Chapter 4 &mdash; What a process is</h3>
+  <p>A capsule is compiled with the kernel and cannot reach past its own fields. A process is a separate binary that the kernel has never seen, written by somebody else, possibly hostile. On the way: what a process actually is in flash and in memory, and what the isolation costs to run.</p>
+</div>
+
+<section class="col sources">
+  <h3>Everything above, checked against source</h3>
+  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>. Nothing here was written from memory. The counts in Figure 3 were taken by counting the word in the <code>.rs</code> files under each path at that commit, once with comments stripped and once whole.</p>
+  <ul>
+    <li>The declaration in Figure 1, and the bounds check one line above the call &mdash; <code>capsules/core/src/led.rs</code>:71 and :112</li>
+    <li>The five methods of the <code>Led</code> trait &mdash; <code>kernel/src/hil/led.rs</code>:19&ndash;32</li>
+    <li><code>#![forbid(unsafe_code)]</code> opening all five capsule crates &mdash; <code>capsules/core/src/lib.rs</code>:5, and the same line 5 of <code>extra</code>, <code>system</code>, <code>aes_gcm</code> and <code>ecdsa_sw</code></li>
+    <li><code>LedHigh</code> calling <code>set</code> and <code>LedLow</code> calling <code>clear</code> for the same <code>on()</code> &mdash; <code>kernel/src/hil/led.rs</code>:57&ndash;95</li>
+    <li>The wording of the <code>Output::set</code> contract quoted in Figure 4 &mdash; <code>kernel/src/hil/gpio.rs</code>:151&ndash;155</li>
+    <li>The chip layer checking the pin's mode before storing &mdash; <code>chips/rp2350/src/gpio.rs</code>:1480&ndash;1490</li>
+    <li>All twelve addresses in Figure 5, with their line numbers &mdash; <code>chips/rp2350/src/</code>, the <code>StaticRef::new</code> call in each of <code>clocks.rs</code>, <code>resets.rs</code>, <code>gpio.rs</code>, <code>xosc.rs</code>, <code>uart.rs</code>, <code>timer.rs</code> and <code>ticks.rs</code></li>
+    <li>The two-line safety contract &mdash; the <code># Safety</code> section on <code>StaticRef::new</code>, <code>kernel/src/utilities/static_ref.rs</code>:29&ndash;35</li>
+    <li>The board handing GPIO 25 to the LED driver, and the same pin commented out of the GPIO driver's list &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:385 and :373</li>
+    <li>The Pico 2 board's three <code>unsafe</code> being <code>panic_fmt</code>, <code>get_peripherals</code> and <code>main</code> &mdash; <code>src/io.rs</code>:89 and <code>src/main.rs</code>:237, :253</li>
+    <li>The HiFive1's three active-low LEDs on a SiFive part &mdash; <code>boards/hifive1/src/main.rs</code>:242&ndash;246</li>
+    <li><code>forbid</code> being the level that also refuses to be turned off later &mdash; the Rust reference on lint levels</li>
+  </ul>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
+</section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* One group of buttons, one group of panels, same index. Every figure on
+     this page is that shape, so it is written once. The panel class differs
+     between components only because each was styled for its own figure. */
+  function group(btn, panel, n, cls, onCls, offCls, extra) {
+    function pick(k) {
+      var i, b, p;
+      for (i = 0; i < n; i++) {
+        b = document.getElementById(btn + i);
+        p = document.getElementById(panel + i);
+        b.setAttribute("aria-pressed", i === k ? "true" : "false");
+        if (cls) { b.classList.toggle(cls, i === k); }
+        p.classList.toggle(onCls, i === k);
+        if (offCls) { p.classList.toggle(offCls, i !== k); }
+      }
+      if (extra) { extra(k); }
+    }
+    var i;
+    for (i = 0; i < n; i++) {
+      (function (k) {
+        document.getElementById(btn + k)
+          .addEventListener("click", function () { pick(k); });
+      }(i));
+    }
+  }
+
+  /* ---------------- Figure 1: the declaration ---------------- */
+  group("sg-", "sgp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 2: which one compiles ---------------- */
+  group("cd-", "cdp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 3: counting the word ----------------
+     Counts of `unsafe` in the .rs files under each path, taken twice: once
+     with comments stripped, once whole. Both are shown because the gap is the
+     finding -- capsules is five and zero, and the five are all comments. */
+  (function () {
+    var COUNTS = [
+      [269, 0, 5],
+      [101, 259, 356],
+      [10, 18, 18],
+      [11, 67, 68],
+      [3, 3, 3]
+    ];
+    group("ar-", "arp-", 5, "", "is-on", "is-off", function (k) {
+      document.getElementById("ar-files").textContent = COUNTS[k][0];
+      document.getElementById("ar-code").textContent = COUNTS[k][1];
+      document.getElementById("ar-all").textContent = COUNTS[k][2];
+    });
+  }());
+
+  /* ---------------- Figure 4: six steps ---------------- */
+  group("hp-", "hpp-", 6, "", "is-on", "is-off");
+
+  /* ---------------- Figure 5: twelve addresses ----------------
+     Opens on the last one rather than the first, because that is the one
+     chapter 1 was about and the reader arrives looking for it. */
+  group("sr-", "srp-", 12, "", "is-on", "is-off");
+
+  /* ---------------- Figure 6: the board's two lines ---------------- */
+  group("wr-", "wrp-", 2, "", "is-on", "is-off");
+
+  /* ---------------- Figure 7: two boards ---------------- */
+  group("bd-", "bdp-", 2, "is-on", "is-on", "");
+
+  /* ---------------- Check yourself ----------------
+     The answer text is in the markup; this only reveals it and marks which
+     option was right, so nothing a reader needs is stored in here. */
+  (function () {
+    function quiz(prefix, n, right, answer) {
+      var i;
+      for (i = 0; i < n; i++) {
+        (function (k) {
+          document.getElementById(prefix + k)
+            .addEventListener("click", function () {
+              var j, b;
+              for (j = 0; j < n; j++) {
+                b = document.getElementById(prefix + j);
+                b.setAttribute("aria-pressed", j === k ? "true" : "false");
+                b.classList.toggle("is-right", j === right);
+                b.classList.toggle("is-wrong", j === k && k !== right);
+              }
+              document.getElementById(answer).classList.remove("is-off");
+            });
+        }(i));
+      }
+    }
+    quiz("qa-", 3, 1, "qan");
+    quiz("qb-", 3, 2, "qbn");
+    quiz("qc-", 3, 2, "qcn");
+  }());
+
+}());
+</script>

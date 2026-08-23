@@ -335,8 +335,6 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 }
 
 /* An eyebrow marking what comes next rather than what section this is. */
-.eyebrow.forward { color: var(--hot); }
-.eyebrow.forward::after { background: var(--rule); }
 .sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
 .sources ul { margin: 0; padding-left: 1.1rem; }
 .sources code { font-size: .8em; }
@@ -414,15 +412,6 @@ dfn {
 }
 .selfcheck summary { cursor: pointer; font-weight: 600; line-height: 1.5; }
 .selfcheck summary::marker { color: var(--accent); }
-.selfcheck .answer {
-  margin-top: .6rem;
-  padding-top: .6rem;
-  border-top: 1px solid var(--rule);
-  color: var(--ink-soft);
-  font-size: .97rem;
-  line-height: 1.6;
-}
-
 .q {
   border: 1px solid var(--rule);
   background: var(--surface);
@@ -695,7 +684,7 @@ dfn {
       <li>Read the twenty-eight bytes at the front of a Tock image and say what each word tells the chip.</li>
       <li>Say what "set up memory" means, and why a variable starting at zero costs no flash while one starting at five does.</li>
     </ul>
-    <p class="goals-time">Plan on forty minutes. Chapter 1 is assumed: what an address is, and what a store does.</p>
+    <p class="cost">Plan on forty minutes. Chapter 1 is assumed: what an address is, and what a store does.</p>
   </div>
 </section>
 

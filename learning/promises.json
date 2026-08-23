@@ -69,7 +69,6 @@
     "about": null,
     "why": "An interval of time. The register still holds the value; nothing is owed to a chapter."
   },
-
   {
     "id": "ch02-opening-recap",
     "in": "ch02",
@@ -188,5 +187,131 @@
     "says": "where the unsafe from chapter 1 lives, and why almost none of Tock needs it",
     "about": "ch03",
     "kept_by": "unsafe"
+  },
+  {
+    "id": "ch03-standfirst-recap",
+    "in": "ch03",
+    "says": "Chapter 2 left the kernel running and holding the whole chip",
+    "about": "ch02",
+    "kept_by": "It has the whole chip"
+  },
+  {
+    "id": "ch03-goal-store",
+    "in": "ch03",
+    "says": "down to the store from chapter 1",
+    "about": "ch01",
+    "kept_by": "#0x18]"
+  },
+  {
+    "id": "ch03-goals-assumed",
+    "in": "ch03",
+    "says": "Chapters 1 and 2 are assumed",
+    "about": "ch01",
+    "kept_by": "A number naming one location"
+  },
+  {
+    "id": "ch03-ch2-ended-machine",
+    "in": "ch03",
+    "says": "Chapter 2 ended with Tock running and holding the entire machine",
+    "about": "ch02",
+    "kept_by": "It has the whole chip"
+  },
+  {
+    "id": "ch03-ch2-ended-ch1-left-off",
+    "in": "ch03",
+    "says": "which is exactly where chapter 1 left off",
+    "about": "ch01",
+    "kept_by": "gpio_out_set"
+  },
+  {
+    "id": "ch03-question-ch2-ended-on",
+    "in": "ch03",
+    "says": "So the question chapter 2 ended on",
+    "about": "ch02",
+    "kept_by": "allowed to touch"
+  },
+  {
+    "id": "ch03-ch1-store-by-hand",
+    "in": "ch03",
+    "says": "This is chapter 1's store written out by hand",
+    "about": "ch01",
+    "kept_by": "#0x18]"
+  },
+  {
+    "id": "ch03-vector-table-ch2",
+    "in": "ch03",
+    "says": "the vector table from chapter 2",
+    "about": "ch02",
+    "kept_by": "vector table"
+  },
+  {
+    "id": "ch03-syscall-is-ch6",
+    "in": "ch03",
+    "says": "crosses from the process into the kernel is chapter 6",
+    "about": "ch06",
+    "kept_by": "command"
+  },
+  {
+    "id": "ch03-fig4-imperative-ch1",
+    "in": "ch03",
+    "says": "the instruction chapter 1 spent its whole length on",
+    "about": "ch01",
+    "kept_by": "gpio_out_set"
+  },
+  {
+    "id": "ch03-step6-store-ch1",
+    "in": "ch03",
+    "says": "The store from chapter 1, reached without anybody above this line",
+    "about": "ch01",
+    "kept_by": "#0x18]"
+  },
+  {
+    "id": "ch03-fig5-imperative-ch1",
+    "in": "ch03",
+    "says": "One of the twelve is the one chapter 1 was about",
+    "about": "ch01",
+    "kept_by": "0xD0000000"
+  },
+  {
+    "id": "ch03-clocks-ch1",
+    "in": "ch03",
+    "says": "Chapter 1 called this the block that decides how fast the chip runs",
+    "about": "ch01",
+    "kept_by": "how fast the chip runs"
+  },
+  {
+    "id": "ch03-sio-block-ch1",
+    "in": "ch03",
+    "says": "Chapter 1 spent its whole length inside this block",
+    "about": "ch01",
+    "kept_by": "0x018"
+  },
+  {
+    "id": "ch03-pin25-ch1",
+    "in": "ch03",
+    "says": "the pin chapter 1 lit",
+    "about": "ch01",
+    "kept_by": "pin 25"
+  },
+  {
+    "id": "ch03-writeonly-ch1",
+    "in": "ch03",
+    "says": "Chapter 1 adds a second reason: that register is write-only",
+    "about": "ch01",
+    "kept_by": "write-only"
+  },
+  {
+    "id": "ch03-next-card-ch4",
+    "in": "ch03",
+    "says": "Chapter 4 - What a process is",
+    "about": "ch04",
+    "kept_by": "process"
+  },
+  {
+    "id": "ch03-forbid-turned-off-later",
+    "in": "ch03",
+    "says": "the level that also refuses to be turned off later",
+    "about": null,
+    "why": "Later in the same source file, not a later chapter: forbid outlives an allow written below it."
   }
 ]

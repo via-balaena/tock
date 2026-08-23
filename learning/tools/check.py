@@ -1091,10 +1091,23 @@ def dead_css_checks(html):
     style = html[html.index("<style>") + 7:html.index("</style>")]
     rest = html[html.index("</style>") + 8:]
 
-    # Every class and id the page can actually put on an element: written in
-    # the markup, or handed to classList/setAttribute/a selector in the script.
-    live = set(re.findall(r"[\w-]+", re.sub(r"<style.*?</style>", " ", rest,
-                                            flags=re.S)))
+    # Every class and id the page can actually put on an element: the values of
+    # its class and id attributes, plus every string the script holds, since a
+    # class the script adds never appears in the markup at all.
+    #
+    # Reading the whole page as one bag of words instead -- the first version of
+    # this -- lets ordinary prose vouch for a rule. `.goals .cost` is dead in
+    # both chapters written so far, and chapter 2 passed anyway, because the
+    # word "cost" occurs in a figure title three screens away.
+    live = set()
+    markup = re.sub(r"<script.*?</script>", " ", rest, flags=re.S)
+    for value in re.findall(r'\b(?:class|id)="([^"]*)"', markup):
+        live.update(re.findall(r"[\w-]+", value))
+    if "<script>" in rest:
+        script = rest[rest.rindex("<script>") + len("<script>"):
+                      rest.rindex("</script>")]
+        for literal in _string_literals(script):
+            live.update(re.findall(r"[\w-]+", literal))
 
     problems = []
     body = re.sub(r"/\*.*?\*/", " ", style, flags=re.S)
@@ -1436,6 +1449,9 @@ MUST_DEFINE = {
         "optimizer", "peripheral", "pin", "register", "SIO", "store",
         "volatile",
     ],
+    "ch03": [
+        "board", "capsule", "generic", "HIL", "trait", "unsafe",
+    ],
 }
 
 # Words this series has decided not to use, and why. Seeded from the places a
@@ -1639,7 +1655,14 @@ def pedagogy_checks(html, chapter):
     #    versa, so the two never drift apart.
     listed = set()
     found_any = False
-    for block in re.finditer(r'<(\w+)[^>]*class="glossary"[^>]*>(.*?)</\1>',
+    # The chapter's vocabulary list: `glossary`, or `glossary cast` where the
+    # words are collected at the front. An exact-attribute match missed the
+    # second, and chapter 2 got away with it only because it declares no
+    # required terms. `glossary inline` is excluded on purpose -- that modifier
+    # marks a two-column table standing in for a paragraph, whose left column is
+    # whatever the paragraph was about (`28 bytes`, `*ptr`) and not vocabulary.
+    for block in re.finditer(
+            r'<(\w+)[^>]*class="glossary(?: cast)?"[^>]*>(.*?)</\1>',
                              html, flags=re.S):
         found_any = True
         for entry in re.findall(r"<dt[^>]*>(.*?)</dt>", block.group(2), flags=re.S):
