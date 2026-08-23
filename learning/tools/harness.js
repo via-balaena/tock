@@ -5,8 +5,9 @@
 // Minimal DOM shim so a chapter's page JavaScript can be executed headlessly
 // under JavaScriptCore. Implements only what the chapters actually use.
 //
-// check.py prepends `var PAGE_IDS = [...]` (every id="" in the page) before
-// this file, then the page's own script, then the chapter's assertions.
+// check.py prepends `var PAGE_IDS = [...]` (every id="" in the page), plus
+// PAGE_VALUES and PAGE_TEXT carrying what the markup already put in each one,
+// before this file, then the page's own script, then the chapter's assertions.
 
 function El(id) {
   this.id = id || "";
@@ -125,6 +126,15 @@ var REG = {};
 PAGE_IDS.forEach(function (i) { REG[i] = new El(i); });
 // Elements carrying value="" in the markup start with it, as they do in a
 // browser, so the page's first render is exercised the way a reader sees it.
+// The markup's own text, the same way PAGE_VALUES carries the markup's own
+// input values. A page whose rule is "the script writes no words" keeps every
+// sentence here, so a shim that starts every element empty can only ever test
+// the words the script writes -- exactly the ones this page tries not to have.
+if (typeof PAGE_TEXT === "object" && PAGE_TEXT) {
+  Object.keys(PAGE_TEXT).forEach(function (i) {
+    if (REG[i]) { REG[i].textContent = PAGE_TEXT[i]; }
+  });
+}
 if (typeof PAGE_VALUES === "object" && PAGE_VALUES) {
   Object.keys(PAGE_VALUES).forEach(function (i) {
     if (REG[i]) { REG[i].value = PAGE_VALUES[i]; }

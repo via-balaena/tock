@@ -34,6 +34,7 @@ Exits non-zero if anything fails, so it can gate a commit.
 """
 
 import collections
+import html as html_module
 import json
 import os
 import re
@@ -600,15 +601,35 @@ def demo_asm_checks(html, chapter_dir):
     return problems
 
 
+SELECTED_TOKENS = {"is-on", "is-lit"}
+
+
 def boot_state_checks(html):
     """The figure a reader meets with scripting off is the markup's own state.
 
-    Every one-of-many figure here declares its opening state twice: in the
-    markup, so the page reads with no JavaScript, and in the script, which
-    reproduces it on load. The behavioural tests only ever see the second,
-    because the script has run by the time they look, so the markup half can
-    drift unnoticed. Figure 15 shipped a listing whose opening line was not the
-    one its panel showed, and only a screenshot caught it.
+    A figure that declares an opening state declares it twice: in the markup,
+    so the page reads with no JavaScript, and in the script, which reproduces
+    it on load. The behavioural tests only ever see the second, because the
+    script has run by the time they look, so the markup half can drift
+    unnoticed. Figure 15 shipped a listing whose opening line was not the one
+    its panel showed, and only a screenshot caught it.
+
+    Selection is spelled two ways on this page, and for a while this scan knew
+    only one of them. `is-on` marks the chosen panel in Figures 3, 4, 7 and 15;
+    `is-lit` does the same job in Figures 1, 2 and 3. Reading only `is-on` made
+    the scan silently skip every `is-lit` figure -- proven by moving the lit
+    panel in Figure 7 and in Figure 1 and watching only the first get caught.
+    Both tokens count now. The token was only half of it: the scan also read
+    attributes positionally, requiring `class=` before `id=`, so Figure 1's
+    `<g id="svg-byte" class="cast-el">` stayed invisible whatever its classes
+    said. Fixing the token alone left the mutation still escaping, which is the
+    argument for putting the defect back rather than reasoning about the patch.
+    Attributes come out of the tag in either order now.
+
+    Note what this still does not mean: Figures 1 and 2 deliberately mark
+    nothing in the markup, because un-highlighted is a fine way for them to
+    read with no scripting, and a figure that declares no opening state is not
+    required to.
 
     The invariant checked is the one that cannot be argued with: where a set of
     buttons and a set of panels inside one figure share suffixes --
@@ -632,16 +653,22 @@ def boot_state_checks(html):
 
     for figure in re.findall(r"<figure\b.*?</figure>", markup, re.S):
         pressed, shown = {}, {}
-        for match in re.finditer(r'<button[^>]*\bid="([\w-]+?)-(\w+)"[^>]*'
-                                 r'aria-pressed="(\w+)"', figure):
-            prefix, suffix, value = match.groups()
-            pressed.setdefault(prefix, {})[suffix] = value == "true"
-        for match in re.finditer(r'<[a-z]+[^>]*\bclass="([^"]*)"[^>]*'
-                                 r'\bid="([\w-]+?)-(\w+)"', figure):
-            classes, prefix, suffix = match.groups()
-            if prefix in pressed:
+        for tag in re.finditer(r"<([a-zA-Z][\w-]*)([^>]*)>", figure):
+            name, attrs = tag.group(1).lower(), tag.group(2)
+            ident = re.search(r'\bid="([\w-]+?)-(\w+)"', attrs)
+            if not ident:
                 continue
-            shown.setdefault(prefix, {})[suffix] = "is-on" in classes.split()
+            prefix, suffix = ident.groups()
+            state = re.search(r'\baria-pressed="(\w+)"', attrs)
+            if name == "button" and state:
+                pressed.setdefault(prefix, {})[suffix] = state.group(1) == "true"
+                continue
+            marks = re.search(r'\bclass="([^"]*)"', attrs)
+            marks = marks.group(1).split() if marks else []
+            shown.setdefault(prefix, {})[suffix] = bool(
+                SELECTED_TOKENS & set(marks))
+        for bprefix in pressed:
+            shown.pop(bprefix, None)
 
         for bprefix, buttons in sorted(pressed.items()):
             if len(buttons) < 2:
@@ -846,6 +873,41 @@ def static_checks(html, name):
     return problems
 
 
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input",
+             "link", "meta", "param", "source", "track", "wbr"}
+
+
+def _page_text(html):
+    """Every id'd element's own text, as a browser would hand it over.
+
+    One pass with a tag stack, so nesting is handled rather than guessed at.
+    The value is tag-stripped and whitespace-collapsed because that is what the
+    shim's innerHTML and textContent both hand back; matching the browser's
+    markup-preserving innerHTML would mean a second divergence, not one fewer.
+    """
+    out, stack = {}, []
+    for match in re.finditer(r"<(/?)([a-zA-Z][\w-]*)([^>]*?)(/?)>", html):
+        closing, tag, attrs, self_closed = match.groups()
+        tag = tag.lower()
+        if closing:
+            while stack:
+                name, ident, start = stack.pop()
+                if name != tag:
+                    continue
+                if ident is not None:
+                    inner = html[start:match.start()]
+                    inner = re.sub(r"<[^>]*>", "", inner)
+                    inner = html_module.unescape(inner)
+                    out[ident] = " ".join(inner.split())
+                break
+            continue
+        if self_closed or tag in VOID_TAGS:
+            continue
+        ident = re.search(r'\bid="([^"]+)"', attrs)
+        stack.append((tag, ident.group(1) if ident else None, match.end()))
+    return out
+
+
 def behavior_checks(html, tests_path):
     """Execute the page JS plus assertions under jsc. Returns (ok, output)."""
     if not os.path.exists(JSC):
@@ -868,6 +930,14 @@ def behavior_checks(html, tests_path):
         if tag_id and tag_value:
             values[tag_id.group(1)] = tag_value.group(1)
 
+    # And a browser gives every element the text the markup put inside it. This
+    # page's own rule is that the markup holds the sentences and the script only
+    # moves highlights, so without this seeding the one architecture the chapter
+    # is built on is the one part no assertion can reach. It is not theoretical:
+    # Figure 13's reset restores the idle line by reading it back off the
+    # element, which reads as empty against an unseeded shim.
+    text = _page_text(html)
+
     with open(os.path.join(TOOLS, "harness.js"), encoding="utf-8") as fh:
         harness = fh.read()
     # The shim's own contract runs before any page script, so a shim that has
@@ -882,6 +952,7 @@ def behavior_checks(html, tests_path):
     bundle = "\n".join([
         "var PAGE_IDS = %s;" % repr(ids).replace("'", '"'),
         "var PAGE_VALUES = %s;" % json.dumps(values),
+        "var PAGE_TEXT = %s;" % json.dumps(text),
         harness,
         page_js,
         tests,

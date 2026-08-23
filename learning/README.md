@@ -134,20 +134,28 @@ Two more are preventive rather than forensic:
   rule sets both, no cascade analysis is needed to know the two will meet, so
   that slice is checked outright. A background inherited from an ancestor is
   still a manual check.
-- **A figure that opens differently with scripting off.** Every one-of-many
-  figure states its opening state twice: in the markup, so the page reads
+- **A figure that opens differently with scripting off.** A figure that
+  declares an opening state declares it twice: in the markup, so the page reads
   without JavaScript, and in the script, which reproduces it on load. The
   behavioural tests only ever see the second, because the script has run by the
   time they look. So where a set of buttons and a set of panels inside one
   figure share suffixes, the pressed button and the shown panel must be the
-  same one. That shape fits three of chapter 1's sixteen figures; most of the
+  same one. That shape fits four of chapter 1's sixteen figures; most of the
   rest build their contents at load and so have no markup state to compare
   against, which is a different problem and the `<noscript>` note is what
   answers it. Figure 15 shipped with a listing whose opening line was not the one
   its panel explained, and only a screenshot caught it. Sets with no matching
   panels are left alone, since independent toggles are not a group; so are sets
   where nothing is marked shown, which is the other legitimate pattern --
-  Figure 14's cases are all visible until the script puts four away.
+  Figure 14's cases are all visible until the script puts four away, and
+  Figures 1 and 2 mark nothing at all because reading un-highlighted suits
+  them.
+  This check spent a while narrower than it read. It recognised only `is-on`,
+  while Figures 1, 2 and 3 spell selection `is-lit`, and it matched attributes
+  positionally so that `class=` had to precede `id=`. Either one alone was
+  enough to hide a moved boot state, and fixing only the first left the test
+  mutation still escaping -- which is the argument for reintroducing a defect
+  rather than reading the patch and being satisfied.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions
@@ -193,7 +201,14 @@ sitting behind buttons a reader might never press. Four rules are enforced:
 
 **Behavioral checks**: the page's own `<script>` is executed headlessly under
 JavaScriptCore against the DOM shim in `tools/harness.js`, then the chapter's
-assertions run against the resulting state. The shim deliberately copies the
+assertions run against the resulting state. The shim is handed what the markup
+already contains before any script runs -- every `value=` attribute, and every
+id'd element's text -- because a browser would. Without the second of those,
+the only content any assertion could reach was content the script had written,
+which is precisely the content these pages are written to avoid having: the
+rule here is that the markup holds the sentences and the script only moves
+highlights. Figure 13 restores its idle prompt by reading it back off the
+element, and against an unseeded shim that reads as empty. The shim deliberately copies the
 DOM's *refusals*, not only its behaviour: it rejects an empty or
 space-containing `classList` token, and its `innerHTML` setter strips tags and
 keeps the text rather than discarding anything that is not the empty string.

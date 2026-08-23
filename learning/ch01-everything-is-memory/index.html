@@ -1814,7 +1814,7 @@ dfn {
   <p>The chip is a black square about 7&nbsp;mm on a side, soldered flat, with nothing sticking out of it. What you actually touch is the board it sits on.</p>
 </section>
 
-<figure class="instrument wide-fig">
+<figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 2</span>
     <span class="instrument-title">The board on your desk, hole by hole</span>
@@ -2167,7 +2167,7 @@ dfn {
     </div>
     </div>
     <div class="lvlsay">
-      <p class="say" id="say-high"><strong>High.</strong> The pin is connected to 3.3&nbsp;volts. Current runs from the pin, through the lamp, to ground, and the lamp glows.</p>
+      <p class="say is-lit" id="say-high"><strong>High.</strong> The pin is connected to 3.3&nbsp;volts. Current runs from the pin, through the lamp, to ground, and the lamp glows.</p>
       <p class="say" id="say-low"><strong>Low.</strong> The pin is connected to 0&nbsp;volts. Both ends of the lamp are now at the same voltage, so no current runs and the lamp is dark.</p>
     </div>
     <div class="pickout" aria-live="polite">
@@ -2175,7 +2175,7 @@ dfn {
       <span class="pickout-v hot" id="lvl-store">*0xD0000018 = 0x02000000</span>
     </div>
   </div>
-  <div class="instrument-note">That bottom line is the entire subject of this chapter, and by the end of it you will be able to read every character of it. Notice that the two states differ by one number, stored to one place.</div>
+  <div class="instrument-note">That bottom line is the entire subject of this chapter, and by the end of it you will be able to read every character of it. Notice that turning the pin off changes the address, not the number &mdash; the same <code class="addr">0x02000000</code> goes to a different place.</div>
 </figure>
 
 <section class="col">
@@ -2367,7 +2367,7 @@ dfn {
 <section class="col">
   <h2>Question 2 &mdash; the distance past the base picks the control</h2>
   <p>SIO is not a single switch. It is a panel of them, and each switch on that panel is a register with its own address.</p>
-  <p>Register addresses are always laid out the same way, on every peripheral and every chip you will ever meet. The block gets a <dfn>base address</dfn> &mdash; SIO's is <code class="addr">0xD0000000</code> &mdash; and each register sits a small fixed distance beyond it. That distance is the register's <dfn>offset</dfn>.</p>
+  <p>Registers are laid out the same way on every peripheral of this chip, and on nearly every chip you will meet. The block gets a <dfn>base address</dfn> &mdash; SIO's is <code class="addr">0xD0000000</code> &mdash; and each register sits a small fixed distance beyond it. That distance is the register's <dfn>offset</dfn>.</p>
   <p>So the address we started with splits into two decisions that have already been made.</p>
 </section>
 
@@ -2919,7 +2919,7 @@ dfn {
   <p>The right-hand column of each pair adds one word, <dfn>volatile</dfn>, which tells the compiler this address is not a variable. Read the left column first, because that is the one you would have written.</p>
 </section>
 
-<figure class="instrument wide-fig">
+<figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 14</span>
     <span class="instrument-title">What the optimizer does to your code</span>
@@ -3309,6 +3309,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
   <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;6 reports the correction rather than the pin.</p>
   <ul>
     <li>Address decode on bits 31:28, the segment table, and unmapped ranges raising a bus error &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8</li>
+    <li>A store to SIO costing no more than a store to a variable &mdash; RP2350 datasheet &sect;2.2.6: SIO &quot;contains registers which need single-cycle access from both cores concurrently, such as the GPIO registers. Access is always zero-wait-state&quot;, against &sect;1.1 on the memory a variable would live in: &quot;All SRAM supports single-cycle access&quot;</li>
     <li>SIO base <code class="addr">0xD0000000</code>, IO_BANK0 <code class="addr">0x40028000</code>, PADS <code class="addr">0x40038000</code> &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/gpio.rs">chips/rp2350/src/gpio.rs</a>:1164&ndash;1169</li>
     <li>The eight output registers at offsets <code>0x010</code>&ndash;<code>0x02C</code>, including the <code>gpio_hi_</code> siblings &mdash; <code>chips/rp2350/src/gpio.rs</code>:88&ndash;108</li>
     <li>Pins defined as <code>GPIO0</code>&ndash;<code>GPIO29</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1245&ndash;1250</li>
@@ -3389,8 +3390,8 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
       decodeSays.textContent = seg.says;
     } else {
       decodeWho.textContent = "Nobody answers.";
-      decodeSays.textContent = "Nothing is wired to this range, so the store " +
-        "does not quietly go nowhere. It raises a fault.";
+      decodeSays.textContent = "Nothing is wired to this range. The store " +
+        "raises a fault rather than quietly vanishing.";
     }
   }
 
@@ -3781,6 +3782,8 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
   var mode = "rmw";
   var stepsEl = document.getElementById("race-steps");
   var outcomeEl = document.getElementById("race-outcome");
+  // The idle line is the markup's, kept so no sentence lives in this script.
+  var raceIdle = outcomeEl.innerHTML;
   var introEl = document.getElementById("race-intro");
   var state, at;
 
@@ -3789,7 +3792,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
     at = 0;
     introEl.textContent = SCENARIOS[mode].intro;
     outcomeEl.className = "outcome prose";
-    outcomeEl.innerHTML = "Press <strong>Step</strong> to advance one instruction at a time.";
+    outcomeEl.innerHTML = raceIdle;
     document.getElementById("race-step").disabled = false;
     document.getElementById("race-all").disabled = false;
     drawRace();
