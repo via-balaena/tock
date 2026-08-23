@@ -303,15 +303,15 @@ chk("no reason is shown before a guess is made", REG["bet1-why"].textContent, ""
 
 REG["bet1-opts"].children[0].fire("click");
 chk("a wrong guess is marked wrong",
-    REG["bet1-opts"].children[0].classList.contains("wrong"), true);
+    REG["bet1-opts"].children[0].classList.contains("is-wrong"), true);
 chk("the right answer is revealed alongside it",
-    REG["bet1-opts"].children[2].classList.contains("right"), true);
+    REG["bet1-opts"].children[2].classList.contains("is-right"), true);
 chk("and the reason explains rather than scores",
     REG["bet1-why"].textContent.indexOf("ordinary memory") > -1, true);
 
 REG["bet1-opts"].children[1].fire("click");
 chk("the bet cannot be re-answered once committed",
-    REG["bet1-opts"].children[1].classList.contains("wrong"), false);
+    REG["bet1-opts"].children[1].classList.contains("is-wrong"), false);
 
 // ---- Figure 10: work one out yourself ----
 
@@ -798,10 +798,10 @@ t("committing to a guess reveals the answer", function () {
   var opts = REG["bet1-opts"].children;
   if (opts.length < 3) { throw new Error("no options rendered"); }
   opts[0].fire("click");                       // the first option is a wrong one
-  if (!opts[0].classList.contains("wrong")) {
+  if (!opts[0].classList.contains("is-wrong")) {
     throw new Error("the option picked was not marked wrong");
   }
-  if (!opts[2].classList.contains("right")) {
+  if (!opts[2].classList.contains("is-right")) {
     throw new Error("the correct option was not revealed");
   }
   if (REG["bet1-why"].textContent.length < 20) {
@@ -1352,3 +1352,8 @@ chk("and says what actually happens to one",
   }
   chk("each roadmap is a named group rather than a labelled div", n, 3);
 }());
+
+// Figure 17's fifth target does stop you, and is careful that this is not a
+// permission check. The carry-forward line has to agree with it.
+chk("the closing summary talks about permission, not about being stopped",
+    REG["carry-tock"].textContent.indexOf("asks whether code is allowed") > -1, true);

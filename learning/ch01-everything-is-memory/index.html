@@ -881,8 +881,8 @@ dfn {
   line-height: 1.45;
 }
 .bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
-.bet-opt.right { border-color: var(--accent); border-width: 2px; }
-.bet-opt.wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
 .bet-why {
   font-size: .97rem;
   line-height: 1.55;
@@ -2705,7 +2705,7 @@ dfn {
 
 <section class="col">
   <h2>Question 3 &mdash; one bit per pin picks which one</h2>
-  <p>Before any explanation, go and play with this. Drag the slider, watch the bottom two lines, and see whether you can work out the rule before it is stated.</p>
+  <p>Before any explanation, go and play with this. Drag the slider, watch which square lights and what the code line underneath says, and see whether you can work out the rule before it is stated.</p>
 </section>
 
 <figure class="instrument">
@@ -2979,7 +2979,7 @@ dfn {
 
 <section class="col">
   <p>Four of seven rows fail. That is why the street picture gets you to the end of question 1 and then quietly starts lying.</p>
-  <p>One more example, from a completely different peripheral, because the shape matters more than the example. The serial port has a data register at offset <code>0x000</code>, and here is its entire description of the low eight bits:</p>
+  <p>That serial port register the table just used is worth looking at properly, because the shape matters more than the example. Its data register sits at offset <code>0x000</code>, and here is its entire description of the low eight bits:</p>
   <blockquote class="quote">DATA: Receive (read) data character. Transmit (write) data character.</blockquote>
   <p>One address. Read it and you get a byte that arrived from outside the chip. Write it and a byte leaves the chip. Not one operation with two directions &mdash; two unrelated operations that happen to share a number.</p>
 </section>
@@ -3403,7 +3403,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
     <span class="instrument-title">The same store, sent somewhere else</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Send it somewhere it was never meant to go. Watch the bottom row while you do.</p>
+    <p class="dothis">Send it somewhere it was never meant to go. Watch <em>instructions run</em> and <em>permission checked</em> while you do.</p>
 
     <pre class="straycode">let mut reading: u32 = 0;         <span class="tok-c">// a sensor value, in SRAM</span>
 let p = &amp;mut reading as *mut u32;  <span class="tok-c">// p holds 0x20000100</span>
@@ -3530,7 +3530,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <li>What an address does on a read and on a write are two separate decisions. Look them up; never infer them.</li>
     <li>Read, change, write is three operations, and something can act in the gaps.</li>
     <li><code>volatile</code> stops the optimizer from helpfully destroying your driver.</li>
-    <li>Nothing yet stops any code from touching any address. That is what Tock is for.</li>
+    <li id="carry-tock">Nothing yet asks whether code is allowed to touch an address. That is what Tock is for.</li>
   </ol>
 </div>
 
@@ -3774,9 +3774,9 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
       betDone = true;
       var all = betOpts.querySelectorAll(".bet-opt");
       for (var i = 0; i < all.length; i++) {
-        if (BET[i].ok) { all[i].classList.add("right"); }
+        if (BET[i].ok) { all[i].classList.add("is-right"); }
       }
-      b.classList.add(opt.ok ? "right" : "wrong");
+      b.classList.add(opt.ok ? "is-right" : "is-wrong");
       betWhy.textContent = opt.why;
     });
     betOpts.appendChild(b);
