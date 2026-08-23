@@ -1192,3 +1192,54 @@ chk("the readout reports the fault rather than a store",
 // This read back a literal "&mdash;" and printed it into the figure.
 chk("the readout carries a real dash, not an entity",
     REG["stray-moved"].textContent, "nothing \u2014 the chip faulted");
+
+// ---- the street analogy, row by row ----
+
+chk("the street table opens on a row that holds",
+    REG["br-0"].getAttribute("aria-pressed"), "true");
+chk("and that row's panel is the one open",
+    REG["brp-0"].classList.contains("is-on"), true);
+
+// Four of the seven rows fail, and the prose under the table says so out loud.
+// If a verdict is ever edited, that sentence has to move with it.
+(function () {
+  var i, fails = 0, holds = 0;
+  for (i = 0; i < 7; i++) {
+    if (REG["br-" + i].classList.contains("no")) { fails++; }
+    if (REG["br-" + i].classList.contains("yes")) { holds++; }
+  }
+  chk("four rows are marked as failing", fails, 4);
+  chk("and three as holding", holds, 3);
+  chk("every row carries one verdict or the other", fails + holds, 7);
+}());
+
+(function () {
+  var i, j, open;
+  for (i = 0; i < 7; i++) {
+    REG["br-" + i].fire("click");
+    if (REG["br-" + i].getAttribute("aria-pressed") !== "true") {
+      throw new Error("row " + i + " did not press when clicked");
+    }
+    open = 0;
+    for (j = 0; j < 7; j++) {
+      if (REG["brp-" + j].classList.contains("is-on")) { open++; }
+    }
+    if (open !== 1) { throw new Error("row " + i + " left " + open + " panels open"); }
+    if (!REG["brp-" + i].classList.contains("is-on")) {
+      throw new Error("row " + i + " opened somebody else's panel");
+    }
+  }
+}());
+
+// Each panel has to actually run something, not restate the row.
+(function () {
+  var i, missing = 0;
+  for (i = 0; i < 7; i++) {
+    if (REG["brp-" + i].textContent.indexOf("run it") === -1) { missing++; }
+    if (REG["brp-" + i].textContent.indexOf("Checked against") === -1) { missing++; }
+  }
+  chk("every row shows an operation and where it was checked", missing, 0);
+}());
+
+chk("the row that fails on reading cites where reading was checked",
+    REG["brp-4"].textContent.indexOf("until read out by the CPU") > -1, true);

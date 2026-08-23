@@ -194,6 +194,16 @@ Two more are preventive rather than forensic:
   with scripting off they now demonstrate themselves instead of sitting inert.
   It does not reach a group addressed by literal id, nor one where several
   members are legitimately lit at once; Figure 2's `cat-*` is both.
+  It also pairs each panel group with the button group that drives it, read
+  off the adjacent `setAttribute("aria-pressed", ...)` in the same script.
+  That is the same comparison the rule above makes, but it needs no container
+  to do it -- which matters, because that one scans a `<figure>` at a time and
+  three of this page's interactives are not inside one. Neither is any of them
+  inside a `<section>`: the street table sits between two. A driver only
+  counts if its own members carry `aria-pressed` and its suffixes cover the
+  panel's, since without both tests it paired Figure 1's nine word buttons
+  with its three zones, and Figure 4's bit ranges with the spans inside its
+  buttons rather than the buttons.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions

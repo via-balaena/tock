@@ -1412,6 +1412,39 @@ dfn {
 }
 .breaks .yes { color: var(--accent); font-weight: 600; }
 .breaks .no { color: var(--danger); font-weight: 600; }
+
+/* The verdict column is the control: each row can be run, and pressing the
+   answer shows the operation that produced it. Written as a real button inside
+   the cell so the table keeps its caption, its header scope and its shape. */
+.brv {
+  width: 100%;
+  font-family: var(--display); font-size: .82rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: none;
+  text-align: left; padding: .25rem .45rem;
+  background: transparent; border: 1px solid transparent; border-radius: 2px;
+}
+.brv.yes { color: var(--accent); }
+.brv.no { color: var(--danger); }
+.brv:hover:not(:disabled) { border-color: var(--rule-strong); background: var(--surface-sunk); }
+.brv[aria-pressed="true"] { border-color: var(--rule-strong); background: var(--surface-sunk); }
+
+.brsay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1rem; }
+.brp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .55rem .75rem; border-left: 2px solid var(--rule);
+  display: none;
+}
+.brp.is-on { display: block; color: var(--ink); background: var(--surface-sunk); }
+.brp.is-on.brp-no { border-left-color: var(--danger); }
+.brp.is-on.brp-yes { border-left-color: var(--accent); }
+.brp-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-top: .5rem;
+}
+.brp-k:first-child { margin-top: 0; }
+.brp code { font-size: .84em; }
+.brp-src { color: var(--ink-soft); font-size: .86rem; }
 .tablewrap { overflow-x: auto; }
 
 /* Show the reader only the lines that matter, and say so out loud. */
@@ -1708,7 +1741,7 @@ dfn {
   <h1>Everything Is Memory</h1>
   <p class="standfirst">A microcontroller gives software exactly one move: put a number at a numbered location. Everything the hardware does, it does because of that. This chapter follows one such move all the way down to a wire changing voltage &mdash; and shows why it forces an operating system like Tock to exist.</p>
   <noscript>
-    <style>.dothis { display: none; }</style>
+    <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
     this chapter relies on is in the prose and the drawn diagrams. Ten of the
     seventeen figures still read as they are. The other seven build their
@@ -2840,20 +2873,29 @@ dfn {
 <div class="col">
   <div class="tablewrap">
     <table class="breaks">
-      <caption>The "addresses are house numbers on a street" picture, checked line by line</caption>
+      <caption>The "addresses are house numbers on a street" picture, checked line by line.<span class="ifjs"> Press any verdict to run that row.</span></caption>
       <thead>
         <tr><th scope="col">On a street</th><th scope="col">In this chip</th><th scope="col">Holds?</th></tr>
       </thead>
       <tbody>
-        <tr><td>Each house has one number</td><td>Each location has one address</td><td class="yes">Yes</td></tr>
-        <tr><td>Numbers run in order down the street</td><td>Addresses run in order, one per byte</td><td class="yes">Yes</td></tr>
-        <tr><td>The number tells you nothing about the house</td><td>Mostly true &mdash; except the first digit, which tells you the district</td><td class="yes">Mostly</td></tr>
-        <tr><td>Whatever you put in a house stays there</td><td><code>gpio_out_set</code> keeps nothing at all</td><td class="no">No</td></tr>
-        <tr><td>Looking inside a house changes nothing</td><td>On some peripherals a read is itself an action</td><td class="no">No</td></tr>
-        <tr><td>What you find is what you left</td><td><code>gpio_in</code> reports the outside world, which you did not put there</td><td class="no">No</td></tr>
-        <tr><td>Every number on the street is a house</td><td>Most addresses are nothing, and touching them faults</td><td class="no">No</td></tr>
+        <tr><td>Each house has one number</td><td>Each location has one address</td><td><button type="button" class="brv yes" id="br-0" aria-pressed="true"><span class="vh">Each house has one number: </span>Yes</button></td></tr>
+        <tr><td>Numbers run in order down the street</td><td>Addresses run in order, one per byte</td><td><button type="button" class="brv yes" id="br-1" aria-pressed="false"><span class="vh">Numbers run in order down the street: </span>Yes</button></td></tr>
+        <tr><td>The number tells you nothing about the house</td><td>Mostly true &mdash; except the first digit, which tells you the district</td><td><button type="button" class="brv yes" id="br-2" aria-pressed="false"><span class="vh">The number tells you nothing about the house: </span>Mostly</button></td></tr>
+        <tr><td>Whatever you put in a house stays there</td><td><code>gpio_out_set</code> keeps nothing at all</td><td><button type="button" class="brv no" id="br-3" aria-pressed="false"><span class="vh">Whatever you put in a house stays there: </span>No</button></td></tr>
+        <tr><td>Looking inside a house changes nothing</td><td>On some peripherals a read is itself an action</td><td><button type="button" class="brv no" id="br-4" aria-pressed="false"><span class="vh">Looking inside a house changes nothing: </span>No</button></td></tr>
+        <tr><td>What you find is what you left</td><td><code>gpio_in</code> reports the outside world, which you did not put there</td><td><button type="button" class="brv no" id="br-5" aria-pressed="false"><span class="vh">What you find is what you left: </span>No</button></td></tr>
+        <tr><td>Every number on the street is a house</td><td>Most addresses are nothing, and touching them faults</td><td><button type="button" class="brv no" id="br-6" aria-pressed="false"><span class="vh">Every number on the street is a house: </span>No</button></td></tr>
       </tbody>
     </table>
+    <div class="brsay">
+      <p class="brp brp-yes is-on" id="brp-0"><span class="brp-k">run it</span>store <code>7</code> at <code class="addr">0x20000100</code>, then read <code class="addr">0x20000100</code><span class="brp-k">what comes back</span><code>7</code>. One address named one location, and it was the same location both times. <span class="brp-src">Checked against the segment table, which puts SRAM at <code>0x2</code> &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8.</span></p>
+      <p class="brp brp-yes" id="brp-1"><span class="brp-k">run it</span>read the offsets of <code>gpio_out</code>, <code>gpio_hi_out</code> and <code>gpio_out_set</code><span class="brp-k">what comes back</span><code>0x010</code>, <code>0x014</code>, <code>0x018</code> &mdash; four apart, because a register is four bytes and addresses count bytes. <span class="brp-src">Checked against <code>chips/rp2350/src/gpio.rs</code>:88&ndash;108.</span></p>
+      <p class="brp brp-yes" id="brp-2"><span class="brp-k">run it</span>put <code class="addr">0x20000100</code> and <code class="addr">0xD0000018</code> side by side<span class="brp-k">what comes back</span>The first digit has already decided who answers: <code>2</code> is memory, <code>D</code> is SIO. The other seven tell you nothing until that one has been read, which is why this row is only mostly true. <span class="brp-src">Checked against RP2350 datasheet &sect;2.2, Table&nbsp;8.</span></p>
+      <p class="brp brp-no" id="brp-3"><span class="brp-k">run it</span>store <code class="addr">0x02000000</code> to <code class="addr">0xD0000018</code>, then read <code class="addr">0xD0000018</code><span class="brp-k">what comes back</span>No promise of anything. The datasheet types that register write-only: your value was used as an argument to an OR and discarded, and nothing was kept for you to come back to. <span class="brp-src">Checked against RP2350 datasheet &sect;3.1 register tables.</span></p>
+      <p class="brp brp-no" id="brp-4"><span class="brp-k">run it</span>read UART0's data register at <code class="addr">0x40070000</code><span class="brp-k">what comes back</span>A byte &mdash; and the read is what removes it. Arriving data waits in the port's receive queue, the datasheet says, <q>until read out by the CPU</q>, so the next read hands you the next byte rather than that one again. Looking did not observe the house; it took something out of it. <span class="brp-src">Checked against RP2350 datasheet &sect;12.1.2.5.</span></p>
+      <p class="brp brp-no" id="brp-5"><span class="brp-k">run it</span>read <code>gpio_in</code> at <code class="addr">0xD0000004</code><span class="brp-k">what comes back</span>The voltage on the pins at this instant, put there by the outside world. Nothing you wrote is in it, and the datasheet types the register read-only. <span class="brp-src">Checked against RP2350 datasheet, Table&nbsp;19.</span></p>
+      <p class="brp brp-no" id="brp-6"><span class="brp-k">run it</span>store <code>1</code> to <code class="addr">0x60000000</code><span class="brp-k">what comes back</span>A fault. Nothing is wired to that range, so no block claims the store and the chip raises a bus error instead of quietly accepting it. <span class="brp-src">Checked against RP2350 datasheet &sect;2.2: <q>Unmapped address ranges raise a bus error when accessed.</q></span></p>
+    </div>
   </div>
 </div>
 
@@ -3429,6 +3471,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <li>UART0 base <code class="addr">0x40070000</code> and UART1 base <code class="addr">0x40078000</code>, sharing one register layout &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/uart.rs">chips/rp2350/src/uart.rs</a>:343&ndash;347 and 20&ndash;60</li>
     <li><code>uartfr</code>'s <code>TXFF</code> bit, and Tock asking exactly the question in the <code>volatile</code> example &mdash; <code>chips/rp2350/src/uart.rs</code>:103&ndash;104 and 438&ndash;440</li>
     <li><code>UARTDR</code> bits 7:0, "Receive (read) data character. Transmit (write) data character.", typed <code>RWF</code> &mdash; RP2350 datasheet, Table&nbsp;1029</li>
+    <li>A read of that register removing the byte rather than copying it, which is the street table's <q>looking inside a house changes nothing</q> row &mdash; RP2350 datasheet &sect;12.1.2.5: received data is <q>stored in the receive FIFO by the receive logic until read out by the CPU</q></li>
     <li>A pin's high level being the IOVDD rail, and all GPIOs sharing it &mdash; RP2350 datasheet &sect;6.1.1. That rail is 3.3&nbsp;V on a Pico&nbsp;2: <em>"3V3 is the main 3.3&nbsp;V supply to RP2350 and its I/O"</em> &mdash; Pico&nbsp;2 datasheet</li>
     <li>Default drive strength of 4&nbsp;mA &mdash; RP2350 datasheet, <code>PADS_BANK0: GPIOx</code>, field <code>DRIVE</code>, reset <code>0x1</code></li>
     <li>GPIO&nbsp;25 as the user LED, and 23, 24, 25 and 29 being used by the board &mdash; Pico&nbsp;2 datasheet, "A few RP2350 GPIO pins are used for internal board functions"</li>
@@ -4425,6 +4468,31 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
   });
   /* Opens on the mask, which is the first of the three to run. */
   pickDis("and");
+
+  /* ---------------- The street analogy, row by row ---------------- */
+
+  /* Seven rows, seven panels, all written out in the markup. The script only
+     moves the class and the pressed state. */
+  (function () {
+    var n;
+    function pickRow(k) {
+      var i;
+      for (i = 0; i < 7; i++) {
+        document.getElementById("br-" + i)
+          .setAttribute("aria-pressed", i === k ? "true" : "false");
+        document.getElementById("brp-" + i).classList.toggle("is-on", i === k);
+      }
+    }
+    for (n = 0; n < 7; n++) {
+      (function (k) {
+        document.getElementById("br-" + k)
+          .addEventListener("click", function () { pickRow(k); });
+      }(n));
+    }
+    /* Opens on the first row that holds, so what "running a row" means is
+       established on an easy one before the four that fail. */
+    pickRow(0);
+  }());
 
   /* ---------------- Figure 17: the same store, sent somewhere else ---------------- */
 

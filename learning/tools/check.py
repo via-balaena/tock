@@ -810,29 +810,86 @@ def selected_in_markup_checks(html):
     script = html[html.rindex("<script>"):html.rindex("</script>")]
     markup = html[:html.rindex("<script>")]
 
-    groups = {}
+    groups, groups_at = {}, {}
     for match in re.finditer(
             r'getElementById\(\s*"([\w-]+?)-"\s*\+[^)]*\)\s*'
             r'\.classList\.toggle\(\s*"([\w-]+)"', script):
         prefix, token = match.groups()
         if token in SELECTED_TOKENS:
             groups.setdefault(prefix, set()).add(token)
+            groups_at.setdefault(prefix, match.start())
+
+    # Which button group drives each panel group, taken from the same lines of
+    # script rather than from the surrounding markup. boot_state_checks pairs
+    # these by scanning one <figure> at a time, so it cannot see an interactive
+    # that is not inside one -- this page has three, and none of them is even
+    # inside a <section>. Reading both prefixes off adjacent statements needs
+    # no container at all, and cannot mis-pair `hd-*` with `rgn-*` the way a
+    # whole-page scan would.
+    drivers = []
+    for match in re.finditer(
+            r'getElementById\(\s*"([\w-]+?)-"\s*\+[^)]*\)'
+            r'[\s\S]{0,80}?\.setAttribute\(\s*"aria-pressed"', script):
+        drivers.append((match.start(), match.group(1)))
+
+    def suffix_marked(prefix, wanted):
+        """The suffix of the one `prefix-*` element the markup marks."""
+        found = []
+        for tag in re.finditer(
+                r'<[a-zA-Z][^>]*\bid="%s-(\w+)"[^>]*>' % re.escape(prefix), markup):
+            attrs = tag.group(0)
+            classes = re.search(r'\bclass="([^"]*)"', attrs)
+            pressed = re.search(r'\baria-pressed="(\w+)"', attrs)
+            if wanted == "pressed":
+                if pressed and pressed.group(1) == "true":
+                    found.append(tag.group(1))
+            elif classes and wanted & set(classes.group(1).split()):
+                found.append(tag.group(1))
+        return found
 
     for prefix, tokens in sorted(groups.items()):
         members = re.findall(
             r'<[a-zA-Z][^>]*\bid="%s-\w+"[^>]*>' % re.escape(prefix), markup)
         if len(members) < 2:
             continue
-        lit = [m for m in members
-               if tokens & set((re.search(r'\bclass="([^"]*)"', m)
-                                or re.match("", "")).group(1).split()
-                               if re.search(r'\bclass="([^"]*)"', m) else [])]
+        lit = suffix_marked(prefix, tokens)
         if len(lit) != 1:
             problems.append(
                 "the script marks one of %s-* with %s, but the markup marks %d "
                 "of them - with no JavaScript the reader cannot tell which one "
                 "the page is talking about"
                 % (prefix, "/".join(sorted(tokens)), len(lit)))
+            continue
+        # Nearest *qualifying* driver, not merely nearest. A driver qualifies
+        # only if its members actually carry aria-pressed and its suffixes
+        # cover the panel's -- the same correspondence boot_state_checks
+        # requires. Without both tests this paired Figure 1's nine word buttons
+        # with its three zones, whose suffixes are not even the same kind of
+        # thing, and Figure 4's ranges with the spans inside its buttons
+        # rather than the buttons.
+        at = groups_at.get(prefix)
+        want = set(lit) | set(re.findall(
+            r'<[a-zA-Z][^>]*\bid="%s-(\w+)"' % re.escape(prefix), markup))
+        near = []
+        for pos, name in drivers:
+            if name == prefix:
+                continue
+            pressable = set(re.findall(
+                r'<[a-zA-Z][^>]*\bid="%s-(\w+)"[^>]*\baria-pressed="'
+                % re.escape(name), markup))
+            if pressable and want <= pressable:
+                near.append((abs(pos - at), name))
+        if not near:
+            continue
+        distance, driver = min(near)
+        if distance > 2000:
+            continue
+        down = suffix_marked(driver, "pressed")
+        if down != lit:
+            problems.append(
+                "with no JavaScript, %s-* shows %s while %s-* has %s pressed - "
+                "the markup's opening state has drifted from the one the script "
+                "reproduces" % (prefix, lit, driver, down or ["nothing"]))
     return problems
 
 
