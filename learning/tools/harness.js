@@ -136,6 +136,11 @@ PAGE_IDS.forEach(function (i) { REG[i] = new El(i); });
 // input values. A page whose rule is "the script writes no words" keeps every
 // sentence here, so a shim that starts every element empty can only ever test
 // the words the script writes -- exactly the ones this page tries not to have.
+if (typeof PAGE_CLASS === "object" && PAGE_CLASS) {
+  Object.keys(PAGE_CLASS).forEach(function (i) {
+    if (REG[i]) { REG[i].className = PAGE_CLASS[i]; }
+  });
+}
 if (typeof PAGE_TEXT === "object" && PAGE_TEXT) {
   Object.keys(PAGE_TEXT).forEach(function (i) {
     if (REG[i]) { REG[i].textContent = PAGE_TEXT[i]; }

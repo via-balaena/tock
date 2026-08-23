@@ -298,7 +298,12 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   border-bottom: 1px dashed var(--rule);
 }
 .rung:last-child { border-bottom: 0; }
-.rung:not(.on) > * { visibility: hidden; }
+/* Keep the space so the page does not jump as layers are stripped, but let
+   the label through: the reader meets this figure showing one rung and four
+   blank rows otherwise, and the note below it talks about a bottom rung that
+   was not on screen. The label alone gives the shape; .rung-who is already
+   --ink-faint until its rung is on, so pending reads as pending. */
+.rung:not(.on) > :not(.rung-who) { visibility: hidden; }
 
 .rung-who {
   font-family: var(--display);

@@ -266,10 +266,40 @@ as a reader with scripting disabled would meet it -- which is worth seeing in it
 own right. It caught a readout value clipped inside its cell, and several figures
 rendering as empty colored boxes, neither of which any static check noticed.
 
-To frame one figure at a time, copy the file, add a stylesheet that hides
-`.wrap > *` and un-hides a single `figure.instrument:nth-of-type(N)`, and render
-that. Keep the whole body in the copy: the script expects every element to exist,
-and deleting the others makes it throw.
+That is only half the page, though. Seven of chapter 1's sixteen figures build
+their contents at load, so QuickLook shows them as empty boxes, and for several
+review rounds the only way to look at one was to hand-write a fixture by reading
+its builder. That got done once, for one figure, and that one round found a
+shipped bug. `tools/fixture.py` does it for all of them:
+
+```
+learning/tools/fixture.py ch01-everything-is-memory \
+    --isolate ladder --theme light --out /tmp/f.html
+qlmanage -t -s 1100 -o /tmp /tmp/f.html
+```
+
+It runs the page under the same shim and the same bundle `check.py` uses for the
+behavioural checks -- literally the same function, because two assemblies of it
+drifted once already -- then serialises the DOM the page built and splices it
+back into a copy of the markup.
+
+Every option is there because it is a step that was otherwise re-derived, and
+got wrong, each time somebody rendered something. `--isolate ID` frames one
+figure; give it an *id*, because a class silently hides the whole page and you
+get a blank square. `--theme light|dark` forces one, which is not cosmetic:
+QuickLook follows the system appearance, so on a machine set to Dark an
+unmodified copy is not the light view, and two "both themes" renders come back
+byte-identical. `--phone` re-emits the narrow-width rules as plain rules, since
+QuickLook does not fire media queries and narrowing the wrapper proves nothing.
+
+`--click ID`, repeatable, fires clicks before dumping. The boot state is what
+most readers see but rarely what teaches -- the race figure only makes its point
+once it has been run to the end. With clicks the markup is *supposed* to be out
+of date, so the live classes, attributes and disabled states are written back
+too, and text is replaced wherever the script actually changed it. Without
+clicks only the empty containers are filled, deliberately: overwriting an
+element the markup already words correctly would hide exactly the disagreement
+`boot_state_checks` exists to catch.
 
 ## What CI requires of these files
 

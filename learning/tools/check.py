@@ -956,35 +956,54 @@ def _page_text(html):
     return out
 
 
-def behavior_checks(html, tests_path):
-    """Execute the page JS plus assertions under jsc. Returns (ok, output)."""
-    if not os.path.exists(JSC):
-        return None, "JavaScriptCore not found at %s - skipped" % JSC
-
-    if "<script>" not in html:
-        return None, "page has no <script> - skipped"
-
-    page_js = html[html.rindex("<script>") + len("<script>"):html.rindex("</script>")]
-    ids = sorted(set(re.findall(r'\bid="([^"]+)"', html)))
-
-    # A browser gives an <input value="25"> that value before any script runs.
-    # Without this the shim starts every control empty, so the page's first
-    # render -- the one a reader actually meets -- goes untested, and a slider
-    # silently computes parseInt("") for it.
-    values = {}
+def _attr_map(html, attr):
+    """{id: value of `attr`} for every element in the markup that has both."""
+    out = {}
     for tag in re.findall(r"<[a-zA-Z][^>]*>", html):
         tag_id = re.search(r'\bid="([^"]+)"', tag)
-        tag_value = re.search(r'\bvalue="([^"]*)"', tag)
-        if tag_id and tag_value:
-            values[tag_id.group(1)] = tag_value.group(1)
+        value = re.search(r'\b%s="([^"]*)"' % attr, tag)
+        if tag_id and value:
+            out[tag_id.group(1)] = value.group(1)
+    return out
 
-    # And a browser gives every element the text the markup put inside it. This
-    # page's own rule is that the markup holds the sentences and the script only
-    # moves highlights, so without this seeding the one architecture the chapter
-    # is built on is the one part no assertion can reach. It is not theoretical:
-    # Figure 13's reset restores the idle line by reading it back off the
-    # element, which reads as empty against an unseeded shim.
-    text = _page_text(html)
+
+def page_state(html):
+    """What a browser hands every element before a line of script runs.
+
+    Three maps, each here because the shim starting blank hid something:
+
+    `value` -- a browser gives an `<input value="25">` that value, and without
+    it the page's first render, the one a reader actually meets, went untested
+    and a slider computed parseInt("").
+
+    `text` -- the markup's own words. These pages are built on the rule that
+    the markup holds the sentences and the script only moves highlights, so an
+    unseeded shim could only ever reach content the script wrote, which is
+    precisely the content this architecture exists not to have. Figure 13's
+    reset reads its idle line back off the element.
+
+    `cls` -- the markup's own classes, without which `classList.contains`
+    answered false for a class the markup plainly declares.
+    """
+    return {
+        "value": _attr_map(html, "value"),
+        "text": _page_text(html),
+        "cls": _attr_map(html, "class"),
+    }
+
+
+def page_bundle(html, tail):
+    """The jsc bundle: seeded shim, the page's script, then `tail`.
+
+    Both callers go through here on purpose. `fixture.py` used to assemble its
+    own copy of this and was not given the class seeding when that was added,
+    so it rendered a figure whose panel had lost the classes the markup gave
+    it -- a defect in the instrument that looked exactly like a defect in the
+    page. Two assemblies of the same bundle will always drift; there is one.
+    """
+    page_js = html[html.rindex("<script>") + len("<script>"):html.rindex("</script>")]
+    ids = sorted(set(re.findall(r'\bid="([^"]+)"', html)))
+    state = page_state(html)
 
     with open(os.path.join(TOOLS, "harness.js"), encoding="utf-8") as fh:
         harness = fh.read()
@@ -994,19 +1013,34 @@ def behavior_checks(html, tests_path):
     if os.path.exists(contract_path):
         with open(contract_path, encoding="utf-8") as fh:
             harness = harness + "\n" + fh.read()
+
+    return "\n".join([
+        "var PAGE_IDS = %s;" % json.dumps(ids),
+        "var PAGE_VALUES = %s;" % json.dumps(state["value"]),
+        "var PAGE_TEXT = %s;" % json.dumps(state["text"]),
+        "var PAGE_CLASS = %s;" % json.dumps(state["cls"]),
+        harness,
+        page_js,
+        tail,
+    ])
+
+
+def behavior_checks(html, tests_path):
+    """Execute the page JS plus assertions under jsc. Returns (ok, output)."""
+    if not os.path.exists(JSC):
+        return None, "JavaScriptCore not found at %s - skipped" % JSC
+
+    if "<script>" not in html:
+        return None, "page has no <script> - skipped"
+
     with open(tests_path, encoding="utf-8") as fh:
         tests = fh.read()
 
-    bundle = "\n".join([
-        "var PAGE_IDS = %s;" % repr(ids).replace("'", '"'),
-        "var PAGE_VALUES = %s;" % json.dumps(values),
-        "var PAGE_TEXT = %s;" % json.dumps(text),
-        harness,
-        page_js,
+    bundle = page_bundle(html, "\n".join([
         tests,
         "var failed = report();",
         "if (failed) { throw new Error(failed + ' assertion(s) failed'); }",
-    ])
+    ]))
 
     tmp = tempfile.NamedTemporaryFile("w", suffix=".js", delete=False,
                                       encoding="utf-8")

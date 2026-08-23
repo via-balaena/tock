@@ -448,6 +448,23 @@ chk("exactly one word is lit after repeated clicks", castLit, 1);
 
 // ---- Figure 2: the board ----
 
+// The kind classes are the markup's, not the script's -- nothing ever assigns
+// k-*, it is declared per hole and read back by the click handler. So these
+// also stand as the check that the shim is handed the classes the markup
+// declares; without that, every one of them reads as absent.
+chk("pin 1 is declared a Tock console pin in the markup",
+    REG["pad-1"].classList.contains("k-tock"), true);
+chk("pin 3 is declared a ground pin",
+    REG["pad-3"].classList.contains("k-gnd"), true);
+chk("pin 30 is declared the reset pin",
+    REG["pad-30"].classList.contains("k-sys"), true);
+chk("pin 40 is declared a power pin",
+    REG["pad-40"].classList.contains("k-pwr"), true);
+chk("and pin 4 is an ordinary GPIO",
+    REG["pad-4"].classList.contains("k-gpio"), true);
+chk("a hole carries exactly one kind",
+    REG["pad-4"].classList.contains("k-pwr"), false);
+
 REG["pad-3"].fire("click");
 chk("a ground hole reports itself as ground",
     REG["cat-gnd"].classList.contains("is-lit"), true);
