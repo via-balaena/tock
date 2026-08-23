@@ -157,7 +157,6 @@ h1 {
   line-height: 1.5;
 }
 
-
 /* ---------- section headings ---------- */
 
 section { margin-top: 3.5rem; }
@@ -269,57 +268,8 @@ summary:focus-visible, a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--surface);
-}
-button.primary:hover:not(:disabled) { filter: brightness(1.12); color: var(--surface); }
-
-.controls {
-  display: flex;
-  gap: .55rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
 
 input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
-
-/* Keep the space so the page does not jump as layers are stripped, but let
-   the label through: the reader meets this figure showing one rung and four
-   blank rows otherwise, and the note below it talks about a bottom rung that
-   was not on screen. The label alone gives the shape; .rung-who is already
-   --ink-faint until its rung is on, so pending reads as pending. */
-.rung:not(.on) > :not(.rung-who) { visibility: hidden; }
-
-.rung-who {
-  font-family: var(--display);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  padding-top: .28rem;
-}
-.rung.on .rung-who { color: var(--accent); }
-.rung:last-child.on .rung-who { color: var(--hot); }
-
-.rung-code {
-  font-family: var(--mono);
-  font-size: .9rem;
-  line-height: 1.45;
-  overflow-x: auto;
-  white-space: pre;
-  padding-bottom: .15rem;
-}
-.rung-where {
-  font-family: var(--display);
-  font-size: .74rem;
-  color: var(--ink-faint);
-  letter-spacing: .02em;
-  margin-top: .25rem;
-  white-space: normal;
-}
 
 /* A small muted aside: provenance lines, caveats, footnotes. */
 .note {
@@ -335,18 +285,6 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 /* An instrument that should hold the reading column's width rather than
    breaking out wide. */
 .instrument.narrow { max-width: var(--measure); }
-
-.compare { margin-top: 1.1rem; }
-
-.map-detail {
-  margin-top: 1.1rem;
-  padding: .85rem 1rem;
-  background: var(--accent-soft);
-  border-left: 3px solid var(--accent);
-  font-size: .95rem;
-  line-height: 1.55;
-  min-height: 3.5rem;
-}
 .map-detail.hot { background: var(--hot-soft); border-left-color: var(--hot); }
 
 /* ---------- code block ---------- */
@@ -363,41 +301,6 @@ pre {
   border-radius: 2px;
 }
 pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
-.tok-c { color: var(--ink-faint); font-style: italic; }
-.tok-k { color: var(--accent); }
-.tok-n { color: var(--hot); }
-
-/* ---------- aside ---------- */
-
-/* A verbatim quotation from a datasheet or specification. */
-.quote {
-  margin: 0;
-  padding: .1rem 0 .1rem 1rem;
-  border-left: 3px solid var(--rule-strong);
-  font-size: .97rem;
-  line-height: 1.55;
-  color: var(--ink-soft);
-  font-style: italic;
-}
-
-.aside {
-  border-left: 3px solid var(--hot);
-  background: var(--hot-soft);
-  padding: .85rem 1rem;
-  font-size: .95rem;
-  line-height: 1.55;
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-}
-.aside-label {
-  font-family: var(--display);
-  font-size: .68rem;
-  font-weight: 700;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--hot);
-}
 
 /* ---------- closing ---------- */
 
@@ -442,16 +345,6 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 .sources code { font-size: .8em; }
 
 @media (max-width: 30rem) {
-  .rung { grid-template-columns: 1fr; gap: .35rem; }
-  .rung-who { padding-top: 0; }
-  .map-row { grid-template-columns: 1fr auto; row-gap: .15rem; }
-  .map-row .map-addr { grid-column: 1 / -1; }
-  /* Stack, the way .rung and .map-row above do. The column was 1.6rem, which
-     is about a third of what "CORE 0" needs at .7rem uppercase with letter
-     spacing, so the label wrapped and the core number landed on the line below
-     its own action -- "COREread gpio_out" over an orphaned "0". The core
-     number is the whole argument of this figure. */
-  .step { grid-template-columns: 1fr; row-gap: .1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -498,34 +391,6 @@ dfn {
   padding-top: .7rem;
 }
 
-/* Where we are in the three questions the chapter answers. */
-.roadmap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-  font-family: var(--display);
-  font-size: .78rem;
-  letter-spacing: .04em;
-}
-.roadmap-step {
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: .35rem .6rem;
-  color: var(--ink-faint);
-  background: var(--surface);
-  display: flex;
-  gap: .45rem;
-  align-items: baseline;
-}
-.roadmap-step.here {
-  border-color: var(--hot);
-  color: var(--hot);
-  background: var(--hot-soft);
-  font-weight: 600;
-}
-.roadmap-step.done { color: var(--ink-soft); }
-.roadmap-n { font-weight: 700; }
-
 /* An imperative naming the control, immediately above the figure it drives. */
 .dothis {
   font-family: var(--display);
@@ -541,50 +406,8 @@ dfn {
   content: "\2192";
   font-weight: 700;
 }
-
-/* Guess first, then reveal. The guess is the point; the score is not. */
-.bet {
-  border: 1px solid var(--rule-strong);
-  background: var(--surface);
-  padding: 1.2rem 1.3rem;
-  display: flex;
-  flex-direction: column;
-  gap: .9rem;
-}
-.bet-q {
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: 1.05rem;
-  line-height: 1.4;
-}
-.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
-.bet-opt {
-  font: inherit;
-  /* These options begin "0x02000000 - the value you stored". `font: inherit`
-     carries the family but not the case, so the shared button rule was
-     uppercasing them into 0X02000000, two paragraphs under prose showing the
-     same address correctly. */
-  text-transform: none; letter-spacing: 0;
-  text-align: left;
-  background: var(--surface-sunk);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: .6rem .8rem;
-  cursor: pointer;
-  line-height: 1.45;
-}
-.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
 .bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
 .bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
-.bet-why {
-  font-size: .97rem;
-  line-height: 1.55;
-  border-top: 1px solid var(--rule);
-  padding-top: .8rem;
-  color: var(--ink-soft);
-}
-.bet-why:empty { display: none; }
 
 /* Check yourself. Question visible, answer one click away. */
 .selfcheck { display: flex; flex-direction: column; gap: .6rem; }
@@ -675,507 +498,29 @@ dfn {
    the argument, so they read at the weight of the prose around them rather
    than below it. */
 .glossary.inline dd { color: var(--ink); }
-
-/* A procedure, as steps. It was one 72-word sentence-chain. */
-.steps {
-  margin: .7rem 0; padding-left: 1.4rem;
-  font-size: .93rem; line-height: 1.6; color: var(--ink);
-}
-.steps li { margin: .2rem 0; }
-.steps li::marker { color: var(--accent); font-family: var(--display); font-weight: 700; }
-
-/* Diagrams. currentColor everywhere so both themes inherit correctly. */
-.svgfig {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: .8rem;
-}
-.svgfig svg {
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  color: var(--ink);
-  overflow: visible;
-}
-.svgfig figcaption {
-  font-size: .93rem;
-  line-height: 1.55;
-  color: var(--ink-soft);
-}
-.d-line { stroke: currentColor; fill: none; stroke-width: 1.5; }
-.d-thin { stroke: var(--rule-strong); fill: none; stroke-width: 1; }
-.d-box { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1.5; }
-.d-box-sunk { fill: var(--surface-sunk); stroke: var(--rule); stroke-width: 1; }
-.d-hot { fill: var(--hot-fill); stroke: none; }
-.d-hot-box { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 2; }
-.d-label {
-  font-family: var(--display);
-  font-size: 12px;
-  font-weight: 600;
-  fill: currentColor;
-}
-.d-small {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  fill: var(--ink-faint);
-}
-.d-mono {
-  font-family: var(--mono);
-  font-size: 11.5px;
-  fill: currentColor;
-}
-.d-hot-text { fill: var(--hot); font-weight: 700; }
-
-/* Eraser eyes: the lines you are meant to skip, visibly skipped. */
-.reveal-all {
-  font-family: var(--display);
-  font-size: .82rem;
-  font-weight: 600;
-  letter-spacing: .03em;
-  color: var(--accent);
-  background: none;
-  border: none;
-  border-bottom: 1px dashed var(--accent);
-  padding: 0 0 1px;
-  cursor: pointer;
-}
-
-/* Text only a screen reader reads. Not `display: none`, which would take it
-   out of the accessibility tree too. Needed because an `aria-label` on a
-   control whose *content is the answer* silently replaces that content: the
-   digit cells announced "the first digit, bits 31 down to 28" and never said
-   which digit was there, which is the whole point of the figure. Naming them
-   with `aria-labelledby` pointing at the live digit fixes that, and needs one
-   hidden span per cell to carry the part that is not on screen. */
-.vh {
-  position: absolute;
-  width: 1px; height: 1px;
-  margin: -1px; padding: 0; border: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-/* The three that are controls. */
-.disline {
-  background: none; border: 0; border-radius: 0;
-  padding: 0; margin: 0; cursor: pointer;
-  font-family: var(--mono); font-size: .84rem; line-height: 1.75;
-  text-transform: none; letter-spacing: 0;
-}
-.disline .dis-n {
-  color: var(--ink-faint); border: 1px solid var(--ink-faint);
-  border-radius: 2px; margin-right: .4rem;
-}
-.disline:hover:not(:disabled) .dis-t { color: var(--hot); }
-.disline:hover:not(:disabled) .dis-n { border-color: var(--hot); color: var(--hot); }
-.disline[aria-pressed="true"] .dis-t { color: var(--hot); font-weight: 600; }
-.disline[aria-pressed="true"] .dis-n {
-  background: var(--hot-fill); border-color: var(--hot-fill); color: var(--hot-ink);
-}
-
-/* Twelve lines of bookkeeping, hidden until asked for. */
-.dis .dis-skip { display: none; }
-.dis.dis-all .dis-skip { display: grid; }
-
-.dispanels { margin-top: 1.1rem; }
-.dispanel { display: none; }
 .dispanel.is-on { display: block; }
-.dispanel p { margin-bottom: .8rem; font-size: .97rem; line-height: 1.6; }
-.dispanel p:last-child { margin-bottom: 0; }
-.dispanel-h {
-  display: flex; align-items: center; gap: .45rem;
-  font-family: var(--display); font-size: .8rem; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase; color: var(--hot);
-  margin-bottom: .7rem;
-}
-.dispanel-h .dis-n {
-  background: var(--hot-fill); color: var(--hot-ink); border-radius: 2px;
-  min-width: 1.3rem;
-}
-.dispanel-h code {
-  font-size: .95rem; text-transform: none; letter-spacing: 0;
-  color: var(--hot);
-}
-/* The toggle's two labels live in the markup, like Figure 7's, so the script
-   holds no words. */
-#dis-toggle .tw-on { display: none; }
-#dis-toggle[aria-expanded="true"] .tw-off { display: none; }
-#dis-toggle[aria-expanded="true"] .tw-on { display: inline; }
-
-.disanswer {
-  border-left: 2px solid var(--rule-strong); padding-left: .7rem;
-  color: var(--ink-soft);
-}
-
-/* The sixteen digits, as the lookup table they are. This was a sentence --
-   "the usual ten run on into six letters: 0 1 2 3 4 5 6 7 8 9 A B C D E F. A is
-   ten, and F is fifteen" -- which is eighteen words asking the reader to hold a
-   table in their head. The six letters are the only new part, so they are the
-   only part that is lit. */
-.hexkey {
-  display: flex; flex-wrap: wrap; gap: .25rem; margin: .2rem 0 .1rem;
-}
-.hexkey-c {
-  display: flex; flex-direction: column; align-items: center;
-  min-width: 2.05rem; padding: .3rem .1rem;
-  background: var(--surface-sunk); border: 1px solid var(--rule);
-  border-radius: 2px;
-  font-family: var(--mono); line-height: 1.2;
-}
-.hexkey-d { font-size: 1rem; font-weight: 600; color: var(--ink-faint); }
-.hexkey-v { font-size: .72rem; color: var(--ink-faint); }
-.hexkey-c.hexkey-letter {
-  background: var(--hot-soft); border-color: var(--hot);
-}
-.hexkey-letter .hexkey-d, .hexkey-letter .hexkey-v { color: var(--hot); }
-
-/* Eight ranges, one shown, so the four bits below are visibly the four bits of
-   the digit above rather than of some digit. Markup, so it survives no JS. */
-.hxrange { display: none; }
 .hxrange.is-on {
   display: inline; font-family: var(--mono); font-style: normal;
   font-weight: 600; color: var(--hot);
 }
-.hd:hover:not(:disabled) { border-color: var(--rule-strong); }
-.hd[aria-pressed="true"] { background: var(--hot-soft); border-color: var(--hot); }
-.hd[aria-pressed="true"] .hd-d { color: var(--hot); }
-.hd[aria-pressed="true"] .hd-r { color: var(--hot); }
-
-/* An instruction for the control immediately below it, inside a figure. */
-.figcue {
-  font-family: var(--body); font-size: .95rem; line-height: 1.55;
-  color: var(--ink-soft); margin: 1.15rem 0 .55rem;
-}
-
-.nib { display: flex; gap: .45rem; flex-wrap: wrap; }
-.nb {
-  display: flex; flex-direction: column; align-items: center; gap: .1rem;
-  min-width: 4rem; padding: .45rem .5rem .4rem;
-  background: var(--surface-sunk); border: 1px solid var(--rule);
-  text-transform: none; letter-spacing: 0;
-}
-.nb-w {
-  font-family: var(--mono); font-size: 1.2rem; font-weight: 700;
-  line-height: 1.15; color: var(--ink);
-}
-.nb-b {
-  font-family: var(--mono); font-size: .8rem; font-weight: 600;
-  color: var(--ink-faint);
-}
-.nb:hover:not(:disabled) { border-color: var(--rule-strong); }
-.nb[aria-pressed="true"] {
-  background: var(--hot-fill); border-color: var(--hot-fill);
-}
-.nb[aria-pressed="true"] .nb-w { color: var(--hot-ink); }
-.nb[aria-pressed="true"] .nb-b { color: var(--hot-ink); }
-
-/* Eight names, one shown. Keeping them in the markup means the script holds no
-   words at all, and the figure still names the right register with no JS. */
-.rgname { display: none; }
 .rgname.is-on { display: inline; }
 
 #rg-twins { text-transform: none; letter-spacing: 0; }
-#rg-twins .tw-on { display: none; }
-#rg-twins[aria-pressed="true"] .tw-off { display: none; }
-#rg-twins[aria-pressed="true"] .tw-on { display: inline; }
-
-.regs-wrap { overflow-x: auto; padding-bottom: .4rem; margin-top: 1.1rem; }
-.regs { display: flex; flex-direction: column; gap: 3px; min-width: 40rem; }
-.regs-head, .reg {
-  display: grid;
-  grid-template-columns: 4.6rem 3.6rem 10.5rem 1fr 9.5rem;
-  gap: .6rem; align-items: baseline; text-align: left;
-}
-.regs-head {
-  font-family: var(--display); font-size: .66rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-  padding: 0 calc(.6rem + 1px) .3rem;
-}
-.reg {
-  width: 100%; padding: .45rem .6rem;
-  background: var(--surface-sunk); border: 1px solid var(--rule);
-  font-family: var(--mono); font-size: .84rem; font-weight: 400;
-  color: var(--ink); text-transform: none; letter-spacing: 0;
-}
-.reg-o, .reg-t { font-variant-numeric: tabular-nums; color: var(--ink); }
-.reg-n { font-weight: 600; color: var(--ink); }
-.reg-w, .reg-p {
-  font-family: var(--body); font-size: .88rem; color: var(--ink-soft);
-  font-variant-numeric: lining-nums;
-}
-/* The twins, marked without moving the grid. */
-.reg.twin { box-shadow: inset 3px 0 0 var(--rule-strong); }
-.reg:hover:not(:disabled) { border-color: var(--rule-strong); }
-.reg[aria-pressed="true"] {
-  background: var(--hot-soft); border-color: var(--hot);
-}
-.reg[aria-pressed="true"] .reg-o { color: var(--hot); }
-.reg[aria-pressed="true"] .reg-t { color: var(--hot); }
-.reg[aria-pressed="true"] .reg-n { color: var(--hot); }
-.reg[aria-pressed="true"] .reg-w { color: var(--hot); }
-.reg[aria-pressed="true"] .reg-p { color: var(--hot); }
-.reg.is-gone { display: none; }
 
 /* On a phone the point of Figure 4 is that there are eight digits, so all
    eight have to be on screen at once rather than five and a scroll. */
 @media (max-width: 30rem) {
-  .hexline { gap: .3rem; }
-  .hexline-0x { font-size: 1.1rem; padding-top: .38rem; }
-  .hexdigits { gap: .15rem; }
-  .hd { min-width: 2.15rem; padding: .35rem .16rem .3rem; }
-  .hd-d { font-size: 1.15rem; }
-  .hd-r { font-size: .53rem; }
 }
-
-/* One hex digit chooses who answers. The chapter's central mechanism. */
-.decode { display: flex; flex-direction: column; gap: .9rem; }
-.digits { display: flex; gap: .3rem; flex-wrap: wrap; }
-.digit {
-  font: 600 1.05rem/1 var(--mono);
-  /* The base button rule uppercases, and the `font` shorthand does not reset
-     that or letter-spacing. These buttons say 0x0 through 0xF, in the one
-     section teaching what 0x means, so they were rendering 0X0 through 0XF. */
-  text-transform: none; letter-spacing: 0;
-  background: var(--surface-sunk);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: .55rem .7rem;
-  cursor: pointer;
-  min-width: 2.6rem;
-}
-.digit:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
-.digit.on:hover:not(:disabled) {
-  color: var(--hot-ink);
-  border-color: var(--hot);
-  background: var(--hot-fill);
-}
-.digit.on {
-  background: var(--hot-fill);
-  color: var(--hot-ink);
-  border-color: var(--hot);
-  font-weight: 700;
-}
-.digit.dead { color: var(--ink-faint); }
-.decode-out {
-  font-family: var(--mono);
-  font-size: 1.05rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: .1rem .55rem;
-  align-items: baseline;
-}
-.decode-said {
-  font-size: .97rem;
-  line-height: 1.6;
-  font-family: var(--body);
-  color: var(--ink-soft);
-  min-height: 3.2em;
-}
-.decode-said strong { color: var(--ink); }
-
-/* The trace: every step of one store, all visible, one highlighted. */
-.trace { display: flex; flex-direction: column; gap: .1rem; }
-.trace-row {
-  display: grid;
-  grid-template-columns: 1.6rem 1fr;
-  gap: .8rem;
-  padding: .55rem .6rem;
-  border-left: 3px solid transparent;
-  align-items: start;
-}
-.trace-row.seen { border-left-color: var(--rule-strong); }
-.trace-row.now {
-  border-left-color: var(--hot);
-  background: var(--hot-soft);
-}
-.trace-n {
-  font-family: var(--mono);
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--ink-faint);
-  padding-top: .12rem;
-}
-.trace-row.now .trace-n { color: var(--hot); }
-.trace-what { font-size: .97rem; line-height: 1.55; }
-.trace-what b { font-weight: 600; }
-.scrub { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
-.scrub input[type=range] { flex: 1; min-width: 9rem; }
-
-/* Two things side by side, same geometry, so the difference is the only
-   thing that moves. */
-.multiples {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: .9rem;
-}
-.mult {
-  border: 1px solid var(--rule);
-  background: var(--surface);
-  padding: .85rem .9rem;
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-}
-.mult-name {
-  font-family: var(--mono);
-  font-size: .86rem;
-  font-weight: 600;
-  color: var(--accent);
-}
-.mult-op {
-  font-family: var(--mono);
-  font-size: .82rem;
-  color: var(--ink-soft);
-}
-.mult-says { font-size: .92rem; line-height: 1.5; color: var(--ink-soft); }
-.mult.is-hot { border-left: 3px solid var(--hot); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .bit, .digit, .trace-row { transition: background-color .18s ease, opacity .18s ease; }
-}
-
-/* The one sentence the chapter is built on. Used once. */
-.pull-quote {
-  font-family: var(--display);
-  font-size: 1.35rem;
-  line-height: 1.35;
-  font-weight: 600;
-  color: var(--ink);
-  border-top: 2px solid var(--hot);
-  border-bottom: 2px solid var(--hot);
-  padding: 1rem 0;
-  text-wrap: balance;
-}
-
-/* Body-typeface running text inside a figure, where the default is mono. */
-.prose { font-family: var(--body); }
-
-/* Worked example, then the same task half-done, then the task. */
-.ladder-steps { display: flex; flex-direction: column; gap: .9rem; }
-.step-card {
-  border: 1px solid var(--rule);
-  background: var(--surface);
-  padding: .95rem 1.05rem;
-  display: flex;
-  flex-direction: column;
-  gap: .55rem;
-}
-.step-card.doing { border-left: 3px solid var(--hot); }
-.step-kind {
-  font-family: var(--display);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.step-card.doing .step-kind { color: var(--hot); }
-.blanks { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-family: var(--mono); font-size: .95rem; }
-.blanks input {
-  font: inherit;
-  width: 7.5rem;
-  padding: .3rem .45rem;
-  background: var(--surface-sunk);
-  color: var(--ink);
-  border: 1px solid var(--rule-strong);
-  border-radius: 2px;
-}
-.blanks input.ok { border-color: var(--accent); background: var(--accent-soft); }
-.blanks input.no { border-color: var(--danger); background: var(--danger-soft); }
-.verdict { font-family: var(--body); font-size: .95rem; line-height: 1.55; color: var(--ink-soft); }
-
-/* Where the analogy stops working. Every row a specific wrong inference. */
-.breaks { width: 100%; border-collapse: collapse; font-size: .95rem; }
-.breaks caption {
-  text-align: left;
-  font-family: var(--display);
-  font-weight: 600;
-  padding-bottom: .6rem;
-  color: var(--ink-soft);
-}
-.breaks th, .breaks td {
-  text-align: left;
-  vertical-align: top;
-  padding: .55rem .7rem;
-  border-bottom: 1px solid var(--rule);
-  line-height: 1.5;
-}
-.breaks th {
-  font-family: var(--display);
-  font-size: .78rem;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  font-weight: 600;
-}
-.breaks .yes { color: var(--accent); font-weight: 600; }
-.breaks .no { color: var(--danger); font-weight: 600; }
-
-/* The verdict column is the control: each row can be run, and pressing the
-   answer shows the operation that produced it. Written as a real button inside
-   the cell so the table keeps its caption, its header scope and its shape. */
-.brv {
-  width: 100%;
-  font-family: var(--display); font-size: .82rem; font-weight: 700;
-  letter-spacing: .06em; text-transform: none;
-  text-align: left; padding: .25rem .45rem;
-  background: transparent; border: 1px solid transparent; border-radius: 2px;
-}
-.brv.yes { color: var(--accent); }
-.brv.no { color: var(--danger); }
-.brv:hover:not(:disabled) { border-color: var(--rule-strong); background: var(--surface-sunk); }
-.brv[aria-pressed="true"] { border-color: var(--rule-strong); background: var(--surface-sunk); }
-
-.brsay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1rem; }
-/* Visible by default and hidden at load, the way the six questions are, so a
-   reader with no scripting gets all seven rows explained instead of one. */
-.brp {
-  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
-  padding: .55rem .75rem; border-left: 2px solid var(--rule);
 }
 .brp.is-off { display: none; }
 .brp.is-on { display: block; color: var(--ink); background: var(--surface-sunk); }
 .brp.is-on.brp-no { border-left-color: var(--danger); }
 .brp.is-on.brp-yes { border-left-color: var(--accent); }
-.brp-k {
-  font-family: var(--display); font-size: .66rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-  display: block; margin-top: .5rem;
-}
-.brp-k:first-child { margin-top: 0; }
-.brp code { font-size: .84em; }
-.brp-src { color: var(--ink-soft); font-size: .86rem; }
-
-/* Both packages read with no scripting; the script hides one at load. */
-.pkgp {
-  font-size: .95rem; line-height: 1.6; color: var(--ink-faint);
-  padding: .6rem .8rem; border-left: 2px solid var(--rule);
-}
 .pkgp.is-off { display: none; }
 .pkgp.is-on { display: block; color: var(--ink); background: var(--surface-sunk); }
 .pkgp.is-on.pkgp-here { border-left-color: var(--hot); background: var(--hot-soft); }
-.pkgp-name {
-  font-family: var(--display); font-size: .7rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft);
-  display: block; margin-bottom: .3rem;
-}
-/* The row that does not move when the package does. It is markup and the
-   script never writes to it, which is the whole reason it is worth reading. */
-.pkgfixed {
-  margin-top: .8rem; padding-left: .8rem;
-  border-left: 2px solid var(--rule-strong);
-  font-size: .9rem; line-height: 1.55; color: var(--ink-soft);
-}
-.pkgfixed-k {
-  font-family: var(--display); font-size: .66rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-  display: block;
-}
-.tablewrap { overflow-x: auto; }
 
 /* Show the reader only the lines that matter, and say so out loud. */
 
@@ -1185,177 +530,24 @@ dfn {
   width: 100%; height: auto; max-width: 100%;
   color: var(--ink); overflow: visible; display: block;
 }
-.ctr { text-anchor: middle; }
-.svg-scroll { overflow-x: auto; overflow-y: hidden; margin: .2rem 0 .4rem; }
-.svg-scroll svg { min-width: 34rem; }
-
-/* A control that is one of a set, where exactly one is current. */
-.seg {
-  display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem;
-}
-.seg button { font-size: .85rem; }
-.seg button[aria-pressed="true"] {
-  border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
-}
-
-/* A short labelled readout strip. */
-.pickout {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem;
-  background: var(--surface-sunk); border: 1px solid var(--rule);
-  padding: .55rem .75rem; margin: .9rem 0;
-}
-.pickout-k {
-  font-family: var(--display); font-size: .68rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-}
-.pickout-v {
-  font-family: var(--mono); font-size: .98rem; font-weight: 500;
-  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
-}
 .pickout-v.hot { color: var(--hot); }
 
-/* Dim the drawing, not the words: opacity composites text toward the
-   background and would take these labels to about 2:1, which the
-   token-based contrast check cannot see. */
-.cast-el.is-dim rect, .cast-el.is-dim circle, .cast-el.is-dim line,
-.cast-el.is-dim path, .cast-el.is-dim polygon { opacity: .42; }
-.cast-t {
-  font-family: var(--display); font-size: 11px; font-weight: 600;
-  fill: var(--ink-faint);
-}
-.cast-mono { font-family: var(--mono); font-size: 13px; fill: var(--ink); }
-.cast-el.is-lit .cast-t { fill: var(--hot); font-weight: 700; }
-.cast-el.is-lit .cast-mono { fill: var(--hot); }
-
-.hole { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1.5; }
-.lit-hole { fill: var(--surface); stroke: var(--rule-strong); }
-.cast-el.is-lit .lit-hole { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 2.5; }
-.dashed { fill: none; stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 4 3; }
-.cast-el.is-lit .dashed { stroke: var(--hot); }
-.outline { fill: none; stroke: var(--rule-strong); stroke-width: 1.5; }
-.cast-el.is-lit .outline { stroke: var(--hot); stroke-width: 2.5; }
-.slot { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
-.cast-el.is-lit .lit-slot { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 2; }
-.sq { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
-.cast-el.is-lit .lit-sq { fill: var(--hot-soft); stroke: var(--hot); stroke-width: 1.5; }
-.arrow { stroke: var(--rule-strong); }
-.cast-el.is-lit .arrow { stroke: var(--hot); }
-
-.where-row {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: .6rem; margin: 1rem 0 1.2rem;
-}
-.where {
-  font-size: .88rem; line-height: 1.45; color: var(--ink-faint);
-  padding: .5rem .65rem; border-left: 2px solid var(--rule);
-}
-.where.is-lit {
-  color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
-}
-
 .glossary.cast { align-items: start; }
-.cast-word {
-  font-family: var(--mono); font-size: .88rem; font-weight: 500;
-  color: var(--accent); background: none; border: 1px solid transparent;
-  text-transform: none; letter-spacing: 0;
-  padding: .05rem .3rem; margin: -.05rem -.3rem; cursor: pointer;
-  border-radius: 2px; text-align: left;
-}
-.cast-word:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.cast-word dfn { font-style: normal; }
 .glossary.cast dt.is-lit .cast-word {
   color: var(--hot); border-color: var(--hot); background: var(--hot-soft);
 }
 .glossary.cast dd.is-lit { color: var(--ink); }
-
-/* The unselected column still names the other board's pins, so it stays fully
-   legible; selection is carried by the border and the heading colour. */
-.four-col.is-lit {
-  border-color: var(--hot); box-shadow: inset 0 0 0 1px var(--hot);
-}
-.four-name {
-  font-family: var(--display); font-size: .72rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-}
-.four-col.is-lit .four-name { color: var(--hot); }
-.four-line { font-size: .86rem; line-height: 1.4; color: var(--ink-soft); }
-.four-line b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
 .four-line.hot b { color: var(--hot); }
-.four-note {
-  margin-top: .8rem; font-size: .88rem; line-height: 1.5; color: var(--ink-soft);
-  border-left: 2px solid var(--hot); padding-left: .65rem; display: none;
-}
-.four-note.is-lit { display: block; }
 
 /* Cases are visible by default and hidden by script, so a reader with no
    JavaScript meets all four rather than none. */
 .optcase.is-off { display: none; }
-.optcols {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  gap: .9rem;
-}
-.optcol {
-  display: flex; flex-direction: column; gap: .5rem;
-  border: 1px solid var(--rule); border-top-width: 3px;
-  padding: .8rem .85rem; background: var(--surface); min-width: 0;
-}
-/* Only the border and the heading carry the verdict colour. Tinting the
-   background would put the body text on a ground nothing has validated. */
-.optcol.bad  { border-top-color: var(--danger); }
-.optcol.good { border-top-color: var(--accent); }
-.optcol-h {
-  font-family: var(--display); font-size: .78rem; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase;
-}
-.optcol.bad  .optcol-h { color: var(--danger); }
-.optcol.good .optcol-h { color: var(--accent); }
-.optcol-k {
-  font-family: var(--display); font-size: .66rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-}
-.optcol pre { font-size: .78rem; }
-.optsay { font-size: .92rem; line-height: 1.5; color: var(--ink); }
-.optwhy {
-  margin-top: .9rem; font-size: .92rem; line-height: 1.55;
-  color: var(--ink-soft); border-left: 2px solid var(--rule);
-  padding-left: .7rem;
-}
-
-/* These buttons are addresses, so the shared button rule's uppercasing would
-   turn 0xD0000018 into 0XD0000018. */
-.stray-seg button {
-  font-family: var(--mono); font-size: .84rem; font-weight: 500;
-  text-transform: none; letter-spacing: 0;
-}
-
-/* The point of the figure is that these two never move, so they are markup and
-   the script never touches them. */
-.strayfixed {
-  display: flex; flex-wrap: wrap; gap: .3rem 1.4rem;
-  align-items: baseline; margin: .9rem 0 0;
-  border-left: 2px solid var(--rule-strong); padding-left: .75rem;
-}
-.strayfixed-k {
-  font-family: var(--display); font-size: .68rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-}
-.strayfixed-v {
-  font-family: var(--mono); font-size: .95rem; font-weight: 500;
-  color: var(--ink);
-}
-
-.straysay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1.1rem; }
-.strayp {
-  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
-  padding: .5rem .7rem; border-left: 2px solid var(--rule);
-}
 .strayp.is-on {
   color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
 }
 .strayp.is-on.strayp-fault {
   border-left-color: var(--danger); background: var(--danger-soft);
 }
-.strayp b { font-family: var(--mono); font-weight: 500; }
 
 /* ---------- Figure 1: three moments ---------- */
 .mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }
@@ -1657,7 +849,7 @@ dfn {
       <div class="vt-rest">+8 &hellip; +60 &nbsp; fourteen more, for faults and interrupts</div>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="vtp-0">Not code &mdash; a number. The processor loads it into the stack pointer before running anything, because code needs somewhere to keep its working values. The linker sets it to the top of RAM.</p>
+      <p class="vtp is-on" id="vtp-0">Not code &mdash; a number. The processor loads it into the stack pointer before running anything, because code needs somewhere to keep its working values. Tock puts that stack at the <em>bottom</em> of RAM on purpose: overflowing it runs off the end into nothing, which faults, instead of quietly overwriting something.</p>
       <p class="vtp" id="vtp-1">The <b>reset handler</b>: the address of the first instruction of yours that runs. The processor jumps here, and everything after this point is Tock.</p>
     </div>
   </div>
@@ -1676,7 +868,7 @@ dfn {
     <span class="instrument-title">Two loops, and then <code>main()</code></span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a loop. Both are the store instruction from chapter 1, run over a range.</p>
+    <p class="dothis">Click a loop. Both walk a range of memory one word at a time, using the store from chapter 1.</p>
     <div class="loops" role="group" aria-label="The two loops of the reset handler">
       <button type="button" class="loop" id="lp-0" aria-pressed="true">
         <span class="loop-k">first loop</span>
@@ -1728,9 +920,9 @@ bl   main</pre></button>
   <div class="instrument-body">
     <p class="dothis">Pick a declaration. Watch the flash column.</p>
     <div class="costs" role="group" aria-label="Three declarations">
-      <button type="button" id="cs-0" aria-pressed="true" data-sec=".bss" data-flash="0 bytes" data-by="the first loop">let mut n: u32 = 0;</button>
-      <button type="button" id="cs-1" aria-pressed="false" data-sec=".data" data-flash="4 bytes" data-by="the second loop">let mut n: u32 = 5;</button>
-      <button type="button" id="cs-2" aria-pressed="false" data-sec=".bss" data-flash="0 bytes" data-by="the first loop">let mut buf = [0u8; 1024];</button>
+      <button type="button" id="cs-0" aria-pressed="true" data-sec=".bss" data-flash="0 bytes" data-by="the first loop">static mut N: u32 = 0;</button>
+      <button type="button" id="cs-1" aria-pressed="false" data-sec=".data" data-flash="4 bytes" data-by="the second loop">static mut N: u32 = 5;</button>
+      <button type="button" id="cs-2" aria-pressed="false" data-sec=".bss" data-flash="0 bytes" data-by="the first loop">static mut BUF: [u8; 1024] = [0; 1024];</button>
     </div>
     <div class="costgrid">
       <div class="costcell"><span class="costcell-k">lives in</span>
@@ -1794,6 +986,7 @@ bl   main</pre></button>
   </div>
   <div class="instrument-body">
     <p class="dothis">Click a line. Each one is something you have already met.</p>
+    <p class="note">The source writes the second constant as <code>0xe0000000&nbsp;+&nbsp;0x0000ed08</code>, which is the same number said in two halves.</p>
     <div class="dbg" role="group" aria-label="The six instructions of the debugger entry point">
         <button type="button" id="db-0" aria-pressed="true">movs&nbsp;r0,&nbsp;#0</button>
         <button type="button" id="db-1" aria-pressed="false">ldr&nbsp;&nbsp;r1,&nbsp;=0xE000ED08</button>
@@ -1891,6 +1084,28 @@ bl   main</pre></button>
     <dt>vector table</dt><dd>A list of addresses at the front of a program, saying where to go when something happens.</dd>
   </dl>
 </div>
+
+<section class="col sources">
+  <h3>Everything above, checked against source</h3>
+  <p class="note">Every claim on this page comes from the Tock tree or the RP2350 datasheet. Nothing here was written from memory.</p>
+  <ul>
+    <li>The ROM searching flash for a block that is part of a closed loop, and why the loop rule exists &mdash; RP2350 datasheet &sect;5.1.5.1</li>
+    <li>The block markers <code>0xffffded3</code> and <code>0xab123579</code>, and the rule that the last item counts the words of the block's items &mdash; RP2350 datasheet &sect;5.9.1</li>
+    <li>The minimum Arm image being twenty bytes, which is Tock's twenty-eight without the vector-table item &mdash; RP2350 datasheet &sect;5.9.5.1</li>
+    <li>The vector-table item having type <code>0x03</code> &mdash; RP2350 datasheet &sect;5.9.3.3</li>
+    <li>Tock's twenty-eight bytes themselves &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
+    <li><code class="addr">0x10000400</code> being where the kernel begins &mdash; the <code>rom</code> region's origin in <code>boards/raspberry_pi_pico_2/layout.ld</code></li>
+    <li>The vector table's first two entries being the initial stack pointer and <code>initialize_ram_jump_to_main</code> &mdash; <code>chips/rp2350/src/lib.rs</code></li>
+    <li>The two loops, and the five linker symbols they use &mdash; <code>arch/cortex-m/src/lib.rs</code></li>
+    <li>Tock placing the kernel stack at the lowest address in SRAM so that overflowing it faults rather than "silently overwriting valuable data" &mdash; the comment on the <code>.stack</code> section in <code>boards/build_scripts/tock_kernel_layout.ld</code></li>
+    <li><code>_szero</code> and <code>_ezero</code> marking "the range of the BSS, SRAM that Tock will zero on boot" &mdash; <code>boards/build_scripts/tock_kernel_layout.ld</code></li>
+    <li>The data section placed with <code>AT (_etext)</code>, which is what puts its initial values in flash &mdash; the same file</li>
+    <li>The debugger entry point existing because the probe does not reset the chip &mdash; the comment on <code>jump_to_bootloader</code> in <code>boards/raspberry_pi_pico_2/src/main.rs</code></li>
+    <li><code class="addr">0xE000ED08</code> being the vector table offset register &mdash; RP2350 datasheet, Table&nbsp;202</li>
+    <li>RP2350 not requiring a checksummed loader at flash address 0, unlike RP2040 &mdash; RP2350 datasheet &sect;5.9.5. The 256-byte loader Tock ships beside the block is a flash-speed setup, not a boot requirement.</li>
+  </ul>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
+</section>
 
 </div>
 

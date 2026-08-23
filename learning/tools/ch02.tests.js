@@ -155,3 +155,20 @@ chk("answering twice does not rewrite the verdict",
 REG["qo-4-0"].fire("click");
 chk("the flash question accepts its right answer",
     REG["qy-4"].classList.contains("is-shown"), true);
+
+// ---- what the review pass found ----
+// The declarations were written as `let` bindings, which are stack locals and
+// never reach .bss or .data at all -- the figure's whole premise needs statics.
+(function () {
+  var i, statics = 0;
+  for (i = 0; i < 3; i++) {
+    if (REG["cs-" + i].textContent.indexOf("static") === 0) { statics++; }
+  }
+  chk("every declaration in the cost figure is a static", statics, 3);
+}());
+// _estack is the top of a reserved stack buffer at the *lowest* address in
+// SRAM, not the top of RAM. Tock does that so an overflow faults.
+chk("the stack panel says which end of RAM the stack sits at",
+    REG["vtp-0"].textContent.indexOf("bottom") > -1, true);
+chk("and why that is deliberate",
+    REG["vtp-0"].textContent.indexOf("faults") > -1, true);

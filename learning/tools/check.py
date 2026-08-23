@@ -841,6 +841,29 @@ def assertion_checks(tests_path):
     return problems
 
 
+def provenance_checks(html, name):
+    """Every chapter carries its sources and its licence, at the bottom.
+
+    Chapter 2 shipped without either. The section was inserted by a string
+    replacement whose anchor did not match, which silently did nothing, and
+    nothing downstream noticed: the page still passed every check and every
+    assertion. Two promises broke quietly. The series tells the reader that
+    every claim on a page is checked against source, and the licence footer is
+    one of the four documents that have to agree about how this content is
+    licensed -- the others being LICENSE, README.md and .lcignore.
+    """
+    problems = []
+    if 'class="col sources"' not in html and "checked against source" not in html:
+        problems.append(
+            "%s has no sources section, and the series promises every claim on "
+            "a page is checked against one" % name)
+    if "CC&nbsp;BY-SA" not in html and "CC BY-SA" not in html:
+        problems.append(
+            "%s has no licence line, which is one of the four places this "
+            "content's licence is stated" % name)
+    return problems
+
+
 def imperative_checks(html):
     """Every figure names something to do, above the thing that does it.
 
@@ -1158,6 +1181,7 @@ def static_checks(html, name):
     problems.extend(boot_state_checks(html))
     problems.extend(selected_in_markup_checks(html))
     problems.extend(imperative_checks(html))
+    problems.extend(provenance_checks(html, name))
     problems.extend(assertion_checks(os.path.join(TOOLS, name.split('-')[0] + '.tests.js')))
     problems.extend(button_case_checks(html))
     problems.extend(run_order_checks(html))

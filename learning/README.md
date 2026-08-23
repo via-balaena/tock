@@ -103,7 +103,7 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Fourteen more static checks exist because each caught a live defect. Keep the
+Fifteen more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
@@ -260,6 +260,14 @@ Two more are preventive rather than forensic:
   it looks like something. It also refuses a ternary whose two arms agree --
   `REG["x"] ? true : true` walks straight past an identity test, and was
   written within the hour by the person who had just added one.
+- **A chapter with no sources and no licence.** Chapter 2 shipped without
+  either. The section was inserted by a string replacement whose anchor did not
+  match, which silently did nothing, and nothing downstream noticed -- the page
+  passed every check and every assertion it had. Two promises broke quietly:
+  the series tells its reader that every claim on a page is checked against
+  source, and the licence footer is one of four places this content's licence
+  is stated, alongside `LICENSE`, this file and `.lcignore`. Every chapter must
+  carry both.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions
