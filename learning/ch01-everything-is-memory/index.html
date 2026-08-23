@@ -1220,6 +1220,10 @@ dfn {
 .digits { display: flex; gap: .3rem; flex-wrap: wrap; }
 .digit {
   font: 600 1.05rem/1 var(--mono);
+  /* The base button rule uppercases, and the `font` shorthand does not reset
+     that or letter-spacing. These buttons say 0x0 through 0xF, in the one
+     section teaching what 0x means, so they were rendering 0X0 through 0XF. */
+  text-transform: none; letter-spacing: 0;
   background: var(--surface-sunk);
   color: var(--ink);
   border: 1px solid var(--rule);
@@ -2511,7 +2515,7 @@ dfn {
       </div>
     </div>
   </div>
-  <div class="instrument-note">The offsets and the order are <code>chips/rp2350/src/gpio.rs</code>, lines 88&ndash;108, with none dropped; the last two columns are written for this page rather than quoted. Tock's driver for this chip neither reads nor writes any of the four <code>gpio_hi_</code> registers.</div>
+  <div class="instrument-note">Offsets are written to a fixed width here, so <code>0x018</code> and <code>0x18</code> are the same number &mdash; a leading zero pads the column and changes nothing. Later figures print it both ways, because the padding is only there to line the column up. The offsets and the order are <code>chips/rp2350/src/gpio.rs</code>, lines 88&ndash;108, with none dropped; the last two columns are written for this page rather than quoted. Tock's driver for this chip neither reads nor writes any of the four <code>gpio_hi_</code> registers.</div>
 </figure>
 
 <section class="col">

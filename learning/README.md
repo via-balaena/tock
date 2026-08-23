@@ -65,7 +65,8 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Five more static checks exist because each caught a live defect:
+Eleven more static checks exist because each caught a live defect. Keep the
+count above honest when adding one; it has now said the wrong number twice:
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
   and are served both from this repository and as standalone uploads, so a raw
@@ -156,6 +157,19 @@ Two more are preventive rather than forensic:
   enough to hide a moved boot state, and fixing only the first left the test
   mutation still escaping -- which is the argument for reintroducing a defect
   rather than reading the patch and being satisfied.
+- **A button showing code that the shared button rule uppercases.**
+  `button { text-transform: uppercase }` is right for labels and wrong for
+  anything case-sensitive, and the `font:` shorthand resets neither it nor
+  letter-spacing. It has bitten twice: glossary terms rendered as PIN, and
+  Figure 5's first-digit buttons rendered `0X0` through `0XF` -- a capital X,
+  in the one section teaching what the `0x` prefix means. Nothing else here
+  could see it, and no screenshot had, because those buttons are not in the
+  markup at all: the script builds them. So button classes are gathered from
+  `<button class="...">` *and* from `className =` on anything
+  `createElement("button")` returned, and a class whose rule asks for the
+  monospace family -- which on these pages means it is showing code -- must
+  say what happens to its case. The declaration is what is required, not a
+  particular value, so a component that means `uppercase` may still say so.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions

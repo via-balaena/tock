@@ -601,6 +601,53 @@ def demo_asm_checks(html, chapter_dir):
     return problems
 
 
+def button_case_checks(html):
+    """A button showing code must not be uppercased by the shared button rule.
+
+    `button { text-transform: uppercase }` is the house style for labels and
+    wrong for anything case-sensitive, and the `font:` shorthand does not reset
+    it. This has now bitten twice: glossary terms rendered as PIN, and Figure
+    5's first-digit buttons rendered 0X0 through 0XF -- capital X, in the one
+    section teaching what the 0x prefix means. Both were invisible to every
+    other check here, and the second was only ever going to be caught by
+    looking, because those buttons do not exist in the markup at all; the
+    script builds them.
+
+    So the classes are gathered from both places: `<button class="...">` in the
+    markup, and `className = "..."` on anything `createElement("button")`
+    produced. A class whose rule asks for the monospace family is showing code
+    -- that is what the family means on these pages -- so its rule has to say
+    what happens to case. Requiring the declaration rather than a particular
+    value keeps the rule loose: a component is free to answer `uppercase` if it
+    means it, and only silence is refused.
+    """
+    problems = []
+    style = html[html.index("<style>"):html.index("</style>")]
+    css = re.sub(r"/\*.*?\*/", "", style, flags=re.S)
+    script = html[html.rindex("<script>"):html.rindex("</script>")]
+
+    classes = set()
+    for attr in re.findall(r'<button[^>]*\bclass="([^"]*)"', html):
+        classes.update(attr.split())
+    for match in re.finditer(r'createElement\("button"\)(.{0,200}?)className\s*=\s*([^;]+);',
+                             script, re.S):
+        for literal in re.findall(r'"([^"]*)"', match.group(2)):
+            classes.update(literal.split())
+
+    for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        target = selector.strip().rstrip(",").split(",")[0].strip()
+        match = re.fullmatch(r"\.([\w-]+)", target)
+        if not match or match.group(1) not in classes:
+            continue
+        wants_mono = re.search(r"font(?:-family)?\s*:[^;]*var\(--mono\)", body)
+        if wants_mono and "text-transform" not in body:
+            problems.append(
+                "%s is a button showing monospace text and never says what "
+                "happens to its case, so the shared button rule uppercases it "
+                "- 0x0 renders as 0X0" % target)
+    return problems
+
+
 SELECTED_TOKENS = {"is-on", "is-lit"}
 
 
@@ -865,6 +912,7 @@ def static_checks(html, name):
     problems.extend(semantic_checks(html))
     problems.extend(register_table_checks(html))
     problems.extend(boot_state_checks(html))
+    problems.extend(button_case_checks(html))
     problems.extend(run_order_checks(html))
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))

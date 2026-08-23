@@ -66,4 +66,13 @@
   // innerHTML keeps the text rather than dropping the assignment.
   el.innerHTML = "<b>kept</b>";
   ok("innerHTML strips tags and keeps text", el.textContent, "kept");
+
+  // createElement remembers what it was asked for. Three of this page's CSS
+  // rules select generated content by tag -- `.trace-what b` among them -- and
+  // a shim that forgets the tag can neither catch a wrong one nor be used to
+  // render what a figure builds.
+  ok("createElement records the tag", document.createElement("div").tagName, "DIV");
+  ok("and reports it uppercased", document.createElement("b").tagName, "B");
+  throws("createElement with no tag", function () { document.createElement(); });
+  throws("createElement with an empty tag", function () { document.createElement(""); });
 }());

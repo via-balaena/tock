@@ -9,8 +9,14 @@
 // PAGE_VALUES and PAGE_TEXT carrying what the markup already put in each one,
 // before this file, then the page's own script, then the chapter's assertions.
 
-function El(id) {
+function El(id, tag) {
   this.id = id || "";
+  // A browser records what you asked createElement for, and reports it
+  // uppercased. Dropping it made every generated element tagless, so nothing
+  // could assert that a row is a <div> or that `.trace-what b` has a <b> to
+  // match -- and no fixture could be rendered from what a script builds, which
+  // is exactly the half of these figures a screenshot never reaches.
+  this.tagName = tag === undefined ? "" : String(tag).toUpperCase();
   this.value = "";
   this.disabled = false;
   this.type = "";
@@ -146,7 +152,14 @@ var document = {
     if (!REG[i]) { throw new Error("page JS asked for an id that is not in the HTML: " + i); }
     return REG[i];
   },
-  createElement: function () { return new El(); }
+  // createElement() with no name, or an empty one, is an InvalidCharacterError
+  // in a browser rather than an anonymous element.
+  createElement: function (tag) {
+    if (tag === undefined || String(tag) === "") {
+      throw new Error("createElement: the tag name provided is not valid");
+    }
+    return new El("", tag);
+  }
 };
 
 // ---- assertion helpers, used by the per-chapter *.tests.js files ----
