@@ -1420,3 +1420,15 @@ chk("and each is given the datasheet's operation",
 }());
 chk("the notation key names all three pieces",
     REG["pairs-notation"].textContent.indexOf("wdata") > -1, true);
+
+// The prose used to name poppl as the return and b .LBB8_1 as the hang, which
+// the listing's own comments already say -- and it said "that first listing",
+// which stops being true the moment a reader picks another case. The prose is
+// gone, so those comments are now the only place either outcome is named.
+(function () {
+  var t = REG["case-wait"].textContent;
+  chk("the wait listing names the branch that returns",
+      t.indexOf("clear? return") > -1, true);
+  chk("and the branch that spins",
+      t.indexOf("set? spin for ever") > -1, true);
+}());

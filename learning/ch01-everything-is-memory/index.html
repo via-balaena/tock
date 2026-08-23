@@ -3352,7 +3352,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
 
 <section class="col">
   <p>Every step of the optimizer's reasoning is valid for a variable. Applied to a register it produces a program that either returns immediately or hangs for ever, depending on what the flag happened to be the first time.</p>
-  <p>Both outcomes are visible in that first listing. <code>poppl</code> is the return, and <code>b&nbsp;.LBB8_1</code> is the hang. Which one you get is decided before the loop starts, and the program fails with no warning, only at higher optimization levels, and usually not on the machine where you tested.</p>
+  <p>Which one you get is decided before the loop starts. The program fails with no warning, only at higher optimization levels, and usually not on the machine where you tested.</p>
   <p class="note">The fourth case is a correction. An earlier draft of this chapter claimed a store you never read back is deleted as dead code. Compiling it showed otherwise: the two columns come out identical.</p>
   <p>So the fix is not to outsmart the optimizer. It is to tell it the truth, and volatile is how you say it. Every access happens, as many times as written, in the order written. None may be invented, removed, or moved past another.</p>
   <p>In Tock you do not have to remember this, because it is welded into the register types:</p>

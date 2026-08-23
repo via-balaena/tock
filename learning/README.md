@@ -257,7 +257,9 @@ Two more are preventive rather than forensic:
   Any `chk` whose expected value is its actual value is refused, whether that
   is a repeated literal or the same expression written twice. This is the same
   argument as a check that has never failed: it is worse than nothing, because
-  it looks like something.
+  it looks like something. It also refuses a ternary whose two arms agree --
+  `REG["x"] ? true : true` walks straight past an identity test, and was
+  written within the hour by the person who had just added one.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions

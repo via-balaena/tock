@@ -827,6 +827,16 @@ def assertion_checks(tests_path):
                 problems.append(
                     "%s asserts %s against itself, so it cannot fail"
                     % (" ".join(parts[0].split())[:60], got))
+            # A ternary whose arms agree is the same defect wearing a
+            # disguise, and the identity test above walks straight past it.
+            # `REG["x"] ? true : true` was written within an hour of adding
+            # that test, by the person who added it.
+            ternary = re.match(r"^.+\?(.+):(.+)$", got)
+            if ternary and (" ".join(ternary.group(1).split())
+                            == " ".join(ternary.group(2).split())):
+                problems.append(
+                    "%s picks between two identical values, so it cannot fail"
+                    % " ".join(parts[0].split())[:60])
         index = cursor
     return problems
 
