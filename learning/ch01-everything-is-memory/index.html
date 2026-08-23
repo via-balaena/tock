@@ -1445,6 +1445,34 @@ dfn {
 .brp-k:first-child { margin-top: 0; }
 .brp code { font-size: .84em; }
 .brp-src { color: var(--ink-soft); font-size: .86rem; }
+
+/* ---------- the two packages, same silicon ---------- */
+
+.pkg { margin: 1.4rem 0; }
+.pkgp {
+  font-size: .95rem; line-height: 1.6; color: var(--ink-faint);
+  padding: .6rem .8rem; border-left: 2px solid var(--rule);
+  display: none;
+}
+.pkgp.is-on { display: block; color: var(--ink); background: var(--surface-sunk); }
+.pkgp.is-on.pkgp-here { border-left-color: var(--hot); background: var(--hot-soft); }
+.pkgp-name {
+  font-family: var(--display); font-size: .7rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft);
+  display: block; margin-bottom: .3rem;
+}
+/* The row that does not move when the package does. It is markup and the
+   script never writes to it, which is the whole reason it is worth reading. */
+.pkgfixed {
+  margin-top: .8rem; padding-left: .8rem;
+  border-left: 2px solid var(--rule-strong);
+  font-size: .9rem; line-height: 1.55; color: var(--ink-soft);
+}
+.pkgfixed-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block;
+}
 .tablewrap { overflow-x: auto; }
 
 /* Show the reader only the lines that matter, and say so out loud. */
@@ -2612,8 +2640,23 @@ dfn {
 <section class="col">
   <p>Two patterns in that table are worth keeping, and both are arithmetic you can check rather than trivia you have to trust.</p>
   <p>Neighbours land 4 apart because a register is 32 bits wide, which is 4 bytes, and addresses count bytes. Every offset is a multiple of 4 for that reason, and that is the sanity check worth keeping. Do not expect every step to be exactly 4, though: a block can leave gaps, and this same file leaves several further down. With the twins taken away the four that remain are 8 apart, which is the same reason applied twice.</p>
-  <p>Those higher GPIO numbers are worth a sentence, because they make a point the code cannot. The part on a Pico&nbsp;2 is an <code>RP2350A</code>: a 60-pin package with 30 GPIOs. Its sibling <code>RP2350B</code> is an 80-pin package with 48. Same silicon design, different plastic, and the datasheet spells out the consequence:</p>
+  <p>Those higher GPIO numbers are worth a sentence, because they make a point the code cannot. Two packages carry this same silicon design, and the datasheet spells out the consequence:</p>
   <blockquote class="quote">GPIOs 0 through 29 are available in all package variants. GPIOs 30 through 47 are available only in QFN-80 (RP2350B) package.</blockquote>
+
+  <div class="pkg">
+    <p class="dothis">Change the package. The three facts under <em>the same either way</em> hold for both.</p>
+    <div class="seg pkg-seg" role="group" aria-label="Which package the silicon is in">
+      <button type="button" id="pk-0" aria-pressed="true">RP2350A</button>
+      <button type="button" id="pk-1" aria-pressed="false">RP2350B</button>
+    </div>
+    <p class="pkgp pkgp-here is-on" id="pkp-0"><span class="pkgp-name">RP2350A &mdash; the one on your desk</span>QFN-60 &mdash; sixty pins on a square 7&nbsp;&times;&nbsp;7&nbsp;mm. Thirty GPIOs, numbered 0 to 29, and four analogue inputs. Bits 30 and 31 of <code>gpio_out</code> are real bits in a real register with no pin behind them, and so is every GPIO bit of the four <code>gpio_hi_</code> registers.</p>
+    <p class="pkgp" id="pkp-1"><span class="pkgp-name">RP2350B</span>QFN-80 &mdash; eighty pins on a square 10&nbsp;&times;&nbsp;10&nbsp;mm. Forty-eight GPIOs, numbered 0 to 47, and eight analogue inputs. Bits 30 and 31 drive pins here, and the four <code>gpio_hi_</code> registers drive GPIO&nbsp;32 to 47 &mdash; the same registers, finally with something behind them.</p>
+    <div class="pkgfixed">
+      <span class="pkgfixed-k">the same either way</span>
+      SIO answers at <code class="addr">0xD0000000</code>. <code>gpio_out_set</code> sits <code>0x018</code> past it. Tock's crate for this chip defines <code>GPIO0</code> through <code>GPIO29</code> and stops, whichever package the silicon came in.
+    </div>
+  </div>
+
   <p>Hold on to that. It comes back in question 3, where it explains something that otherwise looks like a mistake.</p>
 </section>
 
@@ -3465,7 +3508,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <li>The eight output registers at offsets <code>0x010</code>&ndash;<code>0x02C</code>, including the <code>gpio_hi_</code> siblings &mdash; <code>chips/rp2350/src/gpio.rs</code>:88&ndash;108</li>
     <li>Pins defined as <code>GPIO0</code>&ndash;<code>GPIO29</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1245&ndash;1250</li>
     <li><code>gpio_out_set.set(1 &lt;&lt; self.pin)</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1485</li>
-    <li>30 GPIOs on QFN-60 (RP2350A) versus 48 on QFN-80 (RP2350B), and GPIOs 30&ndash;47 being QFN-80 only &mdash; RP2350 datasheet Table&nbsp;1 and the note under the pin-function table</li>
+    <li>30 GPIOs on QFN-60 (RP2350A) versus 48 on QFN-80 (RP2350B), their four and eight analogue inputs, the 7&nbsp;&times;&nbsp;7&nbsp;mm and 10&nbsp;&times;&nbsp;10&nbsp;mm packages, and GPIOs 30&ndash;47 being QFN-80 only &mdash; RP2350 datasheet Table&nbsp;1, the sentence introducing it, and the note under the pin-function table</li>
     <li><code>GPIO_OUT</code> read-back wording, the <code>|=</code> / <code>&amp;= ~</code> / <code>^=</code> semantics, the <code>WO</code> type of <code>GPIO_OUT_SET</code>, and how simultaneous writes from both cores resolve &mdash; RP2350 datasheet &sect;3.1 and its register tables at offsets <code>0x010</code>&ndash;<code>0x028</code></li>
     <li><code>GPIO_IN</code> typed <code>RO</code> &mdash; RP2350 datasheet, Table&nbsp;19</li>
     <li>UART0 base <code class="addr">0x40070000</code> and UART1 base <code class="addr">0x40078000</code>, sharing one register layout &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/uart.rs">chips/rp2350/src/uart.rs</a>:343&ndash;347 and 20&ndash;60</li>
@@ -4468,6 +4511,26 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
   });
   /* Opens on the mask, which is the first of the three to run. */
   pickDis("and");
+
+  /* ---------------- The two packages, same silicon ---------------- */
+
+  /* Both descriptions are in the markup; the script moves the class. */
+  (function () {
+    function pickPkg(n) {
+      var i;
+      for (i = 0; i < 2; i++) {
+        document.getElementById("pk-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+        document.getElementById("pkp-" + i).classList.toggle("is-on", i === n);
+      }
+    }
+    document.getElementById("pk-0")
+      .addEventListener("click", function () { pickPkg(0); });
+    document.getElementById("pk-1")
+      .addEventListener("click", function () { pickPkg(1); });
+    /* Opens on the part that is actually on the reader's desk. */
+    pickPkg(0);
+  }());
 
   /* ---------------- The street analogy, row by row ---------------- */
 

@@ -1243,3 +1243,37 @@ chk("and that row's panel is the one open",
 
 chk("the row that fails on reading cites where reading was checked",
     REG["brp-4"].textContent.indexOf("until read out by the CPU") > -1, true);
+
+// ---- the two packages ----
+
+chk("the package switcher opens on the part on the reader's desk",
+    REG["pk-0"].getAttribute("aria-pressed"), "true");
+chk("and shows that part's description",
+    REG["pkp-0"].classList.contains("is-on"), true);
+chk("the other package is not also shown",
+    REG["pkp-1"].classList.contains("is-on"), false);
+
+REG["pk-1"].fire("click");
+chk("switching packages presses the other button",
+    REG["pk-1"].getAttribute("aria-pressed"), "true");
+chk("and releases the first", REG["pk-0"].getAttribute("aria-pressed"), "false");
+chk("and swaps which description is shown",
+    REG["pkp-1"].classList.contains("is-on")
+      && !REG["pkp-0"].classList.contains("is-on"), true);
+
+// The counts are the whole point of the switch, and they are the numbers most
+// likely to be edited into agreement with each other by mistake.
+chk("the 60-pin part is described with 30 GPIOs",
+    REG["pkp-0"].textContent.indexOf("0 to 29") > -1, true);
+chk("the 80-pin part is described with 48",
+    REG["pkp-1"].textContent.indexOf("0 to 47") > -1, true);
+chk("the packages are named by their real sizes",
+    REG["pkp-0"].textContent.indexOf("QFN-60") > -1
+      && REG["pkp-1"].textContent.indexOf("QFN-80") > -1, true);
+// Three later passages call it "the 80-pin part". This switcher is the only
+// place the chapter now says how many pins a QFN-80 has, so those depend on it.
+chk("and by their pin counts, which later prose refers back to",
+    REG["pkp-0"].textContent.indexOf("sixty pins") > -1
+      && REG["pkp-1"].textContent.indexOf("eighty pins") > -1, true);
+
+REG["pk-0"].fire("click");
