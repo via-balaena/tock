@@ -1450,6 +1450,72 @@ dfn {
   .vt button { grid-template-columns: 1fr; gap: .1rem; }
 }
 
+/* ---------- Figure 5: what a variable costs ---------- */
+.costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
+/* These are lines of Rust, so their case is the content. */
+.costs button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+.costgrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
+}
+.costcell {
+  border: 1px solid var(--rule); background: var(--surface-sunk); padding: .55rem .7rem;
+}
+.costcell-k {
+  font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
+.costcell-v.hot { color: var(--hot); }
+.costsay { display: flex; flex-direction: column; gap: .45rem; }
+.costp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.costp.is-off { display: none; }
+@media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
+
+/* ---------- Figure 6: the whole sequence ---------- */
+.seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
+.seq button {
+  display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
+  align-items: baseline; text-align: left; width: 100%;
+  font-family: var(--body); font-size: .95rem; font-weight: 400; line-height: 1.5;
+  text-transform: none; letter-spacing: 0;
+  padding: .42rem .6rem; background: transparent;
+  border: 1px solid transparent; border-left: 2px solid var(--rule);
+  border-radius: 0; color: var(--ink-faint);
+}
+.seq button[aria-pressed="true"] {
+  color: var(--ink); background: var(--hot-soft); border-left-color: var(--hot);
+}
+.seq-n { font-family: var(--mono); font-size: .8rem; color: var(--ink-faint); }
+.seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
+.seq b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- Figure 7: the debugger's entry ---------- */
+.dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
+.dbg button {
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .35rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.dbg button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.dbgsay { display: flex; flex-direction: column; gap: .45rem; }
+.dbgp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.dbgp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.dbgp.is-off { display: none; }
+
 @media (max-width: 30rem) {
   .mo-fig { grid-template-columns: 1fr; }
 }
@@ -1649,6 +1715,168 @@ bl   main</pre></button>
   <p class="note">Both loops are <code>initialize_ram_jump_to_main</code> in <code>arch/cortex-m/src/lib.rs</code>, shortened here only by dropping the comments. The five names beginning with an underscore are defined by the linker script, not by any Rust code.</p>
 </section>
 
+
+<section class="col">
+  <p>Which loop a variable belongs to is decided by one thing: what it starts as. That has a consequence worth seeing, because it is not the one people expect.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">What a variable costs before it runs</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a declaration. Watch the flash column.</p>
+    <div class="costs" role="group" aria-label="Three declarations">
+      <button type="button" id="cs-0" aria-pressed="true" data-sec=".bss" data-flash="0 bytes" data-by="the first loop">let mut n: u32 = 0;</button>
+      <button type="button" id="cs-1" aria-pressed="false" data-sec=".data" data-flash="4 bytes" data-by="the second loop">let mut n: u32 = 5;</button>
+      <button type="button" id="cs-2" aria-pressed="false" data-sec=".bss" data-flash="0 bytes" data-by="the first loop">let mut buf = [0u8; 1024];</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">lives in</span>
+        <span class="costcell-v" id="cost-sec">.bss</span></div>
+      <div class="costcell"><span class="costcell-k">costs in flash</span>
+        <span class="costcell-v hot" id="cost-flash">0 bytes</span></div>
+      <div class="costcell"><span class="costcell-k">set up by</span>
+        <span class="costcell-v" id="cost-by">the first loop</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="csp-0">Starting at zero costs nothing to store, because zero is what the first loop writes anyway. The linker records the range and no more.</p>
+      <p class="costp" id="csp-1">Starting at five means the five has to be kept somewhere until the chip runs. It is kept in flash, four bytes of it, and the second loop copies it into RAM.</p>
+      <p class="costp" id="csp-2">A kilobyte of RAM, and still nothing in flash. The first loop writes zeros over the range, so a large buffer full of zeros is free to store and only costs the time to clear it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice which way round that is. Asking for more memory can cost nothing; asking for a particular value costs flash, one byte per byte.</div>
+</figure>
+
+<section class="col">
+  <p class="note">The linker script says both halves out loud. <code>_szero</code> and <code>_ezero</code> "define the range of the BSS, SRAM that Tock will zero on boot". The data section is placed with <code>AT (_etext)</code>, which is what puts its initial values in flash. Both lines are in <code>boards/build_scripts/tock_kernel_layout.ld</code>.</p>
+</section>
+
+
+<section class="col">
+  <h2>The whole thing, in order</h2>
+  <p>Every step above, as one list. Nothing here is new.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Power to <code>main()</code>, in eight steps</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a step to mark where you are. All eight stay on screen.</p>
+    <div class="seq" role="group" aria-label="Eight steps from power to main">
+        <button type="button" id="sq-0" aria-pressed="true"><span class="seq-n">1</span><span>Power arrives. Both processors come out of reset. Nothing of yours has been read yet.</span></button>
+        <button type="button" id="sq-1" aria-pressed="false"><span class="seq-n">2</span><span>Both begin fetching at <b>0x00000000</b>. That is inside the boot ROM, so the first instruction to run is one nobody can change.</span></button>
+        <button type="button" id="sq-2" aria-pressed="false"><span class="seq-n">3</span><span>The ROM searches the first four kilobytes of flash. It is looking for the marker that starts a block. Blank flash has none, and neither does a half-written image.</span></button>
+        <button type="button" id="sq-3" aria-pressed="false"><span class="seq-n">4</span><span>It finds <b>0xffffded3</b> at <b>0x10000000</b>. Then it checks the rest: the footer is there, and the link closes a loop back to this block.</span></button>
+        <button type="button" id="sq-4" aria-pressed="false"><span class="seq-n">5</span><span>The block says the vector table is at <b>0x10000400</b>. The ROM reads the first word there and loads it into the stack pointer.</span></button>
+        <button type="button" id="sq-5" aria-pressed="false"><span class="seq-n">6</span><span>It reads the second word and jumps to it. This is the handover. Everything before was the ROM; everything after is Tock.</span></button>
+        <button type="button" id="sq-6" aria-pressed="false"><span class="seq-n">7</span><span><b>initialize_ram_jump_to_main</b> runs. It writes zeros over .bss, then copies .data out of flash into RAM.</span></button>
+        <button type="button" id="sq-7" aria-pressed="false"><span class="seq-n">8</span><span><b>bl main</b>. Tock is running, and everything chapter 1 described can now happen.</span></button>
+    </div>
+  </div>
+  <div class="instrument-note">Notice where the handover falls. Five of the eight steps are the chip looking for your program, and only the last two are your program running.</div>
+</figure>
+
+<section class="col">
+  <h2>One thing that is not the boot path</h2>
+  <p>The linker script names an entry point, <code>jump_to_bootloader</code>, and it is tempting to read that as where the chip starts. It is not.</p>
+  <p>It is there for the debugger. Loading a program over the debug probe does not reset the chip. Without this stub the debugger would start you at the front of flash, which, as Figure&nbsp;2 showed, is metadata rather than code.</p>
+  <p>So this stub sends the chip back to the beginning, and it does so using only what this chapter has covered.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">Six instructions that fake a power-on</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a line. Each one is something you have already met.</p>
+    <div class="dbg" role="group" aria-label="The six instructions of the debugger entry point">
+        <button type="button" id="db-0" aria-pressed="true">movs&nbsp;r0,&nbsp;#0</button>
+        <button type="button" id="db-1" aria-pressed="false">ldr&nbsp;&nbsp;r1,&nbsp;=0xE000ED08</button>
+        <button type="button" id="db-2" aria-pressed="false">str&nbsp;&nbsp;r0,&nbsp;[r1]</button>
+        <button type="button" id="db-3" aria-pressed="false">ldmia&nbsp;r0!,&nbsp;{r1,&nbsp;r2}</button>
+        <button type="button" id="db-4" aria-pressed="false">msr&nbsp;&nbsp;msp,&nbsp;r1</button>
+        <button type="button" id="db-5" aria-pressed="false">bx&nbsp;&nbsp;&nbsp;r2</button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="dbp-0">Put zero in a register. It is about to be used as an address, and as a value.</p>
+      <p class="dbgp" id="dbp-1">The address of the register that tells the processor where its vector table is. Chapter 1's map labels that whole stripe as the processor's own registers.</p>
+      <p class="dbgp" id="dbp-2">The store from chapter 1, doing something drastic: point the vector table back at zero, which is the boot ROM's own.</p>
+      <p class="dbgp" id="dbp-3">Read the first two words at zero &mdash; the ROM's stack pointer and its entry address &mdash; exactly as the hardware would at reset.</p>
+      <p class="dbgp" id="dbp-4">Set the stack pointer to the first of them.</p>
+      <p class="dbgp" id="dbp-5">Jump to the second. The chip is now doing what it would have done on a power-on, and the whole search happens again.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that it never calls anything. It rearranges two numbers and jumps, which is all starting a program ever was.</div>
+</figure>
+
+
+<section class="col">
+  <h2>Check yourself</h2>
+  <p>Four questions, three choices each. Commit to one and the reasoning opens underneath it.</p>
+</section>
+
+<div class="col">
+  <div class="selfcheck">
+    <div class="q">
+      <p class="q-ask">1. Where does this chip fetch its first instruction?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 1">
+        <button type="button" class="q-opt" id="qo-1-0">From the start of your program in flash</button>
+        <button type="button" class="q-opt" id="qo-1-1" data-ok="1">From <code class="addr">0x00000000</code>, inside the boot ROM</button>
+        <button type="button" class="q-opt" id="qo-1-2">From wherever the debugger left the program counter</button>
+      </div>
+      <p class="q-answer" id="qa-1"><span class="q-yes" id="qy-1">Right. </span><span class="q-no" id="qn-1">Not quite. </span>From <code class="addr">0x00000000</code>, which is the boot ROM. That code was burned in at manufacture and is the same on every one of these chips. Your program does not run until the ROM has found it and handed over.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">2. Why does a Tock image begin with twenty-eight bytes that are not instructions?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 2">
+        <button type="button" class="q-opt" id="qo-2-0">To leave room for the debugger</button>
+        <button type="button" class="q-opt" id="qo-2-1" data-ok="1">So the boot ROM can tell a program from blank flash</button>
+        <button type="button" class="q-opt" id="qo-2-2">Because flash must start on a four-kilobyte boundary</button>
+      </div>
+      <p class="q-answer" id="qa-2"><span class="q-yes" id="qy-2">Right. </span><span class="q-no" id="qn-2">Not quite. </span>So the boot ROM can recognise it. Flash might be blank, or half-written, or holding something never meant to run. The block is how an image says what it is, and where to start it.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">3. What does the first loop of the reset handler do?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 3">
+        <button type="button" class="q-opt" id="qo-3-0">Copies your program from flash into RAM</button>
+        <button type="button" class="q-opt" id="qo-3-1" data-ok="1">Writes zeros over a range of RAM</button>
+        <button type="button" class="q-opt" id="qo-3-2">Clears the vector table</button>
+      </div>
+      <p class="q-answer" id="qa-3"><span class="q-yes" id="qy-3">Right. </span><span class="q-no" id="qn-3">Not quite. </span>Writes zeros over the range between <code>_szero</code> and <code>_ezero</code>. RAM at power-on holds whatever it held, so anything expecting to start at zero has to be put there.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">4. One variable is declared <code>= 0</code>, another <code>= 5</code>. Which costs flash?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 4">
+        <button type="button" class="q-opt" id="qo-4-0" data-ok="1">The one set to 5</button>
+        <button type="button" class="q-opt" id="qo-4-1">Both, equally</button>
+        <button type="button" class="q-opt" id="qo-4-2">Neither &mdash; variables live in RAM</button>
+      </div>
+      <p class="q-answer" id="qa-4"><span class="q-yes" id="qy-4">Right. </span><span class="q-no" id="qn-4">Not quite. </span>The one set to 5. Its value has to be kept somewhere until the chip runs, so it sits in flash and the second loop copies it. Zero costs nothing, because zero is what the first loop writes anyway.</p>
+    </div>
+  </div>
+</div>
+
+<section class="col">
+  <h2>So here is the next problem</h2>
+  <p>Tock is running. It has the whole chip: every address, every peripheral, and nothing standing in the way &mdash; which is exactly where chapter 1 left off.</p>
+  <p>The kernel is not one program, though. It is a core with drivers bolted on, and a driver is where most of the code, and most of the mistakes, live.</p>
+  <p>So the question chapter 3 asks is: when you add a driver, what should it be allowed to touch?</p>
+</section>
+
+<div class="col">
+  <div class="next">
+    <p class="next-eyebrow">Next</p>
+    <h3 style="margin-top:0">Chapter 3 &mdash; What a driver may touch</h3>
+    <p>Capsules, and the interfaces they are handed. A driver that cannot reach hardware it was not given &mdash; enforced by the type system rather than by the chip.</p>
+    <p>On the way: where the <code>unsafe</code> from chapter 1 lives, and why almost none of Tock needs it.</p>
+  </div>
+</div>
+
 <section class="col">
   <h2>Every word, collected</h2>
 </section>
@@ -1742,6 +1970,101 @@ bl   main</pre></button>
     document.getElementById("lp-0").addEventListener("click", function () { pick(0); });
     document.getElementById("lp-1").addEventListener("click", function () { pick(1); });
     pick(0);
+  }());
+
+  /* ---------------- Figure 5: what a variable costs ---------------- */
+  (function () {
+    /* Every word this figure says is in the markup; the readouts are copied
+       from the pressed button's own data attributes. */
+    function pick(n) {
+      var i, panel, btn = document.getElementById("cs-" + n);
+      for (i = 0; i < 3; i++) {
+        document.getElementById("cs-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+        panel = document.getElementById("csp-" + i);
+        panel.classList.toggle("is-on", i === n);
+        panel.classList.toggle("is-off", i !== n);
+      }
+      document.getElementById("cost-sec").textContent = btn.getAttribute("data-sec");
+      document.getElementById("cost-flash").textContent = btn.getAttribute("data-flash");
+      document.getElementById("cost-by").textContent = btn.getAttribute("data-by");
+    }
+    [0, 1, 2].forEach(function (n) {
+      document.getElementById("cs-" + n)
+        .addEventListener("click", function () { pick(n); });
+    });
+    pick(0);
+  }());
+
+  /* ---------------- Figure 6: the whole sequence ---------------- */
+  (function () {
+    function pick(n) {
+      var i;
+      for (i = 0; i < 8; i++) {
+        document.getElementById("sq-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+      }
+    }
+    for (var n = 0; n < 8; n++) {
+      (function (k) {
+        document.getElementById("sq-" + k)
+          .addEventListener("click", function () { pick(k); });
+      }(n));
+    }
+    pick(0);
+  }());
+
+  /* ---------------- Figure 7: the debugger's entry ---------------- */
+  (function () {
+    function pick(n) {
+      var i, panel;
+      for (i = 0; i < 6; i++) {
+        document.getElementById("db-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+        panel = document.getElementById("dbp-" + i);
+        panel.classList.toggle("is-on", i === n);
+        panel.classList.toggle("is-off", i !== n);
+      }
+    }
+    for (var m = 0; m < 6; m++) {
+      (function (k) {
+        document.getElementById("db-" + k)
+          .addEventListener("click", function () { pick(k); });
+      }(m));
+    }
+    pick(0);
+  }());
+
+  /* ---------------- Check yourself: four predictions ---------------- */
+  (function () {
+    var n, m;
+    function answer(q, chosen) {
+      var i, opt, correct = -1;
+      for (i = 0; i < 3; i++) {
+        opt = document.getElementById("qo-" + q + "-" + i);
+        if (opt.getAttribute("data-ok") === "1") { correct = i; }
+        opt.setAttribute("aria-disabled", "true");
+      }
+      document.getElementById("qo-" + q + "-" + correct).classList.add("is-right");
+      if (chosen !== correct) {
+        document.getElementById("qo-" + q + "-" + chosen).classList.add("is-wrong");
+      }
+      document.getElementById(chosen === correct ? "qy-" + q : "qn-" + q)
+        .classList.add("is-shown");
+      document.getElementById("qa-" + q).classList.remove("is-off");
+    }
+    for (n = 1; n <= 4; n++) {
+      document.getElementById("qa-" + n).classList.add("is-off");
+      for (m = 0; m < 3; m++) {
+        (function (q, choice) {
+          var el = document.getElementById("qo-" + q + "-" + choice);
+          el.addEventListener("click", function () {
+            if (el.getAttribute("aria-disabled") === "true") { return; }
+            answer(q, choice);
+          });
+        }(n, m));
+      }
+    }
   }());
 
 }());
