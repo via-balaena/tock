@@ -982,6 +982,14 @@ dfn {
    than below it. */
 .glossary.inline dd { color: var(--ink); }
 
+/* A procedure, as steps. It was one 72-word sentence-chain. */
+.steps {
+  margin: .7rem 0; padding-left: 1.4rem;
+  font-size: .93rem; line-height: 1.6; color: var(--ink);
+}
+.steps li { margin: .2rem 0; }
+.steps li::marker { color: var(--accent); font-family: var(--display); font-weight: 700; }
+
 /* Diagrams. currentColor everywhere so both themes inherit correctly. */
 .svgfig {
   margin: 0;
@@ -2395,11 +2403,14 @@ dfn {
 
 <section class="col">
   <h2>Question 1 &mdash; the first hex digit picks the hardware</h2>
-  <p>On a desktop computer, an address almost always names a slot of memory. Store a number there and the number is kept. Read it back and you get it. That is where variables live.</p>
-  <p>A microcontroller reuses the same machinery for something else entirely. Only part of its range is memory. Other stretches are wired to real hardware, and storing a number in those stretches <em>operates</em> that hardware.</p>
-  <p>Which stretch is which was decided once, by the chip designers, and burned into the silicon. So the very first thing the chip has to work out is: <strong>who does this address belong to?</strong></p>
-  <p>It works that out by looking at a single digit.</p>
-  <p>That digit is written in a counting system you may not have met. Numbers here are counted in sixteens rather than in tens, which is called <dfn>hexadecimal</dfn>, and the <code>0x</code> in front is the flag that says so.</p>
+  <p>The same word means two different things, depending on the machine.</p>
+  <dl id="pairs-machines" class="glossary inline">
+    <dt>on a desktop</dt><dd>an address names a slot of memory. Store a number, read it back, get it. That is where variables live.</dd>
+    <dt>on this chip</dt><dd>only part of the range is memory. The rest is wired to hardware, and storing a number there <em>operates</em> it.</dd>
+  </dl>
+  <p>Which stretch is which was burned into the silicon once, by the chip designers. So the chip's first question is: <strong>who does this address belong to?</strong></p>
+  <p>It answers it by looking at a single digit.</p>
+  <p>That digit is written in a counting system you may not have met: sixteens rather than tens, called <dfn>hexadecimal</dfn>, flagged by the <code>0x</code> in front.</p>
   <p>Sixteens need sixteen digits, so the usual ten run on into six letters.</p>
   <div class="hexkey" role="group" aria-label="The sixteen hex digits and what each one is worth">
     <span id="hk-0" class="hexkey-c"><span class="hexkey-d">0</span><span class="hexkey-v">0</span></span>
@@ -2419,7 +2430,7 @@ dfn {
     <span id="hk-14" class="hexkey-c hexkey-letter"><span class="hexkey-d">E</span><span class="hexkey-v">14</span></span>
     <span id="hk-15" class="hexkey-c hexkey-letter"><span class="hexkey-d">F</span><span class="hexkey-v">15</span></span>
   </div>
-  <p>Here is what makes it worth the trouble. One hex digit is exactly four bits, always, so an eight-digit address is exactly 32 bits and each digit owns a fixed slice of them. Take one apart.</p>
+  <p>One hex digit is exactly four bits, always. So an eight-digit address is exactly 32 bits, and each digit owns a fixed slice of them. Take one apart.</p>
 </section>
 
 <figure class="instrument">
@@ -2736,9 +2747,8 @@ dfn {
 </figure>
 
 <section class="col">
-  <p>Two patterns in that table are worth keeping, and both are arithmetic you can check rather than trivia you have to trust.</p>
-  <p>Neighbours land 4 apart because a register is 32 bits wide, which is 4 bytes, and addresses count bytes. Every offset is a multiple of 4 for that reason, and that is the sanity check worth keeping. Do not expect every step to be exactly 4, though: a block can leave gaps, and this same file leaves several further down. With the twins taken away the four that remain are 8 apart, which is the same reason applied twice.</p>
-  <p>Those higher GPIO numbers are worth a sentence, because they make a point the code cannot. Two packages carry this same silicon design, and the datasheet spells out the consequence:</p>
+  <p>Two patterns there are arithmetic you can check rather than trivia you have to trust. Neighbours land 4 apart because a register is 4 bytes and addresses count bytes, so every offset is a multiple of 4. Do not expect every <em>step</em> to be 4, though: a block can leave gaps, and this file leaves several further down. Take the twins away and the four that remain are 8 apart, the same reason applied twice.</p>
+  <p>Those higher GPIO numbers make a point the code cannot. Two packages carry this same silicon, and the datasheet spells out the consequence:</p>
   <blockquote class="quote">GPIOs 0 through 29 are available in all package variants. GPIOs 30 through 47 are available only in QFN-80 (RP2350B) package.</blockquote>
 
   <div class="pkg">
@@ -2881,7 +2891,11 @@ dfn {
 </figure>
 
 <section class="col">
-  <p class="note"><strong>One honest qualification.</strong> That trace assumes the pin was already set up, and two things had to be arranged first. Something had to point pin 25's wiring at SIO rather than at one of the other blocks that can drive it, and something had to switch the pin from listening to driving. The datasheet is direct about the first: <em>"To drive a pin with the SIO's GPIO registers, the GPIO multiplexer for this pin must first be configured to select the SIO GPIO function."</em></p>
+  <p class="note"><strong>One honest qualification.</strong> That trace assumes the pin was already set up. Two things had to be arranged first.</p>
+  <dl id="pairs-setup" class="glossary inline">
+    <dt>the wiring</dt><dd>something had to point pin&nbsp;25 at SIO rather than at one of the other blocks that can drive it. The datasheet is direct: <q>To drive a pin with the SIO's GPIO registers, the GPIO multiplexer for this pin must first be configured to select the SIO GPIO function.</q></dd>
+    <dt>the direction</dt><dd>something had to switch the pin from listening to driving.</dd>
+  </dl>
   <p class="note">Both are stores to other registers, in other blocks, obeying exactly the three questions above &mdash; which is why they are not a special case worth learning separately. Tock does them when it starts. So "one instruction changes the pin" is true of <em>changing</em> the pin, and the setup that made it possible is its own story.</p>
 </section>
 
@@ -2975,7 +2989,7 @@ dfn {
 </div>
 
 <section class="col">
-  <p>The reason is that <code>gpio_out_set</code> was never storage. Look again at what its description actually says &mdash; not what it is called, but what it does:</p>
+  <p><code>gpio_out_set</code> was never storage. Look at what its description says &mdash; not what it is called, but what it does:</p>
   <blockquote class="quote">Perform an atomic bit-set on GPIO_OUT, i.e. <code>GPIO_OUT |= wdata</code></blockquote>
   <p class="note">Three pieces of notation in that one line.</p>
   <dl id="pairs-notation" class="glossary inline">
@@ -3160,10 +3174,10 @@ dfn {
 
 <section class="col">
   <p>Nobody wrote a bug. Both cores ran reasonable code, and a pin that was asked to turn on stayed off.</p>
-  <p>Now, the chip designers did think about two cores hitting one register at once, and the datasheet makes a firm promise about it:</p>
+  <p>The chip designers did think about two cores hitting one register at once, and the datasheet makes a firm promise:</p>
   <blockquote class="quote">If core 0 and core 1 both write to GPIO_OUT simultaneously (or to a SET/CLR/XOR alias), the result is as though the write from core 0 took place first, and the write from core 1 was then applied to that intermediate result.</blockquote>
   <p>Read that carefully, because it sounds like a rescue and is not one.</p>
-  <p>It is a promise about <em>writes</em>. Two simultaneous writes are cleanly ordered, one then the other, with a defined result. But the failure you just watched was not caused by the write. It was caused by the <em>read</em>, several steps earlier, returning a value that went stale while it sat in a processor register.</p>
+  <p>It is a promise about <em>writes</em>. Two simultaneous writes are cleanly ordered, with a defined result. But the failure you just watched was not caused by the write. It was caused by the <em>read</em>, several steps earlier, returning a value that went stale while it sat in a processor register.</p>
   <p>Which is what <code>gpio_out_set</code> is for. Storing to it is a single write, and the OR happens inside the hardware where no gap exists. That property has a name: the operation is <dfn>atomic</dfn>, meaning nothing can observe or interrupt it halfway.</p>
   <p>No lock. No disabled interrupts. No agreement between the cores. One store.</p>
 </section>
@@ -3171,8 +3185,8 @@ dfn {
 <section class="col">
   <h2>The compiler does not know any of this</h2>
   <p>One thing still stands between your Rust and the silicon, and it is on your side normally.</p>
-  <p>A <dfn>compiler</dfn> turns your source into machine instructions, and a good one does not translate line by line. It reasons about what your code means and then emits the cheapest instructions with the same meaning. The part that does that reasoning is the <dfn>optimizer</dfn>.</p>
-  <p>Here is how that goes wrong. Suppose you want to wait until the serial port has room for another byte, so you read its flag register in a loop until the "transmit buffer full" bit clears. It is one ordinary-looking line, and what the chip runs is not what you wrote.</p>
+  <p>A <dfn>compiler</dfn> turns your source into machine instructions, and a good one does not translate line by line. It works out what your code <em>means</em>, then emits the cheapest instructions with that meaning. The part doing that is the <dfn>optimizer</dfn>.</p>
+  <p>Suppose you want to wait until the serial port has room for another byte, so you read its flag register in a loop until the "transmit buffer full" bit clears. It is one ordinary-looking line, and what the chip runs is not what you wrote.</p>
   <p class="note">Not invented for the example. <code>uartfr</code> is a real register on this chip, <code>TXFF</code> is its bit 5, and Tock's own serial driver asks exactly this question at <code>chips/rp2350/src/uart.rs</code>:438&ndash;440.</p>
   <p>The right-hand column of each pair adds one word, <dfn>volatile</dfn>, which tells the compiler this address is not a variable. Read the left column first, because that is the one you would have written.</p>
 </section>
@@ -3339,7 +3353,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
 <section class="col">
   <p>Every step of the optimizer's reasoning is valid for a variable. Applied to a register it produces a program that either returns immediately or hangs for ever, depending on what the flag happened to be the first time.</p>
   <p>Both outcomes are visible in that first listing. <code>poppl</code> is the return, and <code>b&nbsp;.LBB8_1</code> is the hang. Which one you get is decided before the loop starts, and the program fails with no warning, only at higher optimization levels, and usually not on the machine where you tested.</p>
-  <p class="note">The fourth case is a correction worth making out loud. An earlier draft of this chapter claimed a store you never read back is deleted as dead code. Compiling it showed otherwise, and the two columns there come out identical.</p>
+  <p class="note">The fourth case is a correction. An earlier draft of this chapter claimed a store you never read back is deleted as dead code. Compiling it showed otherwise: the two columns come out identical.</p>
   <p>So the fix is not to outsmart the optimizer. It is to tell it the truth, and volatile is how you say it. Every access happens, as many times as written, in the order written. None may be invented, removed, or moved past another.</p>
   <p>In Tock you do not have to remember this, because it is welded into the register types:</p>
 </section>
@@ -3358,7 +3372,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
   <h3>What that <code>unsafe</code> is doing there</h3>
   <p>If you have worked through the Rust Book but not reached its <em>Advanced Features</em> chapter, this is the thing to know. Here <code>unsafe</code> is not a confession that the code is risky.</p>
   <p>It is a claim: <em>I have checked the thing the compiler cannot check.</em></p>
-  <p>Following a raw <dfn>pointer</dfn> would be catastrophic if the address were wrong, and Rust has no way to verify that <code class="addr">0xD0000018</code> is a real register. Nothing in the type system can know that. So a human asserts it, inside a block small enough that a reviewer can check the assertion by eye.</p>
+  <p>Following a raw <dfn>pointer</dfn> would be catastrophic if the address were wrong, and nothing in Rust's type system can verify that <code class="addr">0xD0000018</code> is a real register. So a human asserts it, inside a block small enough for a reviewer to check by eye.</p>
   <p>That move &mdash; a tiny audited core wrapped in an API nobody can misuse &mdash; is the most characteristic thing in the whole Tock kernel. You will see it everywhere. Here it means every <code>pin.set()</code> in the codebase is safe in Rust's sense, and the trust for all of them sits in four three-line functions.</p>
 </section>
 
@@ -3439,7 +3453,13 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
 </figure>
 
 <section class="col">
-  <p class="note">Reproduce it yourself, if you have the toolchain: build <code>boards/raspberry_pi_pico_2</code>, then run <code>llvm-objdump -d --demangle</code> on the resulting binary and search for <code>Output&gt;::set</code>. Ask for demangling rather than guessing at the raw symbol name, because how Rust encodes names into symbols depends on compiler settings this board does not pin down. Addresses shift between builds. If you have not set up a cross-compiler yet, skip this &mdash; nothing later depends on it.</p>
+  <p class="note">Reproduce it yourself, if you have the toolchain:</p>
+  <ol class="steps">
+    <li>build <code>boards/raspberry_pi_pico_2</code></li>
+    <li>run <code>llvm-objdump -d --demangle</code> on the resulting binary</li>
+    <li>search for <code>Output&gt;::set</code></li>
+  </ol>
+  <p class="note">Ask for demangling rather than guessing at the raw symbol name: how Rust encodes names into symbols depends on compiler settings this board does not pin down. Addresses shift between builds. If you have not set up a cross-compiler yet, skip this &mdash; nothing later depends on it.</p>
 </section>
 
 <section class="col">
