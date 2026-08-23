@@ -1654,6 +1654,51 @@ dfn {
   color: var(--ink-soft); border-left: 2px solid var(--rule);
   padding-left: .7rem;
 }
+
+/* ---------- Figure 17: the same store, sent somewhere else ---------- */
+
+.straycode {
+  font-family: var(--mono); font-size: .82rem; line-height: 1.7;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .7rem .85rem; margin: 0 0 1rem; overflow-x: auto;
+}
+.straycode .tok-c { color: var(--ink-faint); }
+
+/* These buttons are addresses, so the shared button rule's uppercasing would
+   turn 0xD0000018 into 0XD0000018. */
+.stray-seg button {
+  font-family: var(--mono); font-size: .84rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+}
+
+/* The point of the figure is that these two never move, so they are markup and
+   the script never touches them. */
+.strayfixed {
+  display: flex; flex-wrap: wrap; gap: .3rem 1.4rem;
+  align-items: baseline; margin: .9rem 0 0;
+  border-left: 2px solid var(--rule-strong); padding-left: .75rem;
+}
+.strayfixed-k {
+  font-family: var(--display); font-size: .68rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.strayfixed-v {
+  font-family: var(--mono); font-size: .95rem; font-weight: 500;
+  color: var(--ink);
+}
+
+.straysay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1.1rem; }
+.strayp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.strayp.is-on {
+  color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
+}
+.strayp.is-on.strayp-fault {
+  border-left-color: var(--danger); background: var(--danger-soft);
+}
+.strayp b { font-family: var(--mono); font-weight: 500; }
 </style>
 
 <div class="wrap">
@@ -1665,8 +1710,8 @@ dfn {
   <noscript>
     <style>.dothis { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
-    this chapter relies on is in the prose and the drawn diagrams. Nine of the
-    sixteen figures still read as they are. The other seven build their
+    this chapter relies on is in the prose and the drawn diagrams. Ten of the
+    seventeen figures still read as they are. The other seven build their
     contents when the page loads, so they will be empty boxes, and the lines
     telling you to click them are hidden rather than left pointing at
     nothing.</p>
@@ -1701,22 +1746,22 @@ dfn {
     <p class="dothis">Click a word. The picture shows you where that thing actually is.</p>
     <div class="svg-scroll">
   <svg viewBox="0 0 560 258" role="img" aria-label="The nine words grouped by where the thing they name actually is: out on the board, in a number travelling between, or inside the chip.">
-    <g id="zone-board" class="zone">
+    <g id="zone-board" class="zone is-lit">
       <rect class="zone-bg" x="8" y="26" width="168" height="212" rx="6"></rect>
       <text class="zone-t" x="20" y="48">Out on the board</text>
       <rect class="d-box-sunk" x="26" y="64" width="26" height="140" rx="3"></rect>
     </g>
-    <g id="svg-gpio" class="cast-el">
+    <g id="svg-gpio" class="cast-el is-dim">
       <rect class="dashed" x="18" y="58" width="42" height="152" rx="5"></rect>
       <text class="cast-t" x="20" y="228">GPIO: 26 of these</text>
     </g>
     <circle class="hole" cx="39" cy="88" r="7"></circle>
     <circle class="hole" cx="39" cy="180" r="7"></circle>
-    <g id="svg-pin" class="cast-el">
+    <g id="svg-pin" class="cast-el is-lit">
       <circle class="hole lit-hole" cx="39" cy="134" r="7"></circle>
       <text class="cast-t" x="60" y="126">one pin</text>
     </g>
-    <g id="svg-voltage" class="cast-el">
+    <g id="svg-voltage" class="cast-el is-dim">
       <line class="d-line" x1="46" y1="134" x2="96" y2="134" stroke-width="2.5"></line>
       <polygon class="d-hot" points="98,124 98,144 118,134"></polygon>
       <line class="d-line" x1="118" y1="123" x2="118" y2="145" stroke-width="2.5"></line>
@@ -1730,7 +1775,7 @@ dfn {
       <rect class="zone-bg" x="192" y="26" width="168" height="212" rx="6"></rect>
       <text class="zone-t" x="204" y="48">In between, as numbers</text>
     </g>
-    <g id="svg-address" class="cast-el">
+    <g id="svg-address" class="cast-el is-dim">
       <text class="cast-mono" x="204" y="80">0xD0000018</text>
       <text class="cast-t" x="204" y="96">a whole address</text>
     </g>
@@ -1757,7 +1802,7 @@ dfn {
     <rect class="sq" x="289" y="166" width="14" height="14" rx="2"></rect>
     <rect class="sq" x="306" y="166" width="14" height="14" rx="2"></rect>
     <rect class="sq" x="323" y="166" width="14" height="14" rx="2"></rect>
-    <g id="svg-byte" class="cast-el">
+    <g id="svg-byte" class="cast-el is-dim">
       <rect class="sq lit-sq" x="204" y="112" width="14" height="14" rx="2"></rect>
       <rect class="sq lit-sq" x="221" y="112" width="14" height="14" rx="2"></rect>
       <rect class="sq lit-sq" x="238" y="112" width="14" height="14" rx="2"></rect>
@@ -1768,7 +1813,7 @@ dfn {
       <rect class="sq lit-sq" x="323" y="112" width="14" height="14" rx="2"></rect>
       <text class="cast-t" x="204" y="204">one byte: a row of eight</text>
     </g>
-    <g id="svg-bit" class="cast-el">
+    <g id="svg-bit" class="cast-el is-dim">
       <rect class="sq lit-sq" x="255" y="148" width="14" height="14" rx="2"></rect>
       <text class="cast-t" x="204" y="224">one bit: a single square</text>
     </g>
@@ -1779,17 +1824,17 @@ dfn {
       <rect class="d-box-sunk" x="400" y="70" width="58" height="28" rx="3"></rect>
       <text class="d-small ctr" x="429" y="88">core</text>
     </g>
-    <g id="svg-store" class="cast-el">
+    <g id="svg-store" class="cast-el is-dim">
       <path class="d-line arrow" d="M429 100 L429 124" stroke-width="2.5" marker-end="url(#cast-ar)"></path>
       <text class="cast-t" x="438" y="117">store</text>
     </g>
-    <g id="svg-peripheral" class="cast-el">
+    <g id="svg-peripheral" class="cast-el is-dim">
       <rect class="outline" x="400" y="126" width="120" height="76" rx="4"></rect>
       <text class="cast-t" x="408" y="142">a peripheral</text>
     </g>
     <rect class="slot" x="410" y="150" width="100" height="12" rx="2"></rect>
     <rect class="slot" x="410" y="186" width="100" height="12" rx="2"></rect>
-    <g id="svg-register" class="cast-el">
+    <g id="svg-register" class="cast-el is-dim">
       <rect class="slot lit-slot" x="410" y="168" width="100" height="12" rx="2"></rect>
       <text class="cast-t" x="400" y="224">one register, 32 bits wide</text>
     </g>
@@ -1797,13 +1842,13 @@ dfn {
   </svg>
     </div>
     <div class="where-row">
-      <p class="where" id="where-board">Three of them name something you could point at on the board in front of you.</p>
+      <p class="where is-lit" id="where-board">Three of them name something you could point at on the board in front of you.</p>
       <p class="where" id="where-number">Three name part of a number, which is the only thing that ever travels between the other two.</p>
       <p class="where" id="where-chip">Three name something sealed inside the chip, which you will never see.</p>
     </div>
     <dl class="glossary cast" id="cast">
-      <dt id="dt-pin"><button class="cast-word" id="btn-pin" aria-pressed="true"><dfn>pin</dfn></button></dt>
-      <dd id="dd-pin">One numbered connection between the chip and the outside world. On a Pico&nbsp;2 these come out as numbered holes along the board's two long edges.</dd>
+      <dt id="dt-pin" class="is-lit"><button class="cast-word" id="btn-pin" aria-pressed="true"><dfn>pin</dfn></button></dt>
+      <dd id="dd-pin" class="is-lit">One numbered connection between the chip and the outside world. On a Pico&nbsp;2 these come out as numbered holes along the board's two long edges.</dd>
       <dt id="dt-voltage"><button class="cast-word" id="btn-voltage" aria-pressed="false"><dfn>voltage</dfn></button></dt>
       <dd id="dd-voltage">Electrical pressure, measured in volts. On this board the two that matter are 3.3&nbsp;V and 0&nbsp;V.</dd>
       <dt id="dt-gpio"><button class="cast-word" id="btn-gpio" aria-pressed="false"><dfn>GPIO</dfn></button></dt>
@@ -1861,13 +1906,13 @@ dfn {
     <line class="d-thin" x1="275.524" y1="538.6" x2="275.524" y2="546.6"></line>
     <text class="d-small" x="283.524" y="546.6">10 mm on the real board</text>
     <text class="d-small" x="8" y="568.6">21 &#215; 51 mm, forty holes at 2.54 mm pitch</text>
-    <g class="pad k-tock" id="pad-1" role="button" tabindex="0" aria-label="Pin 1, GP0">
+    <g class="pad k-tock is-lit" id="pad-1" role="button" tabindex="0" aria-label="Pin 1, GP0">
       <rect class="pad-box" x="14" y="73.0" width="132" height="18" rx="3"></rect>
       <text class="pad-name" x="80" y="86.0" text-anchor="middle">GP0</text>
       <text class="pad-num" x="172" y="86.0" text-anchor="end">1</text>
       <circle class="pad-hole" cx="196" cy="82.0" r="6"></circle>
     </g>
-    <g class="pad k-tock" id="pad-2" role="button" tabindex="-1" aria-label="Pin 2, GP1">
+    <g class="pad k-tock is-kin" id="pad-2" role="button" tabindex="-1" aria-label="Pin 2, GP1">
       <rect class="pad-box" x="14" y="95.7" width="132" height="18" rx="3"></rect>
       <text class="pad-name" x="80" y="108.7" text-anchor="middle">GP1</text>
       <text class="pad-num" x="172" y="108.7" text-anchor="end">2</text>
@@ -2104,8 +2149,8 @@ dfn {
   </svg>
     </div>
     <div class="cats">
-      <p class="cat" id="cat-gpio"><strong>26 holes carry a GPIO you may drive.</strong> Any of these will light a small lamp. This is the ordinary case.</p>
-      <p class="cat" id="cat-tock"><strong>2 of those are already spoken for.</strong> Tock sends its own console output through GPIO&nbsp;0 and GPIO&nbsp;1, so driving either one cuts off the kernel while you watch.</p>
+      <p class="cat is-lit" id="cat-gpio"><strong>26 holes carry a GPIO you may drive.</strong> Any of these will light a small lamp. This is the ordinary case.</p>
+      <p class="cat is-lit" id="cat-tock"><strong>2 of those are already spoken for.</strong> Tock sends its own console output through GPIO&nbsp;0 and GPIO&nbsp;1, so driving either one cuts off the kernel while you watch.</p>
       <p class="cat" id="cat-gnd"><strong>8 holes are 0 volts.</strong> Seven are plain ground; the eighth is a quieter ground kept for the four pins that measure voltages. Your lamp&rsquo;s far end goes to one of the seven plain ones.</p>
       <p class="cat" id="cat-pwr"><strong>5 holes are power, not signal.</strong> Some feed the board and some are fed by it. None of them answers to a store.</p>
       <p class="cat" id="cat-sys"><strong>1 hole resets the chip.</strong> Pull it to 0 volts and the RP2350 stops and starts again.</p>
@@ -2113,7 +2158,7 @@ dfn {
     <div class="four">
       <p class="four-h">Four of the chip&rsquo;s thirty GPIOs never reach a hole at all. The board kept them, and what it kept them for is the difference between the two boards:</p>
       <div class="four-cols">
-        <div class="four-col" id="variant-plain">
+        <div class="four-col is-lit" id="variant-plain">
           <span class="four-name">Pico 2</span>
           <span class="four-line"><b>GPIO 23</b> on-board power-save control</span>
           <span class="four-line"><b>GPIO 24</b> senses whether USB power is present</span>
@@ -3117,7 +3162,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
   <h3>What that <code>unsafe</code> is doing there</h3>
   <p>If you have worked through the Rust Book but not reached its <em>Advanced Features</em> chapter, this is the thing to know. Here <code>unsafe</code> is not a confession that the code is risky.</p>
   <p>It is a claim: <em>I have checked the thing the compiler cannot check.</em></p>
-  <p>Following a raw pointer would be catastrophic if the address were wrong, and Rust has no way to verify that <code class="addr">0xD0000018</code> is a real register. Nothing in the type system can know that. So a human asserts it, inside a block small enough that a reviewer can check the assertion by eye.</p>
+  <p>Following a raw <dfn>pointer</dfn> would be catastrophic if the address were wrong, and Rust has no way to verify that <code class="addr">0xD0000018</code> is a real register. Nothing in the type system can know that. So a human asserts it, inside a block small enough that a reviewer can check the assertion by eye.</p>
   <p>That move &mdash; a tiny audited core wrapped in an API nobody can misuse &mdash; is the most characteristic thing in the whole Tock kernel. You will see it everywhere. Here it means every <code>pin.set()</code> in the codebase is safe in Rust's sense, and the trust for all of them sits in four three-line functions.</p>
 </section>
 
@@ -3229,7 +3274,53 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
   <p>Add up what is now true.</p>
   <p>Peripherals are addresses. Storing numbers at them moves physical things in the world. And on a bare microcontroller, <strong>any instruction anywhere on the chip can store to any address at any moment.</strong></p>
   <p>There is nothing to ask. No permission is checked. A store to <code class="addr">0xD0000018</code> is exactly as allowed as a store to a variable of your own, and costs the same.</p>
-  <p>So a stray pointer in some unrelated sensor routine can drive a lock relay, reconfigure a serial port in the middle of a transmission, or scribble over the flash controller. Not because anyone wrote a bug in the code that got hurt. Because nothing was ever standing in the way.</p>
+  <p>A pointer is a number a variable happens to be holding. Give it the wrong number and the same instruction stores somewhere else, with nothing else about the program changed.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 17</span>
+    <span class="instrument-title">The same store, sent somewhere else</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Send it somewhere it was never meant to go. Watch the bottom row while you do.</p>
+
+    <pre class="straycode">let mut reading: u32 = 0;         <span class="tok-c">// a sensor value, in SRAM</span>
+let p = &amp;mut reading as *mut u32;  <span class="tok-c">// p holds 0x20000100</span>
+unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
+
+    <div class="seg stray-seg" role="group" aria-label="What the pointer is holding">
+      <button type="button" id="st-0" aria-pressed="true" data-moved="your own variable, and nothing else">0x20000100</button>
+      <button type="button" id="st-1" aria-pressed="false" data-moved="a pin, and whatever is wired to it">0xD0000018</button>
+      <button type="button" id="st-2" aria-pressed="false" data-moved="a byte out of the console, mid-sentence">0x40070000</button>
+      <button type="button" id="st-3" aria-pressed="false" data-moved="hardware that was running">0x40020000</button>
+      <button type="button" id="st-4" aria-pressed="false" data-moved="nothing &mdash; the chip faulted">0x60000000</button>
+    </div>
+
+    <div class="pickout" aria-live="polite">
+      <span class="pickout-k">what moved</span>
+      <span class="pickout-v hot" id="stray-moved">your own variable, and nothing else</span>
+    </div>
+
+    <div class="strayfixed">
+      <span class="strayfixed-k">instructions run</span>
+      <span class="strayfixed-v">1</span>
+      <span class="strayfixed-k">permission checked</span>
+      <span class="strayfixed-v">none</span>
+    </div>
+
+    <div class="straysay">
+      <p class="strayp is-on" id="stp-0">Where the code meant to go. The number is kept, nothing else in the machine notices, and this is the only one of the five anybody intended.</p>
+      <p class="strayp" id="stp-1"><b>gpio_out_set</b>, the address this whole chapter has been building. A pin goes high. Whatever is wired to that pin moves &mdash; a light, a motor, the relay holding a door shut.</p>
+      <p class="strayp" id="stp-2"><b>UART0</b>'s data register. A byte leaves the chip. Tock's console is on this port, so it arrives in the middle of a sentence the kernel was printing.</p>
+      <p class="strayp" id="stp-3"><b>RESETS</b>, the block that holds other blocks switched off. Most of the chip stays dead until its bit here is cleared, so a wrong value here can switch off hardware that was working.</p>
+      <p class="strayp strayp-fault" id="stp-4">Nobody owns this range, so the chip raises a fault. This is the one of the five that stops, and it is worth being exact about why: it stopped because the address is unowned, not because you lacked permission to use it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that <em>instructions run</em> and <em>permission checked</em> never move. Every one of these is one instruction, and not one of them asks permission. The machine has no opinion about which of the five you meant.</div>
+</figure>
+
+<section class="col">
   <p>That is not a flaw in somebody's program. It is the default condition of the machine.</p>
   <p class="pull-quote">Every single thing Tock does is an answer to one sentence: any code can write any address.</p>
   <p>Its drivers run without the privilege to touch hardware they were not given. Its applications run behind a hardware barrier the kernel programs before letting them start. Its memory for those applications is handed out in bounded pieces rather than shared.</p>
@@ -3313,6 +3404,7 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
     <dt>optimizer</dt><dd>The part of a compiler that rewrites your code into cheaper instructions with the same meaning &mdash; which is why <code>volatile</code> has to exist.</dd>
     <dt>peripheral</dt><dd>Dedicated hardware beside the processor with one job, operated by storing numbers at its addresses.</dd>
     <dt>pin</dt><dd>One numbered connection between the chip and the outside world.</dd>
+    <dt>pointer</dt><dd>A number, held like any other, that is meant to be used as an address. Following it means storing to or reading from wherever it points.</dd>
     <dt>register</dt><dd>A fixed-width slot of hardware at an address. Also, confusingly, a scratch slot inside the processor.</dd>
     <dt>SIO</dt><dd>Single-cycle input/output, at <code class="addr">0xD0000000</code>. The peripheral owning the output state of every pin.</dd>
     <dt>store</dt><dd>The instruction that puts a number at an address.</dd>
@@ -4333,6 +4425,34 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
   });
   /* Opens on the mask, which is the first of the three to run. */
   pickDis("and");
+
+  /* ---------------- Figure 17: the same store, sent somewhere else ---------------- */
+
+  /* Every word this figure says is in the markup: the five panels are written
+     out, and each button carries its own readout line in data-moved. The
+     script moves a class and copies one string it did not author. */
+  (function () {
+    var strayMoved = document.getElementById("stray-moved");
+
+    function pickStray(n) {
+      var i;
+      for (i = 0; i < 5; i++) {
+        document.getElementById("st-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+        document.getElementById("stp-" + i).classList.toggle("is-on", i === n);
+      }
+      strayMoved.textContent =
+        document.getElementById("st-" + n).getAttribute("data-moved");
+    }
+
+    [0, 1, 2, 3, 4].forEach(function (n) {
+      document.getElementById("st-" + n)
+        .addEventListener("click", function () { pickStray(n); });
+    });
+    /* Opens on the address the code meant, so the reader starts where the
+       program is correct and walks out of it. */
+    pickStray(0);
+  }());
 
 }());
 </script>

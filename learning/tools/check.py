@@ -601,6 +601,12 @@ def demo_asm_checks(html, chapter_dir):
     return problems
 
 
+def _mono_without_case(body):
+    """A declaration block that asks for the code face and ignores case."""
+    return bool(re.search(r"font(?:-family)?\s*:[^;]*var\(--mono\)", body)
+                and "text-transform" not in body)
+
+
 def button_case_checks(html):
     """A button showing code must not be uppercased by the shared button rule.
 
@@ -656,12 +662,25 @@ def button_case_checks(html):
             declared.add(name)
         if name not in classes:
             continue
-        wants_mono = re.search(r"font(?:-family)?\s*:[^;]*var\(--mono\)", body)
-        if wants_mono and "text-transform" not in body:
+        if _mono_without_case(body):
             problems.append(
                 "%s is a button showing monospace text and never says what "
                 "happens to its case, so the shared button rule uppercases it "
                 "- 0x0 renders as 0X0" % target)
+
+    # A rule can dress buttons without naming a class they carry --
+    # `.stray-seg button` styles the address buttons of Figure 17, whose own
+    # class list is empty. Skipped by the loop above, and removing its reset
+    # brought 0XD0000018 back with nothing complaining.
+    for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        target = " ".join(selector.split())
+        if not re.search(r"(?:^|[\s>+~])button(?:[\s:\[]|$)", target):
+            continue
+        if _mono_without_case(body):
+            problems.append(
+                "%s dresses buttons in the monospace family without saying "
+                "what happens to their case, so the shared button rule "
+                "uppercases them - 0x0 renders as 0X0" % target)
 
     for name in sorted(generated - declared):
         problems.append(
@@ -758,6 +777,62 @@ def boot_state_checks(html):
                         "pressed - the markup's opening state has drifted from "
                         "the one the script reproduces"
                         % (pprefix, lit, bprefix, down or ["nothing"]))
+    return problems
+
+
+def selected_in_markup_checks(html):
+    """A group the script selects one of must say which one in the markup.
+
+    boot_state_checks compares a pressed button against a shown panel, and lets
+    a group with nothing shown through, because that is a real pattern: Figure
+    14's cases are all visible until the script puts four away. The escape is
+    wider than it should be. Take the opening class off Figure 17's first panel
+    and nothing complained -- the behavioural tests still passed, because the
+    script sets it at load, and the no-JavaScript reader was left with five
+    equally dim paragraphs and no way to tell which one was being talked about.
+
+    What separates the two cases is which token the script uses. A *selection*
+    token means one of these is current, so exactly one must carry it before
+    any script runs; `is-off` and the like hide things and imply nothing. So
+    the prefixes are read out of the script -- `getElementById("stp-" + i)`
+    followed by `classList.toggle("is-on", ...)` -- rather than guessed at.
+
+    Two things this deliberately does not reach, so nobody reads more coverage
+    into it than it has. A group addressed by literal id rather than by prefix
+    plus index is invisible here; Figure 2's `cat-*` is written that way. And
+    "exactly one" is the wrong rule for a set of independent flags -- that same
+    `cat-*` lights two at boot, because a console pin is also a GPIO -- so
+    widening the scan without widening the rule would fail correct work.
+    """
+    problems = []
+    if "<script>" not in html:
+        return problems
+    script = html[html.rindex("<script>"):html.rindex("</script>")]
+    markup = html[:html.rindex("<script>")]
+
+    groups = {}
+    for match in re.finditer(
+            r'getElementById\(\s*"([\w-]+?)-"\s*\+[^)]*\)\s*'
+            r'\.classList\.toggle\(\s*"([\w-]+)"', script):
+        prefix, token = match.groups()
+        if token in SELECTED_TOKENS:
+            groups.setdefault(prefix, set()).add(token)
+
+    for prefix, tokens in sorted(groups.items()):
+        members = re.findall(
+            r'<[a-zA-Z][^>]*\bid="%s-\w+"[^>]*>' % re.escape(prefix), markup)
+        if len(members) < 2:
+            continue
+        lit = [m for m in members
+               if tokens & set((re.search(r'\bclass="([^"]*)"', m)
+                                or re.match("", "")).group(1).split()
+                               if re.search(r'\bclass="([^"]*)"', m) else [])]
+        if len(lit) != 1:
+            problems.append(
+                "the script marks one of %s-* with %s, but the markup marks %d "
+                "of them - with no JavaScript the reader cannot tell which one "
+                "the page is talking about"
+                % (prefix, "/".join(sorted(tokens)), len(lit)))
     return problems
 
 
@@ -936,6 +1011,7 @@ def static_checks(html, name):
     problems.extend(semantic_checks(html))
     problems.extend(register_table_checks(html))
     problems.extend(boot_state_checks(html))
+    problems.extend(selected_in_markup_checks(html))
     problems.extend(button_case_checks(html))
     problems.extend(run_order_checks(html))
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
@@ -981,13 +1057,19 @@ def _page_text(html):
 
 
 def _attr_map(html, attr):
-    """{id: value of `attr`} for every element in the markup that has both."""
+    """{id: value of `attr`} for every element in the markup that has both.
+
+    Unescaped, because an HTML parser decodes entity references inside an
+    attribute value before anything can read it back. Leaving them raw meant
+    `getAttribute` handed the page a literal "&mdash;", which Figure 17 then
+    printed into its readout.
+    """
     out = {}
     for tag in re.findall(r"<[a-zA-Z][^>]*>", html):
         tag_id = re.search(r'\bid="([^"]+)"', tag)
         value = re.search(r'\b%s="([^"]*)"' % attr, tag)
         if tag_id and value:
-            out[tag_id.group(1)] = value.group(1)
+            out[tag_id.group(1)] = html_module.unescape(value.group(1))
     return out
 
 
@@ -1019,7 +1101,8 @@ def page_state(html):
         tag_id = re.search(r'\bid="([^"]+)"', tag)
         if not tag_id:
             continue
-        pairs = dict(re.findall(r'\b([a-zA-Z][\w:-]*)="([^"]*)"', tag))
+        pairs = {k: html_module.unescape(v) for k, v in
+                 re.findall(r'\b([a-zA-Z][\w:-]*)="([^"]*)"', tag)}
         pairs.pop("id", None)
         pairs.pop("class", None)
         attrs[tag_id.group(1)] = pairs

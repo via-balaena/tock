@@ -1139,3 +1139,56 @@ t("hiding and showing the bookkeeping does not disturb the chosen line",
     }
   });
 REG["dl-and"].fire("click");
+
+// ---- Figure 17: the same store, sent somewhere else ----
+
+// Boots on the address the code meant, so a reader who never clicks still sees
+// a correct program before being shown it going wrong.
+chk("the stray figure opens on the intended address",
+    REG["st-0"].getAttribute("aria-pressed"), "true");
+chk("and its panel is the one showing",
+    REG["stp-0"].classList.contains("is-on"), true);
+chk("no other panel is showing",
+    REG["stp-1"].classList.contains("is-on")
+      || REG["stp-2"].classList.contains("is-on")
+      || REG["stp-3"].classList.contains("is-on")
+      || REG["stp-4"].classList.contains("is-on"), false);
+chk("the readout agrees with the markup it boots into",
+    REG["stray-moved"].textContent, "your own variable, and nothing else");
+
+// The figure's whole argument is that the readout it changes is the only one
+// that moves, so the two it does not touch are asserted after every click.
+(function () {
+  var i, moved = {};
+  for (i = 0; i < 5; i++) {
+    REG["st-" + i].fire("click");
+    moved[REG["stray-moved"].textContent] = 1;
+    if (REG["st-" + i].getAttribute("aria-pressed") !== "true") {
+      throw new Error("clicking target " + i + " did not press it");
+    }
+    if (REG["stp-" + i].classList.contains("is-on") !== true) {
+      throw new Error("clicking target " + i + " did not open its panel");
+    }
+    var open = 0, j;
+    for (j = 0; j < 5; j++) {
+      if (REG["stp-" + j].classList.contains("is-on")) { open++; }
+    }
+    if (open !== 1) {
+      throw new Error("target " + i + " left " + open + " panels open");
+    }
+  }
+  chk("each of the five says something different moved",
+      Object.keys(moved).length, 5);
+}());
+
+// Not a decoration: the reader is told to compare these, and they are markup
+// the script must never write to.
+chk("the pointer that stops is the unmapped one, and says why",
+    REG["stp-4"].textContent.indexOf("not because you lacked permission") > -1,
+    true);
+chk("the readout reports the fault rather than a store",
+    REG["stray-moved"].textContent.indexOf("faulted") > -1, true);
+// A browser decodes entities in an attribute value before any script sees it.
+// This read back a literal "&mdash;" and printed it into the figure.
+chk("the readout carries a real dash, not an entity",
+    REG["stray-moved"].textContent, "nothing \u2014 the chip faulted");

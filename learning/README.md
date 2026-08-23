@@ -65,7 +65,7 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Eleven more static checks exist because each caught a live defect. Keep the
+Twelve more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
@@ -141,7 +141,7 @@ Two more are preventive rather than forensic:
   behavioural tests only ever see the second, because the script has run by the
   time they look. So where a set of buttons and a set of panels inside one
   figure share suffixes, the pressed button and the shown panel must be the
-  same one. That shape fits four of chapter 1's sixteen figures; most of the
+  same one. That shape fits five of chapter 1's seventeen figures; most of the
   rest build their contents at load and so have no markup state to compare
   against, which is a different problem and the `<noscript>` note is what
   answers it. Figure 15 shipped with a listing whose opening line was not the one
@@ -170,6 +170,30 @@ Two more are preventive rather than forensic:
   monospace family -- which on these pages means it is showing code -- must
   say what happens to its case. The declaration is what is required, not a
   particular value, so a component that means `uppercase` may still say so.
+  Two widenings since, each after the narrower version let a real one through.
+  The font test alone missed the prediction options, which are set in the body
+  face and shipped reading `0X02000000`, so the base class of every button the
+  script builds must now declare its case whatever font it asks for. And a rule
+  can dress buttons without naming a class they carry -- `.stray-seg button`
+  styles Figure 17's addresses, whose own class list is empty -- so selectors
+  are matched too, not only bare class names.
+- **A group the script selects one of, that the markup does not.**
+  `boot_state_checks` compares a pressed button against a shown panel and lets
+  a group with nothing shown through, because that is a real pattern -- Figure
+  14's cases are all visible until the script puts four away. That escape was
+  too wide. Taking the opening class off Figure 17's first panel broke nothing
+  anybody could see: the behavioural tests still passed, because the script
+  sets it on load, and only the reader with scripting off was left with five
+  equally dim paragraphs and no way to tell which one the page meant. What
+  separates the two cases is the token. A *selection* token says one of these
+  is current, so exactly one must carry it before any script runs; `is-off`
+  hides things and implies nothing. So the prefixes are read out of the script
+  -- `getElementById("stp-" + i)` followed by `classList.toggle("is-on", ...)`
+  -- rather than guessed at. Figures 1 and 2 had to start declaring their
+  opening state in the markup to satisfy it, which is a straight improvement:
+  with scripting off they now demonstrate themselves instead of sitting inert.
+  It does not reach a group addressed by literal id, nor one where several
+  members are legitimately lit at once; Figure 2's `cat-*` is both.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions
@@ -222,7 +246,13 @@ the only content any assertion could reach was content the script had written,
 which is precisely the content these pages are written to avoid having: the
 rule here is that the markup holds the sentences and the script only moves
 highlights. Figure 13 restores its idle prompt by reading it back off the
-element, and against an unseeded shim that reads as empty. The shim deliberately copies the
+element, and against an unseeded shim that reads as empty. The seeding covers
+the markup's classes and its other attributes too, and decodes entity
+references the way a parser does -- Figure 17 keeps its readout lines in
+`data-moved`, and undecoded they printed a literal `&mdash;` onto the page.
+A range input also clamps what you assign it, so the shim does: 8 into a
+`max="7"` scrubber left Figure 9 reporting "9 of 8" with no step highlighted,
+a position the control cannot reach. The shim deliberately copies the
 DOM's *refusals*, not only its behaviour: it rejects an empty or
 space-containing `classList` token, and its `innerHTML` setter strips tags and
 keeps the text rather than discarding anything that is not the empty string.
@@ -266,7 +296,7 @@ as a reader with scripting disabled would meet it -- which is worth seeing in it
 own right. It caught a readout value clipped inside its cell, and several figures
 rendering as empty colored boxes, neither of which any static check noticed.
 
-That is only half the page, though. Seven of chapter 1's sixteen figures build
+That is only half the page, though. Seven of chapter 1's seventeen figures build
 their contents at load, so QuickLook shows them as empty boxes, and for several
 review rounds the only way to look at one was to hand-write a fixture by reading
 its builder. That got done once, for one figure, and that one round found a
