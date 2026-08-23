@@ -894,16 +894,16 @@ dfn {
 
 /* Check yourself. Question visible, answer one click away. */
 .selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+/* Figure 12 keeps one <details> inside a .selfcheck, so these rules are still
+   load-bearing even though the six questions below no longer use any. Deleting
+   them along with the questions stripped that reveal of its box, and only a
+   render showed it. */
 .selfcheck details {
   border: 1px solid var(--rule);
   background: var(--surface);
   padding: .75rem .95rem;
 }
-.selfcheck summary {
-  cursor: pointer;
-  font-weight: 600;
-  line-height: 1.5;
-}
+.selfcheck summary { cursor: pointer; font-weight: 600; line-height: 1.5; }
 .selfcheck summary::marker { color: var(--accent); }
 .selfcheck .answer {
   margin-top: .6rem;
@@ -913,6 +913,41 @@ dfn {
   font-size: .97rem;
   line-height: 1.6;
 }
+
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way Figure 14's cases are,
+   so a reader with no scripting gets all six answers rather than none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+.q-yes, .q-no { display: none; font-weight: 600; }
+.q-yes.is-shown, .q-no.is-shown { display: inline; }
+.q-yes { color: var(--accent); }
+.q-no { color: var(--danger); }
 
 /* The words, collected. */
 .glossary {
@@ -2645,7 +2680,7 @@ dfn {
 
   <div class="pkg">
     <p class="dothis">Change the package. The three facts under <em>the same either way</em> hold for both.</p>
-    <div class="seg pkg-seg" role="group" aria-label="Which package the silicon is in">
+    <div class="seg" role="group" aria-label="Which package the silicon is in">
       <button type="button" id="pk-0" aria-pressed="true">RP2350A</button>
       <button type="button" id="pk-1" aria-pressed="false">RP2350B</button>
     </div>
@@ -3415,35 +3450,65 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 <section class="col">
   <h2>Check yourself</h2>
   <p>Reading this again will not make it stick. Neither will highlighting it &mdash; that is one of the few study habits the research is actually rude about.</p>
-  <p>What does work is trying to produce the answer before you look. Six questions, answers one click away. Getting one wrong is useful information, not a problem.</p>
+  <p>What does work is producing the answer before you look at one. Six questions, three choices each: commit to one and the reasoning opens underneath it. Getting one wrong is useful information, not a problem &mdash; it is the whole reason to answer before reading.</p>
 </section>
 
 <div class="col">
   <div class="selfcheck">
-    <details>
-      <summary>1. An address begins with <code>0x4</code>. What do you already know about it?</summary>
-      <div class="answer">That it belongs to the peripherals on the APB side of the chip &mdash; the serial ports, the timers, the pin-configuration blocks. The first hex digit is the whole routing decision, so it is the only part of an address you can interpret without looking anything up.</div>
-    </details>
-    <details>
-      <summary>2. Why is a register listing written as offsets rather than finished addresses?</summary>
-      <div class="answer">Because the offsets are the part that is shared. UART0 and UART1 are the same hardware built twice, so <code>0x000</code> is the data register on both; only the base differs. Writing offsets lets one driver serve both, and it matches the processor's addressing mode, which takes a base in a register plus a small fixed offset.</div>
-    </details>
-    <details>
-      <summary>3. You store <code class="addr">0x00000000</code> to <code>gpio_out_set</code>. What happens?</summary>
-      <div class="answer">Nothing at all. Its description is <code>GPIO_OUT |= wdata</code>, and OR-ing in a value with no bits set changes nothing. This is the clearest single sign that the address is not storage: no real storage location silently discards a write.</div>
-    </details>
-    <details>
-      <summary>4. A 32-bit register drives a bank of pins. How many pins does the chip have?</summary>
-      <div class="answer">Unknown from that fact alone &mdash; and this is the trap. The part on a Pico&nbsp;2 has 30, so bits 30 and 31 drive nothing. The 80-pin version of the same silicon has 48, and those bits drive real pins there. Register width and pin count are two independent facts.</div>
-    </details>
-    <details>
-      <summary>5. Both cores run <code>gpio_out |= 1 &lt;&lt; n</code> with different <code>n</code>, and a pin stays off. Where exactly did it go wrong?</summary>
-      <div class="answer">At the read, not the write. Each core read all 32 bits, changed its own copy, and wrote all 32 back &mdash; so the second write carried a value that predated the first. The datasheet's promise that simultaneous writes are cleanly ordered is true and does not help, because the stale data was already in hand.</div>
-    </details>
-    <details>
-      <summary>6. Why can't the compiler be trusted with these addresses?</summary>
-      <div class="answer">Because its reasoning is correct for variables and wrong here. It will delete a store nothing reads back, collapse two stores into one, reorder independent stores, and cache a value nothing appears to modify. On a peripheral, the store <em>is</em> the effect and the value can change with no code involved. <code>volatile</code> is how you say so.</div>
-    </details>
+    <div class="q">
+      <p class="q-ask">1. An address begins with <code>0x4</code>. What do you already know about it?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 1">
+        <button type="button" class="q-opt" id="qo-1-0">Nothing, until you look up the rest of the digits</button>
+        <button type="button" class="q-opt" id="qo-1-1" data-ok="1">That it belongs to the peripherals on the APB side of the chip</button>
+        <button type="button" class="q-opt" id="qo-1-2">That it is somewhere in RAM</button>
+      </div>
+      <p class="q-answer" id="qa-1"><span class="q-yes" id="qy-1">Right. </span><span class="q-no" id="qn-1">Not quite. </span>That it belongs to the peripherals on the APB side of the chip &mdash; the serial ports, the timers, the pin-configuration blocks. The first hex digit is the whole routing decision, so it is the only part of an address you can interpret without looking anything up.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">2. Why is a register listing written as offsets rather than finished addresses?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 2">
+        <button type="button" class="q-opt" id="qo-2-0">Offsets are shorter to write down</button>
+        <button type="button" class="q-opt" id="qo-2-1" data-ok="1">Because the offsets are the part that two copies of the same hardware share</button>
+        <button type="button" class="q-opt" id="qo-2-2">Because the base address changes while the program is running</button>
+      </div>
+      <p class="q-answer" id="qa-2"><span class="q-yes" id="qy-2">Right. </span><span class="q-no" id="qn-2">Not quite. </span>Because the offsets are the part that is shared. UART0 and UART1 are the same hardware built twice, so <code>0x000</code> is the data register on both; only the base differs. Writing offsets lets one driver serve both, and it matches the processor's addressing mode, which takes a base in a register plus a small fixed offset.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">3. You store <code class="addr">0x00000000</code> to <code>gpio_out_set</code>. What happens?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 3">
+        <button type="button" class="q-opt" id="qo-3-0">Every pin in the bank goes low</button>
+        <button type="button" class="q-opt" id="qo-3-1">The register is cleared to zero</button>
+        <button type="button" class="q-opt" id="qo-3-2" data-ok="1">Nothing at all</button>
+      </div>
+      <p class="q-answer" id="qa-3"><span class="q-yes" id="qy-3">Right. </span><span class="q-no" id="qn-3">Not quite. </span>Nothing at all. Its description is <code>GPIO_OUT |= wdata</code>, and OR-ing in a value with no bits set changes nothing. This is the clearest single sign that the address is not storage: no real storage location silently discards a write.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">4. A 32-bit register drives a bank of pins. How many pins does the chip have?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 4">
+        <button type="button" class="q-opt" id="qo-4-0">Thirty-two, one per bit</button>
+        <button type="button" class="q-opt" id="qo-4-1">Thirty, because that is what this one has</button>
+        <button type="button" class="q-opt" id="qo-4-2" data-ok="1">You cannot tell from that alone</button>
+      </div>
+      <p class="q-answer" id="qa-4"><span class="q-yes" id="qy-4">Right. </span><span class="q-no" id="qn-4">Not quite. </span>Unknown from that fact alone &mdash; and this is the trap. The part on a Pico&nbsp;2 has 30, so bits 30 and 31 drive nothing. The 80-pin version of the same silicon has 48, and those bits drive real pins there. Register width and pin count are two independent facts.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">5. Both cores run <code>gpio_out |= 1 &lt;&lt; n</code> with different <code>n</code>, and a pin stays off. Where exactly did it go wrong?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 5">
+        <button type="button" class="q-opt" id="qo-5-0" data-ok="1">At the read</button>
+        <button type="button" class="q-opt" id="qo-5-1">At the write</button>
+        <button type="button" class="q-opt" id="qo-5-2">The two writes arrived at the same instant and collided</button>
+      </div>
+      <p class="q-answer" id="qa-5"><span class="q-yes" id="qy-5">Right. </span><span class="q-no" id="qn-5">Not quite. </span>At the read, not the write. Each core read all 32 bits, changed its own copy, and wrote all 32 back &mdash; so the second write carried a value that predated the first. The datasheet's promise that simultaneous writes are cleanly ordered is true and does not help, because the stale data was already in hand.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">6. Why can't the compiler be trusted with these addresses?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 6">
+        <button type="button" class="q-opt" id="qo-6-0">It has a bug where hardware is concerned</button>
+        <button type="button" class="q-opt" id="qo-6-1" data-ok="1">Its reasoning is correct for variables and wrong here</button>
+        <button type="button" class="q-opt" id="qo-6-2">It does not know how wide these registers are</button>
+      </div>
+      <p class="q-answer" id="qa-6"><span class="q-yes" id="qy-6">Right. </span><span class="q-no" id="qn-6">Not quite. </span>Because its reasoning is correct for variables and wrong here. It will collapse two stores into one, reorder independent stores, cache a value nothing appears to modify, and delete a read whose result you ignore. A lone store it keeps, as Figure&nbsp;14 shows. On a peripheral, the store <em>is</em> the effect and the value can change with no code involved. <code>volatile</code> is how you say so.</p>
+    </div>
   </div>
 </div>
 
@@ -4511,6 +4576,42 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
   });
   /* Opens on the mask, which is the first of the three to run. */
   pickDis("and");
+
+  /* ---------------- Check yourself: six predictions ---------------- */
+
+  /* Every answer and both verdict words are in the markup. The answers start
+     visible so that with no scripting the reader gets all six; the script hides
+     them at load and gives one back when its question is answered. */
+  (function () {
+    var n, m;
+    function answer(q, chosen) {
+      var i, opt, correct = -1;
+      for (i = 0; i < 3; i++) {
+        opt = document.getElementById("qo-" + q + "-" + i);
+        if (opt.getAttribute("data-ok") === "1") { correct = i; }
+        opt.setAttribute("aria-disabled", "true");
+      }
+      document.getElementById("qo-" + q + "-" + correct).classList.add("is-right");
+      if (chosen !== correct) {
+        document.getElementById("qo-" + q + "-" + chosen).classList.add("is-wrong");
+      }
+      document.getElementById(chosen === correct ? "qy-" + q : "qn-" + q)
+        .classList.add("is-shown");
+      document.getElementById("qa-" + q).classList.remove("is-off");
+    }
+    for (n = 1; n <= 6; n++) {
+      document.getElementById("qa-" + n).classList.add("is-off");
+      for (m = 0; m < 3; m++) {
+        (function (q, choice) {
+          var el = document.getElementById("qo-" + q + "-" + choice);
+          el.addEventListener("click", function () {
+            if (el.getAttribute("aria-disabled") === "true") { return; }
+            answer(q, choice);
+          });
+        }(n, m));
+      }
+    }
+  }());
 
   /* ---------------- The two packages, same silicon ---------------- */
 

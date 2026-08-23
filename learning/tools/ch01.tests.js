@@ -1277,3 +1277,67 @@ chk("and by their pin counts, which later prose refers back to",
       && REG["pkp-1"].textContent.indexOf("eighty pins") > -1, true);
 
 REG["pk-0"].fire("click");
+
+// ---- Check yourself: six predictions ----
+
+// The point of the section is committing before reading, so nothing may be
+// revealed until a question is answered.
+(function () {
+  var n;
+  for (n = 1; n <= 6; n++) {
+    if (!REG["qa-" + n].classList.contains("is-off")) {
+      throw new Error("question " + n + " gave its answer away before it was answered");
+    }
+    if (REG["qy-" + n].classList.contains("is-shown")
+        || REG["qn-" + n].classList.contains("is-shown")) {
+      throw new Error("question " + n + " showed a verdict before it was answered");
+    }
+  }
+  chk("no answer is on screen before the reader commits", true, true);
+}());
+
+// Exactly one option per question is the correct one, in the markup.
+(function () {
+  var n, m, keys = 0, per;
+  for (n = 1; n <= 6; n++) {
+    per = 0;
+    for (m = 0; m < 3; m++) {
+      if (REG["qo-" + n + "-" + m].getAttribute("data-ok") === "1") { per++; }
+    }
+    if (per !== 1) { throw new Error("question " + n + " has " + per + " correct answers"); }
+    keys += per;
+  }
+  chk("each of the six questions has exactly one answer key", keys, 6);
+}());
+
+// Answering wrongly still has to teach the right answer.
+REG["qo-1-2"].fire("click");
+chk("a wrong choice reveals the reasoning", REG["qa-1"].classList.contains("is-off"), false);
+chk("and says so", REG["qn-1"].classList.contains("is-shown"), true);
+chk("without claiming otherwise", REG["qy-1"].classList.contains("is-shown"), false);
+chk("the wrong choice is marked wrong", REG["qo-1-2"].classList.contains("is-wrong"), true);
+chk("and the right one is still pointed out",
+    REG["qo-1-1"].classList.contains("is-right"), true);
+
+// A question settles once. Clicking again must not rewrite the verdict.
+REG["qo-1-1"].fire("click");
+chk("answering again does not overwrite the first answer",
+    REG["qn-1"].classList.contains("is-shown"), true);
+chk("and does not add a second verdict",
+    REG["qy-1"].classList.contains("is-shown"), false);
+
+REG["qo-3-2"].fire("click");
+chk("a right choice says right", REG["qy-3"].classList.contains("is-shown"), true);
+chk("and marks nothing wrong", REG["qo-3-2"].classList.contains("is-wrong"), false);
+chk("and still reveals the reasoning", REG["qa-3"].classList.contains("is-off"), false);
+
+// Answering one question must not answer the others for the reader.
+chk("question 2 is still waiting", REG["qa-2"].classList.contains("is-off"), true);
+chk("and question 6", REG["qa-6"].classList.contains("is-off"), true);
+
+// This one contradicted Figure 14 until it was fixed: the chapter proves by
+// compiling that a lone store is kept.
+chk("the compiler answer no longer claims a lone store is deleted",
+    REG["qa-6"].textContent.indexOf("delete a store nothing reads back"), -1);
+chk("and says what actually happens to one",
+    REG["qa-6"].textContent.indexOf("A lone store it keeps") > -1, true);
