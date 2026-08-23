@@ -172,3 +172,28 @@ chk("the stack panel says which end of RAM the stack sits at",
     REG["vtp-0"].textContent.indexOf("bottom") > -1, true);
 chk("and why that is deliberate",
     REG["vtp-0"].textContent.indexOf("faults") > -1, true);
+
+// ---- what the third review pass found ----
+// Chapter 1 promises "Chapter 2 opens them up" of both things sharing the first
+// kilobyte of flash. The 28-byte block gets Figure 2; the 256-byte loader had
+// one line in the sources list and nothing else.
+chk("the other half of that first kilobyte is opened up",
+    REG["pairs-kilobyte"].textContent.indexOf("256 bytes") > -1, true);
+chk("and says the loader is about speed rather than booting",
+    REG["pairs-kilobyte"].textContent.indexOf("faster") > -1, true);
+// The two loops set up statics. A local is set up by its own function and never
+// reaches .bss or .data -- the same error that had the declarations as `let`.
+(function () {
+  var i, loose = 0;
+  for (i = 0; i < 2; i++) {
+    if (REG["lpp-" + i].textContent.indexOf("every variable") > -1) { loose++; }
+  }
+  chk("neither loop panel claims to handle every variable", loose, 0);
+  chk("and both say static instead",
+      REG["lpp-0"].textContent.indexOf("every static") > -1
+        && REG["lpp-1"].textContent.indexOf("every static") > -1, true);
+}());
+// msr is the one instruction in Figure 7 that neither chapter has shown before,
+// and two sentences used to claim the reader had met all six.
+chk("the new instruction is named as new rather than assumed",
+    REG["dbp-4"].textContent.indexOf("one new instruction") > -1, true);

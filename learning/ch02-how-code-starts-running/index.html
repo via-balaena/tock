@@ -836,6 +836,18 @@ dfn {
   <p class="note">Those bytes are <code>METADATA_BLOCK</code> in <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code>, and the format is the RP2350 datasheet, &sect;5.9.</p>
 </section>
 
+<section class="col">
+  <h2>The rest of that first kilobyte</h2>
+  <p>The block is twenty-eight bytes and the kernel does not start until <code class="addr">0x10000400</code>. Chapter 1 said two things share that space. Here is the other one.</p>
+  <dl id="pairs-kilobyte" class="glossary inline">
+    <dt>28 bytes</dt><dd>the block Figure 2 just took apart, which is how the ROM recognises the image at all</dd>
+    <dt>256 bytes</dt><dd>a loader that reconfigures the connection to the flash chip, so that code runs from it faster</dd>
+  </dl>
+  <p>The loader is the interesting one, because it is no longer required. On the RP2040 every image had to begin with a routine like this, checksummed, or the chip would not boot. The RP2350's own ROM sets the flash up well enough to run before it hands over.</p>
+  <p>Tock ships one anyway, and the reason is speed rather than correctness: the ROM's setup is deliberately cautious, and a program is free to replace it with a faster one. That is what these 256 bytes are.</p>
+  <p class="note">The bytes are <code>FLASH_BOOTLOADER</code> in the same file, and its comment records where they came from. The datasheet is explicit that they are optional now &mdash; &sect;5.9.5.</p>
+</section>
+
 
 <section class="col">
   <h2>What is at that address</h2>
@@ -868,7 +880,7 @@ dfn {
 <section class="col">
   <h2>What "set up memory" means</h2>
   <p>The reset handler has a name that says exactly what it does: <code>initialize_ram_jump_to_main</code>. It is two loops and a call.</p>
-  <p>It has to be, because RAM at power-on holds whatever it happened to hold. Not zero &mdash; whatever was there. Every variable your program expects to start at a known value has to be put there by somebody, and that somebody is these two loops.</p>
+  <p>It has to be, because RAM at power-on holds whatever it happened to hold. Not zero &mdash; whatever was there. Every <em>static</em> &mdash; every variable that lives for the whole run, rather than one inside a function &mdash; has to be put there by somebody, and that somebody is these two loops. Variables inside a function are a different story, set up by that function as it runs.</p>
 </section>
 
 <figure class="instrument">
@@ -905,8 +917,8 @@ b    200b
 bl   main</pre></button>
     </div>
     <div class="loopsay">
-      <p class="loopp is-on" id="lpp-0">Writes zero, one word at a time, from <b>_szero</b> to <b>_ezero</b>. That range is every variable your program expects to start at zero. The <b>!</b> on <b>stm r0!</b> is what steps the address forward, so the loop needs no separate add.</p>
-      <p class="loopp" id="lpp-1">Copies, one word at a time, from <b>_etext</b> in flash into the range starting at <b>_srelocate</b> in RAM. That range is every variable expecting to start at something other than zero, and the values it copies were stored in flash by the linker. Then <b>bl main</b>, and Tock is running.</p>
+      <p class="loopp is-on" id="lpp-0">Writes zero, one word at a time, from <b>_szero</b> to <b>_ezero</b>. That range is every static your program expects to start at zero. The <b>!</b> on <b>stm r0!</b> is what steps the address forward, so the loop needs no separate add.</p>
+      <p class="loopp" id="lpp-1">Copies, one word at a time, from <b>_etext</b> in flash into the range starting at <b>_srelocate</b> in RAM. That range is every static expecting to start at something other than zero, and the values it copies were stored in flash by the linker. Then <b>bl main</b>, and Tock is running.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that neither loop knows what any of those bytes mean. One writes zeros over a range; the other copies a range. The meaning was decided by the linker, before the chip was ever powered on.</div>
@@ -985,7 +997,7 @@ bl   main</pre></button>
   <h2>One thing that is not the boot path</h2>
   <p>The linker script names an entry point, <code>jump_to_bootloader</code>, and it is tempting to read that as where the chip starts. It is not.</p>
   <p>It is there for the debugger. Loading a program over the debug probe does not reset the chip. Without this stub the debugger would start you at the front of flash, which, as Figure&nbsp;2 showed, is metadata rather than code.</p>
-  <p>So this stub sends the chip back to the beginning, and it does so using only what this chapter has covered.</p>
+  <p>So this stub sends the chip back to the beginning, using five instructions you have already seen and one you have not.</p>
 </section>
 
 <figure class="instrument">
@@ -994,7 +1006,7 @@ bl   main</pre></button>
     <span class="instrument-title">Six instructions that fake a power-on</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a line. Each one is something you have already met.</p>
+    <p class="dothis">Click a line. Five of the six you have already met; the panel says which one you have not.</p>
     <p class="note">The source writes the second constant as <code>0xe0000000&nbsp;+&nbsp;0x0000ed08</code>, which is the same number said in two halves.</p>
     <div class="dbg" role="group" aria-label="The six instructions of the debugger entry point">
         <button type="button" id="db-0" aria-pressed="true">movs&nbsp;r0,&nbsp;#0</button>
@@ -1009,7 +1021,7 @@ bl   main</pre></button>
       <p class="dbgp" id="dbp-1">The address of the register that tells the processor where its vector table is. Chapter 1's map labels that whole stripe as the processor's own registers.</p>
       <p class="dbgp" id="dbp-2">The store from chapter 1, doing something drastic: point the vector table back at zero, which is the boot ROM's own.</p>
       <p class="dbgp" id="dbp-3">Read the first two words at zero &mdash; the ROM's stack pointer and its entry address &mdash; exactly as the hardware would at reset.</p>
-      <p class="dbgp" id="dbp-4">Set the stack pointer to the first of them.</p>
+      <p class="dbgp" id="dbp-4">Set the stack pointer to the first of them. This is the one new instruction: <b>msr</b> writes one of the processor's special registers, and the stack pointer is one of those rather than an ordinary numbered one.</p>
       <p class="dbgp" id="dbp-5">Jump to the second. The chip is now doing what it would have done on a power-on, and the whole search happens again.</p>
     </div>
   </div>
@@ -1105,6 +1117,7 @@ bl   main</pre></button>
     <li>The minimum Arm image being twenty bytes, which is Tock's twenty-eight without the vector-table item &mdash; RP2350 datasheet &sect;5.9.5.1</li>
     <li>The vector-table item having type <code>0x03</code> &mdash; RP2350 datasheet &sect;5.9.3.3</li>
     <li>Tock's twenty-eight bytes themselves &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
+    <li>The 256-byte loader sharing that kilobyte, and being optional on RP2350 where RP2040 required a checksummed one at flash address 0 &mdash; <code>FLASH_BOOTLOADER</code> in the same file, and RP2350 datasheet &sect;5.9.5</li>
     <li><code class="addr">0x10000400</code> being where the kernel begins &mdash; the <code>rom</code> region's origin in <code>boards/raspberry_pi_pico_2/layout.ld</code></li>
     <li>The vector table's first two entries being the initial stack pointer and <code>initialize_ram_jump_to_main</code> &mdash; <code>chips/rp2350/src/lib.rs</code></li>
     <li>The two loops, and the five linker symbols they use &mdash; <code>arch/cortex-m/src/lib.rs</code></li>
