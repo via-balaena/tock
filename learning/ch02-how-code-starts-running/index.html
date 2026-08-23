@@ -1399,6 +1399,57 @@ dfn {
    scripting none of that runs and all seven stay readable. */
 .blkp.is-off { display: none; }
 .blkp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- Figure 3: the vector table ---------- */
+.vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
+.vt button {
+  display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.vt button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.vt-at { color: var(--hot); }
+.vt-rest {
+  font-family: var(--mono); font-size: .84rem; color: var(--ink-faint);
+  padding: .4rem .6rem; border: 1px dashed var(--rule); border-radius: 2px;
+}
+.vtsay { display: flex; flex-direction: column; gap: .45rem; }
+.vtp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.vtp.is-off { display: none; }
+
+/* ---------- Figure 4: the two loops ---------- */
+.loops { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; margin: .2rem 0 1rem; }
+.loop {
+  border: 1px solid var(--rule); background: var(--surface-sunk);
+  padding: .6rem .7rem; text-align: left; width: 100%;
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+}
+.loop[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.loop-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .35rem;
+}
+.loop[aria-pressed="true"] .loop-k { color: var(--hot); }
+.loop pre { margin: 0; font-family: var(--mono); font-size: .78rem; line-height: 1.5; color: var(--ink); white-space: pre; overflow-x: auto; }
+.loopsay { display: flex; flex-direction: column; gap: .45rem; }
+.loopp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.loopp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.loopp.is-off { display: none; }
+@media (max-width: 30rem) {
+  .loops { grid-template-columns: 1fr; }
+  .vt button { grid-template-columns: 1fr; gap: .1rem; }
+}
+
 @media (max-width: 30rem) {
   .mo-fig { grid-template-columns: 1fr; }
 }
@@ -1518,6 +1569,86 @@ dfn {
   <p class="note">Those bytes are <code>METADATA_BLOCK</code> in <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code>, and the format is the RP2350 datasheet, &sect;5.9.</p>
 </section>
 
+
+<section class="col">
+  <h2>What is at that address</h2>
+  <p>The ROM now knows where to look, and what it finds there is not an instruction. It is a list of addresses.</p>
+  <p>A Cortex-M processor expects a program to begin with a <em>vector table</em>: one entry for each thing that can happen to it. The first two entries are the only ones that matter at boot.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">The list at <code class="addr">0x10000400</code></span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click either of the first two entries. The rest are for later.</p>
+    <div class="vt" role="group" aria-label="The first entries of the vector table">
+      <button type="button" id="vt-0" aria-pressed="true">
+        <span class="vt-at">+0</span><span>_estack</span></button>
+      <button type="button" id="vt-1" aria-pressed="false">
+        <span class="vt-at">+4</span><span>initialize_ram_jump_to_main</span></button>
+      <div class="vt-rest">+8 &hellip; +60 &nbsp; fourteen more, for faults and interrupts</div>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="vtp-0">Not code &mdash; a number. The processor loads it into the stack pointer before running anything, because code needs somewhere to keep its working values. The linker sets it to the top of RAM.</p>
+      <p class="vtp" id="vtp-1">The <b>reset handler</b>: the address of the first instruction of yours that runs. The processor jumps here, and everything after this point is Tock.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that starting a program takes two numbers, not one. Somewhere to put the stack, and somewhere to begin.</div>
+</figure>
+
+<section class="col">
+  <h2>What "set up memory" means</h2>
+  <p>The reset handler has a name that says exactly what it does: <code>initialize_ram_jump_to_main</code>. It is two loops and a call.</p>
+  <p>It has to be, because RAM at power-on holds whatever it happened to hold. Not zero &mdash; whatever was there. Every variable your program expects to start at a known value has to be put there by somebody, and that somebody is these two loops.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">Two loops, and then <code>main()</code></span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a loop. Both are the store instruction from chapter 1, run over a range.</p>
+    <div class="loops" role="group" aria-label="The two loops of the reset handler">
+      <button type="button" class="loop" id="lp-0" aria-pressed="true">
+        <span class="loop-k">first loop</span>
+<pre>ldr  r0, =_szero
+ldr  r1, =_ezero
+movs r2, #0
+100:
+cmp  r1, r0
+beq  101f
+stm  r0!, {r2}
+b    100b
+101:</pre></button>
+      <button type="button" class="loop" id="lp-1" aria-pressed="false">
+        <span class="loop-k">second loop</span>
+<pre>ldr  r0, =_srelocate
+ldr  r1, =_erelocate
+ldr  r2, =_etext
+200:
+cmp  r1, r0
+beq  201f
+ldm  r2!, {r3}
+stm  r0!, {r3}
+b    200b
+201:
+bl   main</pre></button>
+    </div>
+    <div class="loopsay">
+      <p class="loopp is-on" id="lpp-0">Writes zero, one word at a time, from <b>_szero</b> to <b>_ezero</b>. That range is every variable your program expects to start at zero. The <b>!</b> on <b>stm r0!</b> is what steps the address forward, so the loop needs no separate add.</p>
+      <p class="loopp" id="lpp-1">Copies, one word at a time, from <b>_etext</b> in flash into the range starting at <b>_srelocate</b> in RAM. That range is every variable expecting to start at something other than zero, and the values it copies were stored in flash by the linker. Then <b>bl main</b>, and Tock is running.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that neither loop knows what any of those bytes mean. One writes zeros over a range; the other copies a range. The meaning was decided by the linker, before the chip was ever powered on.</div>
+</figure>
+
+<section class="col">
+  <p class="note">Both loops are <code>initialize_ram_jump_to_main</code> in <code>arch/cortex-m/src/lib.rs</code>, shortened here only by dropping the comments. The five names beginning with an underscore are defined by the linker script, not by any Rust code.</p>
+</section>
+
 <section class="col">
   <h2>Every word, collected</h2>
 </section>
@@ -1576,6 +1707,40 @@ dfn {
           .addEventListener("click", function () { pick(k); });
       }(n));
     }
+    pick(0);
+  }());
+
+  /* ---------------- Figure 3: the vector table ---------------- */
+  (function () {
+    function pick(n) {
+      var i, panel;
+      for (i = 0; i < 2; i++) {
+        document.getElementById("vt-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+        panel = document.getElementById("vtp-" + i);
+        panel.classList.toggle("is-on", i === n);
+        panel.classList.toggle("is-off", i !== n);
+      }
+    }
+    document.getElementById("vt-0").addEventListener("click", function () { pick(0); });
+    document.getElementById("vt-1").addEventListener("click", function () { pick(1); });
+    pick(0);
+  }());
+
+  /* ---------------- Figure 4: the two loops ---------------- */
+  (function () {
+    function pick(n) {
+      var i, panel;
+      for (i = 0; i < 2; i++) {
+        document.getElementById("lp-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+        panel = document.getElementById("lpp-" + i);
+        panel.classList.toggle("is-on", i === n);
+        panel.classList.toggle("is-off", i !== n);
+      }
+    }
+    document.getElementById("lp-0").addEventListener("click", function () { pick(0); });
+    document.getElementById("lp-1").addEventListener("click", function () { pick(1); });
     pick(0);
   }());
 
