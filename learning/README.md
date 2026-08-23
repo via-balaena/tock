@@ -14,9 +14,47 @@ reader can verify rather than trust.
 
 ## Chapters
 
-| # | Title | Source |
-|---|-------|--------|
-| 1 | Everything Is Memory | [`ch01-everything-is-memory/`](ch01-everything-is-memory/) |
+Seven, and then the series is finished. Chapter 1 asks one question -- any code
+can write any address -- and each chapter after it answers part of that. The
+last one lands on grants, which is the last mechanism chapter 1 names, so the
+arc closes where the first chapter said it would.
+
+| # | Title | Covers | Status |
+|---|-------|--------|--------|
+| 1 | [Everything Is Memory](ch01-everything-is-memory/) | One store, from `str` to 3.3 V on a pin, and why nothing stops it landing anywhere | published |
+| 2 | How code starts running | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | planned |
+| 3 | What a driver may touch | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip | planned |
+| 4 | What a process is | Kernel against application -- how an app is loaded, what its memory looks like, and why it is not simply more kernel | planned |
+| 5 | The memory protection unit | The hardware fence the kernel programs around a process before letting it run | planned |
+| 6 | Asking the kernel | The eight syscall classes, upcalls and allowed buffers: the only door through that fence | planned |
+| 7 | Grants | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator | planned |
+
+**Why those seven and not the five chapter 1 promises.** Chapter 1 commits to
+itself, to chapter 2 by name, and then to three more in a single clause:
+"capsules, the memory protection unit, and grants -- and each one gets its own
+chapter". Two of those three cannot be written as promised. `kernel/src/grant.rs`
+describes grants as allocating "memory from a process to hold state on the
+process's behalf", out of a region inside that process's own memory, and they
+hold the upcalls and allowed buffers that syscalls create. So grants need
+processes and syscalls underneath them, and the MPU needs processes -- it is
+what it fences. Chapters 4 and 6 are those missing prerequisites; nothing in
+chapter 1 promised them, and without them chapters 5 and 7 have no ground to
+stand on.
+
+**Reading order is dependency order.** 3 needs 1 and 2. 5 needs 4. 6 needs 4
+and 5. 7 needs 3, 4 and 6. The MPU deliberately comes before syscalls: meet the
+wall, then find the door, which is the same shape as letting the read-modify-write
+race lose a pin before the atomic register is offered.
+
+**Size.** Chapter 1 runs to about 10,900 prose words across 17 figures, and is
+the outlier on purpose -- it defines the vocabulary from nothing and has no
+chapter to lean on. Later chapters inherit that vocabulary and should be roughly
+half: aim under 6,000 words and 8 to 10 figures. Nothing enforces this; it is a
+target to notice blowing past, not a gate.
+
+All seven are groundable on the hardware in front of the reader -- a Pico 2 and
+a debug probe -- because `boards/raspberry_pi_pico_2` is a real port in this
+tree and every chapter can cite it.
 
 ## Why this lives in the Tock repository
 
