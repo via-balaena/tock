@@ -280,12 +280,9 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 
 /* An instrument whose content is a single code block, so the block can sit
    flush against the frame instead of inside the usual padding. */
-.instrument-body.flush { padding: 0; }
 
 /* An instrument that should hold the reading column's width rather than
    breaking out wide. */
-.instrument.narrow { max-width: var(--measure); }
-.map-detail.hot { background: var(--hot-soft); border-left-color: var(--hot); }
 
 /* ---------- code block ---------- */
 
@@ -343,9 +340,6 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 .sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
 .sources ul { margin: 0; padding-left: 1.1rem; }
 .sources code { font-size: .8em; }
-
-@media (max-width: 30rem) {
-}
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
@@ -406,8 +400,6 @@ dfn {
   content: "\2192";
   font-weight: 700;
 }
-.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
-.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
 
 /* Check yourself. Question visible, answer one click away. */
 .selfcheck { display: flex; flex-direction: column; gap: .6rem; }
@@ -498,31 +490,6 @@ dfn {
    the argument, so they read at the weight of the prose around them rather
    than below it. */
 .glossary.inline dd { color: var(--ink); }
-.dispanel.is-on { display: block; }
-.hxrange.is-on {
-  display: inline; font-family: var(--mono); font-style: normal;
-  font-weight: 600; color: var(--hot);
-}
-.rgname.is-on { display: inline; }
-
-#rg-twins { text-transform: none; letter-spacing: 0; }
-
-/* On a phone the point of Figure 4 is that there are eight digits, so all
-   eight have to be on screen at once rather than five and a scroll. */
-@media (max-width: 30rem) {
-}
-
-@media (prefers-reduced-motion: no-preference) {
-}
-.brp.is-off { display: none; }
-.brp.is-on { display: block; color: var(--ink); background: var(--surface-sunk); }
-.brp.is-on.brp-no { border-left-color: var(--danger); }
-.brp.is-on.brp-yes { border-left-color: var(--accent); }
-.pkgp.is-off { display: none; }
-.pkgp.is-on { display: block; color: var(--ink); background: var(--surface-sunk); }
-.pkgp.is-on.pkgp-here { border-left-color: var(--hot); background: var(--hot-soft); }
-
-/* Show the reader only the lines that matter, and say so out loud. */
 
 /* ---------- shared by the three opening figures ---------- */
 
@@ -530,24 +497,8 @@ dfn {
   width: 100%; height: auto; max-width: 100%;
   color: var(--ink); overflow: visible; display: block;
 }
-.pickout-v.hot { color: var(--hot); }
 
 .glossary.cast { align-items: start; }
-.glossary.cast dt.is-lit .cast-word {
-  color: var(--hot); border-color: var(--hot); background: var(--hot-soft);
-}
-.glossary.cast dd.is-lit { color: var(--ink); }
-.four-line.hot b { color: var(--hot); }
-
-/* Cases are visible by default and hidden by script, so a reader with no
-   JavaScript meets all four rather than none. */
-.optcase.is-off { display: none; }
-.strayp.is-on {
-  color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
-}
-.strayp.is-on.strayp-fault {
-  border-left-color: var(--danger); background: var(--danger-soft);
-}
 
 /* ---------- Figure 1: three moments ---------- */
 .mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }

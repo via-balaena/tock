@@ -1071,6 +1071,67 @@ def same_rule_contrast_checks(component_css, tokens):
     return problems
 
 
+def dead_css_checks(html):
+    """A rule whose class or id appears nowhere else on the page.
+
+    Chapter 2 was built by copying chapter 1's stylesheet and deleting what it
+    did not use -- 237 rules went. Fourteen survived that had nothing left to
+    style: `.brp`, `.pkgp`, `.strayp`, `.hxrange` and the rest were chapter 1
+    figures that chapter 2 does not have, and each appeared exactly once in the
+    file, in its own rule. Two media queries were left with empty bodies and a
+    comment describing a figure that is not there either.
+
+    None of it renders wrong, which is the problem: dead CSS is invisible until
+    somebody copies the sheet again for the next chapter, and then it is
+    inherited rather than found. It also makes the sheet lie about what the
+    page contains, which is the thing a reader of the source trusts it for.
+    """
+    if "</style>" not in html:
+        return []
+    style = html[html.index("<style>") + 7:html.index("</style>")]
+    rest = html[html.index("</style>") + 8:]
+
+    # Every class and id the page can actually put on an element: written in
+    # the markup, or handed to classList/setAttribute/a selector in the script.
+    live = set(re.findall(r"[\w-]+", re.sub(r"<style.*?</style>", " ", rest,
+                                            flags=re.S)))
+
+    problems = []
+    body = re.sub(r"/\*.*?\*/", " ", style, flags=re.S)
+    # Rule heads only: everything before a `{` that is not inside a block.
+    depth, head, empty_at = 0, [], None
+    i = 0
+    while i < len(body):
+        c = body[i]
+        if c == "{":
+            if depth == 0:
+                selector = " ".join("".join(head).split())
+                head = []
+                if selector.startswith("@"):
+                    # An at-rule with nothing in it is dead in a quieter way.
+                    j, d = i + 1, 1
+                    while j < len(body) and d:
+                        d += (body[j] == "{") - (body[j] == "}")
+                        j += 1
+                    if not body[i + 1:j - 1].strip():
+                        problems.append("%s has an empty body" % selector)
+                else:
+                    for token in re.findall(r"[.#]([A-Za-z][\w-]*)", selector):
+                        if token not in live:
+                            problems.append(
+                                "%s styles .%s, which the page never uses"
+                                % (selector, token))
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth < 0:
+                depth = 0
+        elif depth == 0:
+            head.append(c)
+        i += 1
+    return problems
+
+
 def static_checks(html, name):
     """Return a list of problem strings; empty means the page is clean."""
     problems = []
@@ -1188,6 +1249,7 @@ def static_checks(html, name):
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
+    problems.extend(dead_css_checks(html))
 
     return problems
 

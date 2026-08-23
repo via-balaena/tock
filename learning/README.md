@@ -103,8 +103,17 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Fifteen more static checks exist because each caught a live defect. Keep the
+Sixteen more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A CSS rule the page never uses.** Chapter 2 was built by copying chapter
+  1's stylesheet and deleting what it did not need -- 237 rules went, and 23
+  survived with nothing left to style, plus three media queries left with empty
+  bodies. None of it rendered wrong, which is exactly the problem: dead CSS is
+  invisible until the sheet gets copied again for the next chapter, and then it
+  is inherited rather than found. The check reads every class and id in a rule's
+  selector and asks whether the page mentions it anywhere outside the `<style>`
+  block, so a class the script alone adds still counts as used.
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
   and are served both from this repository and as standalone uploads, so a raw
