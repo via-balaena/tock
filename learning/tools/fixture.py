@@ -28,6 +28,12 @@ got wrong, every time somebody rendered something:
                  state is what most readers see, but it is rarely what teaches;
                  the race figure only makes its point once it has been run to
                  the end.
+  --click-nth    click the Nth child of a container. Script-built controls carry
+      ID:N       no id -- the address map's rows, the first-digit buttons and
+                 the four bargains are all generated -- so nothing else reaches
+                 them.
+  --set ID=V     set a value and fire input, for the two range sliders and the
+                 four answer boxes, which no click can drive.
   --isolate ID   hide everything except the figure containing that id. Pick an
                  id, not a class: a class silently hides the whole page and you
                  get a blank square.
@@ -92,9 +98,27 @@ function _ser(el) {
     : _esc(el.textContent);
   return "<" + tag + a + ">" + inner + "</" + tag + ">";
 }
-CLICKS.forEach(function (id) {
-  if (!REG[id]) { throw new Error("--click names an id the page does not have: " + id); }
-  REG[id].fire("click");
+ACTIONS.forEach(function (act) {
+  var el;
+  if (act.k === "click") {
+    el = REG[act.id];
+    if (!el) { throw new Error("--click names an id the page does not have: " + act.id); }
+    el.fire("click");
+  } else if (act.k === "nth") {
+    el = REG[act.id];
+    if (!el) { throw new Error("--click-nth names an id the page does not have: " + act.id); }
+    if (!el.children[act.n]) {
+      throw new Error("--click-nth " + act.id + ":" + act.n + " - only "
+                      + el.children.length + " child(ren)");
+    }
+    el.children[act.n].fire("click");
+  } else if (act.k === "set") {
+    el = REG[act.id];
+    if (!el) { throw new Error("--set names an id the page does not have: " + act.id); }
+    el.value = act.v;
+    el.fire("input");
+    el.fire("change");
+  }
 });
 var OUT = {};
 Object.keys(REG).forEach(function (id) {
@@ -102,6 +126,7 @@ Object.keys(REG).forEach(function (id) {
   OUT[id] = {
     i: el.children.length ? el.children.map(_ser).join("") : _esc(el.textContent),
     t: el.children.length ? "" : el.textContent,
+    v: el.value,
     c: el.className,
     d: !!el.disabled,
     a: el._attrs
@@ -111,7 +136,7 @@ print(JSON.stringify(OUT));
 """
 
 
-def generated(chapter_dir, clicks):
+def generated(chapter_dir, actions):
     """Run the page under the shim and report what every element ended up as.
 
     The bundle comes from check.py rather than being assembled here. It was
@@ -124,7 +149,7 @@ def generated(chapter_dir, clicks):
     with open(page, encoding="utf-8") as handle:
         html = handle.read()
 
-    tail = "var CLICKS = %s;\n%s" % (json.dumps(clicks), SERIALISE_JS)
+    tail = "var ACTIONS = %s;\n%s" % (json.dumps(actions), SERIALISE_JS)
     tmp = tempfile.NamedTemporaryFile("w", suffix=".js", delete=False,
                                       encoding="utf-8")
     try:
@@ -156,6 +181,15 @@ def _rewrite_open_tag(tag, state):
             tag = tag[:-1].rstrip() + ' %s="%s">' % (key, value)
     if state["d"] and "disabled" not in tag:
         tag = tag[:-1].rstrip() + " disabled>"
+    # An input's typed text is a property, not the markup's value attribute, so
+    # without this a fixture built with --set showed the verdict the answer
+    # triggered above an answer box still rendering as empty.
+    if state["v"] != "" and re.match(r"<(input|textarea)\b", tag):
+        if re.search(r'\bvalue="[^"]*"', tag):
+            tag = re.sub(r'\bvalue="[^"]*"', 'value="%s"' % state["v"], tag,
+                         count=1)
+        else:
+            tag = tag[:-1].rstrip() + ' value="%s">' % state["v"]
     return tag
 
 
@@ -180,6 +214,21 @@ def splice(html, built, markup_text, after_clicks):
     filled = 0
     for element_id, state in built.items():
         inner = state["i"]
+        # Void elements have no closing tag, so neither pattern below can ever
+        # match one. Inputs are the whole reason --set exists, and without this
+        # a fixture showed the verdict an answer triggered above an answer box
+        # still rendering empty.
+        void = re.compile(
+            r'<(?:input|img|br|hr|source|track|area|base|col|embed|link|meta'
+            r'|param|wbr)\b[^>]*\bid="%s"[^>]*>' % re.escape(element_id))
+        match = void.search(html)
+        if match:
+            if after_clicks:
+                html = (html[:match.start()]
+                        + _rewrite_open_tag(match.group(0), state)
+                        + html[match.end():])
+                filled += 1
+            continue
         empty = re.compile(
             r'(<(\w+)[^>]*\bid="%s"[^>]*>)\s*(</\2>)' % re.escape(element_id))
         html, count = empty.subn(
@@ -207,14 +256,53 @@ def splice(html, built, markup_text, after_clicks):
     return html, filled
 
 
+def _narrow_rules(source):
+    """The bodies of every narrow-width block, found by counting braces.
+
+    A regex cannot do this. The first version matched to the next line starting
+    with `}`, so a block whose closing brace happened to be indented swallowed
+    everything after it, including the reduced-motion block -- and a figure
+    rendered "at phone width" was then not showing the phone rules at all.
+    """
+    out = []
+    for match in re.finditer(r"@media \(max-width: [^)]+\)\s*\{", source):
+        depth, i = 1, match.end()
+        while depth and i < len(source):
+            if source[i] == "{":
+                depth += 1
+            elif source[i] == "}":
+                depth -= 1
+            i += 1
+        out.append(source[match.end():i - 1])
+    return "".join(out)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("chapter", help="chapter directory under learning/")
     parser.add_argument("--out", help="write the fixture here (default: stdout)")
     parser.add_argument("--click", action="append", default=[], metavar="ID",
                         help="fire a click on this id first; repeatable")
+    parser.add_argument("--click-nth", action="append", default=[],
+                        metavar="ID:N", dest="click_nth",
+                        help="click the Nth child of this container, zero-based."
+                             " Generated controls carry no id -- the map rows,"
+                             " the first-digit buttons and the four bargains are"
+                             " all built by script -- so this is the only way to"
+                             " reach them; repeatable, ordered with --click and"
+                             " --set by the order given on the command line")
+    parser.add_argument("--set", action="append", default=[], metavar="ID=VALUE",
+                        dest="set_value",
+                        help="set a control's value and fire input, for the two"
+                             " range sliders and the four answer boxes")
     parser.add_argument("--isolate", metavar="ID",
                         help="show only the figure containing this id")
+    parser.add_argument("--isolate-sel", metavar="SEL", dest="isolate_sel",
+                        help="the same, by any selector, for a figure that has "
+                             "no id in it at all -- Figure 12 has none. Make "
+                             "sure it matches nothing outside the figure: a "
+                             "class used elsewhere hides everything and renders "
+                             "a blank square")
     parser.add_argument("--theme", choices=("light", "dark", "auto"),
                         default="auto", help="force a theme (default: auto)")
     parser.add_argument("--phone", action="store_true",
@@ -234,16 +322,31 @@ def main():
     with open(page, encoding="utf-8") as handle:
         source = handle.read()
 
-    built, markup_text = generated(chapter_dir, args.click)
+    actions = [{"k": "click", "id": i} for i in args.click]
+    for spec in args.click_nth:
+        target, _, index = spec.rpartition(":")
+        if not target or not index.isdigit():
+            raise SystemExit("--click-nth wants ID:N, got %r" % spec)
+        actions.append({"k": "nth", "id": target, "n": int(index)})
+    for spec in args.set_value:
+        target, sep, value = spec.partition("=")
+        if not sep:
+            raise SystemExit("--set wants ID=VALUE, got %r" % spec)
+        actions.append({"k": "set", "id": target, "v": value})
+
+    built, markup_text = generated(chapter_dir, actions)
     body = source
     if not args.keep_noscript:
         body = re.sub(r"<noscript>.*?</noscript>", "", body, flags=re.S)
-    body, filled = splice(body, built, markup_text, bool(args.click))
+    body, filled = splice(body, built, markup_text, bool(actions))
 
     extra = ""
     if args.isolate:
         extra += ('<style>.wrap > *:not(:has(#%s)) '
                   '{ display: none !important; }</style>' % args.isolate)
+    if args.isolate_sel:
+        extra += ('<style>.wrap > *:not(:has(%s)) '
+                  '{ display: none !important; }</style>' % args.isolate_sel)
     if args.theme == "light":
         tokens = re.search(r"^:root \{(.*?)^\}", source, re.S | re.M).group(1)
         extra += ('<style>html:root:not([data-theme="never"]) {%s}</style>'
@@ -255,10 +358,8 @@ def main():
         extra += ('<style>html:root:not([data-theme="never"]) {%s}</style>'
                   % block.group(1))
     if args.phone:
-        narrow = "".join(re.findall(r"@media \(max-width: 30rem\)\s*\{(.*?)\n\}",
-                                    source, re.S))
         extra += ("<style>.wrap { max-width: 374px !important; }%s</style>"
-                  % narrow)
+                  % _narrow_rules(source))
 
     out = body + extra
     if args.out:
@@ -266,8 +367,8 @@ def main():
             handle.write(out)
         sys.stderr.write("%s - %d container(s) filled%s\n"
                          % (args.out, filled,
-                            ", %d click(s) fired" % len(args.click)
-                            if args.click else ""))
+                            ", %d action(s) fired" % len(actions)
+                            if actions else ""))
     else:
         sys.stdout.write(out)
 

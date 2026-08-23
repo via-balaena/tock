@@ -17,7 +17,25 @@ function El(id, tag) {
   // match -- and no fixture could be rendered from what a script builds, which
   // is exactly the half of these figures a screenshot never reaches.
   this.tagName = tag === undefined ? "" : String(tag).toUpperCase();
-  this.value = "";
+  // A range input clamps whatever you assign into [min, max]; assigning 8 to a
+  // max="7" slider leaves it at 7. The shim stored it verbatim, so a figure
+  // could be driven into a position the control cannot actually reach -- this
+  // one reported "9 of 8" with no step highlighted.
+  var value = "";
+  Object.defineProperty(this, "value", {
+    get: function () { return value; },
+    set: function (v) {
+      v = v === null || v === undefined ? "" : String(v);
+      if (self._attrs.type === "range" && v !== "" && isFinite(Number(v))) {
+        var n = Number(v);
+        var lo = self._attrs.min, hi = self._attrs.max;
+        if (lo !== undefined && n < Number(lo)) { n = Number(lo); }
+        if (hi !== undefined && n > Number(hi)) { n = Number(hi); }
+        v = String(n);
+      }
+      value = v;
+    }
+  });
   this.disabled = false;
   this.type = "";
   this.children = [];
@@ -136,6 +154,16 @@ PAGE_IDS.forEach(function (i) { REG[i] = new El(i); });
 // input values. A page whose rule is "the script writes no words" keeps every
 // sentence here, so a shim that starts every element empty can only ever test
 // the words the script writes -- exactly the ones this page tries not to have.
+// Attributes first: the value setter reads type/min/max off them to clamp.
+if (typeof PAGE_ATTRS === "object" && PAGE_ATTRS) {
+  Object.keys(PAGE_ATTRS).forEach(function (i) {
+    if (!REG[i]) { return; }
+    Object.keys(PAGE_ATTRS[i]).forEach(function (k) {
+      REG[i]._attrs[k] = PAGE_ATTRS[i][k];
+    });
+    if (PAGE_ATTRS[i].type) { REG[i].type = PAGE_ATTRS[i].type; }
+  });
+}
 if (typeof PAGE_CLASS === "object" && PAGE_CLASS) {
   Object.keys(PAGE_CLASS).forEach(function (i) {
     if (REG[i]) { REG[i].className = PAGE_CLASS[i]; }

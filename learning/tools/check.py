@@ -634,10 +634,27 @@ def button_case_checks(html):
         for literal in re.findall(r'"([^"]*)"', match.group(2)):
             classes.update(literal.split())
 
+    # The base class of every button the script builds. Its content is never in
+    # the markup, so no one can eyeball it, and the first version of this check
+    # only asked about monospace ones -- which let the prediction options ship
+    # reading 0X02000000, because they are set in the body face.
+    generated = set()
+    for match in re.finditer(r'createElement\("button"\).{0,200}?className\s*=\s*"([^"]*)"',
+                             script, re.S):
+        first = match.group(1).split()
+        if first:
+            generated.add(first[0])
+
+    declared = set()
     for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
         target = selector.strip().rstrip(",").split(",")[0].strip()
         match = re.fullmatch(r"\.([\w-]+)", target)
-        if not match or match.group(1) not in classes:
+        if not match:
+            continue
+        name = match.group(1)
+        if "text-transform" in body:
+            declared.add(name)
+        if name not in classes:
             continue
         wants_mono = re.search(r"font(?:-family)?\s*:[^;]*var\(--mono\)", body)
         if wants_mono and "text-transform" not in body:
@@ -645,6 +662,13 @@ def button_case_checks(html):
                 "%s is a button showing monospace text and never says what "
                 "happens to its case, so the shared button rule uppercases it "
                 "- 0x0 renders as 0X0" % target)
+
+    for name in sorted(generated - declared):
+        problems.append(
+            ".%s is the base class of a button the script builds, so its text "
+            "is never in the markup for anyone to notice, and it does not say "
+            "what happens to its case - the shared button rule uppercases it"
+            % name)
     return problems
 
 
@@ -984,11 +1008,27 @@ def page_state(html):
 
     `cls` -- the markup's own classes, without which `classList.contains`
     answered false for a class the markup plainly declares.
+
+    `attrs` -- every other attribute. `getAttribute` used to return only what
+    `setAttribute` had set, so it answered null for an attribute written in the
+    markup; and without `min`/`max` a range input could not be clamped the way
+    a browser clamps one.
     """
+    attrs = {}
+    for tag in re.findall(r"<[a-zA-Z][^>]*>", html):
+        tag_id = re.search(r'\bid="([^"]+)"', tag)
+        if not tag_id:
+            continue
+        pairs = dict(re.findall(r'\b([a-zA-Z][\w:-]*)="([^"]*)"', tag))
+        pairs.pop("id", None)
+        pairs.pop("class", None)
+        attrs[tag_id.group(1)] = pairs
+
     return {
         "value": _attr_map(html, "value"),
         "text": _page_text(html),
         "cls": _attr_map(html, "class"),
+        "attrs": attrs,
     }
 
 
@@ -1019,6 +1059,7 @@ def page_bundle(html, tail):
         "var PAGE_VALUES = %s;" % json.dumps(state["value"]),
         "var PAGE_TEXT = %s;" % json.dumps(state["text"]),
         "var PAGE_CLASS = %s;" % json.dumps(state["cls"]),
+        "var PAGE_ATTRS = %s;" % json.dumps(state["attrs"]),
         harness,
         page_js,
         tail,

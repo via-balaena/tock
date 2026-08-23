@@ -75,4 +75,23 @@
   ok("and reports it uppercased", document.createElement("b").tagName, "B");
   throws("createElement with no tag", function () { document.createElement(); });
   throws("createElement with an empty tag", function () { document.createElement(""); });
+
+  // A range input clamps what you assign it. Storing an out-of-range value
+  // verbatim lets a figure be driven to a position its control cannot reach:
+  // Figure 9's scrubber is max="7", and 8 rendered as "9 of 8" with no step
+  // highlighted at all.
+  var slider = new El("contract-slider");
+  slider._attrs.type = "range";
+  slider._attrs.min = "0";
+  slider._attrs.max = "7";
+  slider.value = 8;
+  ok("a range input clamps to max", slider.value, "7");
+  slider.value = -3;
+  ok("and to min", slider.value, "0");
+  slider.value = 4;
+  ok("an in-range value is kept", slider.value, "4");
+  var plain = new El("contract-text");
+  plain._attrs.type = "text";
+  plain.value = 99;
+  ok("a text input is not clamped, only stringified", plain.value, "99");
 }());
