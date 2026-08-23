@@ -1375,3 +1375,19 @@ chk("the package switcher puts the other package away",
     REG["pkp-1"].classList.contains("is-off"), true);
 chk("and keeps the one on the reader's desk",
     REG["pkp-0"].classList.contains("is-off"), false);
+
+// ---- the hex digit strip ----
+// Sixteen cells, each digit against its value. This was a sentence; the values
+// are arithmetic, so they are recomputed here rather than trusted.
+(function () {
+  var digits = "0123456789ABCDEF", i, right = 0;
+  for (i = 0; i < 16; i++) {
+    if (!REG["hk-" + i]) { throw new Error("hex strip is missing cell " + i); }
+    if (REG["hk-" + i].textContent === digits.charAt(i) + String(i)) { right++; }
+  }
+  chk("every hex cell pairs its digit with the right value", right, 16);
+}());
+chk("the ten familiar digits are not marked as the new part",
+    REG["hk-9"].classList.contains("hexkey-letter"), false);
+chk("and the six letters are", REG["hk-10"].classList.contains("hexkey-letter"), true);
+chk("F is the last of them", REG["hk-15"].classList.contains("hexkey-letter"), true);

@@ -1116,6 +1116,28 @@ dfn {
   color: var(--ink-soft);
 }
 
+/* The sixteen digits, as the lookup table they are. This was a sentence --
+   "the usual ten run on into six letters: 0 1 2 3 4 5 6 7 8 9 A B C D E F. A is
+   ten, and F is fifteen" -- which is eighteen words asking the reader to hold a
+   table in their head. The six letters are the only new part, so they are the
+   only part that is lit. */
+.hexkey {
+  display: flex; flex-wrap: wrap; gap: .25rem; margin: .2rem 0 .1rem;
+}
+.hexkey-c {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 2.05rem; padding: .3rem .1rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: var(--mono); line-height: 1.2;
+}
+.hexkey-d { font-size: 1rem; font-weight: 600; color: var(--ink-faint); }
+.hexkey-v { font-size: .72rem; color: var(--ink-faint); }
+.hexkey-c.hexkey-letter {
+  background: var(--hot-soft); border-color: var(--hot);
+}
+.hexkey-letter .hexkey-d, .hexkey-letter .hexkey-v { color: var(--hot); }
+
 /* Figure 4: a hex digit is four bits, and those four are worth 8, 4, 2 and 1. */
 .hexline {
   display: flex; align-items: flex-start; gap: .4rem;
@@ -2363,7 +2385,25 @@ dfn {
   <p>Which stretch is which was decided once, by the chip designers, and burned into the silicon. So the very first thing the chip has to work out is: <strong>who does this address belong to?</strong></p>
   <p>It works that out by looking at a single digit.</p>
   <p>That digit is written in a counting system you may not have met. Numbers here are counted in sixteens rather than in tens, which is called <dfn>hexadecimal</dfn>, and the <code>0x</code> in front is the flag that says so.</p>
-  <p>Sixteens need sixteen digits, so the usual ten run on into six letters: <code>0&nbsp;1&nbsp;2&nbsp;3&nbsp;4&nbsp;5&nbsp;6&nbsp;7&nbsp;8&nbsp;9&nbsp;A&nbsp;B&nbsp;C&nbsp;D&nbsp;E&nbsp;F</code>. <code>A</code> is ten, and <code>F</code> is fifteen.</p>
+  <p>Sixteens need sixteen digits, so the usual ten run on into six letters.</p>
+  <div class="hexkey" role="group" aria-label="The sixteen hex digits and what each one is worth">
+    <span id="hk-0" class="hexkey-c"><span class="hexkey-d">0</span><span class="hexkey-v">0</span></span>
+    <span id="hk-1" class="hexkey-c"><span class="hexkey-d">1</span><span class="hexkey-v">1</span></span>
+    <span id="hk-2" class="hexkey-c"><span class="hexkey-d">2</span><span class="hexkey-v">2</span></span>
+    <span id="hk-3" class="hexkey-c"><span class="hexkey-d">3</span><span class="hexkey-v">3</span></span>
+    <span id="hk-4" class="hexkey-c"><span class="hexkey-d">4</span><span class="hexkey-v">4</span></span>
+    <span id="hk-5" class="hexkey-c"><span class="hexkey-d">5</span><span class="hexkey-v">5</span></span>
+    <span id="hk-6" class="hexkey-c"><span class="hexkey-d">6</span><span class="hexkey-v">6</span></span>
+    <span id="hk-7" class="hexkey-c"><span class="hexkey-d">7</span><span class="hexkey-v">7</span></span>
+    <span id="hk-8" class="hexkey-c"><span class="hexkey-d">8</span><span class="hexkey-v">8</span></span>
+    <span id="hk-9" class="hexkey-c"><span class="hexkey-d">9</span><span class="hexkey-v">9</span></span>
+    <span id="hk-10" class="hexkey-c hexkey-letter"><span class="hexkey-d">A</span><span class="hexkey-v">10</span></span>
+    <span id="hk-11" class="hexkey-c hexkey-letter"><span class="hexkey-d">B</span><span class="hexkey-v">11</span></span>
+    <span id="hk-12" class="hexkey-c hexkey-letter"><span class="hexkey-d">C</span><span class="hexkey-v">12</span></span>
+    <span id="hk-13" class="hexkey-c hexkey-letter"><span class="hexkey-d">D</span><span class="hexkey-v">13</span></span>
+    <span id="hk-14" class="hexkey-c hexkey-letter"><span class="hexkey-d">E</span><span class="hexkey-v">14</span></span>
+    <span id="hk-15" class="hexkey-c hexkey-letter"><span class="hexkey-d">F</span><span class="hexkey-v">15</span></span>
+  </div>
   <p>Here is what makes it worth the trouble. One hex digit is exactly four bits, always, so an eight-digit address is exactly 32 bits and each digit owns a fixed slice of them. Take one apart.</p>
 </section>
 
