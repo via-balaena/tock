@@ -68,6 +68,8 @@ CONTRAST_PAIRS = [
     ("hot", "surface-sunk", 4.5), ("hot", "hot-soft", 4.5),
     ("hot-ink", "hot-fill", 4.5), ("surface", "accent", 4.5),
     ("danger", "danger-soft", 4.5), ("danger", "surface", 4.5),
+    # The street table's failing verdicts sit on a sunk ground once pressed.
+    ("danger", "surface-sunk", 4.5),
     ("danger", "ground", 4.5),
     # Tinted states: the text inside them is the ordinary ink colour.
     ("ink", "danger-soft", 4.5), ("ink", "accent-soft", 4.5),

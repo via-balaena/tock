@@ -1341,3 +1341,14 @@ chk("the compiler answer no longer claims a lone store is deleted",
     REG["qa-6"].textContent.indexOf("delete a store nothing reads back"), -1);
 chk("and says what actually happens to one",
     REG["qa-6"].textContent.indexOf("A lone store it keeps") > -1, true);
+
+// A bare <div> has role=generic, which does not support naming, so an
+// aria-label on one is either dropped or -- where it is exposed -- swallows the
+// content it sits on. The roadmap carried one on nothing for three sections.
+(function () {
+  var i, ids = ["rm-1", "rm-2", "rm-3"], n = 0;
+  for (i = 0; i < ids.length; i++) {
+    if (REG[ids[i]] && REG[ids[i]].getAttribute("role") === "group") { n++; }
+  }
+  chk("each roadmap is a named group rather than a labelled div", n, 3);
+}());
