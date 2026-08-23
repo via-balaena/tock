@@ -554,6 +554,11 @@ dfn {
 .mo {
   border: 1px solid var(--rule); background: var(--surface-sunk);
   padding: .7rem .8rem; border-radius: 2px;
+  /* Centred on purpose: three equal cards read as a timeline. A button is
+     centred by default, so saying it here is the difference between a decision
+     and an accident -- and the phone rule below overrides it, because a
+     full-width stacked card centred reads as a mistake. */
+  text-align: center;
 }
 .mo.is-on { border-color: var(--hot); background: var(--hot-soft); }
 .mo-when {
@@ -648,6 +653,8 @@ dfn {
 .costs button {
   font-family: var(--mono); font-size: .82rem; font-weight: 400;
   text-transform: none; letter-spacing: 0;
+  /* Lines of Rust. The longest wraps, and a button centres by default. */
+  text-align: left;
   padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
 }
 .costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
@@ -710,6 +717,7 @@ dfn {
 
 @media (max-width: 30rem) {
   .mo-fig { grid-template-columns: 1fr; }
+  .mo { text-align: left; }
 }
 </style>
 
@@ -761,6 +769,7 @@ dfn {
   <p>Power arrives. Both processors come out of reset and begin fetching instructions &mdash; but not from your program.</p>
   <p>They begin at address <code class="addr">0x00000000</code>, which chapter 1's map of the address space labelled <em>ROM</em>: built-in code, burned in at the factory. It is unchangeable, it is the same on every RP2350 ever made, and it has never heard of Tock.</p>
   <p>So the chip's first job is to find your program. Most of what follows is that search.</p>
+  <p>Both processors start together, and they do not stay that way. The boot code's first decision is to read <code>CPUID</code>, which lives at <code class="addr">0xD0000000</code> &mdash; the SIO block chapter 1 spent its whole length on. Core&nbsp;1 reads a 1 there, goes into a deep sleep, and takes no further part. Everything below is core&nbsp;0.</p>
 </section>
 
 <figure class="instrument">
@@ -779,7 +788,7 @@ dfn {
         <span class="mo-when">finally</span><span class="mo-who">your code</span></button>
     </div>
     <div class="mosay">
-      <p class="mop is-on" id="mop-0">Both processors come out of reset. Nothing of yours is running, and nothing of yours has been looked at yet.</p>
+      <p class="mop is-on" id="mop-0">Both processors come out of reset and start together. Within a few instructions core&nbsp;1 is asleep, and nothing of yours has been looked at yet.</p>
       <p class="mop" id="mop-1">Code burned into the chip at manufacture takes control at <b>0x00000000</b>. It searches flash for something that looks like a program, and it will hand over only if it finds one.</p>
       <p class="mop" id="mop-2">The <b>reset handler</b> runs, sets up memory, and calls <b>main()</b>. Everything chapter 1 described happens after this point.</p>
     </div>
@@ -959,7 +968,7 @@ bl   main</pre></button>
   <div class="instrument-body">
     <p class="dothis">Click a step to mark where you are. All eight stay on screen.</p>
     <div class="seq" role="group" aria-label="Eight steps from power to main">
-        <button type="button" id="sq-0" aria-pressed="true"><span class="seq-n">1</span><span>Power arrives. Both processors come out of reset. Nothing of yours has been read yet.</span></button>
+        <button type="button" id="sq-0" aria-pressed="true"><span class="seq-n">1</span><span>Power arrives. Both processors come out of reset together, and core&nbsp;1 reads <b>CPUID</b>, sees a 1, and sleeps.</span></button>
         <button type="button" id="sq-1" aria-pressed="false"><span class="seq-n">2</span><span>Both begin fetching at <b>0x00000000</b>. That is inside the boot ROM, so the first instruction to run is one nobody can change.</span></button>
         <button type="button" id="sq-2" aria-pressed="false"><span class="seq-n">3</span><span>The ROM searches the first four kilobytes of flash. It is looking for the marker that starts a block. Blank flash has none, and neither does a half-written image.</span></button>
         <button type="button" id="sq-3" aria-pressed="false"><span class="seq-n">4</span><span>It finds <b>0xffffded3</b> at <b>0x10000000</b>. Then it checks the rest: the footer is there, and the link closes a loop back to this block.</span></button>
@@ -1089,6 +1098,8 @@ bl   main</pre></button>
   <h3>Everything above, checked against source</h3>
   <p class="note">Every claim on this page comes from the Tock tree or the RP2350 datasheet. Nothing here was written from memory.</p>
   <ul>
+    <li>Both cores starting together, then core 1 sleeping &mdash; RP2350 datasheet &sect;3.1.2 and &sect;7.4 step 12. The first says it plainly: "both cores start running simultaneously, core 1 goes into a deep sleep state, and core 0 continues the main boot sequence".</li>
+    <li><code>CPUID</code> sitting at SIO's base, offset <code>0x000</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>, the <code>SIORegisters</code> block</li>
     <li>The ROM searching flash for a block that is part of a closed loop, and why the loop rule exists &mdash; RP2350 datasheet &sect;5.1.5.1</li>
     <li>The block markers <code>0xffffded3</code> and <code>0xab123579</code>, and the rule that the last item counts the words of the block's items &mdash; RP2350 datasheet &sect;5.9.1</li>
     <li>The minimum Arm image being twenty bytes, which is Tock's twenty-eight without the vector-table item &mdash; RP2350 datasheet &sect;5.9.5.1</li>
