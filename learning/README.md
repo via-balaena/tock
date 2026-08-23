@@ -65,7 +65,7 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Twelve more static checks exist because each caught a live defect. Keep the
+Thirteen more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
@@ -204,6 +204,14 @@ Two more are preventive rather than forensic:
   panel's, since without both tests it paired Figure 1's nine word buttons
   with its three zones, and Figure 4's bit ranges with the spans inside its
   buttons rather than the buttons.
+- **A figure with nothing telling you what to do with it.** The chapter's own
+  rule is an imperative over each figure and a "Notice that" under it, and
+  fifteen of seventeen followed it -- the rule lived in a note, so nothing
+  noticed the other two. That line is what tells a reader a drawing is a
+  control at all; Figure 13's only instruction sat *inside* its outcome box,
+  below the tabs it never mentioned. Only the `instrument` figures are
+  required to carry one: the two plain `svgfig` drawings have no controls, and
+  demanding a line over those would be the gate failing correct work.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions

@@ -782,6 +782,33 @@ def boot_state_checks(html):
     return problems
 
 
+def imperative_checks(html):
+    """Every figure names something to do, above the thing that does it.
+
+    The chapter's own rule -- an imperative over each figure, a "Notice that"
+    under it -- and fifteen of seventeen followed it. Figures 10 and 13 never
+    had one, which nothing noticed because the rule lived in a note rather
+    than in the gate. The line is what tells a reader that a drawing is a
+    control at all, and Figure 13's only instruction sat *inside* its outcome
+    box, below the tabs it does not mention.
+    """
+    problems = []
+    body = html[html.index("</style>") + 8:] if "</style>" in html else html
+    markup = body.split("<script>")[0]
+    # Only the instrument figures. The two plain `svgfig` drawings carry no
+    # controls, so there is nothing to tell a reader to do with them, and
+    # requiring a line over those would be a gate failing correct work.
+    for figure in re.findall(r'<figure class="instrument[^"]*">.*?</figure>',
+                             markup, re.S):
+        if 'class="dothis"' in figure:
+            continue
+        label = re.search(r'instrument-label">([^<]*)', figure)
+        problems.append(
+            "%s has no imperative - nothing above it says what to do with it"
+            % (label.group(1).replace("&nbsp;", " ") if label else "a figure"))
+    return problems
+
+
 def selected_in_markup_checks(html):
     """A group the script selects one of must say which one in the markup.
 
@@ -1071,6 +1098,7 @@ def static_checks(html, name):
     problems.extend(register_table_checks(html))
     problems.extend(boot_state_checks(html))
     problems.extend(selected_in_markup_checks(html))
+    problems.extend(imperative_checks(html))
     problems.extend(button_case_checks(html))
     problems.extend(run_order_checks(html))
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
