@@ -65,7 +65,7 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Thirteen more static checks exist because each caught a live defect. Keep the
+Fourteen more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
@@ -212,6 +212,14 @@ Two more are preventive rather than forensic:
   below the tabs it never mentioned. Only the `instrument` figures are
   required to carry one: the two plain `svgfig` drawings have no controls, and
   demanding a line over those would be the gate failing correct work.
+- **An assertion that cannot fail.** `chk("no answer is on screen before the
+  reader commits", true, true)` sat beside a loop that threw on failure, so the
+  throw was the real check and the `chk` was decoration -- but it counted
+  toward the suite total and read, in a list of passes, exactly like coverage.
+  Any `chk` whose expected value is its actual value is refused, whether that
+  is a repeated literal or the same expression written twice. This is the same
+  argument as a check that has never failed: it is worse than nothing, because
+  it looks like something.
 - **A register table disagreeing with itself.** Figure 7 of chapter 1 states
   each offset three times -- in sixteens, in tens, and again as a number in the
   script, which needs it to compute base + offset. The behavioral assertions

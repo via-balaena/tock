@@ -1283,17 +1283,14 @@ REG["pk-0"].fire("click");
 // The point of the section is committing before reading, so nothing may be
 // revealed until a question is answered.
 (function () {
-  var n;
+  var n, hidden = 0, verdicts = 0;
   for (n = 1; n <= 6; n++) {
-    if (!REG["qa-" + n].classList.contains("is-off")) {
-      throw new Error("question " + n + " gave its answer away before it was answered");
-    }
+    if (REG["qa-" + n].classList.contains("is-off")) { hidden++; }
     if (REG["qy-" + n].classList.contains("is-shown")
-        || REG["qn-" + n].classList.contains("is-shown")) {
-      throw new Error("question " + n + " showed a verdict before it was answered");
-    }
+        || REG["qn-" + n].classList.contains("is-shown")) { verdicts++; }
   }
-  chk("no answer is on screen before the reader commits", true, true);
+  chk("all six answers are hidden before anything is answered", hidden, 6);
+  chk("and not one verdict is showing", verdicts, 0);
 }());
 
 // Exactly one option per question is the correct one, in the markup.
@@ -1357,3 +1354,24 @@ chk("and says what actually happens to one",
 // permission check. The carry-forward line has to agree with it.
 chk("the closing summary talks about permission, not about being stopped",
     REG["carry-tock"].textContent.indexOf("asks whether code is allowed") > -1, true);
+
+// With scripting on, one row's reasoning is open and the rest are put away.
+// With scripting off none of that runs, and every panel stays readable -- the
+// same bargain the six questions make. Assert the scripted half; the other half
+// is a render.
+// Earlier assertions above have already clicked every row, so establish the
+// state rather than assuming the one the page booted into.
+REG["br-2"].fire("click");
+(function () {
+  var i, off = 0;
+  for (i = 0; i < 7; i++) {
+    if (REG["brp-" + i].classList.contains("is-off")) { off++; }
+  }
+  chk("the street table puts six of its seven panels away", off, 6);
+  chk("and the seventh is the one whose verdict is pressed",
+      REG["brp-2"].classList.contains("is-off"), false);
+}());
+chk("the package switcher puts the other package away",
+    REG["pkp-1"].classList.contains("is-off"), true);
+chk("and keeps the one on the reader's desk",
+    REG["pkp-0"].classList.contains("is-off"), false);

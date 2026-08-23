@@ -782,6 +782,55 @@ def boot_state_checks(html):
     return problems
 
 
+def assertion_checks(tests_path):
+    """An assertion whose expected value is its actual value cannot fail.
+
+    `chk("no answer is on screen before the reader commits", true, true)` was
+    written beside a loop that threw on failure, so the real check was the
+    throw and the chk was decoration -- but it counted toward the suite total
+    and read, in a list of passes, exactly like coverage. That is worse than
+    no assertion, which is the same argument as a check that has never failed.
+    """
+    problems = []
+    if not os.path.exists(tests_path):
+        return problems
+    with open(tests_path, encoding="utf-8") as handle:
+        source = handle.read()
+
+    index = 0
+    while True:
+        start = source.find("chk(", index)
+        if start < 0:
+            break
+        cursor, depth = start + 4, 1
+        while depth and cursor < len(source):
+            if source[cursor] == "(":
+                depth += 1
+            elif source[cursor] == ")":
+                depth -= 1
+            cursor += 1
+        args, parts, current, nesting = source[start + 4:cursor - 1], [], "", 0
+        for char in args:
+            if char in "([{":
+                nesting += 1
+            elif char in ")]}":
+                nesting -= 1
+            if char == "," and nesting == 0:
+                parts.append(current)
+                current = ""
+            else:
+                current += char
+        parts.append(current)
+        if len(parts) >= 3:
+            got, want = (" ".join(p.split()) for p in parts[1:3])
+            if got == want:
+                problems.append(
+                    "%s asserts %s against itself, so it cannot fail"
+                    % (" ".join(parts[0].split())[:60], got))
+        index = cursor
+    return problems
+
+
 def imperative_checks(html):
     """Every figure names something to do, above the thing that does it.
 
@@ -1099,6 +1148,7 @@ def static_checks(html, name):
     problems.extend(boot_state_checks(html))
     problems.extend(selected_in_markup_checks(html))
     problems.extend(imperative_checks(html))
+    problems.extend(assertion_checks(os.path.join(TOOLS, name.split('-')[0] + '.tests.js')))
     problems.extend(button_case_checks(html))
     problems.extend(run_order_checks(html))
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
