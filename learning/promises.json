@@ -1,0 +1,192 @@
+[
+  {
+    "id": "ch01-registers-everywhere",
+    "in": "ch01",
+    "says": "on nearly every chip you will meet",
+    "about": null,
+    "why": "A claim about how hardware is built, not about anything this series will show later."
+  },
+  {
+    "id": "ch01-hex-padding",
+    "in": "ch01",
+    "says": "Later figures print it both ways",
+    "about": "ch01",
+    "kept_by": "#0x18]"
+  },
+  {
+    "id": "ch01-unsafe-pattern",
+    "in": "ch01",
+    "says": "You will see it everywhere",
+    "about": "ch03",
+    "kept_by": "unsafe"
+  },
+  {
+    "id": "ch01-crosscompiler-optional",
+    "in": "ch01",
+    "says": "nothing later depends on it",
+    "about": null,
+    "why": "Later in this page, not later in the series: the rest of chapter 1 reads without a toolchain."
+  },
+  {
+    "id": "ch01-next-card-title",
+    "in": "ch01",
+    "says": "Chapter 2 - How code starts running",
+    "about": "ch02",
+    "kept_by": "How Code Starts Running"
+  },
+  {
+    "id": "ch01-next-card-blurb",
+    "in": "ch01",
+    "says": "Chapter 2 follows the chip from the instant power arrives",
+    "about": "ch02",
+    "kept_by": "initialize_ram_jump_to_main"
+  },
+  {
+    "id": "ch01-rom-what-it-does",
+    "in": "ch01",
+    "says": "Chapter 2 is largely about what this code does before yours runs",
+    "about": "ch02",
+    "kept_by": "boot ROM"
+  },
+  {
+    "id": "ch01-first-kilobyte",
+    "in": "ch01",
+    "says": "Chapter 2 opens them up",
+    "about": "ch02",
+    "kept_by": "The rest of that first kilobyte"
+  },
+  {
+    "id": "ch01-mpu-later-chapters",
+    "in": "ch01",
+    "says": "the memory protection unit that later chapters use to fence applications in",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch01-register-hour-later",
+    "in": "ch01",
+    "says": "come back an hour later",
+    "about": null,
+    "why": "An interval of time. The register still holds the value; nothing is owed to a chapter."
+  },
+
+  {
+    "id": "ch02-opening-recap",
+    "in": "ch02",
+    "says": "Chapter 1 followed one instruction down to a wire changing voltage",
+    "about": "ch01",
+    "kept_by": "3.3 volts"
+  },
+  {
+    "id": "ch02-assumed",
+    "in": "ch02",
+    "says": "Chapter 1 is assumed: what an address is, and what a store does",
+    "about": "ch01",
+    "kept_by": "A number naming one location"
+  },
+  {
+    "id": "ch02-six-words-later",
+    "in": "ch02",
+    "says": "Each is one sentence now and repeated in context later",
+    "about": "ch02",
+    "kept_by": "boot ROM"
+  },
+  {
+    "id": "ch02-rom-map",
+    "in": "ch02",
+    "says": "which chapter 1's map of the address space labelled ROM",
+    "about": "ch01",
+    "kept_by": "Built-in code, burned in at the factory"
+  },
+  {
+    "id": "ch02-cpuid-sio",
+    "in": "ch02",
+    "says": "the SIO block chapter 1 spent its whole length on",
+    "about": "ch01",
+    "kept_by": "SIO"
+  },
+  {
+    "id": "ch02-everything-after",
+    "in": "ch02",
+    "says": "Everything chapter 1 described happens after this point",
+    "about": "ch01",
+    "kept_by": "gpio_out_set"
+  },
+  {
+    "id": "ch02-two-things-share",
+    "in": "ch02",
+    "says": "Chapter 1 said two things share that space",
+    "about": "ch01",
+    "kept_by": "Two things share this space"
+  },
+  {
+    "id": "ch02-vector-rest-later",
+    "in": "ch02",
+    "says": "The rest are for later",
+    "about": "ch05",
+    "kept_by": "fault"
+  },
+  {
+    "id": "ch02-loops-store",
+    "in": "ch02",
+    "says": "using the store from chapter 1",
+    "about": "ch01",
+    "kept_by": "#0x18]"
+  },
+  {
+    "id": "ch02-tock-running",
+    "in": "ch02",
+    "says": "everything chapter 1 described can now happen",
+    "about": "ch01",
+    "kept_by": "gpio_out_set"
+  },
+  {
+    "id": "ch02-ppb-stripe",
+    "in": "ch02",
+    "says": "Chapter 1's map labels that whole stripe as the processor's own registers",
+    "about": "ch01",
+    "kept_by": "Controls belonging to the processor core"
+  },
+  {
+    "id": "ch02-vtor-store",
+    "in": "ch02",
+    "says": "The store from chapter 1, doing something drastic",
+    "about": "ch01",
+    "kept_by": "#0x18]"
+  },
+  {
+    "id": "ch02-where-ch1-left-off",
+    "in": "ch02",
+    "says": "which is exactly where chapter 1 left off",
+    "about": "ch01",
+    "kept_by": "gpio_out_set"
+  },
+  {
+    "id": "ch02-ch3-question",
+    "in": "ch02",
+    "says": "So the question chapter 3 asks is",
+    "about": "ch03",
+    "kept_by": "allowed to touch"
+  },
+  {
+    "id": "ch02-next-card-title",
+    "in": "ch02",
+    "says": "Chapter 3 - What a driver may touch",
+    "about": "ch03",
+    "kept_by": "capsule"
+  },
+  {
+    "id": "ch02-next-card-unsafe-cites-ch01",
+    "in": "ch02",
+    "says": "where the unsafe from chapter 1 lives",
+    "about": "ch01",
+    "kept_by": "unsafe"
+  },
+  {
+    "id": "ch02-next-card-unsafe-owed-by-ch03",
+    "in": "ch02",
+    "says": "where the unsafe from chapter 1 lives, and why almost none of Tock needs it",
+    "about": "ch03",
+    "kept_by": "unsafe"
+  }
+]

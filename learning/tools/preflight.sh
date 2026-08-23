@@ -33,6 +33,10 @@ skip() { printf "  ----  %s\n" "$1"; }
 step "The chapter gate"
 if python3 learning/tools/check.py > /tmp/preflight-gate.$$ 2>&1; then
     ok "$(grep -E 'assertions passed' /tmp/preflight-gate.$$ | sed 's/^ *//')"
+    # The debts owed by chapters that do not exist yet. Not failures -- this is
+    # the list the next chapter is written against, so it belongs where it will
+    # be read rather than buried in the gate's own output.
+    grep -E '^  open  ' /tmp/preflight-gate.$$ || true
 else
     cat /tmp/preflight-gate.$$
     bad "check.py"

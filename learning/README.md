@@ -95,7 +95,7 @@ repository root:
 python3 learning/tools/check.py
 ```
 
-This runs three kinds of check against every chapter and exits non-zero if any
+This runs four kinds of check against every chapter and exits non-zero if any
 fails, so it can gate a commit.
 
 **Static checks** on the page: duplicate ids, unbalanced tags, JavaScript
@@ -356,6 +356,50 @@ nothing. They run before any other test touches a control.
 
 Adding a chapter means adding `tools/chNN.tests.js`; the runner discovers it by
 the chapter directory's prefix and needs no changes.
+
+**Promise checks**, across chapters rather than within one, read from
+`promises.json`. A chapter that says something about another chapter has made a
+claim somebody has to keep, and two of the three findings in chapter 2's third
+review pass were exactly that: chapter 1's Figure 6 promised "Chapter 2 opens
+them up" of the two things sharing the first kilobyte of flash, and chapter 2
+opened one of them; Figure 7 told the reader all six instructions were ones
+they had already met, and one appears nowhere else in the series.
+
+That risk grows with every chapter. Chapter 2 makes fourteen claims about what
+chapter 1 says, and chapter 1 was rewritten heavily after chapter 2 was
+drafted -- seven passages converted from prose into tables, ten openings cut.
+Any one of those edits could have removed a sentence chapter 2 cites, and
+nothing would have said so.
+
+The gate is deliberately narrow, because the wide version would be a lie: no
+check can read a chapter and decide whether a debt has been honoured. What it
+does enforce is the bookkeeping.
+
+- **Every cross-reference is written down.** The scan reads the prose *and*
+  every string literal in the script, which is the half that matters: both
+  findings above were panel text, invisible to anything looking at markup
+  alone. An unlogged reference fails the build.
+- **The pattern over-matches on purpose.** It takes any "chapter *N*", and
+  also bare "later", "for now", "not yet", "you will see". A regex sharp
+  enough to tell "chapter 5 covers this" from "come back an hour later" is
+  also sharp enough to drop a real promise silently, and silent is how chapter
+  2 shipped with no sources section at all. A false match costs one ledger
+  line and a written reason; a missed one costs a broken promise nobody sees.
+  Entries with `"about": null` must say `"why"`.
+- **The quoted line must still be on the page.** Rewrite the sentence and its
+  ledger entry goes stale and fails, which is the moment to re-read what it
+  was promising.
+- **A chapter that has shipped must contain what its creditors were told.**
+  `kept_by` is a substring the owing chapter has to carry. It proves the topic
+  is present, not that the argument lands -- the judgement stays with the
+  author, the bookkeeping does not.
+- **Debts owed by chapters that do not exist yet are printed, not failed.**
+  `preflight.sh` surfaces them, because that list is the specification the
+  next chapter gets written against. Chapter 3 currently owes four.
+
+A chapter naming its own number is identifying itself, not referring to
+anything, and is skipped.
+
 
 ### Looking at it
 

@@ -1656,6 +1656,177 @@ def pedagogy_checks(html, chapter):
     return problems
 
 
+# ---------------------------------------------------------------------------
+# The promise ledger.
+#
+# Two of the three findings in chapter 2's third review pass were the same
+# shape: one chapter says something about another chapter, and the other
+# chapter does not back it up. Chapter 1's Figure 6 promised "Chapter 2 opens
+# them up" of two things and chapter 2 opened one. Figure 7 said all six
+# instructions were ones the reader had already met, and one of them appears
+# nowhere else in the series.
+#
+# That class only gets worse from here. Chapter 2 alone makes fourteen claims
+# about what chapter 1 says, and chapter 1 was rewritten heavily after chapter
+# 2 was drafted -- seven passages were converted from prose to tables, ten
+# openings were cut. Any one of those edits could have taken away a sentence
+# chapter 2 cites, and nothing would have said so.
+#
+# What a machine can check here is narrow, and pretending otherwise would be
+# worse than not checking. It cannot read a chapter and decide whether a debt
+# is honoured. It can insist that every cross-reference is written down, that
+# what the ledger says a chapter says is still there, and that a chapter which
+# has shipped contains the text its creditors were promised. The judgement
+# stays with the author; the bookkeeping does not.
+# ---------------------------------------------------------------------------
+
+LEDGER = os.path.join(ROOT, "promises.json")
+
+PLANNED_CHAPTERS = ["ch%02d" % n for n in range(1, 8)]
+
+WORD_NUMBERS = {"one": 1, "two": 2, "three": 3, "four": 4,
+                "five": 5, "six": 6, "seven": 7}
+
+# Deliberately loose. A regex clever enough to tell "chapter 5 covers this"
+# from "come back an hour later" would also be clever enough to drop a real
+# promise quietly, and quiet is how chapter 2 shipped with no sources section.
+# Over-matching costs one ledger line and a written reason; under-matching
+# costs a broken promise nobody sees.
+PROMISE_PAT = re.compile(
+    r"\b(chapters?\s+(?:\d+|one|two|three|four|five|six|seven)"
+    r"|later\b|you will (?:see|meet)\b|for now\b|not yet\b"
+    r"|rest of this series\b)", re.I)
+
+
+def _chapter_sentences(html):
+    """Everything a reader can end up looking at, as sentences.
+
+    The prose, and then every string literal in the script. The literals
+    matter: "Chapter 2 opens them up" was a panel string, and so was Figure
+    7's claim about the six instructions. A scan over the markup alone sees
+    neither, which would have made this gate blind to both of the findings
+    that caused it to be written.
+    """
+    text = re.sub(r"<style.*?</style>", " ", html, flags=re.S)
+    text = re.sub(r"<script.*?</script>", " ", text, flags=re.S)
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+    out = _sentences(text)
+    if "<script>" in html:
+        src = html[html.rindex("<script>") + len("<script>"):
+                   html.rindex("</script>")]
+        for literal in _string_literals(src):
+            out.extend(s for s in _sentences(literal) if len(s.split()) > 3)
+    return out
+
+
+def _named_chapter(phrase):
+    """The chapter directory prefix a matched phrase names, or None."""
+    number = re.search(r"chapters?\s+(\d+|[a-z]+)", phrase, re.I)
+    if not number:
+        return None
+    token = number.group(1).lower()
+    value = int(token) if token.isdigit() else WORD_NUMBERS.get(token)
+    return None if value is None else "ch%02d" % value
+
+
+def promise_checks(root, chapters):
+    """Every cross-reference is logged, still said, and backed where it lands.
+
+    Returns (problems, notes). Notes are the debts owed by chapters that do
+    not exist yet: not failures, but the specification the next chapter is
+    written against.
+    """
+    problems, notes = [], []
+
+    if not os.path.exists(LEDGER):
+        return ["no promises.json - the ledger the promise gate reads"], []
+    with open(LEDGER, encoding="utf-8") as fh:
+        try:
+            entries = json.load(fh)
+        except ValueError as exc:
+            return ["promises.json is not readable JSON: %s" % exc], []
+
+    prefix_of = {c.split("-", 1)[0]: c for c in chapters}
+    text_of = {}
+    for chapter in chapters:
+        page = os.path.join(root, chapter, "index.html")
+        if os.path.exists(page):
+            with open(page, encoding="utf-8") as fh:
+                text_of[chapter.split("-", 1)[0]] = _chapter_sentences(fh.read())
+
+    seen_ids = set()
+    for entry in entries:
+        eid = entry.get("id", "")
+        where = entry.get("in", "")
+        says = entry.get("says", "")
+        if not eid or eid in seen_ids:
+            problems.append("ledger entry with a missing or repeated id: %r"
+                            % (eid or entry))
+            continue
+        seen_ids.add(eid)
+        if where not in text_of:
+            problems.append("%s is logged in %s, which is not a chapter here"
+                            % (eid, where or "nowhere"))
+            continue
+        if not says or not PROMISE_PAT.search(says):
+            problems.append(
+                "%s quotes %r, which contains no reference for it to be "
+                "logging" % (eid, says))
+            continue
+        # The quoted line has to still be on the page. This is the half that
+        # catches an edit: rewrite the sentence and its ledger entry goes
+        # stale, which is the moment to re-read what it was promising.
+        if not any(says in s for s in text_of[where]):
+            problems.append(
+                "%s quotes %r, which %s no longer says" % (eid, says, where))
+            continue
+
+        owed = entry.get("about")
+        if owed is None:
+            if not entry.get("why", "").strip():
+                problems.append(
+                    "%s claims %r is not a reference but gives no reason"
+                    % (eid, says))
+            continue
+        if owed not in PLANNED_CHAPTERS:
+            problems.append("%s points at %s, which is not one of the seven"
+                            % (eid, owed))
+            continue
+        kept = entry.get("kept_by", "")
+        if not kept:
+            problems.append("%s says %s owes something but not what" % (eid, owed))
+            continue
+        if owed not in text_of:
+            notes.append("%s owes %s: %s" % (owed, where, kept))
+            continue
+        if not any(kept in s for s in text_of[owed]):
+            problems.append(
+                "%s: %s says %r, and %s does not say %r"
+                % (eid, where, says, owed, kept))
+
+    # The other half. A reference nobody wrote down is the case this gate
+    # exists for, so an unlogged one fails rather than warns.
+    logged = collections.defaultdict(list)
+    for entry in entries:
+        if entry.get("in") and entry.get("says"):
+            logged[entry["in"]].append(entry["says"])
+    for prefix, sentences in sorted(text_of.items()):
+        for sentence in sentences:
+            for match in PROMISE_PAT.finditer(sentence):
+                phrase = match.group(0)
+                # A chapter naming its own number is identifying itself, not
+                # referring to anything.
+                if _named_chapter(phrase) == prefix:
+                    continue
+                if any(says in sentence and phrase.lower() in says.lower()
+                       for says in logged[prefix]):
+                    continue
+                problems.append(
+                    "%s says %r and no ledger entry covers the %r in it"
+                    % (prefix, sentence[:90], phrase))
+    return problems, notes
+
+
 def main():
     chapters = sorted(d for d in os.listdir(ROOT)
                       if d.startswith("ch")
@@ -1717,6 +1888,19 @@ def main():
 
         if bad:
             failures += 1
+
+    # Across chapters, not within one, so it runs once after all of them.
+    print("\npromises")
+    print("-" * len("promises"))
+    problems, notes = promise_checks(ROOT, chapters)
+    for problem in problems:
+        print("  FAIL  %s" % problem)
+    if not problems:
+        print("  pass  every cross-reference is logged and backed")
+    else:
+        failures += 1
+    for note in sorted(notes):
+        print("  open  %s" % note)
 
     print("\n%s" % ("all chapters passed" if not failures
                     else "%d chapter(s) with failures" % failures))
