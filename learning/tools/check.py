@@ -838,6 +838,18 @@ def assertion_checks(tests_path):
                     "%s picks between two identical values, so it cannot fail"
                     % " ".join(parts[0].split())[:60])
         index = cursor
+    # A comparison that cannot fail. `x.length >= 0` is never false, and I have
+    # now written the tautology three times: chk(..., true, true), a ternary
+    # whose arms agree, and this. Each time within an hour of adding the rule
+    # meant to catch the previous one.
+    for line in re.findall(r"chk\([^;]*?\);", source, re.S):
+        flat = " ".join(line.split())
+        if re.search(r"\.length\s*>=\s*0", flat) or re.search(
+                r"\.length\s*>\s*-\d", flat):
+            problems.append(
+                "an assertion compares a length against zero, which cannot "
+                "fail: %s" % flat[:90])
+
     return problems
 
 
@@ -1489,12 +1501,13 @@ def behavior_checks(html, tests_path):
 MUST_DEFINE = {
     "ch01": [
         "address", "atomic", "bank", "base address", "bit", "byte", "core",
-        "disassembler", "GPIO", "hexadecimal", "interrupt", "mask", "offset",
-        "optimizer", "peripheral", "pin", "register", "SIO", "store",
-        "volatile",
+        "crate", "disassembler", "flash", "GPIO", "hexadecimal", "instruction",
+        "interrupt", "kernel", "mask", "offset", "optimizer", "peripheral",
+        "pin", "processor", "register", "SIO", "store", "volatile",
     ],
     "ch03": [
-        "board", "capsule", "generic", "HIL", "trait", "unsafe",
+        "board", "capsule", "generic", "HIL", "process", "struct", "trait",
+        "unsafe", "virtualizer",
     ],
 }
 
@@ -1809,6 +1822,69 @@ def pedagogy_checks(html, chapter):
 # stays with the author; the bookkeeping does not.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Vocabulary the series leans on.
+#
+# The existing rule is bidirectional but narrow: every term a chapter marks
+# <dfn> has to be in its glossary, and vice versa. It has nothing to say about a
+# word the chapter uses constantly and never marks at all.
+#
+# Chapter 3 used `crate` fourteen times, and its central argument turns on it --
+# "what makes it legal there and illegal here is only which crate it sits in".
+# It used `process` twelve times, all load-bearing, three chapters before the
+# one that explains what a process is. Neither was defined anywhere in the
+# series, and nothing noticed, because both rules were satisfied: the terms were
+# never marked, so they were never required in a glossary.
+#
+# A word used this often is load-bearing whether or not the author noticed. The
+# threshold is deliberately blunt.
+# ---------------------------------------------------------------------------
+
+LEANED_ON = 4
+
+# Terms that carry weight when they appear, beyond TRACKED_TERMS. Kept separate
+# because TRACKED_TERMS drives the per-sentence novelty limit, which is a
+# different question from whether the series ever says what a word means.
+WEIGHT_BEARING = [
+    "capsule", "crate", "generic", "grant", "HIL", "lifetime", "panic",
+    "process", "scheduler", "struct", "syscall", "timeslice", "trait",
+    "unsafe", "upcall", "virtualizer",
+]
+
+
+def vocabulary_checks(root, chapters):
+    """A word a chapter leans on has to be defined somewhere by then.
+
+    Somewhere, not necessarily here: chapter 3 may lean on `flash` because
+    chapter 2 defined it. What it may not do is lean on a word no chapter has
+    ever explained.
+    """
+    problems = []
+    defined = set()
+    watch = sorted(set(WEIGHT_BEARING) | set(TRACKED_TERMS), key=len,
+                   reverse=True)
+    for chapter in chapters:
+        page = os.path.join(root, chapter, "index.html")
+        if not os.path.exists(page):
+            continue
+        with open(page, encoding="utf-8") as fh:
+            html = fh.read()
+        # This chapter's own definitions count for this chapter. The glossary
+        # sits near the top, before the prose that leans on it, so crediting
+        # them only from the next chapter onward reported every word chapter 1
+        # defines as undefined -- 23 of them, including `address`.
+        defined |= {d.lower() for d in re.findall(r"<dfn[^>]*>(.*?)</dfn>", html)}
+        prose = " ".join(_sentences(_strip_for_prose(html)))
+        for term in watch:
+            uses = len(re.findall(r"\b%ss?\b" % re.escape(term), prose,
+                                  re.IGNORECASE))
+            if uses >= LEANED_ON and term.lower() not in defined:
+                problems.append(
+                    "%s uses '%s' %d times and no chapter has defined it"
+                    % (chapter.split("-", 1)[0], term, uses))
+    return problems
+
+
 LEDGER = os.path.join(ROOT, "promises.json")
 
 PLANNED_CHAPTERS = ["ch%02d" % n for n in range(1, 8)]
@@ -2029,6 +2105,10 @@ def main():
     # Across chapters, not within one, so it runs once after all of them.
     print("\npromises")
     print("-" * len("promises"))
+    for problem in vocabulary_checks(ROOT, chapters):
+        print("  FAIL  %s" % problem)
+        failures += 1
+
     problems, notes = promise_checks(ROOT, chapters)
     for problem in problems:
         print("  FAIL  %s" % problem)

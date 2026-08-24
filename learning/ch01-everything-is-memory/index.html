@@ -1868,7 +1868,7 @@ dfn {
     <ol>
       <li>Read something like <code class="addr">0xD0000018</code> and say which piece of hardware answers to it, and why that one.</li>
       <li>Meet an unfamiliar line in a datasheet and predict what reading that location gives back &mdash; or say honestly that nothing promises you anything.</li>
-      <li>Explain why <code>x |= 1</code> is a real bug on a chip with two processors, and what the hardware offers instead.</li>
+      <li>Explain why <code>x |= 1</code> is a real bug on a chip with two <dfn>processor</dfn>s, and what the hardware offers instead.</li>
     </ol>
     <p class="cost">Plan on an hour, not twenty minutes. There is nothing to install and no hardware needed, and nothing here is a race.</p>
   </div>
@@ -2008,7 +2008,7 @@ dfn {
       <dt id="dt-register"><button class="cast-word" id="btn-register" aria-pressed="false"><dfn>register</dfn></button></dt>
       <dd id="dd-register">A fixed-width slot of hardware, 32 bits wide here, that lives at an address and that some part of the chip is watching.</dd>
       <dt id="dt-store"><button class="cast-word" id="btn-store" aria-pressed="false"><dfn>store</dfn></button></dt>
-      <dd id="dd-store">What a processor does when it puts a number at an address. One machine instruction.</dd>
+      <dd id="dd-store">What a processor does when it puts a number at an address. One machine <dfn>instruction</dfn>.</dd>
     </dl>
   </div>
   <div class="instrument-note">Notice that nothing in the right-hand column is reachable. You cannot touch a register or watch a store happen. The whole of the rest of this chapter is about reaching that column using only the middle one.</div>
@@ -2294,7 +2294,7 @@ dfn {
     </div>
     <div class="cats">
       <p class="cat is-lit" id="cat-gpio"><strong>26 holes carry a GPIO you may drive.</strong> Any of these will light a small lamp. This is the ordinary case.</p>
-      <p class="cat is-lit" id="cat-tock"><strong>2 of those are already spoken for.</strong> Tock sends its own console output through GPIO&nbsp;0 and GPIO&nbsp;1, so driving either one cuts off the kernel while you watch.</p>
+      <p class="cat is-lit" id="cat-tock"><strong>2 of those are already spoken for.</strong> Tock sends its own console output through GPIO&nbsp;0 and GPIO&nbsp;1, so driving either one cuts off the <dfn>kernel</dfn> while you watch.</p>
       <p class="cat" id="cat-gnd"><strong>8 holes are 0 volts.</strong> Seven are plain ground; the eighth is a quieter ground kept for the four pins that measure voltages. Your lamp&rsquo;s far end goes to one of the seven plain ones.</p>
       <p class="cat" id="cat-pwr"><strong>5 holes are power, not signal.</strong> Some feed the board and some are fed by it. None of them answers to a store.</p>
       <p class="cat" id="cat-sys"><strong>1 hole resets the chip.</strong> Pull it to 0 volts and the RP2350 stops and starts again.</p>
@@ -2636,7 +2636,7 @@ dfn {
     <dt>processor register</dt><dd>one of a handful of tiny scratch slots inside the processor itself, called <code>r0</code>, <code>r1</code> and so on, holding whatever it is working on this instant</dd>
   </dl>
   <p class="note">Same word, different things. Where it matters below, the text says which one.</p>
-  <p>Here is SIO's output section: the offsets and their order exactly as Tock's chip crate declares them, with the address arithmetic worked alongside.</p>
+  <p>Here is SIO's output section: the offsets and their order exactly as Tock's chip <dfn>crate</dfn> declares them, with the address arithmetic worked alongside.</p>
 </section>
 
 <figure class="instrument">
@@ -2672,7 +2672,7 @@ dfn {
         </span>
       </span>
     </div>
-    <p class="figcue">Four of these eight are for the high half: GPIO 32 to 47, plus the pins that talk to the flash chip and the USB socket. Each one sits directly after its twin. Take them away and watch what the offsets do.</p>
+    <p class="figcue">Four of these eight are for the high half: GPIO 32 to 47, plus the pins that talk to the <dfn>flash</dfn> chip and the USB socket. Each one sits directly after its twin. Take them away and watch what the offsets do.</p>
     <div class="controls">
       <button type="button" id="rg-twins" aria-pressed="false">
         <span class="tw-off">Take the four away</span>
@@ -3640,6 +3640,11 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <dt>bit</dt><dd>A single 0 or 1.</dd>
     <dt>byte</dt><dd>Eight bits. The unit addresses count in, which is why 32-bit registers sit 4 apart.</dd>
     <dt>compiler</dt><dd>The program that turns your source into machine instructions, deciding for itself which ones to emit.</dd>
+    <dt>crate</dt><dd>A Rust library, compiled as one unit. Tock's chip support, its kernel and its drivers are separate ones.</dd>
+    <dt>flash</dt><dd>Memory that keeps what it holds when the power is off. Your program lives here.</dd>
+    <dt>instruction</dt><dd>One step the processor can perform, encoded as a number. This chapter follows exactly one of them.</dd>
+    <dt>kernel</dt><dd>The program that owns the machine and decides what everything else is allowed to do. Tock is one.</dd>
+    <dt>processor</dt><dd>The part of the chip that fetches instructions and carries them out. This chip has two.</dd>
     <dt>core</dt><dd>One complete processor. This chip has two, running at the same time on the same memory.</dd>
     <dt>disassembler</dt><dd>A tool that reads a compiled program and prints its instructions back in readable form.</dd>
     <dt>GPIO</dt><dd>General-purpose input/output: a pin with no fixed job, so you decide what it means.</dd>

@@ -322,3 +322,28 @@ chk("the note places this driver in the distribution",
     REG["fig1note"].textContent.indexOf("the largest has thirty-one") > -1, true);
 chk("and says the rule survives the count",
     REG["fig1note"].textContent.indexOf("does not change the rule") > -1, true);
+
+// ---- what the fourth review pass found ----
+// The chapter leaned on words no chapter had ever defined: `crate` fourteen
+// times, with the whole argument resting on it, and `process` twelve times,
+// three chapters before the one that explains what a process is.
+chk("the words the chapter leans on are in its own list",
+    REG["words"].textContent.indexOf("process") > -1
+      && REG["words"].textContent.indexOf("struct") > -1
+      && REG["words"].textContent.indexOf("virtualizer") > -1, true);
+(function () {
+  var i, missing = 0;
+  var WORDS = ["capsule", "board", "process", "struct", "virtualizer",
+               "trait", "HIL", "generic", "unsafe"];
+  for (i = 0; i < WORDS.length; i++) {
+    if (REG["words"].textContent.indexOf(WORDS[i]) < 0) { missing++; }
+  }
+  chk("all nine of the words the heading promises are in the list", missing, 0);
+}());
+
+// The counts and the twelve lines are the same argument, and the chain sat
+// between them with the only bridge buried in a panel nobody has to click.
+chk("the chain section says where the answer lands before taking the detour",
+    REG["bridge"].textContent.indexOf("Figure 5 is those twelve") > -1, true);
+chk("and says why the detour comes first",
+    REG["bridge"].textContent.indexOf("stands on top of them") > -1, true);

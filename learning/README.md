@@ -103,8 +103,21 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Seventeen more static checks exist because each caught a live defect. Keep the
+Eighteen more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A word the series leans on and never defines.** The `<dfn>` rule is
+  bidirectional but narrow: every term a chapter *marks* has to be in its
+  glossary and vice versa. It says nothing about a word used constantly and
+  never marked at all. Chapter 3 used `crate` fourteen times with its whole
+  argument resting on it -- "what makes it legal there and illegal here is only
+  which crate it sits in" -- and `process` twelve times, three chapters before
+  the one that explains what a process is. Neither was defined anywhere, and
+  both existing rules were satisfied, because an unmarked term is never
+  required in a glossary. Any watched term used four or more times in a chapter
+  must now be defined by that chapter or an earlier one. It found nine: chapter
+  1 had never said what a kernel, an instruction, a processor, a crate or flash
+  was, and chapter 2 had never defined RAM.
 
 - **A control the script never reaches.** Chapter 3's Figure 8 shipped with
   three buttons, three panels, a correct opening state in the markup and no

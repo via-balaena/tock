@@ -686,19 +686,22 @@ dfn {
       <li>Follow a call from the LED driver down to the store from chapter 1, and say which layer first knows what chip this is.</li>
       <li>Say what a driver can still do to you anyway, and why the compiler has nothing to say about it.</li>
     </ul>
-    <p class="cost">Plan on forty minutes. Chapters 1 and 2 are assumed: what an address is, what a store does, and how the kernel got started. So is enough Rust to read a struct with a lifetime and a type parameter on it, which the Rust Book reaches in its chapter 10.</p>
+    <p class="cost">Plan on forty minutes. Chapters 1 and 2 are assumed: what an address is, what a store does, and how the kernel got started. So is enough Rust to read a <dfn>struct</dfn> with a lifetime and a type parameter on it, which the Rust Book reaches in its chapter 10.</p>
   </div>
 </section>
 
 <section class="col">
-  <h2>Six words, before we start</h2>
+  <h2>Nine words, before we start</h2>
   <p>Each is one sentence now and repeated in context below. None is hard.</p>
 </section>
 
 <div class="col">
-  <dl class="glossary cast">
+  <dl class="glossary cast" id="words">
     <dt><dfn>capsule</dfn></dt><dd>Tock's word for a driver. An ordinary Rust struct with no special powers.</dd>
     <dt><dfn>board</dfn></dt><dd>The crate that says which chip and which drivers one particular product has, and wires them to each other.</dd>
+    <dt><dfn>process</dfn></dt><dd>An application, loaded separately from the kernel and running under its supervision.</dd>
+    <dt><dfn>struct</dfn></dt><dd>A Rust type that groups named fields together. A capsule is one.</dd>
+    <dt><dfn>virtualizer</dfn></dt><dd>A capsule whose job is to let several other capsules share one piece of hardware.</dd>
     <dt><dfn>trait</dfn></dt><dd>A list of things a type promises it can do. The compiler checks the promise.</dd>
     <dt><dfn>HIL</dfn></dt><dd>Hardware interface layer: a trait naming what a piece of hardware can do, without naming a chip.</dd>
     <dt><dfn>generic</dfn></dt><dd>Code written against a trait instead of against one type, so a single copy serves every chip.</dd>
@@ -834,7 +837,8 @@ dfn {
 
 <section class="col">
   <h2>The chain, end to end</h2>
-  <p>A process asks for its first LED to be turned on. How that request crosses from the process into the kernel is chapter 6; pick it up on the kernel's side, in the capsule, and follow it down.</p>
+  <p id="bridge">The answer is twelve lines, and Figure 5 is those twelve. They read better after seeing what stands on top of them, so take one call from the top and follow it all the way down.</p>
+  <p>A process asks for its first LED to be turned on. How that request crosses from the process into the kernel is chapter 6; pick it up on the kernel's side, in the capsule.</p>
 </section>
 
 <figure class="instrument">
