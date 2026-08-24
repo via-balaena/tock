@@ -178,7 +178,7 @@ chk("and in how many LEDs they have",
 // The answer text lives in the markup and starts hidden; clicking any option
 // reveals it and marks which was right. A wrong click must still reveal.
 (function () {
-  var CASE = [["qa-", 3, 1, "qan"], ["qb-", 3, 2, "qbn"], ["qc-", 3, 2, "qcn"]];
+  var CASE = [["qa-", 3, 0, "qan"], ["qb-", 3, 2, "qbn"], ["qc-", 3, 2, "qcn"]];
   var i, c, wrong;
   for (i = 0; i < CASE.length; i++) {
     c = CASE[i];
@@ -213,9 +213,8 @@ chk("goal 3, which layer knows the chip, is delivered by figure 4",
 chk("the boundary of the guarantee is on the page",
     REG["pairs-trust"].textContent.indexOf("taken away") > -1
       && REG["pairs-trust"].textContent.indexOf("left alone") > -1, true);
-chk("and the half that is left alone names both ways a capsule still ends it",
-    REG["pairs-trust"].textContent.indexOf("panic") > -1
-      && REG["pairs-trust"].textContent.indexOf("refuse to return") > -1, true);
+chk("and the row no longer claims a capsule cannot disturb another one at all",
+    REG["pairs-trust"].textContent.indexOf("may be shared") > -1, true);
 // A fourth question, on the section a reader is most likely to skip.
 chk("the loop question starts hidden", REG["qdn"].classList.contains("is-off"), true);
 REG["qd-0"].fire("click");
@@ -247,3 +246,48 @@ chk("the third candidate is the declaration that is actually in the tree",
     REG["cd-2"].textContent.indexOf("const SIO_BASE") > -1, true);
 chk("and the panel cites it by line",
     REG["cdp-2"].textContent.indexOf("gpio.rs:1168") > -1, true);
+
+// ---- what the second review pass found ----
+// The boundary section was prose only. On the skim path -- headings,
+// imperatives and notes, which is what most readers take -- it was a bare
+// heading, in the one place a reader is most likely to stop reading.
+chk("the boundary section has an instrument of its own",
+    REG["st-0"].getAttribute("aria-pressed"), "true");
+walk("st-", "stp-", 3, "figure 8");
+REG["st-0"].fire("click");
+chk("it names the panic handler's return type",
+    REG["stp-0"].textContent.indexOf("never returns") > -1, true);
+chk("it says nothing preempts a capsule that will not return",
+    REG["stp-1"].textContent.indexOf("never left") > -1, true);
+// The third one is the finding: the earlier wording said a capsule bug could
+// not touch another capsule's state, which is true of memory and false of
+// everything a virtualizer shares.
+chk("and it says what a capsule can still do to another one",
+    REG["stp-2"].textContent.indexOf("degrades every other client") > -1, true);
+chk("with the board's own count of who shares what",
+    REG["stp-2"].textContent.indexOf("four capsules on one serial port") > -1, true);
+
+// Tock's kernel is no_std and has no allocator. Chapter 7 is about handing a
+// driver per-process state without one, so naming an allocator here would have
+// contradicted a chapter that is not written yet.
+REG["ar-1"].fire("click");
+chk("the kernel panel no longer lists an allocator",
+    REG["arp-1"].textContent.indexOf("memory allocator"), -1);
+chk("and says so as the point",
+    REG["arp-1"].textContent.indexOf("there is no allocator") > -1, true);
+REG["ar-0"].fire("click");
+
+// Three of the four self-check answers used to be the structurally odd option,
+// so the quiz could be passed on shape alone. Each question's options are now
+// the same shape as their siblings, which no assertion can prove -- but the
+// answer moving off the last position is at least visible.
+chk("question 1's answer is no longer the middle one by default",
+    REG["qa-0"].textContent.indexOf("raw pointer") > -1, true);
+chk("and none of its options begins with yes or no",
+    (REG["qa-0"].textContent + REG["qa-1"].textContent + REG["qa-2"].textContent)
+      .toLowerCase().indexOf("yes,"), -1);
+
+// Two words for one thing, joined only in the glossary until now.
+chk("the two words are tied together in the prose as well",
+    document.getElementById("wordpair").textContent
+      .indexOf("both words for the same thing") > -1, true);

@@ -320,5 +320,12 @@
     "says": "it is why chapter 4 is about code the kernel does not compile at all",
     "about": "ch04",
     "kept_by": "process"
+  },
+  {
+    "id": "ch03-no-allocator-points-at-ch7",
+    "in": "ch03",
+    "says": "never asks for memory it did not already have, which is the problem chapter 7 is about",
+    "about": "ch07",
+    "kept_by": "grant"
   }
 ]

@@ -1071,6 +1071,49 @@ def same_rule_contrast_checks(component_css, tokens):
     return problems
 
 
+def wired_checks(html):
+    """A control the script never reaches.
+
+    Chapter 3's Figure 8 shipped with three buttons, three panels, a correct
+    opening state in the markup, and no listener: the `group()` call that binds
+    them was never added. Every static check passed, because the markup was
+    internally consistent -- the opening state a script would produce is the one
+    that was already there. Only walking the figure caught it.
+
+    So: every button that declares `aria-pressed` has to be reachable from the
+    script, either by its own id or by the prefix the script builds ids from.
+    """
+    if "<script>" not in html:
+        return []
+    script = html[html.rindex("<script>") + len("<script>"):
+                  html.rindex("</script>")]
+    strings = set(_string_literals(script))
+    problems = []
+    for tag in re.findall(r"<button[^>]*aria-pressed[^>]*>", html):
+        found = re.search(r'\bid="([^"]+)"', tag)
+        if not found:
+            problems.append("a button declares aria-pressed but has no id")
+            continue
+        ident = found.group(1)
+        # Named outright, or built from a prefix the script holds. The prefix
+        # is not always an index: chapter 1 builds "opt-" + a word and "btn-" +
+        # a word, so stripping trailing digits alone reported nine buttons that
+        # are bound perfectly well. Any literal that is a prefix of the id
+        # counts, and a class the script selects on counts too, since
+        # `querySelectorAll(".bet-opt")` never mentions an id at all.
+        classes = re.search(r'\bclass="([^"]*)"', tag)
+        tokens = set(classes.group(1).split()) if classes else set()
+        if (ident in strings
+                or tokens & strings
+                or any(len(lit) >= 3 and ident.startswith(lit)
+                       for lit in strings)):
+            continue
+        problems.append(
+            "nothing in the script reaches %s, so its aria-pressed is a "
+            "promise the page does not keep" % ident)
+    return problems
+
+
 def dead_css_checks(html):
     """A rule whose class or id appears nowhere else on the page.
 
@@ -1263,6 +1306,7 @@ def static_checks(html, name):
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
+    problems.extend(wired_checks(html))
 
     return problems
 

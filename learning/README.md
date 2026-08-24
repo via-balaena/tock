@@ -23,7 +23,7 @@ arc closes where the first chapter said it would.
 |---|-------|--------|--------|
 | 1 | [Everything Is Memory](ch01-everything-is-memory/) | One store, from `str` to 3.3 V on a pin, and why nothing stops it landing anywhere | published |
 | 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
-| 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip | published |
+| 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
 | 4 | What a process is | Kernel against application -- how an app is loaded, what its memory looks like, and why it is not simply more kernel | planned |
 | 5 | The memory protection unit | The hardware fence the kernel programs around a process before letting it run | planned |
 | 6 | Asking the kernel | The eight syscall classes, upcalls and allowed buffers: the only door through that fence | planned |
@@ -103,8 +103,19 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Sixteen more static checks exist because each caught a live defect. Keep the
+Seventeen more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A control the script never reaches.** Chapter 3's Figure 8 shipped with
+  three buttons, three panels, a correct opening state in the markup and no
+  listener -- the one line binding them was never written. Every static check
+  passed, because the markup was internally consistent: the opening state a
+  script would have produced was already there. Only walking the figure in the
+  behavioural suite caught it. Now a button that declares `aria-pressed` has to
+  be reachable from the script, by its own id, by a prefix the script builds ids
+  from, or by a class the script selects on. The first version of this check
+  only knew about numeric suffixes and reported nine correctly-bound buttons in
+  chapter 1, which build ids as `"opt-" + a word`.
 
 - **A CSS rule the page never uses.** Chapter 2 was built by copying chapter
   1's stylesheet and deleting what it did not need -- 237 rules went, and 23

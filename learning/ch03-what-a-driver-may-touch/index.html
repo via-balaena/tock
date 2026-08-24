@@ -709,6 +709,7 @@ dfn {
   <h2>The kernel has everything. A driver should not.</h2>
   <p>Chapter 2 ended with Tock running and holding the entire machine: every address, every peripheral, and nothing in the way &mdash; which is exactly where chapter 1 left off.</p>
   <p>That is defensible for the kernel. It is thirty-two thousand lines, and every one of them is read by people who work on Tock itself.</p>
+  <p id="wordpair">Tock calls them capsules, and this chapter uses both words for the same thing: the crate is named one and the job is the other.</p>
   <p>Drivers are a different proposition. There are eighty-eight thousand lines of them, they are written one board at a time, and they are what a newcomer writes first. So the question chapter 2 ended on: when you add a driver, what should it be <em>allowed to touch</em>?</p>
   <p>The usual answer is a rule and a code review. Here is what you may do; please do not do the other thing. Tock's answer is different, and it is the subject of this chapter. A driver reaches less than the kernel not because it agreed to, but because there is no way to write down the thing it would reach.</p>
 </section>
@@ -794,7 +795,7 @@ dfn {
 </figure>
 
 <section class="col">
-  <h2>So where is the <code>unsafe</code>?</h2>
+  <h2>How much of Tock is unchecked</h2>
   <p>Somewhere, something has to turn a number from the datasheet into a thing a program can use. Rust cannot check that step, because nothing in the language knows what is at <code class="addr">0xD0000000</code>. The question is only how much code that step is allowed to contaminate.</p>
 </section>
 
@@ -810,7 +811,7 @@ dfn {
       <button type="button" id="ar-1" aria-pressed="false">kernel</button>
       <button type="button" id="ar-2" aria-pressed="false">chips/rp2350</button>
       <button type="button" id="ar-3" aria-pressed="false">arch/cortex-m</button>
-      <button type="button" id="ar-4" aria-pressed="false">the Pico 2 board</button>
+      <button type="button" id="ar-4" aria-pressed="false">boards/raspberry_pi_pico_2</button>
     </div>
     <div class="costgrid">
       <div class="costcell"><span class="costcell-k">Rust files</span><span class="costcell-v" id="ar-files">269</span></div>
@@ -819,7 +820,7 @@ dfn {
     </div>
     <div class="costsay">
       <p class="costp is-on" id="arp-0">Eighty-eight thousand lines of drivers, and the word appears five times &mdash; every one of them inside a comment. Five crates make up this directory, and all five open with <b>#![forbid(unsafe_code)]</b>.</p>
-      <p class="costp is-off" id="arp-1">The scheduler, the memory allocator, the syscall layer, the code that starts and stops processes. This is the part that is small on purpose, and the part everyone reads.</p>
+      <p class="costp is-off" id="arp-1">The scheduler, the syscall layer, and the code that starts and stops processes. Notice what is not in that list: there is no allocator. The kernel is <b>no_std</b> and never asks for memory it did not already have, which is the problem chapter 7 is about.</p>
       <p class="costp is-off" id="arp-2">Ten files describing one chip. Twelve of the eighteen are the same line with a different number in it, and Figure 5 is those twelve.</p>
       <p class="costp is-off" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 2, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
       <p class="costp is-off" id="arp-4">Three, and all three are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, and main. They are the entry points something outside Rust calls.</p>
@@ -978,15 +979,33 @@ dfn {
 
 <div class="col">
   <dl class="glossary inline" id="pairs-trust">
-    <dt>taken away</dt><dd>it cannot reach memory it was never handed, so no bug in a capsule can corrupt the kernel or another capsule's state</dd>
-    <dt>left alone</dt><dd>it is compiled into the same binary and runs in the same address space, so it can still panic, and it can still refuse to return</dd>
+    <dt>taken away</dt><dd>it cannot touch memory it was never handed, so no bug in a capsule can corrupt the kernel's memory or another capsule's</dd>
+    <dt>left alone</dt><dd>everything else. It is compiled into the same binary, it runs in the same address space, and what it <em>was</em> handed may be shared</dd>
   </dl>
 </div>
 
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-title">Three things a capsule can still do to you</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each one. None of these is a memory error, and the compiler prevents none of them.</p>
+    <div class="blk" role="group" aria-label="Three failures the type system does not prevent">
+      <button type="button" id="st-0" aria-pressed="true">panic</button>
+      <button type="button" id="st-1" aria-pressed="false">never return</button>
+      <button type="button" id="st-2" aria-pressed="false">hog what it shares</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="stp-0">There is one <b>#[panic_handler]</b> in the whole binary and its return type is <b>!</b>, meaning it never returns. The comment above that decision says the system "is no longer in a well-defined state". On this board the handler then takes GPIO&nbsp;25 for itself and blinks it forever &mdash; the same pin Figure 6 handed to the driver.</p>
+      <p class="blkp is-off" id="stp-1">A timeslice governs a process, not kernel code. A capsule is <em>called</em> by the kernel and runs until it returns, so one that never returns is never left. Nothing preempts it and nothing restarts it.</p>
+      <p class="blkp is-off" id="stp-2">What a capsule was handed is often shared. This board puts four capsules on one serial port and two on one timer, each through a <b>virtualizer</b> whose stated job is to "allow multiple Tock capsules to use the same UART bus". A capsule that takes more than its share degrades every other client of it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the compiler stopped none of these. It governs what a capsule can reach, and has nothing to say about what it does with what it reached.</div>
+</figure>
+
 <section class="col">
-  <p>Either one ends the machine. There is a single <code>#[panic_handler]</code> in the whole binary and its return type is <code>!</code>, meaning it never returns. The comment above that decision says why: the system "is no longer in a well-defined state".</p>
-  <p>On this board it then takes GPIO&nbsp;25 for itself and blinks it forever &mdash; the same pin Figure 6 handed to the driver, driven now by the handler instead.</p>
-  <p>A loop is no better. A timeslice governs a process, not kernel code, so a capsule that never returns is never left.</p>
   <p>Memory safety, then, and not good behaviour. That is the whole of what a type system was ever going to give, and it is why chapter 4 is about code the kernel does not compile at all.</p>
 </section>
 
@@ -996,13 +1015,13 @@ dfn {
 
 <div class="col selfcheck">
   <div class="q">
-    <p class="q-ask">A capsule holds one field: <code>&amp;'a [&amp;'a L; NUM_LEDS]</code>. Could it read back the value of <code>gpio_out_set</code>?</p>
+    <p class="q-ask">A capsule holds one field: <code>&amp;'a [&amp;'a L; NUM_LEDS]</code>. What would it take to read <code>gpio_out_set</code> from there?</p>
     <div class="q-opts" role="group" aria-label="Answers to the first question">
-      <button type="button" class="q-opt" id="qa-0" aria-pressed="false">Yes, by dereferencing the address</button>
-      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">No, and two separate things stop it</button>
-      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">Only if the board allows it</button>
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false">A raw pointer, which its crate will not compile</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">A different HIL trait, handed over by the board</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">Permission from the kernel, checked at run time</button>
     </div>
-    <p class="q-answer is-off" id="qan">No. Nothing in scope is an address, and getting one would need <code>unsafe</code>, which the crate forbids. Chapter 1 adds a second reason: that register is write-only, so even the chip layer is promised nothing by reading it.</p>
+    <p class="q-answer is-off" id="qan">A raw pointer, and the crate will not compile one. No HIL offers a raw register either, and the kernel is not asked at run time &mdash; the refusal happens at build time. Chapter 1 adds a second reason: that register is write-only, so even the chip layer is promised nothing by reading it.</p>
   </div>
   <div class="q">
     <p class="q-ask">Which of the six steps in Figure 4 first knows the chip is an RP2350?</p>
@@ -1016,18 +1035,18 @@ dfn {
   <div class="q">
     <p class="q-ask">A capsule hits a loop it never leaves. What stops it?</p>
     <div class="q-opts" role="group" aria-label="Answers to the third question">
-      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The scheduler preempts it</button>
-      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The kernel restarts the capsule</button>
-      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">Nothing does</button>
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The scheduler preempts it after its timeslice</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The kernel notices and restarts the capsule</button>
+      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">The rest of the kernel waits for it to finish</button>
     </div>
     <p class="q-answer is-off" id="qdn">Nothing. A timeslice governs a process; a capsule is <em>called</em> by the kernel and runs until it returns. This is the half of "semi-trusted" that the type system does not cover.</p>
   </div>
   <div class="q">
-    <p class="q-ask">A board author hands the same pin to two capsules. What stops it?</p>
+    <p class="q-ask">A board author hands the same pin to two capsules. What catches it?</p>
     <div class="q-opts" role="group" aria-label="Answers to the fourth question">
-      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">The compiler refuses</button>
-      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">The kernel faults at run time</button>
-      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">Nothing checked by a machine</button>
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">The compiler, when the board is built</button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">The kernel, the first time both drive it</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">A person, reading <code>main.rs</code></button>
     </div>
     <p class="q-answer is-off" id="qcn">Nothing. Both capsules hold a shared reference, which is legal Rust, and both would drive the pin. Figure 6's commented-out line is a person preventing it, and this is the weaker of the chapter's two guarantees.</p>
   </div>
@@ -1051,6 +1070,10 @@ dfn {
   <ul>
     <li>The declaration in Figure 1, and the bounds check one line above the call &mdash; <code>capsules/core/src/led.rs</code>:71 and :112</li>
     <li>The five methods of the <code>Led</code> trait &mdash; <code>kernel/src/hil/led.rs</code>:19&ndash;32</li>
+    <li>The capsule being 158 lines &mdash; <code>wc -l capsules/core/src/led.rs</code> at that commit</li>
+    <li>The kernel having no allocator &mdash; <code>#![no_std]</code> at <code>kernel/src/lib.rs</code>:93, and no crate under <code>kernel/</code> or <code>chips/</code> declaring <code>extern crate alloc</code></li>
+    <li>Four capsules on one serial port and two on one timer &mdash; <code>uart_mux</code> and <code>mux_alarm</code> in <code>boards/raspberry_pi_pico_2/src/main.rs</code>:318&ndash;411</li>
+    <li>What a virtualizer is for &mdash; <code>capsules/core/src/virtualizers/virtual_uart.rs</code>:3, "this allows multiple Tock capsules to use the same UART bus"</li>
     <li><code>#![forbid(unsafe_code)]</code> opening all five capsule crates &mdash; <code>capsules/core/src/lib.rs</code>:5, and the same line 5 of <code>extra</code>, <code>system</code>, <code>aes_gcm</code> and <code>ecdsa_sw</code></li>
     <li><code>LedHigh</code> calling <code>set</code> and <code>LedLow</code> calling <code>clear</code> for the same <code>on()</code> &mdash; <code>kernel/src/hil/led.rs</code>:57&ndash;95</li>
     <li>The wording of the <code>Output::set</code> contract quoted in Figure 4 &mdash; <code>kernel/src/hil/gpio.rs</code>:152&ndash;154, in the <code>Output</code> trait declared at :151</li>
@@ -1140,6 +1163,9 @@ dfn {
   /* ---------------- Figure 7: two boards ---------------- */
   group("bd-", "bdp-", 2, "is-on", "is-on", "");
 
+  /* ---------------- Figure 8: what is left over ---------------- */
+  group("st-", "stp-", 3, "", "is-on", "is-off");
+
   /* ---------------- Check yourself ----------------
      The answer text is in the markup; this only reveals it and marks which
      option was right, so nothing a reader needs is stored in here. */
@@ -1162,7 +1188,7 @@ dfn {
         }(i));
       }
     }
-    quiz("qa-", 3, 1, "qan");
+    quiz("qa-", 3, 0, "qan");
     quiz("qb-", 3, 2, "qbn");
     quiz("qc-", 3, 2, "qcn");
     quiz("qd-", 3, 2, "qdn");
