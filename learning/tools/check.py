@@ -2756,6 +2756,7 @@ def index_checks(root, chapters):
         html = fh.read()
 
     problems.extend(palette_checks(html))
+    problems.extend(semantic_checks(html))
 
     marker = "* { box-sizing: border-box; }"
     if marker in html and "</style>" in html:

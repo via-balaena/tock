@@ -299,7 +299,15 @@ code {
   margin: 1rem 0 0;
 }
 .warnbox p { max-width: 46ch; margin-bottom: 0; font-size: .95rem; }
-.warnbox .kicker { color: var(--hot); }
+.warnbox h3 {
+  font-family: var(--mono);
+  font-size: .7rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--hot);
+  margin: 0 0 .5rem;
+}
 
 pre {
   font-family: var(--mono);
@@ -348,14 +356,14 @@ pre {
 <section class="stance">
   <p class="kicker">How to read a claim here</p>
   <h2>Nothing on these pages asks to be believed</h2>
-  <p>Claims about the kernel are quoted from the Tock tree at a commit each chapter names, and the source is given &mdash; the file, and the line where the line is the point. Where a chapter rests on the RP2350 or Pico&nbsp;2 datasheet instead, it says so and cites the section.</p>
-  <p>Three chapters turn on a number rather than a mechanism, and each ships the source that produces it, so the figure prints something compiled or assembled rather than worked out on the page. That is not a stylistic preference: the first draft of one such number was wrong by four bytes, and no amount of careful reading had caught it.</p>
+  <p>Claims about the kernel are checked against the Tock tree and cited by file, and wherever a chapter's argument turns on a particular line, it gives the line and the commit it is pinned to. Where a chapter rests on the RP2350 or Pico&nbsp;2 datasheet instead, it says so and cites the section.</p>
+  <p>Three chapters ship the source a figure rests on, so that what those figures print is compiled or assembled rather than transcribed &mdash; listings in two of them, and in the third a byte count. That is not a stylistic preference: the first draft of that byte count was wrong by four bytes, and no amount of careful reading had caught it.</p>
 </section>
 
 <section class="contents">
   <p class="kicker">The chapters</p>
   <h2>Reading order is dependency order</h2>
-  <p>Chapter&nbsp;1 defines the vocabulary from nothing; everything after inherits it. Beyond that, each entry names what it stands on, so you can see what a chapter rests on before you open it.</p>
+  <p>Chapter&nbsp;1 defines the vocabulary from nothing; everything after inherits it. Beyond that, every chapter after the first names what it stands on, so you can see the ground one needs before you open it.</p>
 
   <div class="shelf">
 
@@ -363,7 +371,7 @@ pre {
       <div class="ord">1</div>
       <div>
         <h3><a href="ch01-everything-is-memory/">Everything Is Memory</a></h3>
-        <p class="hook">One store, from a string in flash to 3.3&nbsp;volts on a pin &mdash; and why nothing in the machine stops a write landing anywhere at all.</p>
+        <p class="hook">One store, from a string in flash to 3.3&nbsp;volts on a pin &mdash; and why, before any of the protections the later chapters describe, a write can land anywhere at all.</p>
         <p class="needs"><b>Start here</b></p>
       </div>
       <button class="mark" type="button" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
@@ -436,7 +444,7 @@ pre {
 
   <section class="panel">
     <p class="kicker">Why the wall before the door</p>
-    <h2>The order is deliberate</h2>
+    <h2>Problems first, mechanisms second</h2>
     <p>The memory protection unit comes before syscalls: meet the wall, then find the door. It is the same shape as letting a read-modify-write race lose a pin before the atomic register is offered &mdash; the mechanism means nothing until you have felt the problem it answers.</p>
   </section>
 
@@ -445,7 +453,7 @@ pre {
     <h2>Groundable on a board you can hold</h2>
     <p>Every chapter cites <code>boards/raspberry_pi_pico_2</code>, a real port in this tree, so a reader with a Pico&nbsp;2 and a debug probe can run what they have just read about.</p>
     <div class="warnbox">
-      <p class="kicker">If your board is a Pico 2 W</p>
+      <h3>If your board is a Pico 2 W</h3>
       <p>It is not that board. This tree has no <code>raspberry_pi_pico_2_w</code>, and the <code>_w</code> board it does have is built on an earlier chip. The chapters say so where it costs something &mdash; most sharply that GPIO&nbsp;25 is the radio's chip select rather than the LED, so the panic blink lands somewhere you cannot see it.</p>
     </div>
   </section>
@@ -462,7 +470,7 @@ pre {
 <p class="colophon">
   Learning Tock from the Ground Up &middot; Jon Hillesheim, 2026<br>
   Licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> &middot; kernel source quoted under Tock's own terms<br>
-  Each chapter names the commit its citations are pinned to<br>
+  A chapter that quotes a line names the commit it is pinned to<br>
   Reading progress is stored in this browser only.
 </p>
 
