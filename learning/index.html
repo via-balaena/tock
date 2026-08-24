@@ -168,12 +168,14 @@ h2 {
   margin: 0 0 .5rem;
 }
 
-code, .mono {
+code {
   font-family: var(--mono);
-  font-size: .86em;
+  font-size: .875em;
   background: var(--surface-sunk);
-  border-radius: .25rem;
-  padding: .08em .35em;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
 }
 
 /* ---------- contents ---------- */
@@ -259,7 +261,9 @@ code, .mono {
   background: transparent;
   cursor: pointer;
   padding: 0;
+  display: none;
 }
+.shelf.interactive .mark { display: block; }
 .mark:hover { border-color: var(--accent); }
 .mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .entry.read .mark { background: var(--accent); border-color: var(--accent); }
@@ -285,6 +289,7 @@ code, .mono {
 }
 .panel p { max-width: 40ch; font-size: .97rem; }
 .panel p:last-child { margin-bottom: 0; }
+.tail { margin-bottom: 3rem; }
 
 .warnbox {
   background: var(--hot-soft);
@@ -343,14 +348,14 @@ pre {
 <section class="stance">
   <p class="kicker">How to read a claim here</p>
   <h2>Nothing on these pages asks to be believed</h2>
-  <p>Every technical claim is quoted from the Tock repository at a known commit, with the file and line given, so you can check it rather than trust it. Where a figure prints a number, the number is compiled or assembled from source the chapter ships, not arrived at by arithmetic on the page.</p>
-  <p>That is not a stylistic preference. It is there because the first draft of one such number was wrong by four bytes, and no amount of careful reading had caught it.</p>
+  <p>Claims about the kernel are quoted from the Tock tree at a commit each chapter names, and the source is given &mdash; the file, and the line where the line is the point. Where a chapter rests on the RP2350 or Pico&nbsp;2 datasheet instead, it says so and cites the section.</p>
+  <p>Three chapters turn on a number rather than a mechanism, and each ships the source that produces it, so the figure prints something compiled or assembled rather than worked out on the page. That is not a stylistic preference: the first draft of one such number was wrong by four bytes, and no amount of careful reading had caught it.</p>
 </section>
 
 <section class="contents">
   <p class="kicker">The chapters</p>
   <h2>Reading order is dependency order</h2>
-  <p>Chapter&nbsp;1 defines the vocabulary from nothing; everything after inherits it. Beyond that, each chapter names what it stands on &mdash; hover or focus an entry to light up what it needs first.</p>
+  <p>Chapter&nbsp;1 defines the vocabulary from nothing; everything after inherits it. Beyond that, each entry names what it stands on, so you can see what a chapter rests on before you open it.</p>
 
   <div class="shelf">
 
@@ -447,10 +452,10 @@ pre {
 
 </div>
 
-<section class="panel" style="margin-bottom:3rem">
+<section class="panel tail">
   <p class="kicker">Verifying</p>
   <h2>The series lives inside the tree it describes</h2>
-  <p>Keeping the chapters in a branch of the Tock repository means every citation can be checked against the exact commit the branch sits on &mdash; and when a rebase moves a line a chapter quoted, that is information rather than an inconvenience. The pages are interactive, so "it looks right" is not evidence:</p>
+  <p>Keeping the chapters in a branch of the Tock repository means every citation can be checked against the exact commit the branch sits on &mdash; and when a rebase moves a line a chapter quoted, that is information rather than an inconvenience. The pages are interactive, so "it looks right" is not evidence. From the repository root:</p>
   <pre>python3 learning/tools/check.py</pre>
 </section>
 
@@ -465,6 +470,9 @@ pre {
 
 <script>
 (function () {
+  var shelf = document.querySelector(".shelf");
+  if (shelf) { shelf.classList.add("interactive"); }
+
   var entries = Array.prototype.slice.call(document.querySelectorAll(".entry"));
   var byNum = {};
   entries.forEach(function (e) { byNum[e.getAttribute("data-ch")] = e; });

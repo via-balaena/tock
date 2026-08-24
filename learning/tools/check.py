@@ -2770,6 +2770,19 @@ def index_checks(root, chapters):
     if dupes:
         problems.append("index: duplicate id(s): %s" % ", ".join(sorted(dupes)))
 
+    # The cover is uploaded standalone like every chapter and declares no
+    # charset, so a raw multi-byte character is at the mercy of whatever the
+    # host guesses. static_checks has applied this to chapters since chapter 1;
+    # the cover was outside it until a review pass noticed the hole.
+    if "charset" not in html.lower():
+        for line_no, line in enumerate(html.splitlines(), 1):
+            bad = sorted({c for c in line if ord(c) > 127})
+            if bad:
+                problems.append("index: non-ASCII on line %d with no charset "
+                                "declared: %s - use an HTML entity"
+                                % (line_no, " ".join("U+%04X" % ord(c) for c in bad)))
+                break
+
     for tag in PAIRED_TAGS:
         opened = len(re.findall(r"<%s[\s>]" % tag, html))
         closed = len(re.findall(r"</%s>" % tag, html))
