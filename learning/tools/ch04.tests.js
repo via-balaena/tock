@@ -55,7 +55,7 @@ chk("and every one of those has its panel open",
       && REG["psp-0"].classList.contains("is-on")
       && REG["fpp-0"].classList.contains("is-on"), true);
 
-// Figure 5 is the deliberate exception. Seven boundaries, and the one the
+// Figure 6 is the deliberate exception. Seven boundaries, and the one the
 // reader needs is the one the process itself can move, not the topmost.
 chk("figure 5 opens on app_break rather than the top",
     REG["mm-2"].getAttribute("aria-pressed"), "true");
@@ -170,7 +170,7 @@ chk("its end is the last byte of the 520 kB this chip has",
     parseInt(REG["rg-hi"].textContent, 16) - 520 * 1024, parseInt("0x20000000", 16));
 REG["rg-0"].fire("click");
 
-// ---- Figure 5: seven boundaries ----
+// ---- Figure 6: seven boundaries ----
 walk("mm-", "mmp-", 7, "figure 5");
 chk("there are seven and not six or eight",
     REG["mm-6"] !== undefined && REG["mm-7"] === undefined, true);
@@ -186,16 +186,16 @@ chk("there are seven and not six or eight",
   chk("and five are the process's", app, 5);
 }());
 chk("the top panel hands the reader on to figure 6",
-    REG["mmp-0"].textContent.indexOf("Figure 6") > -1, true);
+    REG["mmp-0"].textContent.indexOf("Figure 7") > -1, true);
 chk("the kernel's floor moves downward",
     REG["mmp-1"].textContent.indexOf("downward") > -1, true);
 chk("the heap moves upward",
     REG["mmp-3"].textContent.indexOf("upward") > -1, true);
 chk("and the bottom is the number the process is told",
-    REG["mmp-6"].textContent.indexOf("Figure 8") > -1, true);
+    REG["mmp-6"].textContent.indexOf("Figure 9") > -1, true);
 REG["mm-2"].fire("click");
 
-// ---- Figure 6: what the kernel keeps inside your memory ----
+// ---- Figure 7: what the kernel keeps inside your memory ----
 walk("ks-", "ksp-", 3, "figure 6");
 chk("the control block panel says the record is stored in what it records",
     REG["ksp-0"].textContent.indexOf("stored in the process") > -1, true);
@@ -205,7 +205,7 @@ chk("and the grant pointers panel hands the mechanism to chapter 7",
     REG["ksp-2"].textContent.indexOf("chapter 7") > -1, true);
 REG["ks-0"].fire("click");
 
-// ---- Figure 7: three ways to place a program ----
+// ---- Figure 8: three ways to place a program ----
 walk("pl-", "plp-", 3, "figure 7");
 // Two of the three exist in the tree and one does not. If a later edit softens
 // the first panel, the figure stops making its point.
@@ -217,19 +217,19 @@ chk("and the third is the default",
     REG["plp-2"].textContent.indexOf("The default") === 0, true);
 REG["pl-0"].fire("click");
 
-// ---- Figure 8: the four arguments ----
+// ---- Figure 9: the four arguments ----
 walk("ag-", "agp-", 4, "figure 8");
 chk("there are four and not three or five",
     REG["ag-3"] !== undefined && REG["ag-4"] === undefined, true);
 chk("the first is not the start of the header",
     REG["agp-0"].textContent.indexOf("Not the start of the header") === 0, true);
 chk("the third says the kernel's own structures are inside the length",
-    REG["agp-2"].textContent.indexOf("Figure 6 are inside this length") > -1, true);
+    REG["agp-2"].textContent.indexOf("Figure 7 are inside this length") > -1, true);
 chk("and the fourth gives the same thirty-two as figure 5",
     REG["agp-3"].textContent.indexOf("thirty-two bytes") > -1, true);
 REG["ag-0"].fire("click");
 
-// ---- Figure 9: the six states ----
+// ---- Figure 10: the six states ----
 walk("ps-", "psp-", 6, "figure 9");
 (function () {
   var NAMES = ["Running", "Yielded", "YieldedFor", "Stopped", "Faulted",
@@ -246,7 +246,7 @@ chk("and Faulted says a process cannot simply be restarted",
     REG["psp-4"].textContent.indexOf("terminated first") > -1, true);
 REG["ps-0"].fire("click");
 
-// ---- Figure 10: two boards, two policies ----
+// ---- Figure 11: two boards, two policies ----
 (function () {
   var i;
   for (i = 0; i < 2; i++) {
@@ -389,7 +389,7 @@ chk("the run-time cost is on the page too",
 chk("and it is counted rather than gestured at",
     REG["runcost"].textContent.indexOf("Six operations") > -1, true);
 
-// ---- Figure 11: the limits section was prose only ----
+// ---- Figure 12: the limits section was prose only ----
 // Chapter 3's second pass found exactly this shape -- the section about what a
 // chapter does not buy, sitting on the skim path as a bare heading.
 chk("figure 11 opens on the first of the three",
@@ -400,17 +400,17 @@ chk("the header panel says total_size is believed outright",
     REG["tbp-0"].textContent.indexOf("believed outright") > -1, true);
 chk("the app_break panel hands enforcement to chapter 5",
     REG["tbp-1"].textContent.indexOf("chapter 5") > -1, true);
-chk("and the timeslice is named as the one that already works",
-    REG["tbp-2"].textContent.indexOf("already works") > -1, true);
+chk("and the timeslice is named as the one already enforced",
+    REG["tbp-2"].textContent.indexOf("anything already enforces") > -1, true);
 
 // ---- The reader has this board on the desk ----
 // Nothing in chapters 1 to 3 was actionable. This one describes a thing with an
 // observable consequence, so it says how to cause it.
 chk("the two objcopy flags are both on the page",
-    REG["pairs-install"].textContent.indexOf("--set-section-flags") > -1
-      && REG["pairs-install"].textContent.indexOf("--update-section") > -1, true);
+    REG["in-0"].textContent.indexOf("--set-section-flags") > -1
+      && REG["in-1"].textContent.indexOf("--update-section") > -1, true);
 chk("and the app lands where figure 3 starts looking",
-    REG["pairs-install"].textContent.indexOf("0x10040000") > -1, true);
+    REG["inp-1"].textContent.indexOf("0x10040000") > -1, true);
 
 // ---- Every glossary word is used again ----
 // The section promises "repeated in context below", and two of the eleven were
@@ -443,9 +443,9 @@ chk("and TBF is used where the chapter is about a TBF header",
 }());
 
 // ---- what the second review pass found ----
-// Figure 4's last row and Figure 5 were the same memory at two scales, and
+// Figure 4's last row and Figure 6 were the same memory at two scales, and
 // nothing joined them. `_sappmem` was cited in the sources and named nowhere on
-// the page, so a reader finishing Figure 5 could not say where memory_start
+// the page, so a reader finishing Figure 6 could not say where memory_start
 // came from.
 chk("the pool and one slice out of it are joined",
     REG["poolbridge"].textContent.indexOf("Figure 4's last row") > -1, true);
@@ -486,7 +486,7 @@ chk("the YieldedFor panel names its state",
 chk("and the imix panel names its board",
     REG["fpp-1"].textContent.indexOf("On imix") === 0, true);
 
-// Figure 5's note counted three moving boundaries and then named the heap,
+// Figure 6's note counted three moving boundaries and then named the heap,
 // whose own boundary does not move.
 (function () {
   var note = REG["mm-note"].textContent, i, named = 0;
@@ -503,3 +503,40 @@ chk("the count is scoped to this board",
     REG["runcost"].textContent.indexOf("on this board") > -1, true);
 chk("and the seventh has somewhere to go",
     REG["runcost"].textContent.indexOf("hook") > -1, true);
+
+// ---- what the third review pass found ----
+// "the fence" was used 7,300 characters before the memory protection unit was
+// named, and in the gap it also named a second thing -- Figure 12 called the
+// timeslice a fence, forty words before the closing said the chapter had
+// described a fence and not built one. The word is the MPU's now, and it is
+// first used where it is named.
+chk("the run-time cost paragraph does not use a metaphor it has not introduced",
+    REG["runcost"].textContent.indexOf("fence"), -1);
+chk("and figure 11 calls the timeslice a boundary rather than a fence",
+    REG["tbp-2"].textContent.indexOf("fence"), -1);
+chk("the closing names the fence in the same sentence it uses the word",
+    REG["closing"].textContent.indexOf("memory protection unit") > -1
+      && REG["closing"].textContent.indexOf("fence") > -1, true);
+
+// `block` meant three things: chapter 2's boot structure, the process control
+// block, and twice a piece of hardware. Chapter 2's glossary pins the first.
+chk("hardware is no longer called a block",
+    REG["tbp-1"].textContent.indexOf("block") + REG["closing"].textContent.indexOf("block"), -2);
+
+// ---- Figure 5: the install section was a bare heading on the skim path ----
+// The same defect chapter 3's second pass named, reintroduced by the pass that
+// fixed it elsewhere. It also now answers the question a reader with this
+// board on the desk asks next.
+chk("figure 12 opens on the first flag", REG["in-0"].getAttribute("aria-pressed"), "true");
+walk("in-", "inp-", 3, "figure 12");
+REG["in-0"].fire("click");
+chk("the first flag panel ties back to figure 4's third row",
+    REG["inp-0"].textContent.indexOf("Figure 4's third row") > -1, true);
+chk("the second says nothing rewrites the file on the way in",
+    REG["inp-1"].textContent.indexOf("Nothing rewrites it") > -1, true);
+chk("and the third says which target suits which hardware",
+    REG["inp-2"].textContent.indexOf("program-openocd") > -1, true);
+chk("it warns that the default path is a Linux one",
+    REG["inp-2"].textContent.indexOf("Linux") > -1, true);
+chk("and the README's third target is in the note rather than lost",
+    REG["in-note"].textContent.indexOf("flash-app") > -1, true);

@@ -460,7 +460,7 @@ dfn {
 
 .glossary.cast { align-items: start; }
 
-/* ---------- Two cards side by side: Figure 10 ---------- */
+/* ---------- Two cards side by side: Figure 12 ---------- */
 .mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }
 .mo-fig.two { grid-template-columns: repeat(2, 1fr); }
 .mo {
@@ -490,7 +490,7 @@ dfn {
 }
 .mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 
-/* ---------- A row of buttons over stacked panels: Figures 1, 6, 9 and 11 ---------- */
+/* ---------- A row of buttons over stacked panels: Figures 1, 7, 10 and 12 ---------- */
 .blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
 /* Words of a program image, so they are addresses and must not be uppercased. */
 .blk button {
@@ -512,7 +512,7 @@ dfn {
 .blkp.is-off { display: none; }
 .blkp b { font-family: var(--mono); font-weight: 500; }
 
-/* ---------- An offset beside a name: Figure 2 ---------- */
+/* ---------- An offset beside a name: Figures 2 and 5 ---------- */
 .vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
 .vt button {
   display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
@@ -531,7 +531,7 @@ dfn {
 .vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 .vtp.is-off { display: none; }
 
-/* ---------- Code cards: Figure 7 ---------- */
+/* ---------- Code cards: Figure 9 ---------- */
 .loops { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; margin: .2rem 0 1rem; }
 .loops.three { grid-template-columns: repeat(3, 1fr); }
 .loop {
@@ -592,7 +592,7 @@ dfn {
 .costp.is-off { display: none; }
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
-/* ---------- Numbered steps: Figures 3 and 8 ---------- */
+/* ---------- Numbered steps: Figures 3 and 9 ---------- */
 .seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
 .seq button {
   display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
@@ -611,7 +611,7 @@ dfn {
 .seq b { font-family: var(--mono); font-weight: 500; }
 .seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
 
-/* ---------- Three columns to a row: Figure 5 ---------- */
+/* ---------- Three columns to a row: Figure 7 ---------- */
 .dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
 .dbg button {
   display: grid; grid-template-columns: minmax(6.6rem, auto) minmax(6.6rem, auto) 1fr;
@@ -789,13 +789,13 @@ dfn {
 
 <section class="col">
   <h2>Where that number comes from</h2>
-  <p>That address is not a decision the kernel makes while it runs. It is fixed when the kernel is built, by the linker script: the file that decides what lands where. On this board it comes out at <code class="addr">0x10040000</code>, and the same file divides the whole chip in four.</p>
+  <p>That address is not a decision the kernel makes while it runs. It is fixed when the kernel is built, by the linker script: the file that decides what lands where. On this board it comes out at <code class="addr">0x10040000</code>, and the same file divides the whole chip into regions.</p>
 </section>
 
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 4</span>
-    <span class="instrument-title">The Pico 2, divided in four</span>
+    <span class="instrument-title">The Pico 2, region by region</span>
   </div>
   <div class="instrument-body">
     <p class="dothis">Pick a region. Every number here is read off this board's linker script.</p>
@@ -821,21 +821,31 @@ dfn {
 </figure>
 
 <section class="col">
-  <h2>How one gets there</h2>
+  <h2>How an application reaches the board</h2>
   <p id="installsrc">Nothing in this repository builds an application. They are built out of tree, in whatever language, and arrive as a <code>.tbf</code> file: a TBF header with a program behind it. Tock's own getting-started guide points at two places to get one, libtock-c for C and C++ and libtock-rs for Rust.</p>
-  <p>Putting one on this board is two lines of <code>objcopy</code> in the board's Makefile, and both of them are about the section Figure 4 just showed.</p>
+  <p>Getting one onto the board is two lines of <code>objcopy</code> and a choice of target, and all three are about the region Figure 4 just showed.</p>
 </section>
 
-<div class="col">
-  <dl class="glossary inline" id="pairs-install">
-    <dt>--set-section-flags</dt><dd><code>.apps=LOAD,ALLOC</code> &mdash; the section the linker marked as one not to load becomes one the loader will write</dd>
-    <dt>--update-section</dt><dd><code>.apps=&lt;your file&gt;</code> &mdash; the <code>.tbf</code> goes in at <code class="addr">0x10040000</code>, where Figure 3's walk begins</dd>
-  </dl>
-</div>
-
-<section class="col">
-  <p>The target that runs those two lines is <code>make program APP=...</code>, and then the result is copied over as a UF2 the same way the kernel was. One caution: this board's README says <code>make flash-app</code>, which is what several other boards call it. This one does not define that target.</p>
-</section>
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">Two flags and a choice of target</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each one. The third is the one that depends on what you have plugged in.</p>
+    <div class="vt" role="group" aria-label="The two objcopy flags and the make target that runs them">
+      <button type="button" id="in-0" aria-pressed="true"><span class="vt-at">1</span><span>--set-section-flags .apps=LOAD,ALLOC</span></button>
+      <button type="button" id="in-1" aria-pressed="false"><span class="vt-at">2</span><span>--update-section .apps=&lt;your file&gt;</span></button>
+      <button type="button" id="in-2" aria-pressed="false"><span class="vt-at">3</span><span>make program &mdash; or make program-openocd</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="inp-0">The section the linker marked as one not to load becomes one the loader will write. Figure 4's third row said the loader should leave it alone; this is the line that changes its mind. It changes it in a copy of the kernel, not in the kernel itself.</p>
+      <p class="vtp" id="inp-1">Your <code>.tbf</code> goes in at <code class="addr">0x10040000</code>, which is <b>_sapps</b>, which is where Figure 3's walk begins. Nothing rewrites it on the way. What Figure 2 reads out of it at boot is byte for byte what you handed over here.</p>
+      <p class="vtp" id="inp-2">Both targets run the same two lines. <b>program</b> then copies a UF2 to a mounted drive, and its default path is a Linux one, so on a Mac it builds the file and tells you to set the variable yourself. <b>program-openocd</b> pushes it down a debug probe instead and needs no drive at all.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="in-note">Notice that this board's README names a third target, <code>make flash-app</code>, which several other boards define and this one does not. The two objcopy lines are the part that does not vary.</div>
+</figure>
 
 <section class="col">
   <h2>One process's memory</h2>
@@ -846,7 +856,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-label">Figure 6</span>
     <span class="instrument-title">Seven lines through one allocation, top to bottom</span>
   </div>
   <div class="instrument-body">
@@ -861,13 +871,13 @@ dfn {
       <button type="button" id="mm-6" aria-pressed="false"><span class="sr-at">app</span><span class="sr-ad">memory_start</span><span>the bottom</span></button>
     </div>
     <div class="dbgsay">
-      <p class="dbgp" id="mmp-0">The end of the allocation. Everything between here and <b>kernel_memory_break</b> belongs to the kernel, sits inside the process's own slice of RAM, and is what Figure 6 is about.</p>
+      <p class="dbgp" id="mmp-0">The end of the allocation. Everything between here and <b>kernel_memory_break</b> belongs to the kernel, sits inside the process's own slice of RAM, and is what Figure 7 is about.</p>
       <p class="dbgp" id="mmp-1">The kernel's floor. It starts at the very top and moves downward as grants are handed out, which is chapter 7. Below it is the process's.</p>
       <p class="dbgp is-on" id="mmp-2">The ceiling, and the only line here the process can move. Above it is refused. It begins thirty-two bytes above <b>memory_start</b> &mdash; thirty-two, not thirty-two thousand &mdash; and the application has to raise it with a syscall before it can do anything at all.</p>
       <p class="dbgp" id="mmp-3">Where the heap begins. It grows upward, towards <b>app_break</b>, and the distance between the two is how much room the application has left.</p>
       <p class="dbgp" id="mmp-4">The application's globals: whatever it started life knowing. Below this line the stack begins, and the two never move towards each other.</p>
       <p class="dbgp" id="mmp-5">How far down the stack has got so far. Everything between here and <b>memory_start</b> is unused, and running out of it means running into the bottom.</p>
-      <p class="dbgp" id="mmp-6">The bottom, and the number the kernel hands the process as its second argument in Figure 8. The process is told this address; it has no way to work it out. Everything it may touch at that moment has been written to zero first, so it cannot read what the last process to hold this memory left behind.</p>
+      <p class="dbgp" id="mmp-6">The bottom, and the number the kernel hands the process as its second argument in Figure 9. The process is told this address; it has no way to work it out. Everything it may touch at that moment has been written to zero first, so it cannot read what the last process to hold this memory left behind.</p>
     </div>
   </div>
   <div class="instrument-note" id="mm-note">Notice that three of the seven move while the process runs: the stack pointer, <b>app_break</b> and <b>kernel_memory_break</b>. The last two move towards each other, and the gap between them is all there is left to hand out.</div>
@@ -881,7 +891,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-label">Figure 7</span>
     <span class="instrument-title">Three things above the line, in your allocation</span>
   </div>
   <div class="instrument-body">
@@ -902,7 +912,7 @@ dfn {
 
 <section class="col" id="runcost">
   <p>That is what isolation costs in memory. It costs something in time too, and the shape is the same &mdash; the charge falls on every single visit to a process.</p>
-  <p>Six operations wrap each one on this board. The kernel programs the fence, turns it on, arms a timer, hands over the processor, disarms the timer, and turns the fence off again. A board that wants a seventh has somewhere to put it: there is a hook immediately before those six, empty unless a board fills it.</p>
+  <p>Six operations wrap each one on this board. The kernel programs a piece of hardware to hold the process inside its own memory, switches it on, arms a timer, hands over the processor, disarms the timer, and switches that hardware off again. A board that wants a seventh has somewhere to put it: there is a hook immediately before those six, empty unless a board fills it.</p>
 </section>
 
 <section class="col">
@@ -913,7 +923,7 @@ dfn {
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-label">Figure 8</span>
     <span class="instrument-title">Three answers to one problem, one of them Tock's</span>
   </div>
   <div class="instrument-body">
@@ -947,7 +957,7 @@ argument3: app_break,</pre></button>
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-label">Figure 9</span>
     <span class="instrument-title">Four numbers, handed over at the door</span>
   </div>
   <div class="instrument-body">
@@ -960,8 +970,8 @@ argument3: app_break,</pre></button>
     </div>
     <div class="dbgsay">
       <p class="dbgp is-on" id="agp-0">Not the start of the header: the start of the code, past the header and past any bytes the kernel is keeping to itself. The first instruction is at another offset again, and that one goes into the program counter rather than a register.</p>
-      <p class="dbgp" id="agp-1">The bottom of Figure 5. Every address the application works out for itself is worked out from this one, which is why it is handed over rather than assumed.</p>
-      <p class="dbgp" id="agp-2">How much was allocated &mdash; and notice what that includes. The three structures in Figure 6 are inside this length. The application is told the size of a region whose top it may never touch.</p>
+      <p class="dbgp" id="agp-1">The bottom of Figure 6. Every address the application works out for itself is worked out from this one, which is why it is handed over rather than assumed.</p>
+      <p class="dbgp" id="agp-2">How much was allocated &mdash; and notice what that includes. The three structures in Figure 7 are inside this length. The application is told the size of a region whose top it may never touch.</p>
       <p class="dbgp" id="agp-3">The ceiling, and the number the application will immediately try to raise. On this processor it arrives thirty-two bytes above <b>memory_start</b>, which is one stack frame and nothing else.</p>
     </div>
   </div>
@@ -975,7 +985,7 @@ argument3: app_break,</pre></button>
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-label">Figure 10</span>
     <span class="instrument-title">The six states, and how a process leaves each</span>
   </div>
   <div class="instrument-body">
@@ -1007,7 +1017,7 @@ argument3: app_break,</pre></button>
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 10</span>
+    <span class="instrument-label">Figure 11</span>
     <span class="instrument-title">The same fault, two boards</span>
   </div>
   <div class="instrument-body">
@@ -1041,7 +1051,7 @@ argument3: app_break,</pre></button>
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 11</span>
+    <span class="instrument-label">Figure 12</span>
     <span class="instrument-title">Three things taken on trust, and what backs each</span>
   </div>
   <div class="instrument-body">
@@ -1053,15 +1063,15 @@ argument3: app_break,</pre></button>
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="tbp-0">The checksum catches a header damaged on the way in, and that is the whole of what it catches. <b>total_size</b> is believed outright, before anything has been verified. Anyone who can write this flash can write a header saying whatever they like, and Figure 3's walk will follow it.</p>
-      <p class="blkp" id="tbp-1">A field in a struct. Chapter 1's store instruction does not read fields, and no arrangement of Rust could make it. What refuses the write is a block of hardware holding the same number, and putting the number there is chapter 5.</p>
-      <p class="blkp" id="tbp-2">The one fence in this chapter that already works. The processor's own counter, clocked at 125&nbsp;MHz on this board, is armed before the switch and disarmed after it. When it fires, control returns to the kernel whether the application cooperates or not.</p>
+      <p class="blkp" id="tbp-1">A field in a struct. Chapter 1's store instruction does not read fields, and no arrangement of Rust could make it. What refuses the write is a piece of hardware holding the same number, and putting the number there is chapter 5.</p>
+      <p class="blkp" id="tbp-2">The one boundary in this chapter that anything already enforces. The processor's own counter, clocked at 125&nbsp;MHz on this board, is armed before the switch and disarmed after it. When it fires, control returns to the kernel whether the application cooperates or not.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that only the last one is finished. The chapter has spent its length drawing boundaries, and the only one enforced by anything it has shown you is the boundary in time.</div>
 </figure>
 
 <section class="col">
-  <p id="closing">So this chapter has described a fence and not built one. The thing that builds it is the <em>memory protection unit</em>: a small block inside the processor, reprogrammed before every switch into a process. Chapter 5 is about it.</p>
+  <p id="closing">So this chapter has described a fence and not built one. The thing that builds it is the <em>memory protection unit</em>: a small piece of hardware inside the processor, reprogrammed before every switch into a process. Chapter 5 is about it.</p>
 </section>
 
 <section class="col">
@@ -1085,7 +1095,7 @@ argument3: app_break,</pre></button>
       <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Because the kernel wants it to confirm where it was put</button>
       <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Because the hardware fence is built from what the process reports</button>
     </div>
-    <p class="q-answer" id="qbn">Because it was placed rather than adapted. Figure 7's first option is the one nobody took. No code in this kernel edits an application's binary, so it arrives still holding whatever addresses it was built with, and has to be told the rest.</p>
+    <p class="q-answer" id="qbn">Because it was placed rather than adapted. Figure 8's first option is the one nobody took. No code in this kernel edits an application's binary, so it arrives still holding whatever addresses it was built with, and has to be told the rest.</p>
   </div>
   <div class="q">
     <p class="q-ask">A process is given two kilobytes of RAM. How much may it touch at its first instruction?</p>
@@ -1137,7 +1147,7 @@ argument3: app_break,</pre></button>
     <li>The <code>.apps</code> section marked <code>NOLOAD</code>, so applications are flashed separately from the kernel &mdash; the same file, :293&ndash;304</li>
     <li>The four <code>0xFF</code> placeholder bytes the linker writes there &mdash; the same file, :318&ndash;321</li>
     <li><code>_sappmem</code> beginning after the kernel's zeroed data, and <code>_eappmem</code> at the last byte of RAM &mdash; the same file, :350&ndash;366</li>
-    <li>The seven boundaries in Figure 5 &mdash; the diagram above <code>memory_start</code>, <code>kernel/src/process_standard.rs</code>:449&ndash;473</li>
+    <li>The seven boundaries in Figure 6 &mdash; the diagram above <code>memory_start</code>, <code>kernel/src/process_standard.rs</code>:449&ndash;473</li>
     <li>The three kernel structures reserved inside a process's allocation &mdash; <code>kernel/src/process_standard.rs</code>:1824&ndash;1829, drawn again at :1995&ndash;2015</li>
     <li>Ten upcalls, and the constant that says so &mdash; <code>kernel/src/process_standard.rs</code>:1729</li>
     <li>The control block reservation being <code>size_of::&lt;ProcessStandard&gt;()</code> plus its alignment &mdash; :1753 and :1755</li>
@@ -1145,7 +1155,7 @@ argument3: app_break,</pre></button>
     <li><code>app_break</code> starting <code>initial_process_app_brk_size()</code> above <code>memory_start</code> &mdash; :1841&ndash;1843 and :2083</li>
     <li>That size being 32 bytes, one Cortex-M exception frame &mdash; <code>arch/cortex-m/src/syscall.rs</code>:196 and :273&ndash;277</li>
     <li>The initially accessible bytes being zeroed, so a process cannot read what a previous one left &mdash; <code>kernel/src/process_standard.rs</code>:2054&ndash;2075</li>
-    <li>The four arguments in Figure 8, and the entry point going in separately &mdash; <code>kernel/src/process_standard.rs</code>:2303&ndash;2343</li>
+    <li>The four arguments in Figure 9, and the entry point going in separately &mdash; <code>kernel/src/process_standard.rs</code>:2303&ndash;2343</li>
     <li><code>memory_len</code> being the whole allocation, kernel structures included &mdash; :2046 and :2216</li>
     <li>The four arguments landing in registers 0 to 3, and the entry point going into the program counter &mdash; <code>arch/cortex-m/src/syscall.rs</code>:404 and :410&ndash;413, in <code>set_process_function</code> at :376</li>
     <li>Fixed addresses as the alternative to being told, and the error when they cannot be met &mdash; <code>libraries/tock-tbf/src/types.rs</code>:204&ndash;213 and <code>kernel/src/process_loading.rs</code>:54&ndash;58</li>
@@ -1161,6 +1171,8 @@ argument3: app_break,</pre></button>
     <li>Applications being built out of tree, and arriving as a <code>.tbf</code> file &mdash; <code>boards/raspberry_pi_pico_2/README.md</code>:44&ndash;51</li>
     <li>The two <code>objcopy</code> lines that put one in the reserved section, and the <code>program</code> target that runs them &mdash; <code>boards/raspberry_pi_pico_2/Makefile</code>:33&ndash;39</li>
     <li>That README naming the target <code>make flash-app</code>, which this board's Makefile does not define &mdash; <code>README.md</code>:50 against <code>Makefile</code>:33. Several other boards do define it; <code>boards/apollo3/redboard_artemis_nano/Makefile</code>:36 is one</li>
+    <li>The mounted-drive path <code>program</code> copies to, and why it does nothing on a Mac &mdash; <code>BOOTSEL_FOLDER?=/run/media/$(USER)/RP2350</code> at <code>Makefile</code>:13, tested at :30 and :40, which print a message when the directory is absent. That board's README gives the default as <code>/media/$(USER)/RP2350</code> at :41, which is a third path again</li>
+    <li><code>program-openocd</code> running the same two <code>objcopy</code> lines and pushing the result down a debug probe instead &mdash; <code>Makefile</code>:43&ndash;49, with <code>OPENOCD_INTERFACE=picoprobe</code> at :10 and the configuration it names at <code>openocd-picoprobe.cfg</code></li>
     <li>A capsule existing that lets an application write its own flash region, and this board not instantiating one &mdash; <code>capsules/extra/src/app_flash_driver.rs</code>:5&ndash;8 and :105, reaching it through <code>ProcessId::get_editable_flash_range</code> at <code>kernel/src/process.rs</code>:208</li>
     <li>The six operations wrapping every switch into a process &mdash; <code>kernel/src/kernel.rs</code>:536&ndash;562, where the fence is configured and enabled, the timer armed and disarmed either side of <code>switch_to</code>, and the fence disabled again</li>
     <li>The timer behind the timeslice being the Cortex-M SysTick, calibrated at 125&nbsp;MHz &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:436</li>
@@ -1232,28 +1244,31 @@ argument3: app_break,</pre></button>
     });
   }());
 
-  /* ---------------- Figure 5: seven boundaries ----------------
+  /* ---------------- Figure 6: seven boundaries ----------------
      Opens on app_break rather than the top, because that is the one boundary
      the process itself can move and the rest are read against it. */
   group("mm-", "mmp-", 7, "", "is-on", "is-off");
 
-  /* ---------------- Figure 6: the kernel's own structures ---------------- */
+  /* ---------------- Figure 7: the kernel's own structures ---------------- */
   group("ks-", "ksp-", 3, "", "is-on", "is-off");
 
-  /* ---------------- Figure 7: three ways to place a program ---------------- */
+  /* ---------------- Figure 8: three ways to place a program ---------------- */
   group("pl-", "plp-", 3, "", "is-on", "is-off");
 
-  /* ---------------- Figure 8: the four arguments ---------------- */
+  /* ---------------- Figure 9: the four arguments ---------------- */
   group("ag-", "agp-", 4, "", "is-on", "is-off");
 
-  /* ---------------- Figure 9: the six states ---------------- */
+  /* ---------------- Figure 10: the six states ---------------- */
   group("ps-", "psp-", 6, "", "is-on", "is-off");
 
-  /* ---------------- Figure 10: two boards, two policies ---------------- */
+  /* ---------------- Figure 11: two boards, two policies ---------------- */
   group("fp-", "fpp-", 2, "is-on", "is-on", "");
 
-  /* ---------------- Figure 11: what backs each boundary ---------------- */
+  /* ---------------- Figure 12: what backs each boundary ---------------- */
   group("tb-", "tbp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 5: getting one onto the board ---------------- */
+  group("in-", "inp-", 3, "", "is-on", "is-off");
 
   /* ---------------- Check yourself ----------------
      The answer text is in the markup; this only reveals it and marks which

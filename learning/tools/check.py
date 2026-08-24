@@ -1165,6 +1165,26 @@ def wired_checks(html):
     return problems
 
 
+def figure_order_checks(html):
+    """Figure labels run 1..N down the page, with no gaps and no repeats.
+
+    Written after inserting a figure into the middle of chapter 4 and numbering
+    it 12, which is what the last label had been. Every cross-reference on the
+    page still resolved, the behavioural suite still passed, and the number was
+    correct in the sense that it named exactly one figure -- it just sat fifth,
+    between Figure 4 and Figure 5. Only rendering it caught that, and only
+    because the renderer picks figures by position rather than by label.
+    """
+    labels = re.findall(r'instrument-label">Figure (\d+)</span>', html)
+    if not labels:
+        return []
+    want = [str(n) for n in range(1, len(labels) + 1)]
+    if labels == want:
+        return []
+    return ["figure labels read %s down the page, and should read %s"
+            % (", ".join(labels), ", ".join(want))]
+
+
 # Words that head a selector part without naming an element: at-rule keywords
 # and the bare-word pieces of a media query. Plus the three elements a browser
 # creates whether or not the file writes them -- these pages open at `<title>`
@@ -1392,6 +1412,7 @@ def static_checks(html, name):
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
     problems.extend(glossary_use_checks(html))
+    problems.extend(figure_order_checks(html))
     problems.extend(wired_checks(html))
 
     return problems

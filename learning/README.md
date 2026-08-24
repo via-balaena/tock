@@ -51,7 +51,10 @@ shipped `KB`, chapter 2 spells it out throughout, and chapter 4 arrived with a
 third spelling before this was written down -- three conventions for one unit
 across four chapters, which is what a cross-chapter notation pass is for.
 
-**Size.** Chapter 1 runs to about 10,900 prose words across 17 figures, and is
+**Size.** Chapter 4 came out at 12 figures against the 8 to 10 below, which is
+the target doing its job rather than failing: three of those twelve were added
+by review passes, and each one replaced a section that was prose only on the
+skim path. Chapter 1 runs to about 10,900 prose words across 17 figures, and is
 the outlier on purpose -- it defines the vocabulary from nothing and has no
 chapter to lean on. Later chapters inherit that vocabulary and should be roughly
 half: aim under 6,000 words and 8 to 10 figures. Nothing enforces this; it is a
@@ -108,8 +111,16 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Nineteen more static checks exist because each caught a live defect. Keep the
+Twenty more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A figure numbered out of order.** Chapter 4's third review pass inserted a
+  figure after Figure 4 and numbered it 12, which is what the last label had
+  been. Every cross-reference on the page still resolved, all 138 assertions
+  still passed, and the number was correct in the narrow sense that it named
+  exactly one figure -- it just sat fifth. Only rendering it caught that, and
+  only because `fixture.py` picks figures by position rather than by label.
+  Labels must now read 1..N down the page.
 
 - **A word the glossary defines and the chapter never uses.** The list makes a
   promise in its own lead sentence -- "each is one sentence now and repeated in
