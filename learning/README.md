@@ -121,8 +121,26 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Twenty-one more static checks exist because each caught a live defect. Keep the
+Twenty-three more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A phrase a review pass removed, back on the page.** Chapter 5's second
+  chapter-2 collision, `block`, was struck from six places in its first review
+  pass and survived in two source-list bullets, because that pass read the prose
+  and not the citations. `RETIRED_PHRASES` is a per-chapter list of phrasings a
+  pass deliberately removed, checked against the markup only -- the CSS says
+  `display: block` legitimately, and a negative assertion legitimately names the
+  phrase it forbids. Adding a line to that list is only allowed once the phrase
+  is actually gone, so the gate proves itself the moment it is written.
+
+- **A stylesheet comment with no rule under it.** `dead_css_checks` finds a rule
+  with no markup and has nothing to say about a comment with no rule. Ten of
+  these were inherited across chapters 1 to 4, describing rules deleted when a
+  chapter pruned what it did not use -- including one that survived chapter 3's
+  five review passes. Section banners (`/* ---- name ---- */`) are exempt,
+  because heading a section rather than a rule is their job. Beware the fix:
+  removing the same comment text from five chapters at once deleted two correct
+  ones, where that comment really did head `.note`.
 
 - **An assertion naming the figure its element used to be in.** Fixing the
   bullet below meant renumbering all twelve of chapter 4's figures. The page

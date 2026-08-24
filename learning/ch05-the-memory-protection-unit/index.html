@@ -267,13 +267,6 @@ button:focus-visible, [tabindex]:focus-visible {
 }
 
 
-/* A small muted aside: provenance lines, caveats, footnotes. */
-/* An instrument whose content is a single code block, so the block can sit
-   flush against the frame instead of inside the usual padding. */
-
-/* An instrument that should hold the reading column's width rather than
-   breaking out wide. */
-
 /* ---------- closing ---------- */
 
 .next {
@@ -625,7 +618,7 @@ dfn {
   <p id="gapline">Chapter 4 drew a process's memory as seven boundaries and named the field behind each one. <code>app_break</code>, <code>kernel_memory_break</code>, <code>memory_start</code>: all of them real, all of them held by the kernel, and every one of them a number in a struct.</p>
   <p>A number in a struct is a note about what should happen. The processor executing a store does not consult it. Between the moment a process issues an instruction and the moment memory changes, no kernel code runs at all &mdash; that is what running means.</p>
   <p id="unitline">So the enforcement cannot be in the kernel. It is in the processor, next to the thing doing the accessing, and it is the one piece of this series that is not software. The RP2350 datasheet lists what it is for in three lines: "enforce privilege rules", "separate processes", "manage memory attributes".</p>
-  <p id="threeuses">The first two are this chapter. The third the kernel writes on every configure without ever changing it.</p>
+  <p id="threeuses">The first two are this chapter. The third comes down to one line the kernel writes on every configure and never changes.</p>
 </section>
 
 <figure class="instrument">
@@ -826,7 +819,7 @@ dfn {
       <button type="button" id="fl-5" aria-pressed="false"><span class="seq-n">6</span><span>the kernel asks why it is back <span class="seq-src">syscall.rs:450</span></span></button>
     </div>
     <div class="dbgsay">
-      <p class="dbgp is-on" id="flp-0">No kernel code has run yet and none is about to. The address did not match an enabled region, or matched one that forbids writing, and the write never reaches memory. Only twice in this series is a step not a line of source: chapter 2's boot ROM searching flash, and this.</p>
+      <p class="dbgp is-on" id="flp-0">No kernel code has run yet and none is about to. The address did not match an enabled region, or matched one that forbids writing, and the write never reaches memory. There is no line of source behind this step, because there is no software in it.</p>
       <p class="dbgp" id="flp-1">The datasheet is exact about it: "MPU mismatches and permission violations invoke the MemManage handler." That is the architecture's answer, and it is what would happen on a board that had asked for it.</p>
       <p class="dbgp" id="flp-2">This board has not. The enable bit for MemManage sits in <b>SHCSR</b> and resets to zero; no line in this kernel sets it. Tock's own comment on the routine that clears that bit says what the consequence is: it "escalates the exception to a HardFault instead". So the <dfn>HardFault</dfn> handler runs, and <dfn>MemManage</dfn> never does.</p>
       <p class="dbgp" id="flp-3">The handler's first job is to find out who faulted, and it is settled by bit 2 of the link register: <b>tst lr, #4</b>. Set means the process's stack was in use, clear means the kernel's. Clear branches to a handler that never returns and takes the board down. Set carries on to step 5.</p>
@@ -954,8 +947,8 @@ dfn {
     <li>What the unit is for, in three lines &mdash; RP2350 datasheet &sect;3.7.4.7: "enforce privilege rules", "separate processes", "manage memory attributes"</li>
     <li>"MPU mismatches and permission violations invoke the MemManage handler" &mdash; the same section</li>
     <li>"The MPU supports 16 memory regions: 8 secure and 8 non-secure" &mdash; the same section</li>
-    <li>The register block at <code class="addr">0xE000ED90</code> &mdash; <code>arch/cortex-m33/src/lib.rs</code>:20&ndash;21, and the datasheet's system control space table, which lists <code>MPU_TYPE</code> at offset <code>0x0ed90</code></li>
-    <li>The layout of the block, so <b>RNR</b>, <b>RBAR</b> and <b>RLAR</b> land at +<code>0x08</code>, +<code>0x0C</code> and +<code>0x10</code> &mdash; <code>arch/cortex-m33/src/mpu_v8m.rs</code>:27&ndash;58</li>
+    <li>The register group at <code class="addr">0xE000ED90</code> &mdash; <code>arch/cortex-m33/src/lib.rs</code>:20&ndash;21, and the datasheet's system control space table, which lists <code>MPU_TYPE</code> at offset <code>0x0ed90</code></li>
+    <li>The layout of that group, so <b>RNR</b>, <b>RBAR</b> and <b>RLAR</b> land at +<code>0x08</code>, +<code>0x0C</code> and +<code>0x10</code> &mdash; <code>arch/cortex-m33/src/mpu_v8m.rs</code>:27&ndash;58</li>
     <li>Every field in Figure 2, with its offset and width &mdash; the same file, :80&ndash;110</li>
     <li>The base being written as <b>logical_start &gt;&gt; 5</b> &mdash; :346</li>
     <li>The limit being written as <b>(logical_end - 1) &gt;&gt; 5</b>, and the comment saying why &mdash; :358&ndash;363</li>

@@ -663,12 +663,5 @@
     "says": "Chapter 4 used region for the four areas a linker script cuts the chip into",
     "about": "ch04",
     "kept_by": "region by region"
-  },
-  {
-    "id": "ch05-notsource-ch02",
-    "in": "ch05",
-    "says": "chapter 2's boot ROM searching flash",
-    "about": "ch02",
-    "kept_by": "It is looking for the marker that starts a block"
   }
 ]

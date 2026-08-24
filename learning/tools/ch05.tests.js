@@ -113,7 +113,7 @@ chk("asking for 2 kB moves the limit and not the base",
     REG["mm-rbar"].textContent + " " + REG["mm-rlar"].textContent + " " + REG["mm-len"].textContent,
     "0x20008003 0x200087F1 2048 bytes");
 REG["mm-2"].fire("click");
-chk("and one byte more is rounded up to a whole block",
+chk("and one byte more is rounded up to the next multiple of 32",
     REG["mm-rbar"].textContent + " " + REG["mm-rlar"].textContent + " " + REG["mm-len"].textContent,
     "0x20008003 0x20008811 2080 bytes");
 chk("the base is the same in all three",
@@ -303,9 +303,9 @@ chk("the closing names the two regions a process starts with",
 // Two source bullets backed claims the page never made: the skip-if-unchanged
 // optimisation, and the older unit writing the identical three control fields.
 // Both are prose now, so both are assertable.
-chk("the chapter says which half of the write is skipped",
+chk("the chapter says which of the two writes is skipped",
     REG["skipline"].textContent.indexOf("the eight pairs are left alone") > -1, true);
-chk("and that the three control fields are not the skipped half",
+chk("and that the three control fields are not the skipped one",
     REG["sameline"].textContent.indexOf("written every time") > -1, true);
 chk("and what the comparison is against",
     REG["skipline"].textContent.indexOf("dirty flag") > -1, true);
@@ -337,7 +337,7 @@ chk("the closing says two pairs confine a process, out of eight",
 // The glossary was the one part of the page neither earlier pass had aimed at,
 // and it held two errors. 'execute-never' called itself one bit while figure 2
 // had grown a second, and 'privileged' blamed the chip for a line Tock writes.
-chk("the glossary says execute-never is a pair",
+chk("the glossary says there are two execute-never bits",
     REG["words"].textContent.indexOf("There are two: one aimed at the process") > -1, true);
 chk("and that exempting the kernel is Tock's configuration, not the chip's",
     REG["words"].textContent.indexOf("Tock configures the unit not to constrain it") > -1, true);
@@ -348,7 +348,7 @@ chk("the count of exception names is two, one of which never fires",
       && REG["wordcount"].textContent.indexOf("only one of the two ever fires") > -1, true);
 // Figure 2's note said ten bits had nowhere to go, in a figure whose rows now
 // account for all ten.
-chk("the note says the ten bits are spent rather than missing",
+chk("the note says the ten register positions carry fields",
     REG["rf-note"].textContent.indexOf("carrying the fields in the rows above") > -1, true);
 // PXN's 0x10 is added to figure 3's limits, not visible inside them.
 chk("the PXN panel says the 0x10 is added, not present",
@@ -366,12 +366,14 @@ chk("the imperative admits a three-bit field, because ATTRINDX is one",
 // sentence lives one <p> further down, so the check could never have failed.
 chk("the intro no longer says the attribute is set once",
     REG["threeuses"].textContent.indexOf("sets once") < 0
-      && REG["threeuses"].textContent.indexOf("on every configure") > -1, true);
+      && REG["threeuses"].textContent.indexOf("one line the kernel writes on every configure") > -1, true);
 chk("and figure 2 says on every configure",
     REG["rfp-5"].textContent.indexOf("set on every configure") > -1, true);
-// Chapter 2's boot ROM was the other step in the series with no source line.
-chk("the one-of-a-kind claim admits chapter 2's boot ROM",
-    REG["flp-0"].textContent.indexOf("Only twice in this series") > -1, true);
+// Steps 1 and 2 both have no source line behind them, so the sentence counts
+// nothing now: it says why this step has none.
+chk("step 1 says why it has no source line rather than counting",
+    REG["flp-0"].textContent.indexOf("no software in it") > -1
+      && REG["flp-0"].textContent.indexOf("Only twice") < 0, true);
 // RLAR's five bits carry the other half of the size rule.
 chk("the base panel calls its five bits half the rule",
     REG["rfp-0"].textContent.indexOf("half the size rule") > -1, true);
@@ -380,3 +382,22 @@ chk("and points at the field carrying the other half",
 // A request that is already a multiple of 32 gets exactly what it asked for.
 chk("the rounding claim is scoped to requests that need rounding",
     REG["mmp-2"].textContent.indexOf("not already a multiple of 32") > -1, true);
+
+// ---- what the fourth review pass found ----
+// Three paragraphs carried real claims behind ids no assertion ever read. An
+// anchor the suite ignores is the mirror of a control nothing wires up.
+chk("the chapter states the order: regions in, then the unit on",
+    REG["ctrlline"].textContent.indexOf("before a switch into a process") > -1
+      && REG["ctrlline"].textContent.indexOf("turned on immediately after") > -1, true);
+chk("and that two of the three control fields are about who is exempt",
+    REG["ctrlline"].textContent.indexOf("who is <em>not</em> being protected against") > -1
+      || REG["ctrlline"].textContent.indexOf("who is not being protected against") > -1, true);
+chk("the fault section opens on the access that starts it",
+    REG["instantline"].textContent.indexOf("one byte past the end of its region") > -1, true);
+chk("and says how many steps it takes to become a stopped process",
+    REG["instantline"].textContent.indexOf("six steps") > -1, true);
+chk("the two-chips section says the kernel asks for a region, not a register",
+    REG["twochips"].textContent.indexOf("It asks for a region of at least so many bytes") > -1, true);
+chk("and names where the answer is worked out",
+    REG["twochips"].textContent.indexOf("under") > -1
+      && REG["twochips"].textContent.indexOf("arch/") > -1, true);

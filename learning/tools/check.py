@@ -1240,6 +1240,72 @@ def figure_label_checks(html, tests_path):
     return problems
 
 
+# Phrasings a review pass deliberately removed from a chapter's page. A word
+# that came out for a reason must not come back, and it does: chapter 5's
+# `block` was struck from six places in its first review pass and survived in
+# two source-list bullets, because that pass scanned the prose and not the
+# citations. Adding a line here is only allowed once the phrase is gone, so the
+# gate proves itself the moment it is written.
+#
+# Markup only. A negative assertion in the test suite legitimately names the
+# phrase it forbids, and the CSS legitimately says `display: block`.
+RETIRED_PHRASES = {
+    "ch05": [
+        ("block", "chapter 2's glossary pins it as the boot ROM's "
+                  "self-describing structure"),
+        ("real region", "the worked example's base is chosen, not read off "
+                        "this board"),
+        ("sets once", "the attribute goes in on every configure, above the "
+                      "dirty check"),
+        ("the entire size rule", "RLAR's five bits carry the other half"),
+        ("only twice", "counting the steps with no source line got the count "
+                       "wrong twice running"),
+    ],
+}
+
+
+def retired_phrase_checks(name, html):
+    """A phrase an earlier pass removed, back on the page."""
+    prefix = name.split("-")[0]
+    retired = RETIRED_PHRASES.get(prefix)
+    if not retired:
+        return []
+    cut = html.find("</style>")
+    markup = html[cut:] if cut >= 0 else html
+    low = markup.lower()
+    problems = []
+    for phrase, why in retired:
+        if phrase.lower() in low:
+            problems.append("%r is back on the page, and came out because %s"
+                            % (phrase, why))
+    return problems
+
+
+def orphan_comment_checks(html):
+    """A stylesheet comment with no rule under it.
+
+    Three of these were left in chapter 5 when the rules they headed were
+    deleted for being dead. `dead_css_checks` finds a rule with no markup; it
+    has nothing to say about a comment with no rule, and a comment that heads
+    nothing is a claim about the file that stopped being true.
+    """
+    cut = html.find("</style>")
+    if cut < 0:
+        return []
+    css = html[:cut]
+    problems = []
+    for match in re.finditer(r"/\*.*?\*/", css, re.S):
+        body = " ".join(match.group(0).split())
+        # A section banner heads a section rather than a rule, so the thing
+        # after it is allowed to be the comment explaining the section.
+        if re.match(r"^/\*\s*-{3,}", body):
+            continue
+        rest = css[match.end():]
+        if re.match(r"\s*(/\*|\Z)", rest):
+            problems.append("stylesheet comment heads nothing: %s" % body[:72])
+    return problems
+
+
 # Words that head a selector part without naming an element: at-rule keywords
 # and the bare-word pieces of a media query. Plus the three elements a browser
 # creates whether or not the file writes them -- these pages open at `<title>`
@@ -1470,6 +1536,8 @@ def static_checks(html, name):
     problems.extend(figure_order_checks(html))
     problems.extend(figure_label_checks(
         html, os.path.join(TOOLS, name.split('-')[0] + '.tests.js')))
+    problems.extend(retired_phrase_checks(name, html))
+    problems.extend(orphan_comment_checks(html))
     problems.extend(wired_checks(html))
 
     return problems
