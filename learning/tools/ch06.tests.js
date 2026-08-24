@@ -35,7 +35,10 @@ function walk(btn, panel, n, name) {
 // ---- No figure may boot empty ----
 // Most readers never click, so a figure that opens on "choose something"
 // teaches nothing. Checked first, because everything below moves these.
-chk("figure 1 opens on the yield instruction", REG["sv-0"].getAttribute("aria-pressed"), "true");
+// Both of the first two figures used to open on yield, the class the chapter
+// uses least. This one opens on the class its worked example is about.
+chk("figure 1 opens on the command instruction", REG["sv-1"].getAttribute("aria-pressed"), "true");
+chk("and not on the yield one", REG["sv-0"].getAttribute("aria-pressed"), "false");
 chk("figure 2 opens on class zero", REG["cl-0"].getAttribute("aria-pressed"), "true");
 chk("figure 3 opens on asking how many LEDs there are", REG["rq-0"].getAttribute("aria-pressed"), "true");
 chk("figure 4 opens on command", REG["tm-0"].getAttribute("aria-pressed"), "true");
@@ -45,7 +48,7 @@ chk("figure 7 opens on the first word of the frame", REG["fr-0"].getAttribute("a
 chk("figure 8 opens on a buffer that is accepted", REG["bf-0"].getAttribute("aria-pressed"), "true");
 chk("figure 9 opens on the class that does not exist", REG["rf-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
-    REG["svp-0"].classList.contains("is-on")
+    REG["svp-1"].classList.contains("is-on")
       && REG["clp-0"].classList.contains("is-on")
       && REG["rqp-0"].classList.contains("is-on")
       && REG["tmp-0"].classList.contains("is-on")
@@ -452,8 +455,12 @@ REG["rf-0"].fire("click");
 // is supposed to keep it, because a goal is written before the figures move.
 chk("the first goal promises where the class number is kept",
     REG["goalbox"].textContent.indexOf("where the number picking a syscall class is kept") > -1, true);
-chk("the second goal promises three classes and two methods",
-    REG["goalbox"].textContent.indexOf("which three never reach a driver and which two reach a line of its code") > -1, true);
+// "two reach" flatly contradicted the closing's "exactly one ... in the
+// ordinary case"; "can reach" is what makes both true at once.
+chk("the second goal promises three classes and two that can reach code",
+    REG["goalbox"].textContent.indexOf("which three never reach a driver and which two can reach a line of its code") > -1, true);
+chk("and the closing says how many do in practice",
+    REG["closing"].textContent.indexOf("exactly one reaches a line of that capsule's own code") > -1, true);
 chk("figure 4 has exactly the two methods that are requests",
     REG["tm-0"].textContent + "/" + REG["tm-1"].textContent, "command/allow_userspace_readable");
 chk("the third goal promises four registers", REG["goalbox"].textContent.indexOf("four registers") > -1, true);
@@ -465,6 +472,65 @@ chk("the chapter says what puts things in chapter 4's queue",
     REG["queueline"].textContent.indexOf("This is what fills it") > -1, true);
 chk("and hands the reader on to grants",
     REG["lastline"].textContent.indexOf("last mechanism this series has left") > -1, true);
+// ---- What the first review pass changed ----
+// A fix pass writes prose nobody has reviewed, so the sentences it wrote are
+// covered here rather than left to the next pass to find.
+(function () {
+  var g = REG["words"].textContent;
+  // `word` was used twenty times in two senses and no chapter had defined it.
+  chk("the glossary now says what a word is", g.indexOf("Four bytes") > -1, true);
+  chk("and owns up to the list's own use of the word",
+      g.indexOf("in the ordinary sense") > -1, true);
+  // The frame entry claimed everything a request carries travels in it, which
+  // is what figure 1's note exists to deny.
+  chk("the frame entry excepts the one thing that is not in it",
+      g.indexOf("Which kind of request it is does not") > -1, true);
+  chk("and figure 1's note is the other half of that",
+      REG["sv-note"].textContent.indexOf("not in a register") > -1, true);
+  // A subscribed upcall is not one-shot.
+  chk("subscribe keeps the pointer until it is replaced",
+      g.indexOf("keeps it until the process hands over another") > -1, true);
+}());
+(function () {
+  // Two return shapes were illustrated with invented uses. One has a single
+  // caller in the tree and one has none, and the page now says so.
+  REG["rt-2"].fire("click");
+  chk("the three-value success names its one caller",
+      REG["rtp-2"].textContent.indexOf("One capsule in the tree returns it") > -1, true);
+  chk("and says what that caller hands back",
+      REG["rtp-2"].textContent.indexOf("three counters about a network device") > -1, true);
+  REG["rt-4"].fire("click");
+  chk("the failure-with-a-value shape names its only caller",
+      REG["rtp-4"].textContent.indexOf("the unit test that checks it encodes correctly") > -1, true);
+  chk("and still says why the ABI has it",
+      REG["rtp-4"].textContent.indexOf("numbered from opposite ends") > -1, true);
+  REG["rt-0"].fire("click");
+}());
+(function () {
+  // `shape` is this chapter's coinage and now says so, and the specification's
+  // own names for the two endings are on the page rather than only in a
+  // source bullet.
+  chk("the chapter owns its coinage",
+      REG["firstword"].textContent.indexOf("Shape is this chapter's word for it") > -1, true);
+  chk("and gives the kernel's name for the same thing",
+      REG["firstword"].textContent.indexOf("the kernel calls them variants") > -1, true);
+  chk("the two endings are named where the reader meets them",
+      REG["blline"].textContent.indexOf("direct resume") > -1
+        && REG["blline"].textContent.indexOf("pushed callback") > -1, true);
+}());
+(function () {
+  // One queued call, one word for it. The chapter used upcall, note and task
+  // interchangeably before this pass.
+  var i, stray = [];
+  var ids = ["uc-0", "uc-1", "uc-2", "uc-3", "uc-4", "uc-5",
+             "ucp-0", "ucp-1", "ucp-2", "ucp-3", "ucp-4", "ucp-5",
+             "queueline", "uc-note", "qbn"];
+  for (i = 0; i < ids.length; i++) {
+    if (/\bnotes?\b/.test(REG[ids[i]].textContent)) { stray.push(ids[i]); }
+  }
+  chk("nothing in the upcall path calls an upcall a note", stray.join(", "), "");
+}());
+
 // The glossary says ten words, and the lead sentence makes a claim about the
 // order of them as well as the count.
 (function () {

@@ -779,7 +779,7 @@
   {
     "id": "ch06-notes-ch04",
     "in": "ch06",
-    "says": "Chapter 4 found where those notes go",
+    "says": "Chapter 4 found where those upcalls go",
     "about": "ch04",
     "kept_by": "CALLBACK_LEN"
   },

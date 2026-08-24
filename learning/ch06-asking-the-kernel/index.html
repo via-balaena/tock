@@ -430,7 +430,7 @@ dfn {
 .glossary dd { margin: 0; color: var(--ink-soft); }
 
 
-/* The ten-word list at the top. Terms are short here, so the two columns
+/* The eleven-word list at the top. Terms are short here, so the two columns
    line up at the top of each row rather than centring. */
 .glossary.cast { align-items: start; }
 
@@ -587,7 +587,7 @@ dfn {
     <h2>What you'll be able to do at the end</h2>
     <ul>
       <li>Name the instruction a process uses to reach the kernel, and say where the number picking a <dfn>syscall class</dfn> is kept.</li>
-      <li>List the eight classes, and say which three never reach a driver and which two reach a line of its code.</li>
+      <li>List the eight classes, and say which three never reach a driver and which two can reach a line of its code.</li>
       <li>Read one request the way the kernel reads it: four registers, meaning four different things depending on the class.</li>
       <li>Follow one event from inside a driver to a function running inside a process, naming the queue it waited in.</li>
     </ul>
@@ -596,7 +596,7 @@ dfn {
 </section>
 
 <section class="col">
-  <h2>Ten words, before we start</h2>
+  <h2>Eleven words, before we start</h2>
   <p id="wordcount">Each is one sentence now and repeated in context below. Three of them are the names of particular requests, and the last is the only one describing traffic going the other way.</p>
 </section>
 
@@ -605,10 +605,11 @@ dfn {
     <dt><dfn>syscall</dfn></dt><dd>The one way a process may ask the kernel for anything at all. Chapter 4 named it; this chapter is the whole of it.</dd>
     <dt><dfn>syscall class</dfn></dt><dd>One of eight kinds of request. Which kind is being made is an eight-bit number, and it travels inside the instruction rather than in a register.</dd>
     <dt><dfn>svc</dfn></dt><dd>The Arm instruction that raises an exception deliberately. It carries a process into the kernel, and going the other way it carries the kernel into a process.</dd>
-    <dt><dfn>exception frame</dfn></dt><dd>The eight words the processor pushes onto a stack when it takes an exception. Everything a request and its answer carry travels in it.</dd>
+    <dt><dfn>word</dfn></dt><dd>Four bytes, the width this processor moves in one go. The list you are reading calls its entries words in the ordinary sense; everywhere else in this chapter, a word is four bytes.</dd>
+    <dt><dfn>exception frame</dfn></dt><dd>The eight words the processor pushes onto a stack when it takes an exception. Every value a request and its answer carry travels in it. Which kind of request it is does not.</dd>
     <dt><dfn>driver number</dfn></dt><dd>The part of a request that names a capsule. A board maps each one to a driver, or to nothing.</dd>
     <dt><dfn>command</dfn></dt><dd>The class that tells a driver to do something now. It is the request that reaches a driver's own code in the ordinary case.</dd>
-    <dt><dfn>subscribe</dfn></dt><dd>The class that leaves a function pointer with the kernel, to be called once when something happens. The driver never sees the pointer.</dd>
+    <dt><dfn>subscribe</dfn></dt><dd>The class that leaves a function pointer with the kernel, for it to call when something happens. The driver never sees the pointer, and the kernel keeps it until the process hands over another.</dd>
     <dt><dfn>allowed buffer</dfn></dt><dd>A run of a process's own memory that the process has handed to the kernel to read or write, given as an address and a length.</dd>
     <dt><dfn>yield</dfn></dt><dd>The class that gives the processor back. A process that never calls it never receives anything.</dd>
     <dt><dfn>upcall</dfn></dt><dd>A call in the other direction: the kernel arranging for one of a process's own functions to run. Chapter 4 found the queue they wait in.</dd>
@@ -631,20 +632,20 @@ dfn {
   <div class="instrument-body">
     <p class="dothis">Click each. The last two are the interesting ones: one is refused, and one is the kernel's own.</p>
     <div class="costs" role="group" aria-label="Five svc instructions and how each decodes">
-      <button type="button" id="sv-0" aria-pressed="true">svc 0</button>
-      <button type="button" id="sv-1" aria-pressed="false">svc 2</button>
+      <button type="button" id="sv-0" aria-pressed="false">svc 0</button>
+      <button type="button" id="sv-1" aria-pressed="true">svc 2</button>
       <button type="button" id="sv-2" aria-pressed="false">svc 4</button>
       <button type="button" id="sv-3" aria-pressed="false">svc 8</button>
       <button type="button" id="sv-4" aria-pressed="false">svc 255</button>
     </div>
     <div class="costgrid">
-      <div class="costcell"><span class="costcell-k">the halfword in flash</span><span class="costcell-v" id="sv-word">0xDF00</span></div>
-      <div class="costcell"><span class="costcell-k">low eight bits</span><span class="costcell-v" id="sv-num">0</span></div>
-      <div class="costcell"><span class="costcell-k">what the kernel makes of it</span><span class="costcell-v" id="sv-cls">Yield</span></div>
+      <div class="costcell"><span class="costcell-k">the halfword in flash</span><span class="costcell-v" id="sv-word">0xDF02</span></div>
+      <div class="costcell"><span class="costcell-k">low eight bits</span><span class="costcell-v" id="sv-num">2</span></div>
+      <div class="costcell"><span class="costcell-k">what the kernel makes of it</span><span class="costcell-v" id="sv-cls">Command</span></div>
     </div>
     <div class="costsay">
-      <p class="costp is-on" id="svp-0">Class zero, <b>yield</b>, and the only class whose first register the decoder actually checks. Three values are legal there; anything else is treated as a broken request rather than a request for something missing.</p>
-      <p class="costp" id="svp-1">Class two, <b>command</b>. This is the one in the LED request two figures down, and it is the class most of a working application spends its time in.</p>
+      <p class="costp" id="svp-0">Class zero, <b>yield</b>, which gives the processor back. It is also the only class whose first register the decoder checks: three values are legal there, and anything else is treated as a broken request rather than a request for something missing.</p>
+      <p class="costp is-on" id="svp-1">Class two, <b>command</b>. This is the one in the LED request two figures down. It is one of only two classes that reach a driver's own code, and the one the rest of this chapter keeps coming back to.</p>
       <p class="costp" id="svp-2">Class four, the read-only kind of handing memory over. Classes three, four and seven are three flavours of the same idea, which is why the numbers on their own tell you so little.</p>
       <p class="costp" id="svp-3">Nothing. The kernel converts eight-bit numbers into requests by matching zero through seven, and eight matches nothing, so the conversion returns nothing at all. A request that will not decode ends the process, which is the same ending chapter 5's forbidden store had.</p>
       <p class="costp" id="svp-4">The kernel's own, going the other way. Tock enters a process by executing <b>svc 0xff</b>, and the comment beside that line says it does not matter which number is used, because nothing reads it. What sorts the two directions apart is a single bit of the link register, which is the same bit chapter 5's fault handler branched on.</p>
@@ -753,7 +754,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="tmp-0">Four arguments in, one answer out. The answer is a wrapper around a small set of shapes: success, success carrying up to three values, or failure carrying an error. A driver that does not recognise the operation says so with an unsupported-operation error, and that is also what the trait does for a driver that does not write this method at all.</p>
-      <p class="blkp" id="tmp-1">The seventh class, and the only allow that a driver sees. It exists because sometimes both sides want to read the same bytes while the kernel is filling them. The default is a refusal, and one capsule in the whole tree replaces it: the one that lets a process read the kernel's own idea of the time without a syscall at all.</p>
+      <p class="blkp" id="tmp-1">The seventh class, and the only allow that a driver sees. It exists because sometimes both sides want to read the same bytes while the kernel is filling them. The default is a refusal, and one capsule in the whole tree replaces it. That one publishes three of the kernel's own numbers into a buffer: how many times the process has been switched to, how much work is waiting for it, and the time. After one allow to hand the buffer over, a process reads all three without another syscall.</p>
       <p class="blkp" id="tmp-2">Not a request. The kernel calls it when a subscribe or an allow needs filing for a process that has never used this driver before. It has to ask, because only the capsule knows how large its own per-process storage is. It is the one method with no default, so a driver author cannot forget it silently.</p>
     </div>
   </div>
@@ -762,8 +763,8 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 
 <section class="col">
   <h2>The answer, in the same four words</h2>
-  <p id="backline">There is no returning from a syscall in the ordinary sense. The kernel is not on a stack the process can return through, and by the time the answer exists the process is not running. What the kernel does instead is write into the exception frame the <b>svc</b> pushed. The four words that carried the request out are the four words that carry the answer back.</p>
-  <p id="firstword">The first of the four says what shape the other three are in, and the numbering is the useful part. Of the ten shapes defined, every failure is numbered below 128 and every success is 128 or above, so a process can sort one from the other by looking at a single bit.</p>
+  <p id="backline">Whether a request reached one of those methods or never left the core kernel, the answer comes back the same way. There is no returning from a syscall in the ordinary sense. The kernel is not on a stack the process can return through, and by the time the answer exists the process is not running. What the kernel does instead is write into the exception frame the <b>svc</b> pushed. The four words that carried the request out are the four words that carry the answer back.</p>
+  <p id="firstword">The first of the four says what shape the other three are in. Shape is this chapter's word for it; the kernel calls them variants, and the numbering is the useful part. Of the ten shapes defined, every failure is numbered below 128 and every success is 128 or above, so a process can sort one from the other by looking at a single bit.</p>
 </section>
 
 <figure class="instrument">
@@ -789,9 +790,9 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <div class="costsay">
       <p class="costp is-on" id="rtp-0">It worked and there is nothing to say about it. One register written, three left alone. This is what turning on an LED comes back as.</p>
       <p class="costp" id="rtp-1">It worked and here is a number. Asking the LED driver how many LEDs it has comes back this way, with the 1 in <b>r1</b>.</p>
-      <p class="costp" id="rtp-2">The widest success shape there is: three values, filling every register the frame has for the purpose. Time-of-day and sensor readings are what tend to need it.</p>
+      <p class="costp" id="rtp-2">The widest success shape there is: three values, filling every register the frame has for the purpose. One capsule in the tree returns it, handing back three counters about a network device in a single call rather than making the process ask three times.</p>
       <p class="costp" id="rtp-3">It did not work, and <b>r1</b> says why. There are thirteen errors in the whole kernel, numbered 1 to 13, with names like invalid-argument and no-such-device. A process compares against a number rather than parsing anything.</p>
-      <p class="costp" id="rtp-4">It did not work, and there is a number worth having anyway &mdash; how much of a buffer was consumed before the trouble, say. Failure shapes and success shapes are numbered from opposite ends for exactly this reason. A failure can carry data of its own without any chance of being read as a success.</p>
+      <p class="costp" id="rtp-4">It did not work, and there is a number worth having anyway. Nothing in this tree has yet wanted one: the only caller of its constructor is the unit test that checks it encodes correctly. It is in the specification because failures and successes are numbered from opposite ends, which means a failure can carry data of its own without any chance of being read as a success.</p>
     </div>
   </div>
   <div class="instrument-note" id="rt-note">Notice what "untouched" means. The kernel writes only the registers a shape needs, and the rest of the frame still holds what the process put there before the <b>svc</b> &mdash; its own arguments. So a process that reads <b>r2</b> after a plain success reads back the argument it sent. That is an accident of the encoding rather than a promise, and the specification says nothing about it.</div>
@@ -801,7 +802,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
   <h2>Things that do not finish</h2>
   <p id="splitline">Turning on an LED finishes inside the call. The pin is high before the process runs again, which is why Figure 3's answer had nothing in it. Most of what a process wants is not like that. A byte from the console arrives when somebody types it, and no amount of waiting inside a driver will make that sooner.</p>
   <p id="twoparts">So a request that cannot finish is split in two. First <b>subscribe</b>, leaving a function pointer with the kernel. Then <b>command</b>, which starts the work and returns immediately, having promised nothing except that it started. Later the driver has something, and asks the kernel to run that function.</p>
-  <p id="queueline">The kernel cannot. The process is not running, and even if it were, interrupting it to run one of its own functions would land a callback in the middle of whatever else it was doing. So the kernel writes down an upcall instead: which function, which three values, and which subscription it answers. Chapter 4 found where those notes go: room for ten of them, a constant belonging to the process implementation rather than to any board. This is what fills it.</p>
+  <p id="queueline">The kernel cannot. The process is not running, and even if it were, interrupting it to run one of its own functions would land a callback in the middle of whatever else it was doing. So the kernel writes down an upcall instead: which function, which three values, and which subscription it answers. Chapter 4 found where those upcalls go: room for ten of them, a constant belonging to the process implementation rather than to any board. This is what fills it.</p>
 </section>
 
 <figure class="instrument">
@@ -813,18 +814,18 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <p class="dothis">Click each step. Step four is the one that is not an action.</p>
     <div class="seq" role="group" aria-label="Six steps in delivering an upcall">
       <button type="button" id="uc-0" aria-pressed="true"><span class="seq-n">1</span><span>The driver has something, and asks for the process's function to be run <span class="seq-src">grant.rs:610</span></span></button>
-      <button type="button" id="uc-1" aria-pressed="false"><span class="seq-n">2</span><span>The kernel builds a note out of it: three values from the driver, and a fourth the driver never saw <span class="seq-src">upcall.rs:183</span></span></button>
-      <button type="button" id="uc-2" aria-pressed="false"><span class="seq-n">3</span><span>The note goes on the end of the process's queue <span class="seq-src">process_standard.rs:598</span></span></button>
+      <button type="button" id="uc-1" aria-pressed="false"><span class="seq-n">2</span><span>The kernel builds an upcall out of it: three values from the driver, and a fourth the driver never saw <span class="seq-src">upcall.rs:183</span></span></button>
+      <button type="button" id="uc-2" aria-pressed="false"><span class="seq-n">3</span><span>The upcall goes on the end of the process's queue <span class="seq-src">process_standard.rs:598</span></span></button>
       <button type="button" id="uc-3" aria-pressed="false"><span class="seq-n">4</span><span>Nothing happens <span class="seq-src">no code at all</span></span></button>
-      <button type="button" id="uc-4" aria-pressed="false"><span class="seq-n">5</span><span>The process calls <b>yield</b>, and the kernel takes one note off the queue <span class="seq-src">kernel.rs:607</span></span></button>
+      <button type="button" id="uc-4" aria-pressed="false"><span class="seq-n">5</span><span>The process calls <b>yield</b>, and the kernel takes one upcall off the queue <span class="seq-src">kernel.rs:607</span></span></button>
       <button type="button" id="uc-5" aria-pressed="false"><span class="seq-n">6</span><span>The frame is rewritten so the process resumes at the function <span class="seq-src">kernel.rs:628</span></span></button>
     </div>
     <div class="dbgsay">
       <p class="dbgp is-on" id="ucp-0">A driver does not call the process's function and does not hold its address. It has a handle that lets it say "number two of mine, with these three values", and the kernel finds the pointer it filed at subscribe time. A driver asking for a number it has no upcall for gets an error and nothing is scheduled.</p>
       <p class="dbgp" id="ucp-1">The fourth value is the one worth knowing about. When the process subscribed, it passed a word of its own alongside the pointer, and the kernel kept it. It comes back here untouched. A callback can therefore tell which of its own requests it is answering, and the driver was never told anything about that.</p>
-      <p class="dbgp" id="ucp-2">Ten slots, shared by every driver a process uses. A full queue does not block and does not fault: the note is dropped and the driver is told the queue was full. What happens next is then the driver's business, because the kernel keeps nothing to retry from.</p>
-      <p class="dbgp" id="ucp-3">This is the step that surprises people. The process is running, and a running process is never stopped to take one of these. It runs until it asks for something, uses up its slice of time, or yields. Until one of those, the note sits in the queue and the driver's event has visibly happened to nobody.</p>
-      <p class="dbgp" id="ucp-4">Yielding puts the process into a state where notes can be delivered, and the kernel takes exactly one. If the queue holds three, the other two wait for the next yield. This is also why a process that never yields never receives anything: its queue fills to ten and the eleventh is dropped.</p>
+      <p class="dbgp" id="ucp-2">Ten slots, shared by every driver a process uses. A full queue does not block and does not fault: the upcall is dropped and the driver is told the queue was full. What happens next is then the driver's business, because the kernel keeps nothing to retry from.</p>
+      <p class="dbgp" id="ucp-3">This is the step that surprises people. The process is running, and a running process is never stopped to take one of these. It runs until it asks for something, uses up its slice of time, or yields. Until one of those, the upcall sits in the queue and the driver's event has visibly happened to nobody.</p>
+      <p class="dbgp" id="ucp-4">Yielding puts the process into a state where upcalls can be delivered, and the kernel takes exactly one. If the queue holds three, the other two wait for the next yield. This is also why a process that never yields never receives anything: its queue fills to ten and the eleventh is dropped.</p>
       <p class="dbgp" id="ucp-5">The last step is the one in the next section. The kernel does not call the function; it edits the eight words on the process's stack so that resuming the process lands inside the function instead of after the <b>svc</b>.</p>
     </div>
   </div>
@@ -834,7 +835,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 <section class="col">
   <h2>One frame, three jobs</h2>
   <p id="frameline">The exception frame is eight words. The processor pushes them when it takes the exception and pops the same eight back when the handler returns. That is the opening the kernel uses: change the words while they are sitting there, and the process resumes into something else.</p>
-  <p id="blline">The comment above the function that does it says what it amounts to in one line: "In effect, this converts <b>svc</b> into <b>bl callback</b>." The instruction the process executed was a request. By the time it finishes, it has become a call to a function, with the address after the request left behind as the place to come back to.</p>
+  <p id="blline">The comment above the function that does it says what it amounts to in one line: "In effect, this converts <b>svc</b> into <b>bl callback</b>." The instruction the process executed was a request. By the time it finishes, it has become a call to a function, with the address after the request left behind as the place to come back to. The specification has names for the two endings: a request that is simply answered is a <em>direct resume</em>, and one that comes back inside a function is a <em>pushed callback</em>.</p>
   <p id="thumbline">Two of the eight words are addresses of instructions, and both are written with their lowest bit set. That is not an odd address. On this processor an address used as a branch target carries one bit saying which instruction set to decode. This chip has only one of the two, the compact set called Thumb, so the bit is always set and the address underneath it is always even.</p>
 </section>
 
@@ -871,7 +872,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 
 <section class="col">
   <h2>A buffer through the wall</h2>
-  <p id="bufline">A command carries two numbers. A line of text to print is not two numbers, and neither is a reading to be filled in. For anything larger the process hands over a piece of its own memory: an address and a length, in a class made for it. What the kernel ends up holding is an allowed buffer, and the classes that make one are three of the eight.</p>
+  <p id="bufline">Two of those eight words reach a driver as arguments, and that is everything a command can carry. A line of text to print is not two numbers, and neither is a reading to be filled in. For anything larger the process hands over a piece of its own memory: an address and a length, in a class made for it. What the kernel ends up holding is an allowed buffer, and the classes that make one are three of the eight.</p>
   <p id="consentline">Which sounds like exactly what chapter 5's fence exists to prevent, and is not. The fence stops a process reaching out. This is a process letting the kernel reach in, and the kernel runs on the privileged side, where chapter 5's regions do not apply at all. It could read that memory unasked. What the class buys is not access. It is a record of consent, with the bounds checked.</p>
   <p id="checkline">The check is software this time, in the process implementation rather than in the processor, and it lands on the same two addresses. The buffer must start at or after the start of the process's memory, and end at or before its break. Those are the two numbers chapter 5 wrote into a hardware register to build the region; here they are compared in Rust to answer a different question about the same span.</p>
 </section>
@@ -951,7 +952,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Never &mdash; a running process is not stopped to take one</button>
       <button type="button" class="q-opt" id="qb-2" aria-pressed="false">At the end of its timeslice, when the scheduler stops it anyway</button>
     </div>
-    <p class="q-answer" id="qbn">The second. Notes are only taken off the queue for a process that has yielded, so a process that never yields accumulates ten of them and then starts losing them. The third answer is the near miss worth naming. Losing the processor at the end of a timeslice is not yielding: it puts the process back in line to run again, not into the state where notes are delivered.</p>
+    <p class="q-answer" id="qbn">The second. Upcalls are only taken off the queue for a process that has yielded, so a process that never yields accumulates ten of them and then starts losing them. The third answer is the near miss worth naming. Losing the processor at the end of a timeslice is not yielding: it puts the process back in line to run again, not into the state where upcalls are delivered.</p>
   </div>
   <div class="q">
     <p class="q-ask">A syscall comes back with 1 in <b>r0</b>. What did the process get?</p>
@@ -992,23 +993,23 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
   <ul>
     <li>The eight classes and their numbers &mdash; <code>SyscallClass</code>, <code>kernel/src/syscall.rs</code>:87&ndash;96, converted from a byte at :101&ndash;116</li>
     <li>The file's own opening line saying six, three lines before it describes a seventh &mdash; the same file, :9&ndash;22</li>
-    <li>The decoded request, one shape per class &mdash; <code>Syscall</code>, the same file, :150&ndash;236</li>
+    <li>Eight kinds of request, each with its own set of arguments &mdash; <code>Syscall</code>, the same file, :150&ndash;236</li>
     <li>Which classes carry a driver number &mdash; <code>driver_number</code>, the same file, :239&ndash;268, returning something for five of the eight</li>
     <li>Four registers and a number becoming one of those shapes &mdash; <code>syscall_from_register_arguments_trd104</code>, <code>kernel/src/utilities/arch_helpers.rs</code>:42&ndash;107</li>
     <li>Yield being the only class whose first register is checked there, and 0, 1 and 2 being the whole of it &mdash; the same function, :50&ndash;66</li>
     <li>Anything that will not decode becoming a fault &mdash; <code>arch/cortex-m/src/syscall.rs</code>:509&ndash;512</li>
     <li>The class number coming out of the instruction rather than a register &mdash; the same file, :478&ndash;497, stepping the program counter back one halfword and masking the low eight bits</li>
-    <li>Which register each architecture uses, in a table &mdash; <code>doc/reference/trd104-syscalls.md</code>:103&ndash;108, where the row for the class identifier says <code>svc</code></li>
+    <li>The arguments travelling in <b>r0</b> to <b>r3</b> and the class identifier travelling in the instruction &mdash; <code>doc/reference/trd104-syscalls.md</code>:103&ndash;108, where the row for the class identifier says <code>svc</code> rather than a register</li>
     <li>The kernel entering a process with the same instruction, and the number there meaning nothing &mdash; <code>arch/cortex-v7m/src/lib.rs</code>:293&ndash;298, "It doesn't matter which SVC number we use here as it is not used in the exception handler"</li>
     <li>One bit of the link register sorting the two directions apart &mdash; the same file, :73&ndash;82, the same bit chapter 5's fault handler branched on</li>
-    <li>This board using that handler &mdash; <code>arch/cortex-m33/src/lib.rs</code>:47</li>
+    <li>That handler being this board's, so the bit above is the one this board branches on &mdash; <code>arch/cortex-m33/src/lib.rs</code>:47, where the Cortex-M33 takes the v7-M one</li>
     <li>The frame being eight words &mdash; <code>arch/cortex-m/src/syscall.rs</code>:195&ndash;196, "Space for 8 u32s: r0-r3, r12, lr, pc, and xPSR"</li>
     <li>Three classes a board's request filter is never shown &mdash; <code>kernel/src/kernel.rs</code>:761&ndash;771</li>
     <li>Five classes routed by driver number &mdash; the same file, :850&ndash;857</li>
     <li>The one line that reaches a driver's own code &mdash; <code>d.command(subdriver_number, arg0, arg1, process.processid())</code>, the same file, :1035</li>
     <li>A driver number a board does not list &mdash; the same file, :1036, and the board's own lookup at <code>boards/raspberry_pi_pico_2/src/main.rs</code>:105&ndash;112, which names five</li>
     <li>Subscribe checking the pointer against the process's flash or its RAM &mdash; the same file, :903&ndash;911, and <code>is_valid_upcall_function_pointer</code>, <code>kernel/src/process_standard.rs</code>:1416&ndash;1422</li>
-    <li>Subscribe returning the previous pointer, and clearing pending calls only on success &mdash; <code>kernel/src/kernel.rs</code>:936 and :1005&ndash;1011</li>
+    <li>Subscribe handing back whichever pointer was there before &mdash; <code>kernel/src/kernel.rs</code>:936, with the queued calls to the old one dropped at :1005&ndash;1011</li>
     <li>An unknown exit variant coming back as an error rather than a fault &mdash; the same file, :1411&ndash;1417</li>
     <li>The trait a driver implements, and its three methods &mdash; <code>kernel/src/syscall_driver.rs</code>:262&ndash;390: <code>command</code> at :268, <code>allow_userspace_readable</code> at :288, <code>allocate_grant</code> at :390</li>
     <li><code>allocate_grant</code> being the one with no default, "to help prevent accidentally forgetting to implement this function" &mdash; the same file, :312&ndash;313</li>
@@ -1016,14 +1017,14 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <li>Only the registers a shape needs being written &mdash; <code>encode_syscall_return_trd104</code>, the same file, :285&ndash;296, where a plain failure writes two of the four</li>
     <li>The upcall's fourth argument being the word the process passed at subscribe time &mdash; <code>encode_upcall_trd104_ptr</code>, the same file, :649&ndash;663, and <code>argument3: self.appdata</code> at <code>kernel/src/upcall.rs</code>:188</li>
     <li>A driver scheduling a call by number, with three values &mdash; <code>schedule_upcall</code>, <code>kernel/src/grant.rs</code>:610&ndash;614</li>
-    <li>The note being built and queued &mdash; <code>kernel/src/upcall.rs</code>:183&ndash;190, into <code>enqueue_task</code> at <code>kernel/src/process_standard.rs</code>:598, which returns out-of-memory on a full ring at :625&ndash;628</li>
+    <li>The upcall being built and queued &mdash; <code>kernel/src/upcall.rs</code>:183&ndash;190, into <code>enqueue_task</code> at <code>kernel/src/process_standard.rs</code>:598, which returns out-of-memory on a full ring at :625&ndash;628</li>
     <li>Ten slots &mdash; <code>CALLBACK_LEN</code>, the same file, :1729, the constant chapter 4 named</li>
-    <li>Notes being delivered only to a process that has yielded &mdash; <code>kernel/src/kernel.rs</code>:602&ndash;628</li>
-    <li>Exactly one of them per yield, because delivering it puts the process back into the running state &mdash; <code>set_process_function</code>, <code>kernel/src/process_standard.rs</code>:1483&ndash;1515, setting <code>State::Running</code> at :1514</li>
+    <li>Upcalls being delivered only to a process that has yielded &mdash; <code>kernel/src/kernel.rs</code>:602&ndash;628</li>
+    <li>Exactly one upcall per yield, because delivering it puts the process back into the running state &mdash; <code>set_process_function</code>, <code>kernel/src/process_standard.rs</code>:1483&ndash;1515, setting <code>State::Running</code> at :1514</li>
     <li>The frame being edited so the process resumes at the function &mdash; <code>set_process_function</code>, <code>arch/cortex-m/src/syscall.rs</code>:364&ndash;418, with "In effect, this converts <code>svc</code> into <code>bl callback</code>" at :375 and the writes at :404&ndash;418</li>
     <li>R12 being pushed and ignored &mdash; the same file, :393, "Stack offset 4 is R12, which the syscall interface ignores"</li>
     <li>The low bit on an address meaning Thumb rather than an odd address &mdash; the line above it, :392, "Instruction addresses require <code>|1</code> to indicate thumb code", and the two places it is written: <code>callback.pc.addr() | 1</code> and <code>state.yield_pc | 1</code> at :404&ndash;405</li>
-    <li>The two cases named &mdash; <code>doc/reference/trd104-syscalls.md</code>:310&ndash;337, "Direct Resume" and "Pushed Callback"</li>
+    <li>The two endings, and the names the page borrows for them &mdash; <code>doc/reference/trd104-syscalls.md</code>:310&ndash;337, "Direct Resume" and "Pushed Callback"</li>
     <li>A read-write buffer being checked against the process's memory alone &mdash; <code>build_readwrite_process_buffer</code>, <code>kernel/src/process_standard.rs</code>:1054&ndash;1113, refusing with an invalid-argument error at :1111</li>
     <li>A read-only buffer being allowed to sit in flash &mdash; <code>build_readonly_process_buffer</code>, the same file, :1145&ndash;1147</li>
     <li>The two addresses that decide it &mdash; <code>in_app_owned_memory</code>, the same file, :2545&ndash;2556, comparing against <code>mem_start()</code> and <code>app_break</code></li>
@@ -1031,6 +1032,9 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <li>A length of zero accepting any address &mdash; the same file, :1067&ndash;1082 and :1129&ndash;1144</li>
     <li>The mark that never comes down, and the break that cannot pass it &mdash; the same file, :1089&ndash;1090 and :975</li>
     <li>Why the mark never comes down, in the kernel's own words &mdash; <code>kernel/src/processbuffer.rs</code>:440&ndash;456, "a given <code>Process</code> implementation must assume that the memory described by a once-allowed <code>ProcessBuffer</code> is still in use"</li>
+    <li>The three-value success having one caller in the tree, returning counters about a network device &mdash; <code>capsules/extra/src/ethernet_tap.rs</code>:488&ndash;492</li>
+    <li>The failure-carrying-a-value shape having none &mdash; <code>CommandReturn::failure_u32</code>, <code>kernel/src/syscall_driver.rs</code>:36&ndash;40, whose only caller in the tree is its own unit test at :423&ndash;424</li>
+    <li>What the one userspace-readable capsule publishes &mdash; <code>capsules/extra/src/read_only_state.rs</code>:23&ndash;32, a switch count, a pending-task count and a time in ticks</li>
     <li>Thirteen errors in the whole kernel, numbered 1 to 13 &mdash; <code>ErrorCode</code>, <code>kernel/src/errorcode.rs</code>:13&ndash;44</li>
     <li>One capsule implementing <code>allow_userspace_readable</code> &mdash; <code>capsules/extra/src/read_only_state.rs</code>:98, the only implementation in the tree besides the trait's own default</li>
     <li>Twelve memop operations, and what each one is for &mdash; <code>kernel/src/memop.rs</code>:14&ndash;44, dispatched at :48&ndash;160</li>

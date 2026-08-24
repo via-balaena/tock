@@ -1360,6 +1360,15 @@ RETIRED_PHRASES = {
         ("only twice", "counting the steps with no source line got the count "
                        "wrong twice running"),
     ],
+    "ch06": [
+        ("tend to need", "a claim about what a return shape is for needs a "
+                         "caller in the tree, and both of this chapter's had "
+                         "none"),
+        ("to be called once", "a subscribed upcall is not one-shot; the "
+                              "pointer stays until the process swaps it"),
+        ("most of a working application", "there are no applications in this "
+                                          "tree to check it against"),
+    ],
 }
 
 
