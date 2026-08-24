@@ -737,10 +737,10 @@ dfn {
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="sgp-0">The driver for the LEDs on every board Tock runs on. Not one per chip &mdash; one, in <b>capsules/core/src/led.rs</b>, 158 lines including its own documentation. What the name leaves out is any chip at all: nothing here or in that file says RP2350.</p>
-      <p class="blkp is-off" id="sgp-1">A lifetime, and the only one this driver has. It says the references in <b>leds</b> outlive the driver holding them. The board is what guarantees that, by handing over things that live for the whole run &mdash; Figure 7 shows the same slot filled in with <b>'static</b>.</p>
-      <p class="blkp is-off" id="sgp-2"><b>L</b> stands for whatever type the board hands over. The bound after the colon is everything this driver knows about it: that it implements <b>led::Led</b>, a trait of five methods &mdash; init, on, off, toggle, read. Which chip <b>L</b> belongs to is not knowable here.</p>
-      <p class="blkp is-off" id="sgp-3">How many there are, fixed when the board is compiled. The driver checks against it by hand, one line above the call: <b>if data &gt;= NUM_LEDS</b>. It has to, because indexing past the end of an array in safe Rust does not corrupt anything &mdash; it panics, and what that costs is Figure 8. Note what it is not: a pin number. This driver never learns which pins these are.</p>
-      <p class="blkp is-off" id="sgp-4">The one field: a reference to an array of references. This is the whole of what the driver can reach, and there is not a number in it.</p>
+      <p class="blkp" id="sgp-1">A lifetime, and the only one this driver has. It says the references in <b>leds</b> outlive the driver holding them. The board is what guarantees that, by handing over things that live for the whole run &mdash; Figure 7 shows the same slot filled in with <b>'static</b>.</p>
+      <p class="blkp" id="sgp-2"><b>L</b> stands for whatever type the board hands over. The bound after the colon is everything this driver knows about it: that it implements <b>led::Led</b>, a trait of five methods &mdash; init, on, off, toggle, read. Which chip <b>L</b> belongs to is not knowable here.</p>
+      <p class="blkp" id="sgp-3">How many there are, fixed when the board is compiled. The driver checks against it by hand, one line above the call: <b>if data &gt;= NUM_LEDS</b>. It has to, because indexing past the end of an array in safe Rust does not corrupt anything &mdash; it panics, and what that costs is Figure 8. Note what it is not: a pin number. This driver never learns which pins these are.</p>
+      <p class="blkp" id="sgp-4">The one field: a reference to an array of references. This is the whole of what the driver can reach, and there is not a number in it.</p>
     </div>
   </div>
   <div class="instrument-note" id="fig1note">Notice that there is one field. This driver is the simplest in the tree; the middle capsule has four, and the largest has thirty-one. The count does not change the rule: a capsule reaches the machine through the fields it was handed, and nowhere else.</div>
@@ -793,8 +793,8 @@ dfn {
     </div>
     <div class="loopsay">
       <p class="loopp is-on" id="cdp-0">Legal, and this is what the driver really does. Nothing here is an address: <b>leds</b> is the field from Figure 1, and <b>on</b> is one of the five methods the trait promised.</p>
-      <p class="loopp is-off" id="cdp-1">Refused &mdash; and not by a person. This is chapter 1's store written out by hand, and turning a number into something you can store through means dereferencing a raw pointer, which requires <b>unsafe</b>. The crate forbids the word, so the build stops here.</p>
-      <p class="loopp is-off" id="cdp-2">Also refused, and this is the interesting one, because those are the exact words that make the LED work. That is the line, verbatim, from <b>chips/rp2350/src/gpio.rs:1168</b>, and what makes it legal there and illegal here is only which crate it sits in.</p>
+      <p class="loopp" id="cdp-1">Refused &mdash; and not by a person. This is chapter 1's store written out by hand, and turning a number into something you can store through means dereferencing a raw pointer, which requires <b>unsafe</b>. The crate forbids the word, so the build stops here.</p>
+      <p class="loopp" id="cdp-2">Also refused, and this is the interesting one, because those are the exact words that make the LED work. That is the line, verbatim, from <b>chips/rp2350/src/gpio.rs:1168</b>, and what makes it legal there and illegal here is only which crate it sits in.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the last two are not bad style. They are the real lines that light the LED &mdash; they simply live somewhere else.</div>
@@ -826,10 +826,10 @@ dfn {
     </div>
     <div class="costsay">
       <p class="costp is-on" id="arp-0">Eighty-eight thousand lines of drivers, and the word appears five times &mdash; every one of them inside a comment. Five crates make up this directory, and all five open with <b>#![forbid(unsafe_code)]</b>.</p>
-      <p class="costp is-off" id="arp-1">The scheduler, the syscall layer, and the code that starts and stops processes. Notice what is not in that list: there is no allocator. The kernel is <b>no_std</b> and never asks for memory it did not already have, which is the problem chapter 7 is about.</p>
-      <p class="costp is-off" id="arp-2">Ten files describing one chip. Twelve of the eighteen are the same line with a different number in it, and Figure 5 is those twelve.</p>
-      <p class="costp is-off" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 2, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
-      <p class="costp is-off" id="arp-4">Three, and all three are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, and main. They are the entry points something outside Rust calls.</p>
+      <p class="costp" id="arp-1">The scheduler, the syscall layer, and the code that starts and stops processes. Notice what is not in that list: there is no allocator. The kernel is <b>no_std</b> and never asks for memory it did not already have, which is the problem chapter 7 is about.</p>
+      <p class="costp" id="arp-2">Ten files describing one chip. Twelve of the eighteen are the same line with a different number in it, and Figure 5 is those twelve.</p>
+      <p class="costp" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 2, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
+      <p class="costp" id="arp-4">Three, and all three are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, and main. They are the entry points something outside Rust calls.</p>
     </div>
   </div>
   <div class="instrument-note">Notice which row is the odd one. There are more driver files than kernel and chip files put together, and they are the only ones whose middle number is zero.</div>
@@ -853,16 +853,16 @@ dfn {
       <button type="button" id="hp-1" aria-pressed="false"><span class="seq-n">2</span><span><b>self.leds[data].on()</b> <span class="seq-src">led.rs:115</span></span></button>
       <button type="button" id="hp-2" aria-pressed="false"><span class="seq-n">3</span><span><b>LedHigh::on()</b> <span class="seq-src">kernel/src/hil/led.rs:62</span></span></button>
       <button type="button" id="hp-3" aria-pressed="false"><span class="seq-n">4</span><span><b>self.pin.set()</b> <span class="seq-src">kernel/src/hil/gpio.rs:154</span></span></button>
-      <button type="button" id="hp-4" aria-pressed="false"><span class="seq-n">5</span><span><b>RPGpioPin::set()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1480</span></span></button>
+      <button type="button" id="hp-4" aria-pressed="false"><span class="seq-n">5</span><span><b>RPGpioPin::set()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1481</span></span></button>
       <button type="button" id="hp-5" aria-pressed="false"><span class="seq-n">6</span><span><b>gpio_out_set.set(1 &lt;&lt; 25)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1485</span></span></button>
     </div>
     <div class="dbgsay">
       <p class="dbgp is-on" id="hpp-0">Command number 1 means on; the 0 is which LED. The capsule matches on the number and does nothing else with it.</p>
-      <p class="dbgp is-off" id="hpp-1">The bounds check is the line above: <b>if data &gt;= NUM_LEDS</b>, and out of range returns an error code. Nothing here names a chip yet.</p>
-      <p class="dbgp is-off" id="hpp-2">The layer that knows this LED lights when its pin goes high. On a board wired the other way the type is <b>LedLow</b>, and this same method calls <b>clear</b> instead.</p>
-      <p class="dbgp is-off" id="hpp-3">A trait method with no body: three lines of documentation saying what an implementation must do. "Set the GPIO pin high. If the pin is not an output or input/output, this call is ignored."</p>
-      <p class="dbgp is-off" id="hpp-4">The first layer that knows this is an RP2350. It checks the pin is configured as an output, and if it is not, does nothing &mdash; which is the promise the trait made one step up.</p>
-      <p class="dbgp is-off" id="hpp-5">Base <b>0xD0000000</b>, offset <b>0x018</b>, bit 25 set and no other. The store from chapter 1, reached without anybody above this line knowing a number.</p>
+      <p class="dbgp" id="hpp-1">The bounds check is the line above: <b>if data &gt;= NUM_LEDS</b>, and out of range returns an error code. Nothing here names a chip yet.</p>
+      <p class="dbgp" id="hpp-2">The layer that knows this LED lights when its pin goes high. On a board wired the other way the type is <b>LedLow</b>, and this same method calls <b>clear</b> instead.</p>
+      <p class="dbgp" id="hpp-3">A trait method with no body: three lines of documentation saying what an implementation must do. "Set the GPIO pin high. If the pin is not an output or input/output, this call is ignored."</p>
+      <p class="dbgp" id="hpp-4">The first layer that knows this is an RP2350. It checks the pin is configured as an output, and if it is not, does nothing &mdash; which is the promise the trait made one step up.</p>
+      <p class="dbgp" id="hpp-5">Base <b>0xD0000000</b>, offset <b>0x018</b>, bit 25 set and no other. The store from chapter 1, reached without anybody above this line knowing a number.</p>
     </div>
   </div>
   <div class="instrument-note">Notice where the chip appears. Five of the six steps could be running on anything; the sixth is the whole of what is particular to this hardware.</div>
@@ -895,17 +895,17 @@ dfn {
       <button type="button" id="sr-11" aria-pressed="true"><span class="sr-at">gpio.rs:1169</span><span class="sr-ad">0xD0000000</span><span>SIORegisters</span></button>
     </div>
     <div class="dbgsay">
-      <p class="dbgp is-off" id="srp-0">The clock generators. Chapter 1 called this the block that decides how fast the chip runs.</p>
-      <p class="dbgp is-off" id="srp-1">Holds other blocks switched off. Most of the chip is dead until something clears its bit here.</p>
-      <p class="dbgp is-off" id="srp-2">Decides what each pin is for: plain output, or a serial line, or one of several other things.</p>
-      <p class="dbgp is-off" id="srp-3">The electrical side of each pin &mdash; how hard it drives, and which way it is pulled when nothing is driving it.</p>
-      <p class="dbgp is-off" id="srp-4">The crystal oscillator: a real quartz crystal on the board, and the most accurate timing the chip has.</p>
-      <p class="dbgp is-off" id="srp-5">Multiplies the crystal up to the speed the processors run at.</p>
-      <p class="dbgp is-off" id="srp-6">A second multiplier, held at 48 MHz for USB so its timing survives retuning the main clock.</p>
-      <p class="dbgp is-off" id="srp-7">The serial port Tock's console uses. Kernel messages leave the chip one byte at a time through here.</p>
-      <p class="dbgp is-off" id="srp-8">A second, identical serial port. Same layout, different base.</p>
-      <p class="dbgp is-off" id="srp-9">A counter that never stops, ticking once a microsecond.</p>
-      <p class="dbgp is-off" id="srp-10">Divides a clock down to the slower rates the timers and the watchdog need.</p>
+      <p class="dbgp" id="srp-0">The clock generators. Chapter 1 called this the block that decides how fast the chip runs.</p>
+      <p class="dbgp" id="srp-1">Holds other blocks switched off. Most of the chip is dead until something clears its bit here.</p>
+      <p class="dbgp" id="srp-2">Decides what each pin is for: plain output, or a serial line, or one of several other things.</p>
+      <p class="dbgp" id="srp-3">The electrical side of each pin &mdash; how hard it drives, and which way it is pulled when nothing is driving it.</p>
+      <p class="dbgp" id="srp-4">The crystal oscillator: a real quartz crystal on the board, and the most accurate timing the chip has.</p>
+      <p class="dbgp" id="srp-5">Multiplies the crystal up to the speed the processors run at.</p>
+      <p class="dbgp" id="srp-6">A second multiplier, held at 48 MHz for USB so its timing survives retuning the main clock.</p>
+      <p class="dbgp" id="srp-7">The serial port Tock's console uses. Kernel messages leave the chip one byte at a time through here.</p>
+      <p class="dbgp" id="srp-8">A second, identical serial port. Same layout, different base.</p>
+      <p class="dbgp" id="srp-9">A counter that never stops, ticking once a microsecond.</p>
+      <p class="dbgp" id="srp-10">Divides a clock down to the slower rates the timers and the watchdog need.</p>
       <p class="dbgp is-on" id="srp-11">This one. Chapter 1 spent its whole length inside this block, and <b>gpio_out_set</b> sits <b>0x018</b> past this base. Every layer above this line works in types; this line is where the number stops being a number.</p>
     </div>
   </div>
@@ -947,7 +947,7 @@ dfn {
     </div>
     <div class="vtsay">
       <p class="vtp is-on" id="wrp-0">The board hands the LED driver exactly one pin, and it is GPIO 25 &mdash; the pin chapter 1 lit. The driver did not ask for it, cannot ask for a different one, and will never know its number.</p>
-      <p class="vtp is-off" id="wrp-1">Forty lines earlier, the general-purpose GPIO driver is given its own list of pins a process may drive directly. Pin 25 is in that list, commented out, with <b>// LED pin</b> written above it. The board author took it back by hand.</p>
+      <p class="vtp" id="wrp-1">Forty lines earlier, the general-purpose GPIO driver is given its own list of pins a process may drive directly. Pin 25 is in that list, commented out, with <b>// LED pin</b> written above it. The board author took it back by hand.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the two boundaries here are not equally strong. The compiler enforces what a capsule can reach; which capsule gets which pin is a decision in one file, and that comment is the whole of what enforces it.</div>
@@ -1005,8 +1005,8 @@ dfn {
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="stp-0">There is one <b>#[panic_handler]</b> in the whole binary and its return type is <b>!</b>, meaning it never returns. The comment above that decision says the system "is no longer in a well-defined state". On this board the handler then takes GPIO&nbsp;25 for itself and blinks it forever &mdash; the same pin Figure 6 handed to the driver.</p>
-      <p class="blkp is-off" id="stp-1">A timeslice governs a process, not kernel code. A capsule is <em>called</em> by the kernel and runs until it returns, so one that never returns is never left. Nothing preempts it and nothing restarts it.</p>
-      <p class="blkp is-off" id="stp-2">What a capsule was handed is often shared. This board puts four capsules on one serial port and two on one timer, each through a <b>virtualizer</b> whose stated job is to "allow multiple Tock capsules to use the same UART bus". A capsule that takes more than its share degrades every other client of it.</p>
+      <p class="blkp" id="stp-1">A timeslice governs a process, not kernel code. A capsule is <em>called</em> by the kernel and runs until it returns, so one that never returns is never left. Nothing preempts it and nothing restarts it.</p>
+      <p class="blkp" id="stp-2">What a capsule was handed is often shared. This board puts four capsules on one serial port and two on one timer, each through a <b>virtualizer</b> whose stated job is to "allow multiple Tock capsules to use the same UART bus". A capsule that takes more than its share degrades every other client of it.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the compiler stopped none of these. It governs what a capsule can reach, and has nothing to say about what it does with what it reached.</div>
@@ -1028,7 +1028,7 @@ dfn {
       <button type="button" class="q-opt" id="qa-1" aria-pressed="false">A different HIL trait, handed over by the board</button>
       <button type="button" class="q-opt" id="qa-2" aria-pressed="false">Permission from the kernel, checked at run time</button>
     </div>
-    <p class="q-answer is-off" id="qan">A raw pointer, and the crate will not compile one. No HIL offers a raw register either, and the kernel is not asked at run time &mdash; the refusal happens at build time. Chapter 1 adds a second reason: that register is write-only, so even the chip layer is promised nothing by reading it.</p>
+    <p class="q-answer" id="qan">A raw pointer, and the crate will not compile one. No HIL offers a raw register either, and the kernel is not asked at run time &mdash; the refusal happens at build time. Chapter 1 adds a second reason: that register is write-only, so even the chip layer is promised nothing by reading it.</p>
   </div>
   <div class="q">
     <p class="q-ask">Which of the six steps in Figure 4 first knows the chip is an RP2350?</p>
@@ -1037,7 +1037,7 @@ dfn {
       <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Step 3, LedHigh</button>
       <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Step 5, RPGpioPin</button>
     </div>
-    <p class="q-answer is-off" id="qbn">Step 5. Steps 3 and 4 are in the kernel's HIL and are shared by every chip; step 5 is the first line in a file that exists only for this one.</p>
+    <p class="q-answer" id="qbn">Step 5. Steps 3 and 4 are in the kernel's HIL and are shared by every chip; step 5 is the first line in a file that exists only for this one.</p>
   </div>
   <div class="q">
     <p class="q-ask">A capsule hits a loop it never leaves. What stops it?</p>
@@ -1046,7 +1046,7 @@ dfn {
       <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The kernel notices and restarts the capsule</button>
       <button type="button" class="q-opt" id="qd-2" aria-pressed="false">The rest of the kernel waits for it to finish</button>
     </div>
-    <p class="q-answer is-off" id="qdn">Nothing. A capsule is not scheduled, so there is no moment at which the kernel gets control back and could decide anything about it. This is the half of "semi-trusted" the type system does not cover.</p>
+    <p class="q-answer" id="qdn">Nothing. A capsule is not scheduled, so there is no moment at which the kernel gets control back and could decide anything about it. This is the half of "semi-trusted" the type system does not cover.</p>
   </div>
   <div class="q">
     <p class="q-ask">A board author hands the same pin to two capsules. What catches it?</p>
@@ -1055,7 +1055,7 @@ dfn {
       <button type="button" class="q-opt" id="qc-1" aria-pressed="false">The kernel, the first time both drive it</button>
       <button type="button" class="q-opt" id="qc-2" aria-pressed="false">A person, reading <code>main.rs</code></button>
     </div>
-    <p class="q-answer is-off" id="qcn">Nothing. Both capsules hold a shared reference, which is legal Rust, and both would drive the pin. Figure 6's commented-out line is a person preventing it, and this is the weaker of the chapter's two guarantees.</p>
+    <p class="q-answer" id="qcn">Nothing. Both capsules hold a shared reference, which is legal Rust, and both would drive the pin. Figure 6's commented-out line is a person preventing it, and this is the weaker of the chapter's two guarantees.</p>
   </div>
 </div>
 
@@ -1081,7 +1081,7 @@ dfn {
     <li>The middle capsule having four fields and the largest thirty-one &mdash; the 290 <code>pub struct</code> declarations under <code>capsules/</code> at that commit, excluding tests and virtualizers; the largest is <code>extra/src/rf233.rs</code></li>
     <li>The kernel having no allocator &mdash; <code>#![no_std]</code> at <code>kernel/src/lib.rs</code>:93, and no crate under <code>kernel/</code> or <code>chips/</code> declaring <code>extern crate alloc</code></li>
     <li>Four capsules on one serial port and two on one timer &mdash; <code>uart_mux</code> and <code>mux_alarm</code> in <code>boards/raspberry_pi_pico_2/src/main.rs</code>:318&ndash;411</li>
-    <li>What a virtualizer is for &mdash; <code>capsules/core/src/virtualizers/virtual_uart.rs</code>:3, "this allows multiple Tock capsules to use the same UART bus"</li>
+    <li>What a virtualizer is for &mdash; <code>capsules/core/src/virtualizers/virtual_uart.rs</code>:7, "this allows multiple Tock capsules to use the same UART bus"</li>
     <li><code>#![forbid(unsafe_code)]</code> opening all five capsule crates &mdash; <code>capsules/core/src/lib.rs</code>:5, and the same line 5 of <code>extra</code>, <code>system</code>, <code>aes_gcm</code> and <code>ecdsa_sw</code></li>
     <li><code>LedHigh</code> calling <code>set</code> and <code>LedLow</code> calling <code>clear</code> for the same <code>on()</code> &mdash; <code>kernel/src/hil/led.rs</code>:57&ndash;95</li>
     <li>The wording of the <code>Output::set</code> contract quoted in Figure 4 &mdash; <code>kernel/src/hil/gpio.rs</code>:152&ndash;154, in the <code>Output</code> trait declared at :151</li>
@@ -1089,7 +1089,7 @@ dfn {
     <li>All twelve addresses in Figure 5, with their line numbers &mdash; <code>chips/rp2350/src/</code>, the <code>StaticRef::new</code> call in each of <code>clocks.rs</code>, <code>resets.rs</code>, <code>gpio.rs</code>, <code>xosc.rs</code>, <code>uart.rs</code>, <code>timer.rs</code> and <code>ticks.rs</code></li>
     <li>The two-line safety contract &mdash; the <code># Safety</code> section on <code>StaticRef::new</code>, <code>kernel/src/utilities/static_ref.rs</code>:29&ndash;35</li>
     <li>The board handing GPIO 25 to the LED driver, and the same pin commented out of the GPIO driver's list &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:385 and :373</li>
-    <li>The Pico 2 board's three <code>unsafe</code> being <code>panic_fmt</code>, <code>get_peripherals</code> and <code>main</code> &mdash; <code>src/io.rs</code>:89 and <code>src/main.rs</code>:237, :253</li>
+    <li>The Pico 2 board's three <code>unsafe</code> being <code>panic_fmt</code>, <code>get_peripherals</code> and <code>main</code> &mdash; <code>boards/raspberry_pi_pico_2/src/io.rs</code>:89 and <code>boards/raspberry_pi_pico_2/src/main.rs</code>:237 and :253</li>
     <li>The HiFive1's three active-low LEDs on a SiFive part &mdash; <code>boards/hifive1/src/main.rs</code>:242&ndash;246</li>
     <li><code>forbid</code> being the level that also refuses to be turned off later &mdash; the Rust reference on lint levels</li>
     <li>Capsules being <em>semi-trusted</em> rather than contained &mdash; <code>doc/ExternalDependencies.md</code>:161, "capsules are a mechanism to provide semi-trusted infrastructure to a Tock board"</li>
@@ -1123,13 +1123,19 @@ dfn {
       }
       if (extra) { extra(k); }
     }
-    var i;
+    var i, opening = 0;
     for (i = 0; i < n; i++) {
       (function (k) {
         document.getElementById(btn + k)
           .addEventListener("click", function () { pick(k); });
       }(i));
+      if (document.getElementById(btn + i)
+            .getAttribute("aria-pressed") === "true") { opening = i; }
     }
+    // The markup ships every panel showing, so a reader with no JavaScript
+    // meets all of them rather than one. Putting the rest away is this
+    // function's first job, not the markup's.
+    pick(opening);
   }
 
   /* ---------------- Figure 1: the declaration ---------------- */
@@ -1180,6 +1186,9 @@ dfn {
   (function () {
     function quiz(prefix, n, right, answer) {
       var i;
+      // Same rule: the answer is in the markup, visible, and script is what
+      // hides it until the reader has committed to a guess.
+      document.getElementById(answer).classList.add("is-off");
       for (i = 0; i < n; i++) {
         (function (k) {
           document.getElementById(prefix + k)

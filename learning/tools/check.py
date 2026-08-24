@@ -1782,18 +1782,45 @@ def pedagogy_checks(html, chapter):
     #    explanation the chapter depends on.
     script = "".join(re.findall(r"<script.*?</script>", html, flags=re.S))
     gated = 0
+    hidden_in_markup = 0
     for literal in _string_literals(script):
         if (len(literal) >= 12 and " " in literal
                 and re.search(r"[a-z]{3} [a-z]{3}", literal)):
             gated += len(re.findall(r"[A-Za-z0-9']+", literal))
-    visible = len(re.findall(r"[A-Za-z0-9']+", re.sub(r"<[^>]+>", " ", prose)))
+
+    # The second route to the same place, and the one this measurement did not
+    # see for four review passes. A chapter that keeps its sentences in the
+    # markup -- which is the rule -- can still hide a quarter of them by
+    # shipping the panels with `is-off` already on. Chapter 3 did: 1,018 words
+    # in 33 blocks, 26.6% of the chapter, while this rule reported roughly
+    # nothing, because none of it was in a script string. Chapters 1 and 2 ship
+    # every panel visible and let the script put the others away, so a reader
+    # with no JavaScript meets all of them; that is the pattern, and this is
+    # what holds a later chapter to it.
+    body = html[html.index("</style>") + 8:] if "</style>" in html else html
+    body = body.split("<script>")[0]
+    for hidden in re.finditer(
+            r'<(\w+)[^>]*class="[^"]*\bis-off\b[^"]*"[^>]*>(.*?)</\1>',
+            body, re.S):
+        gated += len(re.findall(r"[A-Za-z0-9']+",
+                                re.sub(r"<[^>]+>", " ", hidden.group(2))))
+        hidden_in_markup += len(re.findall(
+            r"[A-Za-z0-9']+", re.sub(r"<[^>]+>", " ", hidden.group(2))))
+    # Words hidden in the markup are inside `prose` as well, so counting them
+    # on both sides of the ratio would let a chapter hide a third of itself and
+    # still measure under the limit -- which is exactly what the first version
+    # of this did when the defect was put back to test it.
+    visible = len(re.findall(r"[A-Za-z0-9']+",
+                             re.sub(r"<[^>]+>", " ", prose))) - hidden_in_markup
+    visible = max(visible, 0)
     if visible:
         share = gated / float(gated + visible)
         if share > MAX_GATED_PROSE:
             problems.append("%.0f%% of prose is only reachable by clicking "
-                            "(limit %.0f%%): %d words in the script vs %d in "
-                            "the page" % (100 * share, 100 * MAX_GATED_PROSE,
-                                          gated, visible))
+                            "(limit %.0f%%): %d words in script strings or "
+                            "markup that ships hidden, vs %d visible"
+                            % (100 * share, 100 * MAX_GATED_PROSE,
+                               gated, visible))
 
     return problems
 

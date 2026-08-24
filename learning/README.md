@@ -335,9 +335,15 @@ sitting behind buttons a reader might never press. Four rules are enforced:
    wrong, since the RP2350 is a QFN package with flat pads and nothing
    protruding. Add to it whenever a reader trips; an author's own sense of
    what is obvious is measurably unreliable.
-4. At most 20% of the prose may be reachable only by clicking. That share is
-   measured by tokenising the script's string literals rather than matching
-   them with a regex: a pattern that only accepts literals over some length
+4. At most 20% of the prose may be reachable only by clicking, counted two
+   ways. Chapter 3 shipped 33 panels with `is-off` already on the element, so a
+   reader with JavaScript off lost 1,018 words -- 26.6% of the chapter -- while
+   this rule reported roughly nothing, because it only looked inside script
+   strings and chapter 3 keeps its sentences in the markup, as the rule says to.
+   Chapters 1 and 2 ship every panel showing and let the script put the others
+   away, so a reader with no script meets all of them; markup that ships hidden
+   now counts against the same limit. The script-string half is measured by
+   tokenising the literals rather than matching them with a regex: a pattern that only accepts literals over some length
    skips the short ones, and skipping one desynchronises the scan, so the
    closing quote of a literal pairs with the next opening quote and the code
    between them -- comments included -- gets counted as prose. Quotations,

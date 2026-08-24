@@ -347,3 +347,30 @@ chk("the chain section says where the answer lands before taking the detour",
     REG["bridge"].textContent.indexOf("Figure 5 is those twelve") > -1, true);
 chk("and says why the detour comes first",
     REG["bridge"].textContent.indexOf("stands on top of them") > -1, true);
+
+// ---- what the fifth review pass found ----
+// The chapter shipped 33 panels with is-off already on, so a reader with
+// JavaScript off lost 1,018 words -- 26.6% of the chapter -- while the
+// noscript note promised the opposite and the chapter has no diagrams to fall
+// back on. Chapters 1 and 2 ship every panel showing and let the script put
+// the rest away. The markup is inverted now, so what has to be asserted is
+// that the script does the hiding it took over.
+(function () {
+  var i, hidden = 0;
+  for (i = 0; i < 5; i++) {
+    if (REG["sgp-" + i].classList.contains("is-off")) { hidden++; }
+  }
+  chk("the script closes the panels the markup no longer closes", hidden, 4);
+}());
+(function () {
+  var i, hidden = 0;
+  for (i = 0; i < 3; i++) {
+    if (REG["stp-" + i].classList.contains("is-off")) { hidden++; }
+  }
+  chk("and does it for the last figure too", hidden, 2);
+}());
+// The self-check answers are inverted the same way, and that is already
+// asserted: the four "starts with its answer hidden" checks above run after
+// the script, and the markup no longer carries is-off, so passing them is
+// proof the script put it there. Repeating it here after the questions have
+// been clicked would assert the opposite of what it says.
