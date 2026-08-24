@@ -15,3 +15,10 @@
 # the rule above was written for chapter 1's build artefact and swallowed
 # chapter 6's source the first time it was committed.
 !ch06-asking-the-kernel/syscall-demo.s
+
+# The account-scoped links to the published copies of each chapter, which
+# mkindex.py substitutes for relative paths when emitting the publishable
+# cover. These are addresses on someone's account rather than part of a
+# CC BY-SA work, so they stay out of a public branch; a clone still gets a
+# cover whose links resolve, because the tracked index.html uses paths.
+tools/artifact-urls.json

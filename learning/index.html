@@ -1,0 +1,508 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>Learning Tock from the Ground Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #616D72;
+  --rule:        #D3DBD8;
+  --rule-strong: #7D918A;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #77858C;
+    --rule:        #252F34;
+    --rule-strong: #556A73;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #77858C;
+  --rule:        #252F34;
+  --rule-strong: #556A73;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.66;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sheet { max-width: var(--wide); margin: 0 auto; padding: 0 1.6rem 7rem; }
+p { margin: 0 0 1em; max-width: var(--measure); }
+a { color: var(--accent); }
+
+/* ---------- cover ---------- */
+
+.cover { padding: 5rem 0 3rem; }
+
+.imprint {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 1.5rem;
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 5rem);
+  line-height: .98;
+  letter-spacing: -.022em;
+  margin: 0 0 1.3rem;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 40ch;
+  margin: 0 0 2.4rem;
+}
+
+.premise {
+  border-left: 3px solid var(--accent);
+  padding: .2rem 0 .2rem 1.4rem;
+  max-width: var(--measure);
+  margin: 0 0 2rem;
+}
+.premise p:last-child { margin-bottom: 0; }
+.premise em { font-style: italic; color: var(--ink); }
+
+/* ---------- the stance ---------- */
+
+.stance {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: .5rem;
+  padding: 1.5rem 1.7rem;
+  box-shadow: var(--shadow);
+  margin: 0 0 4rem;
+  max-width: 46rem;
+}
+.stance h2 { margin-top: 0; }
+.stance p { max-width: 44ch; }
+.stance p:last-child { margin-bottom: 0; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: -.012em;
+  line-height: 1.15;
+  margin: 0 0 .7rem;
+  text-wrap: balance;
+}
+
+.kicker {
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 .5rem;
+}
+
+code, .mono {
+  font-family: var(--mono);
+  font-size: .86em;
+  background: var(--surface-sunk);
+  border-radius: .25rem;
+  padding: .08em .35em;
+}
+
+/* ---------- contents ---------- */
+
+.contents { margin: 0 0 4rem; }
+.contents > .kicker { margin-bottom: 1.2rem; }
+
+.shelf { display: flex; flex-direction: column; gap: .85rem; margin: 1.4rem 0 0; }
+
+.entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  gap: 0 1.3rem;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: .5rem;
+  padding: 1.15rem 1.3rem;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.entry:hover { border-color: var(--rule-strong); }
+.entry.lit {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ord {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--rule-strong);
+  font-variant-numeric: tabular-nums;
+  padding-top: .1rem;
+}
+.entry.lit .ord { color: var(--accent); }
+.entry.read .ord { color: var(--accent); }
+
+.entry h3 { margin: 0 0 .3rem; }
+.entry h3 a {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.32rem;
+  letter-spacing: -.012em;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.2;
+}
+.entry h3 a:hover { color: var(--accent); text-decoration: underline; }
+.entry h3 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: .2rem; }
+
+.hook { color: var(--ink-soft); margin: 0 0 .7rem; max-width: 52ch; font-size: .97rem; }
+
+.needs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .4rem;
+  font-family: var(--mono);
+  font-size: .69rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.needs b { font-weight: 500; color: var(--ink-faint); }
+.chip {
+  border: 1px solid var(--rule-strong);
+  border-radius: 1rem;
+  padding: .06rem .5rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.entry:hover .chip, .entry:focus-within .chip { border-color: var(--accent); color: var(--accent); }
+
+.mark {
+  position: absolute;
+  top: 1.15rem;
+  right: 1.2rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--rule-strong);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.mark:hover { border-color: var(--accent); }
+.mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.entry.read .mark { background: var(--accent); border-color: var(--accent); }
+.entry.read .mark::after {
+  content: "";
+  position: absolute;
+  left: .44rem;
+  top: .17rem;
+  width: .3rem;
+  height: .62rem;
+  border: solid var(--surface);
+  border-width: 0 2px 2px 0;
+  transform: rotate(42deg);
+}
+.entry.read h3 a { color: var(--ink-soft); }
+
+/* ---------- closing blocks ---------- */
+
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1.6rem; margin: 0 0 3rem; }
+.panel {
+  border-top: 2px solid var(--ink);
+  padding-top: 1rem;
+}
+.panel p { max-width: 40ch; font-size: .97rem; }
+.panel p:last-child { margin-bottom: 0; }
+
+.warnbox {
+  background: var(--hot-soft);
+  border: 1px solid var(--hot);
+  border-radius: .5rem;
+  padding: 1.1rem 1.3rem;
+  margin: 1rem 0 0;
+}
+.warnbox p { max-width: 46ch; margin-bottom: 0; font-size: .95rem; }
+.warnbox .kicker { color: var(--hot); }
+
+pre {
+  font-family: var(--mono);
+  font-size: .8rem;
+  line-height: 1.7;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: .4rem;
+  padding: .8rem 1rem;
+  margin: .8rem 0 0;
+  overflow-x: auto;
+}
+
+.colophon {
+  border-top: 1px solid var(--rule);
+  padding-top: 1.5rem;
+  font-family: var(--mono);
+  font-size: .73rem;
+  line-height: 1.9;
+  color: var(--ink-faint);
+}
+.colophon a { color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+@media (max-width: 34rem) {
+  .entry { grid-template-columns: 2.3rem 1fr; gap: 0 .9rem; padding: 1rem 1.05rem; }
+  .ord { font-size: 1.5rem; }
+  .entry h3 a { font-size: 1.15rem; }
+  .mark { top: .95rem; right: .9rem; }
+}
+</style>
+
+<div class="sheet">
+
+<header class="cover">
+  <p class="imprint">A series in seven chapters</p>
+  <h1>Learning Tock from the Ground Up</h1>
+  <p class="standfirst">Microcontrollers and the Tock kernel from first principles, written from the position of someone actually learning them rather than someone who already knows.</p>
+
+  <div class="premise">
+    <p>Chapter&nbsp;1 asks one question: <em>any code can write any address, so what stops it?</em> Every chapter after it answers part of that, and the last one lands on grants, which is the final mechanism chapter&nbsp;1 names. The arc closes where the first chapter said it would.</p>
+  </div>
+</header>
+
+<section class="stance">
+  <p class="kicker">How to read a claim here</p>
+  <h2>Nothing on these pages asks to be believed</h2>
+  <p>Every technical claim is quoted from the Tock repository at a known commit, with the file and line given, so you can check it rather than trust it. Where a figure prints a number, the number is compiled or assembled from source the chapter ships, not arrived at by arithmetic on the page.</p>
+  <p>That is not a stylistic preference. It is there because the first draft of one such number was wrong by four bytes, and no amount of careful reading had caught it.</p>
+</section>
+
+<section class="contents">
+  <p class="kicker">The chapters</p>
+  <h2>Reading order is dependency order</h2>
+  <p>Chapter&nbsp;1 defines the vocabulary from nothing; everything after inherits it. Beyond that, each chapter names what it stands on &mdash; hover or focus an entry to light up what it needs first.</p>
+
+  <div class="shelf">
+
+    <article class="entry" data-ch="1" data-needs="">
+      <div class="ord">1</div>
+      <div>
+        <h3><a href="ch01-everything-is-memory/">Everything Is Memory</a></h3>
+        <p class="hook">One store, from a string in flash to 3.3&nbsp;volts on a pin &mdash; and why nothing in the machine stops a write landing anywhere at all.</p>
+        <p class="needs"><b>Start here</b></p>
+      </div>
+      <button class="mark" type="button" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
+    </article>
+
+    <article class="entry" data-ch="2" data-needs="1">
+      <div class="ord">2</div>
+      <div>
+        <h3><a href="ch02-how-code-starts-running/">How Code Starts Running</a></h3>
+        <p class="hook">Power-on to <code>main()</code>: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" actually means.</p>
+        <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
+      </div>
+      <button class="mark" type="button" data-mark="2" aria-label="Mark chapter 2 as read" aria-pressed="false"></button>
+    </article>
+
+    <article class="entry" data-ch="3" data-needs="1,2">
+      <div class="ord">3</div>
+      <div>
+        <h3><a href="ch03-what-a-driver-may-touch/">What a Driver May Touch</a></h3>
+        <p class="hook">Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip &mdash; and the three things it can still do to you anyway.</p>
+        <p class="needs"><b>Needs</b> <span class="chip">1</span> <span class="chip">2</span></p>
+      </div>
+      <button class="mark" type="button" data-mark="3" aria-label="Mark chapter 3 as read" aria-pressed="false"></button>
+    </article>
+
+    <article class="entry" data-ch="4" data-needs="1">
+      <div class="ord">4</div>
+      <div>
+        <h3><a href="ch04-what-a-process-is/">What a Process Is</a></h3>
+        <p class="hook">Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it.</p>
+        <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
+      </div>
+      <button class="mark" type="button" data-mark="4" aria-label="Mark chapter 4 as read" aria-pressed="false"></button>
+    </article>
+
+    <article class="entry" data-ch="5" data-needs="4">
+      <div class="ord">5</div>
+      <div>
+        <h3><a href="ch05-the-memory-protection-unit/">The Memory Protection Unit</a></h3>
+        <p class="hook">The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process.</p>
+        <p class="needs"><b>Needs</b> <span class="chip">4</span></p>
+      </div>
+      <button class="mark" type="button" data-mark="5" aria-label="Mark chapter 5 as read" aria-pressed="false"></button>
+    </article>
+
+    <article class="entry" data-ch="6" data-needs="4,5">
+      <div class="ord">6</div>
+      <div>
+        <h3><a href="ch06-asking-the-kernel/">Asking the Kernel</a></h3>
+        <p class="hook">One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that.</p>
+        <p class="needs"><b>Needs</b> <span class="chip">4</span> <span class="chip">5</span></p>
+      </div>
+      <button class="mark" type="button" data-mark="6" aria-label="Mark chapter 6 as read" aria-pressed="false"></button>
+    </article>
+
+    <article class="entry" data-ch="7" data-needs="3,4,6">
+      <div class="ord">7</div>
+      <div>
+        <h3><a href="ch07-grants/">Grants</a></h3>
+        <p class="hook">How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and never given back while the process lives.</p>
+        <p class="needs"><b>Needs</b> <span class="chip">3</span> <span class="chip">4</span> <span class="chip">6</span></p>
+      </div>
+      <button class="mark" type="button" data-mark="7" aria-label="Mark chapter 7 as read" aria-pressed="false"></button>
+    </article>
+
+  </div>
+</section>
+
+<div class="pair">
+
+  <section class="panel">
+    <p class="kicker">Why the wall before the door</p>
+    <h2>The order is deliberate</h2>
+    <p>The memory protection unit comes before syscalls: meet the wall, then find the door. It is the same shape as letting a read-modify-write race lose a pin before the atomic register is offered &mdash; the mechanism means nothing until you have felt the problem it answers.</p>
+  </section>
+
+  <section class="panel">
+    <p class="kicker">Hardware</p>
+    <h2>Groundable on a board you can hold</h2>
+    <p>Every chapter cites <code>boards/raspberry_pi_pico_2</code>, a real port in this tree, so a reader with a Pico&nbsp;2 and a debug probe can run what they have just read about.</p>
+    <div class="warnbox">
+      <p class="kicker">If your board is a Pico 2 W</p>
+      <p>It is not that board. This tree has no <code>raspberry_pi_pico_2_w</code>, and the <code>_w</code> board it does have is built on an earlier chip. The chapters say so where it costs something &mdash; most sharply that GPIO&nbsp;25 is the radio's chip select rather than the LED, so the panic blink lands somewhere you cannot see it.</p>
+    </div>
+  </section>
+
+</div>
+
+<section class="panel" style="margin-bottom:3rem">
+  <p class="kicker">Verifying</p>
+  <h2>The series lives inside the tree it describes</h2>
+  <p>Keeping the chapters in a branch of the Tock repository means every citation can be checked against the exact commit the branch sits on &mdash; and when a rebase moves a line a chapter quoted, that is information rather than an inconvenience. The pages are interactive, so "it looks right" is not evidence:</p>
+  <pre>python3 learning/tools/check.py</pre>
+</section>
+
+<p class="colophon">
+  Learning Tock from the Ground Up &middot; Jon Hillesheim, 2026<br>
+  Licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> &middot; kernel source quoted under Tock's own terms<br>
+  Each chapter names the commit its citations are pinned to<br>
+  Reading progress is stored in this browser only.
+</p>
+
+</div>
+
+<script>
+(function () {
+  var entries = Array.prototype.slice.call(document.querySelectorAll(".entry"));
+  var byNum = {};
+  entries.forEach(function (e) { byNum[e.getAttribute("data-ch")] = e; });
+
+  function light(entry, on) {
+    var needs = (entry.getAttribute("data-needs") || "").split(",");
+    needs.forEach(function (n) {
+      if (n && byNum[n]) { byNum[n].classList.toggle("lit", on); }
+    });
+  }
+
+  entries.forEach(function (entry) {
+    entry.addEventListener("mouseenter", function () { light(entry, true); });
+    entry.addEventListener("mouseleave", function () { light(entry, false); });
+    entry.addEventListener("focusin", function () { light(entry, true); });
+    entry.addEventListener("focusout", function () { light(entry, false); });
+  });
+
+  var KEY = "tock-series-read-v1";
+  var read = {};
+  try { read = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { read = {}; }
+
+  function paint(entry, on) {
+    entry.classList.toggle("read", on);
+    var btn = entry.querySelector(".mark");
+    if (btn) { btn.setAttribute("aria-pressed", on ? "true" : "false"); }
+  }
+
+  entries.forEach(function (entry) {
+    var n = entry.getAttribute("data-ch");
+    paint(entry, !!read[n]);
+    var btn = entry.querySelector(".mark");
+    if (!btn) { return; }
+    btn.addEventListener("click", function () {
+      if (read[n]) { delete read[n]; } else { read[n] = 1; }
+      try { localStorage.setItem(KEY, JSON.stringify(read)); } catch (e) {}
+      paint(entry, !!read[n]);
+    });
+  });
+})();
+</script>

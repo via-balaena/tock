@@ -29,6 +29,32 @@ arc closes where the first chapter said it would.
 | 6 | [Asking the Kernel](ch06-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | published |
 | 7 | [Grants](ch07-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and never given back while the process lives | published |
 
+## The cover
+
+`learning/index.html` is the front door: the seven chapters in dependency
+order, what the series is for, and how to check a claim rather than believe it.
+A clone gets working links because it links by relative path.
+
+The published copy links to hosted chapters instead, and those URLs are
+addresses on an account rather than part of a CC BY-SA work, so they are not in
+this branch. `learning/tools/mkindex.py` substitutes them from an ignored
+`tools/artifact-urls.json` and refuses to write anything if a chapter has no
+URL -- a cover with one dead entry is worse than no cover, because it looks
+complete.
+
+    python3 learning/tools/mkindex.py /tmp/cover.html
+
+**What the cover is for, beyond navigation.** It is the only file that
+duplicates information: every chapter's number, title and place in the order
+appear both in the chapter and on the cover. `index_checks` in `check.py`
+exists because duplicated information goes stale -- it fails if a chapter has
+no entry, if an entry points somewhere that is not a chapter, if the visible
+chips and the `data-needs` attribute disagree, if a chapter claims to depend on
+a later one, if the cover renames a chapter, or if the cover pins a commit some
+chapter does not cite. That last one is not hypothetical: the first draft of
+the cover claimed all seven chapters sit on `08894c2e0`, and chapter 1 sits on
+`47287a64e`.
+
 **Why those seven and not the five chapter 1 promises.** Chapter 1 commits to
 itself, to chapter 2 by name, and then to three more in a single clause:
 "capsules, the memory protection unit, and grants -- and each one gets its own

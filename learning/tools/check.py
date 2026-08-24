@@ -2738,6 +2738,128 @@ def promise_checks(root, chapters):
     return problems, notes
 
 
+def index_checks(root, chapters):
+    """The front door and the chapters it opens must not drift apart.
+
+    An index is the one file in the series that duplicates information: every
+    chapter's number, title and place in the dependency order appears both in
+    the chapter and on the cover. Duplicated information is information that
+    goes stale, and a cover that names six chapters of seven is worse than no
+    cover, because it looks complete.
+    """
+    problems = []
+    page = os.path.join(root, "index.html")
+    if not os.path.exists(page):
+        return ["no index.html: the chapters have no front door"]
+
+    with open(page, encoding="utf-8") as fh:
+        html = fh.read()
+
+    problems.extend(palette_checks(html))
+
+    marker = "* { box-sizing: border-box; }"
+    if marker in html and "</style>" in html:
+        component = html.split(marker, 1)[1].split("</style>", 1)[0]
+        literals = sorted(set(re.findall(r"#[0-9A-Fa-f]{3,8}\b", component)))
+        if literals:
+            problems.append("index: color literals outside the token blocks: %s"
+                            % ", ".join(literals))
+
+    ids = re.findall(r'\bid="([^"]+)"', html)
+    dupes = [k for k, v in collections.Counter(ids).items() if v > 1]
+    if dupes:
+        problems.append("index: duplicate id(s): %s" % ", ".join(sorted(dupes)))
+
+    for tag in PAIRED_TAGS:
+        opened = len(re.findall(r"<%s[\s>]" % tag, html))
+        closed = len(re.findall(r"</%s>" % tag, html))
+        if opened != closed:
+            problems.append("index: <%s>: %d opened, %d closed"
+                            % (tag, opened, closed))
+
+    # One entry per chapter directory, and no entry pointing anywhere else.
+    linked = re.findall(r'href="(ch[^"/]+)/"', html)
+    if len(linked) != len(set(linked)):
+        problems.append("index: a chapter is linked more than once")
+    for missing in sorted(set(chapters) - set(linked)):
+        problems.append("index: %s exists and the cover does not link it"
+                        % missing)
+    for stray in sorted(set(linked) - set(chapters)):
+        problems.append("index: links %s, which is not a chapter directory"
+                        % stray)
+
+    # The visible ordinal, the directory it links, and the order on the page
+    # all have to agree. They are three hand-written copies of one fact.
+    entries = re.findall(
+        r'<article class="entry" data-ch="(\d+)" data-needs="([^"]*)">(.*?)</article>',
+        html, re.S)
+    if len(entries) != len(chapters):
+        problems.append("index: %d entries for %d chapters"
+                        % (len(entries), len(chapters)))
+    seen = []
+    for number, needs, block in entries:
+        seen.append(int(number))
+        ordinal = re.search(r'<div class="ord">(\d+)</div>', block)
+        if ordinal and ordinal.group(1) != number:
+            problems.append("index: entry data-ch=%s prints ordinal %s"
+                            % (number, ordinal.group(1)))
+        href = re.search(r'href="(ch(\d+)[^"]*)"', block)
+        if href and int(href.group(2)) != int(number):
+            problems.append("index: entry %s links %s" % (number, href.group(1)))
+
+        # A dependency has to exist, and has to come earlier. A chapter that
+        # needs a later one is not a reading order at all.
+        wanted = [n for n in needs.split(",") if n]
+        for dep in wanted:
+            if not dep.isdigit() or int(dep) > len(chapters):
+                problems.append("index: entry %s needs %r, which is not a chapter"
+                                % (number, dep))
+            elif int(dep) >= int(number):
+                problems.append("index: entry %s says it needs %s, which is not "
+                                "earlier" % (number, dep))
+
+        # The chips a reader sees and the attribute the script reads are two
+        # copies of the same list, written by hand at opposite ends of a line.
+        chips = re.findall(r'<span class="chip">(\d+)</span>', block)
+        if chips != wanted:
+            problems.append("index: entry %s shows chips %s and data-needs %s"
+                            % (number, chips or ["none"], wanted or ["none"]))
+
+    if seen != sorted(seen):
+        problems.append("index: entries are not in chapter order: %s" % seen)
+
+    # A chapter's own title is the title the cover has to use.
+    for chapter in chapters:
+        with open(os.path.join(root, chapter, "index.html"), encoding="utf-8") as fh:
+            head = fh.read(4096)
+        own = re.search(r"<title>(.*?)</title>", head)
+        if not own:
+            continue
+        want = own.group(1).strip()
+        if ">%s</a>" % want not in html:
+            problems.append("index: %s calls itself %r and the cover does not"
+                            % (chapter, want))
+
+    # The cover must not pin a commit the chapters disagree about. Chapter 1
+    # sits on an earlier tree than chapters 3 to 7, so any single hash printed
+    # here is wrong for somebody -- which is how this check was written: the
+    # first draft of the cover claimed one commit for all seven.
+    cited = {}
+    for chapter in chapters:
+        with open(os.path.join(root, chapter, "index.html"), encoding="utf-8") as fh:
+            body = fh.read()
+        if not re.search(r"\.rs</code>:\d+|\.rs:\d+", body):
+            continue
+        cited[chapter] = set(re.findall(r"<code>([0-9a-f]{9})</code>", body))
+    for hash_ in set(re.findall(r"<span class=\"mono\">([0-9a-f]{9})</span>", html)):
+        disagree = sorted(c for c, hs in cited.items() if hash_ not in hs)
+        if disagree:
+            problems.append("index: pins %s, which %s does not cite"
+                            % (hash_, ", ".join(disagree)))
+
+    return problems
+
+
 def main():
     chapters = sorted(d for d in os.listdir(ROOT)
                       if d.startswith("ch")
@@ -2799,6 +2921,18 @@ def main():
 
         if bad:
             failures += 1
+
+    # The cover duplicates every chapter's number, title and place in the
+    # order, so it runs after the chapters it describes.
+    print("\nindex")
+    print("-" * len("index"))
+    problems = index_checks(ROOT, chapters)
+    for problem in problems:
+        print("  FAIL  %s" % problem)
+    if problems:
+        failures += 1
+    else:
+        print("  pass  the cover and the chapters agree")
 
     # Across chapters, not within one, so it runs once after all of them.
     print("\npromises")
