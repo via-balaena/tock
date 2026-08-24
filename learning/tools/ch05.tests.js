@@ -123,12 +123,23 @@ walk("mm-", "mmp-", 3, "figure 3");
 REG["mm-2"].fire("click");
 // The numbers live in the readout only. With scripting off every panel is
 // visible while the readout shows one moment, so a panel that restated another
-// moment's value read as a contradiction.
+// moment's value read as a contradiction. mmp-1 may say 0x11 -- that is the
+// constant all three moments share, not any one moment's value.
 chk("the rounding panel states the rule, not the readout's numbers",
     REG["mmp-2"].textContent.indexOf("next whole multiple") > -1, true);
-chk("and no panel quotes a value the readout is showing for another moment",
-    REG["mmp-0"].textContent.indexOf("0x") + REG["mmp-1"].textContent.indexOf("0x2")
-      + REG["mmp-2"].textContent.indexOf("0x"), -3);
+(function () {
+  var READOUT = ["0x20008003", "0x20008011", "0x200087F1", "0x20008811",
+                 "32 bytes", "2048 bytes", "2080 bytes"];
+  var i, k, quoted = [];
+  for (i = 0; i < 3; i++) {
+    for (k = 0; k < READOUT.length; k++) {
+      if (REG["mmp-" + i].textContent.indexOf(READOUT[k]) > -1) {
+        quoted.push("mmp-" + i + " says " + READOUT[k]);
+      }
+    }
+  }
+  chk("no panel quotes a value the readout is showing", quoted.join("; "), "");
+}());
 REG["mm-0"].fire("click");
 
 // ---- Figure 4: the five permission names ----
@@ -289,8 +300,10 @@ chk("the closing names the two regions a process starts with",
 // Two source bullets backed claims the page never made: the skip-if-unchanged
 // optimisation, and the older unit writing the identical three control fields.
 // Both are prose now, so both are assertable.
-chk("the chapter says the hardware write is skipped when nothing changed",
-    REG["skipline"].textContent.indexOf("are not rewritten") > -1, true);
+chk("the chapter says which half of the write is skipped",
+    REG["skipline"].textContent.indexOf("the eight pairs are left alone") > -1, true);
+chk("and that the three control fields are not the skipped half",
+    REG["sameline"].textContent.indexOf("written every time") > -1, true);
 chk("and what the comparison is against",
     REG["skipline"].textContent.indexOf("dirty flag") > -1, true);
 chk("the older unit writing the same three fields is on the page",
@@ -304,11 +317,39 @@ chk("the worked example admits its base is picked, not read off the board",
     REG["workline"].textContent.indexOf("picked to make the arithmetic") > -1, true);
 // Three of the five permission names have no caller anywhere. The chapter said
 // so three different ways -- 'the loading path', 'this board', 'this tree'.
-chk("all three unused permissions are scoped to the tree, not the board",
-    REG["pmp-0"].textContent.indexOf("in this tree") > -1
-      && REG["pmp-3"].textContent.indexOf("in this tree") > -1
-      && REG["pmp-4"].textContent.indexOf("anywhere in the tree") > -1, true);
+// The three unused variants have no caller anywhere. Saying so in every panel
+// meant saying it four times; it is the note's job now, once.
+chk("the note carries the tree-wide claim about the unused three",
+    REG["pm-note"].textContent.indexOf("no caller anywhere in the tree") > -1, true);
+chk("and no panel repeats it",
+    REG["pmp-0"].textContent.indexOf("this tree")
+      === REG["pmp-3"].textContent.indexOf("this tree"), true);
 // The closing counted the same registers two ways in adjacent sentences.
 chk("the closing says two pairs confine a process, out of eight",
     REG["closing"].textContent.indexOf("two pairs of registers") > -1
-      && REG["closing"].textContent.indexOf("out of the eight") > -1, true);
+      && REG["closing"].textContent.indexOf("holds eight pairs") > -1, true);
+
+// ---- what the second review pass found ----
+// The glossary was the one part of the page neither earlier pass had aimed at,
+// and it held two errors. 'execute-never' called itself one bit while figure 2
+// had grown a second, and 'privileged' blamed the chip for a line Tock writes.
+chk("the glossary says execute-never is a pair",
+    REG["words"].textContent.indexOf("The pair carries two of them") > -1, true);
+chk("and that exempting the kernel is Tock's configuration, not the chip's",
+    REG["words"].textContent.indexOf("Tock configures the unit not to constrain it") > -1, true);
+// It also miscounted its own exception names: MemManage never fires here and
+// HardFault is the handler this board installs, so one of two, not two of three.
+chk("the count of exception names is two, one of which never fires",
+    REG["wordcount"].textContent.indexOf("Two of them are the names") > -1
+      && REG["wordcount"].textContent.indexOf("one of those two never fires") > -1, true);
+// Figure 2's note said ten bits had nowhere to go, in a figure whose rows now
+// account for all ten.
+chk("the note says the ten bits are spent rather than missing",
+    REG["rf-note"].textContent.indexOf("carrying a field in the rows above") > -1, true);
+// PXN's 0x10 is added to figure 3's limits, not visible inside them.
+chk("the PXN panel says the 0x10 is added, not present",
+    REG["rfp-4"].textContent.indexOf("adds to every limit") > -1, true);
+// ATTRINDX is three bits and its own row says so.
+chk("the imperative admits a three-bit field, because ATTRINDX is one",
+    REG["rf-do"].textContent.indexOf("one, two or three bits") > -1
+      && REG["rf-5"].textContent.indexOf("bits 3:1") > -1, true);
