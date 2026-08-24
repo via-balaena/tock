@@ -1542,6 +1542,22 @@ RETIRED_PHRASES = {
                                      "figures earlier"),
         ("never comes down", "same claim, same reason"),
     ],
+    "ch07": [
+        ("wired to fetch", "chapter 2's headline is that the first "
+                           "instruction is never yours; the chip fetches from "
+                           "zero, inside the boot ROM"),
+        ("the type system will not compile", "chapter 3 credits a crate-level "
+                                             "refusal and says outright that "
+                                             "this is the half the type system "
+                                             "does not cover"),
+        ("never pays for it", "a process pays a table entry per driver before "
+                              "it runs, which figures 2 and 5 both price"),
+        ("names a file and a line", "four of the seven chapters cite the "
+                                    "datasheet by section"),
+        ("only one of the seven is enforced by hardware", "chapter 6's "
+                                                          "instruction is "
+                                                          "hardware too"),
+    ],
 }
 
 

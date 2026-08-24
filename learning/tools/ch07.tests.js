@@ -270,8 +270,13 @@ walk("ar-", "arp-", 7, "figure 9");
 REG["ar-4"].fire("click");
 chk("chapter 5 is named as the one the hardware enforces",
     REG["arp-4"].textContent.indexOf("The cut that is hardware") > -1, true);
-chk("and the note says it is the only one",
-    REG["ar-note"].textContent.indexOf("only one of the seven is enforced by hardware") > -1, true);
+// "Only one of the seven is enforced by hardware" left a reader arriving from
+// chapter 6 with an obvious objection: svc is hardware too. The note answers
+// it now rather than inviting it.
+chk("and the note counts the hardware honestly",
+    REG["ar-note"].textContent.indexOf("Notice how little of this is hardware") > -1, true);
+chk("and says why chapter 6's instruction does not count as enforcement",
+    REG["ar-note"].textContent.indexOf("it enforces nothing on its own") > -1, true);
 chk("which is the answer the chapter closes on",
     REG["ar-note"].textContent.indexOf("nothing on the chip stops it, so people did") > -1, true);
 REG["ar-0"].fire("click");
@@ -311,6 +316,80 @@ REG["ar-0"].fire("click");
   REG["qa-0"].fire("click");
   chk("a wrong click is marked wrong", REG["qa-0"].classList.contains("is-wrong"), true);
   chk("and the right option is marked anyway", REG["qa-1"].classList.contains("is-right"), true);
+}());
+
+// ---- What this chapter says about the other six ----
+// A closing chapter summarises six chapters it cannot check by reading its own
+// source files, and four of the seven panels were wrong on the first draft.
+// Each of these pins the summary against what that chapter actually says.
+(function () {
+  REG["ar-1"].fire("click");
+  // Chapter 2's headline is "The first instruction is never yours."
+  chk("the chapter 2 panel does not say the chip fetches your first instruction",
+      REG["arp-1"].textContent.indexOf("The first instruction is never yours") > -1, true);
+  chk("and names the ROM that hunts for it",
+      REG["arp-1"].textContent.indexOf("hunts through flash") > -1, true);
+  REG["ar-2"].fire("click");
+  // Chapter 3 credits a crate-level refusal and says outright that this is the
+  // half the type system does not cover.
+  chk("the chapter 3 panel credits the crate, not the type system",
+      REG["arp-2"].textContent.indexOf("the crate it lives in will not compile") > -1, true);
+  chk("and puts the refusal at build time",
+      REG["arp-2"].textContent.indexOf("refused at build time") > -1, true);
+  REG["ar-3"].fire("click");
+  // Chapter 4's distinction is the compiler, and it spends a figure on the
+  // header the kernel does check.
+  chk("the chapter 4 panel says which tool never saw the code",
+      REG["arp-3"].textContent.indexOf("the compiler behind the kernel never saw") > -1, true);
+  chk("and does not claim the kernel checks nothing",
+      REG["arp-3"].textContent.indexOf("sixteen bytes at the front") > -1, true);
+  REG["ar-0"].fire("click");
+  // Chapter 1's sentence, as chapter 1 has it, without the clause this chapter
+  // had been adding to it.
+  chk("chapter 1's sentence is quoted as chapter 1 has it",
+      REG["closingq"].textContent.indexOf("everything Tock does is an answer to: any code can write any address") > -1, true);
+}());
+
+// ---- The claims no assertion reached ----
+// Twelve ids were read by neither the script nor this suite, one of them a
+// figure note. Each of these asserts what the anchor claims rather than that
+// it exists, so a rewrite that drops the claim fails.
+(function () {
+  var CLAIMS = [
+    ["needstate",  "two processes can be printing at once"],
+    ["fourways",   "this kernel has ruled out three of them"],
+    ["costline",   "its per-process state is four fields"],
+    ["wasteline",  "Three of those seven slots are never touched"],
+    ["lifeline",   "that object contains no memory at all"],
+    ["reenter",    "It panics, and the board stops"],
+    ["whypanic",   "two mutable references to the same bytes"],
+    ["gapline",    "there is no separate pool for grants"],
+    ["whofirst",   "which asks first"],
+    ["closingq",   "Six chapters have been taking pieces out of"],
+    ["wordcount",  "Chapter 4 defined a grant in one line"],
+    ["lf-note",    "A driver installed on the board and never called by a process"]
+  ];
+  var i, missing = [];
+  for (i = 0; i < CLAIMS.length; i++) {
+    if (REG[CLAIMS[i][0]].textContent.indexOf(CLAIMS[i][1]) === -1) {
+      missing.push(CLAIMS[i][0] + " no longer says " + CLAIMS[i][1]);
+    }
+  }
+  chk("every anchored paragraph still makes the claim it was anchored for",
+      missing.join("; "), "");
+}());
+
+// ---- What a process pays before it calls anything ----
+// Figure 1 sold the design on "never pays for it" and figures 2 and 5 spend
+// their length correcting that. The three have to agree now.
+(function () {
+  REG["wy-3"].fire("click");
+  chk("figure 1 admits the fixed cost rather than denying it",
+      REG["wyp-3"].textContent.indexOf("small fixed cost per driver") > -1, true);
+  chk("figure 2's note is where it is priced",
+      REG["bd-note"].textContent.indexOf("pays for a table entry per driver") > -1, true);
+  chk("and figure 5's note gives the number",
+      REG["lf-note"].textContent.indexOf("eight bytes and not one more") > -1, true);
 }());
 
 // ---- The debts, and the end of the series ----

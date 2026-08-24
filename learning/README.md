@@ -167,6 +167,20 @@ count above honest when adding one; it has now said the wrong number twice:
   anything in particular -- that stays a review lens. Skipped where git or the
   pinned commit is unavailable.
 
+- **A chapter's summary of another chapter.** Only a closing chapter has this
+  problem, and chapter 7 has it badly: its last figure walks all seven chapters
+  in one panel each, and four of the seven were wrong on the first draft --
+  written from memory about pages that were not open. It said the chip is wired
+  to fetch the first instruction, where chapter 2's headline is that the first
+  instruction is never yours. It credited the type system with a refusal
+  chapter 3 attributes to a crate-level `forbid`, having said outright that
+  this is the half the type system does not cover. It said the kernel cannot
+  check a process, where chapter 4 spends a figure on the sixteen bytes it does
+  check. And it quoted chapter 1's closing sentence with a clause chapter 1
+  does not have. There is no gate for this: the check is to open the chapter
+  being summarised and read what it says. `RETIRED_PHRASES` holds the four
+  wrong ones so they cannot come back.
+
 - **A halfword a figure printed without assembling it.** The sibling of the
   Rust one below, for chapter 6, whose whole opening rests on `svc N` being
   `0xDF00` with N in its low byte -- which is why the class of a request is the

@@ -635,7 +635,7 @@ dfn {
       <p class="blkp" id="wyp-0">Give the driver an array with a slot for every process the board could ever run. It works, and it is paid for in flash and RAM whether the processes exist or not. Every driver pays for every process, and the board's maximum has to be decided at compile time by somebody who does not know what will be installed.</p>
       <p class="blkp" id="wyp-1">Ask for the memory when the driver needs it. This is what a larger operating system does, and it is not available here: there is nothing to ask. A heap also brings the failure this kernel is built to avoid, where one driver's appetite becomes another's crash at an unpredictable moment.</p>
       <p class="blkp" id="wyp-2">Keep one process's worth of state and refuse the second caller. Some drivers really do this, and a driver for a single sensor may only make sense one process at a time anyway. But it turns a shared peripheral into a private one, and the console cannot work that way.</p>
-      <p class="blkp is-on" id="wyp-3">Take the memory out of the process that caused the need. The process is already holding an allocation the kernel gave it. If a driver needs eighty bytes because of what this process asked for, take eighty bytes from this process. Nothing is shared, nothing is global, and a process that never uses a driver never pays for it.</p>
+      <p class="blkp is-on" id="wyp-3">Take the memory out of the process that caused the need. The process is already holding an allocation the kernel gave it. If a driver needs eighty bytes because of what this process asked for, take eighty bytes from this process. Nothing is shared and nothing is global, and what a process pays is decided almost entirely by which drivers it actually calls. Almost: there is a small fixed cost per driver as well, and Figure 2 is where it shows up.</p>
     </div>
   </div>
   <div class="instrument-note" id="wy-note">Notice what the fourth one does to the accounting. The cost of a driver stops being a property of the driver and becomes a property of the process using it, which means it can be charged rather than estimated. It also means a process's memory is no longer only the process's, and the rest of this chapter is about the care that takes.</div>
@@ -766,7 +766,7 @@ dfn {
       <button type="button" id="lf-4" aria-pressed="false"><span class="seq-n">5</span><span>The process restarts <span class="seq-src">process_standard.rs:2460</span></span></button>
     </div>
     <div class="dbgsay">
-      <p class="dbgp is-on" id="lfp-0">No memory anywhere. The kernel hands out a grant number, counts up by one, and the driver keeps that number for the life of the board. Once the first process is created the count is finalised and no driver can be given another, because every process's table was sized from it.</p>
+      <p class="dbgp is-on" id="lfp-0">No memory anywhere. The kernel hands out a grant number, counts up by one, and the driver keeps that number for the life of the board. Once the first process is created the count is finalised, and asking for another grant panics outright, because every process's table was sized from that count.</p>
       <p class="dbgp" id="lfp-1">Eight bytes, in the table at the very top of the process's memory, holding a driver number of zero and a null pointer. Null is the flag: the kernel cannot use the driver number to tell whether a grant exists, because zero is a real driver number, so the pointer carries that meaning instead.</p>
       <p class="dbgp" id="lfp-2">Now it costs something. The kernel works out the size from the driver's type, moves <b>kernel_memory_break</b> down by it, aligns it, checks it has not run into the process's own break, and writes the pointer into the table. This is the only moment in the five where the region gets smaller.</p>
       <p class="dbgp" id="lfp-3">Free, every time after the first. The pointer is already in the table, so entering is a bounds check and a closure call. A driver that talks to a process a thousand times allocates once.</p>
@@ -865,7 +865,7 @@ dfn {
 
 <section class="col">
   <h2>Where that leaves chapter 1's question</h2>
-  <p id="closingq">Chapter 1 ended on one sentence: any code can write any address, and nothing on the chip stops it. Six chapters have been taking pieces out of that, and this is the last of them.</p>
+  <p id="closingq">Chapter 1 ended on one sentence, the one it says everything Tock does is an answer to: any code can write any address. Six chapters have been taking pieces out of that, and this is the last of them.</p>
 </section>
 
 <figure class="instrument">
@@ -886,15 +886,15 @@ dfn {
     </div>
     <div class="vtsay">
       <p class="vtp is-on" id="arp-0">The problem, stated. A store is a store, and a peripheral register is an address like any other. The processor running the instruction has no opinion about which address it lands on. Everything after this is somebody deciding which code gets to run that instruction.</p>
-      <p class="vtp" id="arp-1">Nothing taken away yet, but the ground laid: the first instruction is at an address the chip is wired to fetch, and everything running afterwards is there because something earlier put it there. Trust starts somewhere physical.</p>
-      <p class="vtp" id="arp-2">The first real cut, and it is not the hardware's. A capsule can only reach what its board handed it, because the type system will not compile a capsule that reaches for anything else. Nothing stops a capsule writing a wild address at run time; what stops it is that the code saying so was never written.</p>
-      <p class="vtp" id="arp-3">A second kind of code, compiled separately, that the kernel did not write and cannot check. Everything after this is about that second kind, because the first kind is handled by the compiler and this one cannot be.</p>
+      <p class="vtp" id="arp-1">Nothing taken away yet, but the ground laid. The first instruction is never yours: the chip fetches from zero, inside a boot ROM nobody can change, and that ROM hunts through flash for something it recognises. Everything after it runs because something earlier chose to run it.</p>
+      <p class="vtp" id="arp-2">The first real cut, and it is not the hardware's. A capsule reaches only what its board handed it, and the crate it lives in will not compile the raw pointer that would reach anything else. Nothing stops a capsule writing a wild address while it runs. What stops it is that the code to do so was refused at build time.</p>
+      <p class="vtp" id="arp-3">A second kind of code, compiled separately, that the compiler behind the kernel never saw. The kernel cannot check what it does. What it can check is sixteen bytes at the front, which it decides to trust so that it can find where one application ends and the next begins.</p>
       <p class="vtp" id="arp-4">The cut that is hardware. Two pairs of registers, checked on every access a process makes. The sentence stops being true of a process: it may write its own memory and nothing else, and no wrong pointer changes that.</p>
       <p class="vtp" id="arp-5">The one way back out, made so narrow that no pointer can find it. Not an address the process may write, but an instruction that stops it, and eight kinds of question it may ask on the way through.</p>
       <p class="vtp" id="arp-6">And the last piece: the kernel's own answer to needing memory it never asked for. It takes it from whoever caused the need, in the process's own allocation, above the fence, and never gives it back until that process is not that process any more.</p>
     </div>
   </div>
-  <div class="instrument-note" id="ar-note">Notice that only one of the seven is enforced by hardware. The rest are enforced by a compiler, by a type, by a boot sequence and by a convention. Every one of them is a decision somebody made and wrote down in a file this series has quoted. That is the answer to chapter 1's question: nothing on the chip stops it, so people did, in software, one mechanism at a time.</div>
+  <div class="instrument-note" id="ar-note">Notice how little of this is hardware. One mechanism is: the unit in chapter 5, which checks an address before the access finishes. Chapter 6's instruction is hardware as well, but it enforces nothing on its own &mdash; it is a door, and what makes it the only way through is the fence beside it. The rest are enforced by a compiler, by a type, by a boot sequence and by a convention. Every one is a decision somebody made and wrote down in a file this series has quoted. That is the answer to chapter 1's question: nothing on the chip stops it, so people did, in software, one mechanism at a time.</div>
 </figure>
 
 <section class="col">
@@ -944,13 +944,13 @@ dfn {
   <h2>What you can say now</h2>
   <p id="closing">A driver keeps its state about a process inside that process's own memory, above the line the process can reach and below a table cut before the process started. The memory is taken the first time that driver is used by that process, by moving one pointer down, and nothing moves it back while the process lives. What it costs is a number you can add up: for the console on this board, seventy-six bytes, twenty-four of them slots kept empty so that an older numbering still works.</p>
   <p id="closing2">A capsule never holds any of it. It holds two numbers, and it borrows the bytes for the length of one closure, which is chapter 3's rule applied to memory that belongs to somebody else. Reaching for the same grant twice at once stops the board, because the alternative is two mutable references to one object and the kernel will not pretend otherwise.</p>
-  <p id="lastline">And that is the last mechanism. Chapter 1 asked why nothing stops a store from landing anywhere. The answer took seven chapters, and it is that nothing on the chip does, so the rest was built. A compiler that will not compile the reach. A header the kernel parses before it trusts anything. Two registers per region, checked on every access. One instruction wide enough for eight kinds of question. And this, the place where the kernel puts what it has been handed. Every one of them is in a file this series has quoted, and every one is a decision somebody wrote down.</p>
+  <p id="lastline">And that is the last mechanism. Chapter 1 said that nothing stops a store from landing anywhere. The answer took seven chapters, and it is that nothing on the chip does, so the rest was built. A compiler that will not compile the reach. A header the kernel parses before it trusts anything. Two registers per region, checked on every access. One instruction wide enough for eight kinds of question. And this, the place where the kernel puts what it has been handed. Every one of them is in a file this series has quoted, and every one is a decision somebody wrote down.</p>
 </section>
 
 <div class="col next">
   <p class="eyebrow forward">The end</p>
   <h3 style="margin-top:0">Seven chapters, one question</h3>
-  <p>There is no chapter 8. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names a file and a line, and all of them are still there. The most useful next thing is not more reading &mdash; it is <code>make program</code> in <code>boards/raspberry_pi_pico_2</code>, and then breaking something on purpose to watch which of these seven mechanisms catches it.</p>
+  <p>There is no chapter 8. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names where it came from: a file and a line in this tree, or a section of the datasheet. All of them are still there at the commit these pages pin. The most useful next thing is not more reading &mdash; it is <code>make program</code> in <code>boards/raspberry_pi_pico_2</code>, and then breaking something on purpose to watch which of these seven mechanisms catches it.</p>
 </div>
 
 <section class="col sources">

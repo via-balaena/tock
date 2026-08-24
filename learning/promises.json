@@ -1059,7 +1059,7 @@
   {
     "id": "ch07-asked-ch01",
     "in": "ch07",
-    "says": "Chapter 1 asked why nothing stops a store from landing anywhere",
+    "says": "Chapter 1 said that nothing stops a store from landing anywhere",
     "about": "ch01",
     "kept_by": "store"
   },
@@ -1090,5 +1090,19 @@
     "says": "Everything else happens later, per process",
     "about": null,
     "why": "'later' here is the life of one grant -- boot, then a process's first call -- rather than a later chapter. There is no later chapter."
+  },
+  {
+    "id": "ch07-hwunit-ch05",
+    "in": "ch07",
+    "says": "the unit in chapter 5, which checks an address before the access finishes",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch07-hwdoor-ch06",
+    "in": "ch07",
+    "says": "Chapter 6's instruction is hardware as well",
+    "about": "ch06",
+    "kept_by": "svc"
   }
 ]
