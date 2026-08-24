@@ -1083,6 +1083,45 @@ def same_rule_contrast_checks(component_css, tokens):
     return problems
 
 
+def glossary_use_checks(html):
+    """A word the chapter defines and then never uses again.
+
+    The glossary section makes a promise in its own lead sentence -- "each is
+    one sentence now and repeated in context below" -- and nothing was checking
+    it. Chapter 4 shipped eleven words of which two, `userspace` and `TBF`,
+    appeared exactly once each: in the list itself. The chapter said
+    "application" and "the header" everywhere it could have said them, which
+    means the reader was handed two words and then never shown one in use.
+
+    Both existing vocabulary rules are satisfied by that page. The `<dfn>` rule
+    is bidirectional between the tags and the list, and both agreed. The
+    leaned-on rule asks whether a word used four or more times has ever been
+    defined, which is the opposite question. This one asks whether a word that
+    was defined is ever used, and it is the cheaper of the two to get wrong,
+    because a glossary is written before the prose that was supposed to need it.
+    """
+    problems = []
+    for block in re.finditer(
+            r'<(\w+)[^>]*class="glossary(?: cast)?"[^>]*>(.*?)</\1>',
+            html, flags=re.S):
+        listed = [re.sub(r"<[^>]+>", "", t).strip()
+                  for t in re.findall(r"<dt[^>]*>(.*?)</dt>",
+                                      block.group(2), flags=re.S)]
+        # Everywhere except the list itself. The first version looked only at
+        # the prose *after* the block, which is right for chapters 3 and 4,
+        # where the glossary is the front matter -- and wrong for chapter 1,
+        # whose list is a closing summary with nothing after it. That version
+        # reported all twenty-three of chapter 1's terms as unused.
+        rest = html[:block.start()] + html[block.end():]
+        text = " ".join(_sentences(_strip_for_prose(rest)))
+        for term in listed:
+            if not re.search(r"\b%ss?\b" % re.escape(term), text,
+                             0 if term.isupper() else re.I):
+                problems.append(
+                    "%r is in the glossary and never used after it" % term)
+    return problems
+
+
 def wired_checks(html):
     """A control the script never reaches.
 
@@ -1318,6 +1357,7 @@ def static_checks(html, name):
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
+    problems.extend(glossary_use_checks(html))
     problems.extend(wired_checks(html))
 
     return problems
@@ -1564,7 +1604,15 @@ def _strip_for_prose(html):
     text = re.sub(r"<script.*?</script>", " ", text, flags=re.S)
     text = re.sub(r"<pre.*?</pre>", " ", text, flags=re.S)
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
-    text = re.sub(r'<div class="sources">.*', " ", text, flags=re.S)
+    # The sources list is citations, not running prose, and this rule has said
+    # so since chapter 2 -- but it matched `<div class="sources">` and every
+    # chapter writes `<section class="col sources">`, so the exemption had
+    # never once applied. Chapters 1 to 3 happened to keep every bullet under
+    # the sentence limit and nobody noticed; chapter 4 cites a Makefile target
+    # against a README that names a different one, which cannot be said in
+    # thirty-four words. Match what the pages actually write.
+    text = re.sub(r'<(div|section)[^>]*class="[^"]*\bsources\b[^"]*">.*', " ",
+                  text, flags=re.S)
     # A chapter's own name is not running prose. `<title>` is never rendered in
     # the page at all -- it is the browser tab -- and `<h1>` is the masthead.
     # Counting them was not a strict reading of the rule, it was measuring the

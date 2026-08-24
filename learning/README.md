@@ -46,6 +46,11 @@ and 5. 7 needs 3, 4 and 6. The MPU deliberately comes before syscalls: meet the
 wall, then find the door, which is the same shape as letting the read-modify-write
 race lose a pin before the atomic register is offered.
 
+**Units.** After a numeral it is `kB`; spelled out it is "kilobyte". Chapter 1
+shipped `KB`, chapter 2 spells it out throughout, and chapter 4 arrived with a
+third spelling before this was written down -- three conventions for one unit
+across four chapters, which is what a cross-chapter notation pass is for.
+
 **Size.** Chapter 1 runs to about 10,900 prose words across 17 figures, and is
 the outlier on purpose -- it defines the vocabulary from nothing and has no
 chapter to lean on. Later chapters inherit that vocabulary and should be roughly
@@ -103,8 +108,25 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Eighteen more static checks exist because each caught a live defect. Keep the
+Nineteen more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A word the glossary defines and the chapter never uses.** The list makes a
+  promise in its own lead sentence -- "each is one sentence now and repeated in
+  context below" -- and nothing checked it. Chapter 4 shipped eleven words of
+  which two, `userspace` and `TBF`, appeared exactly once each: in the list.
+  The chapter said "application" and "the header" everywhere it could have said
+  them, so the reader was handed two words and never shown one in use. Both
+  existing vocabulary rules pass that page. The `<dfn>` rule is bidirectional
+  between the tags and the list, and the two agreed; the leaned-on rule asks
+  whether a word used four or more times was ever defined, which is the other
+  direction entirely. This one asks whether a defined word is ever used, and it
+  is the easier of the two to get wrong, because a glossary is written before
+  the prose that was supposed to need it. The first version looked only at the
+  prose *after* the block, which is right for chapters 3 and 4, where the
+  glossary is front matter, and wrong for chapter 1, whose list is a closing
+  summary with nothing after it -- it reported all twenty-three of chapter 1's
+  terms as unused. It reads the whole page outside the list now.
 
 - **A word the series leans on and never defines.** The `<dfn>` rule is
   bidirectional but narrow: every term a chapter *marks* has to be in its
@@ -357,7 +379,13 @@ sitting behind buttons a reader might never press. Four rules are enforced:
    closing quote of a literal pairs with the next opening quote and the code
    between them -- comments included -- gets counted as prose. Quotations,
    diagram labels and the sources list are exempt from the sentence limits: a
-   datasheet quote cannot be rewritten to suit a house style.
+   datasheet quote cannot be rewritten to suit a house style. That exemption
+   had never once applied. It matched `<div class="sources">` and every chapter
+   writes `<section class="col sources">`, so the sources list was being held
+   to the prose limits all along; chapters 1 to 3 happened to keep every bullet
+   short enough that nobody found out. Chapter 4 cites a Makefile target
+   against a README naming a different one, which cannot be said in thirty-four
+   words, and that is what surfaced it.
 
 **Behavioral checks**: the page's own `<script>` is executed headlessly under
 JavaScriptCore against the DOM shim in `tools/harness.js`, then the chapter's

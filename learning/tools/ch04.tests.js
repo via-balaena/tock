@@ -313,7 +313,7 @@ chk("the first question's three options all begin the same way",
 // Four goals at the top, each tied to what on the page delivers it. A goal
 // nothing answers is the failure this catches.
 chk("goal 1, what a process is in flash and in RAM, is delivered by figures 4 and 5",
-    REG["rgp-2"].textContent.indexOf("the kernel never writes a byte of it") > -1
+    REG["rgp-2"].textContent.indexOf("flashed separately from the kernel") > -1
       && REG["mmp-6"].textContent.indexOf("The bottom") === 0, true);
 chk("goal 2, why chapter 3's promise cannot be made, is delivered by figure 1",
     REG["twp-0"].textContent.indexOf("it arrives as bytes") > -1, true);
@@ -359,4 +359,85 @@ chk("and names hardware as the half that is missing",
     if (REG["words"].textContent.indexOf(WORDS[i]) < 0) { missing++; }
   }
   chk("all eleven of the words the heading promises are in the list", missing, 0);
+}());
+
+// ---- what the first review pass found ----
+// The checksum panel said "every four-byte word of the header". The loop skips
+// word three, which is the checksum field itself, so a reader working one out
+// by hand would have got a different number than the kernel does.
+chk("the checksum panel says which word is left out",
+    REG["hdp-4"].textContent.indexOf("except this one") > -1, true);
+chk("and no longer claims every word goes in",
+    REG["hdp-4"].textContent.indexOf("Every four-byte word of the header, exclusive"), -1);
+
+// The chapter never said the thing every mechanism in it is a consequence of.
+// Tock's threat model was on the page only inside a citation.
+chk("the chapter states its own premise in the prose",
+    REG["premise"].textContent.indexOf("untrusted") > -1, true);
+chk("and quotes the clause that says what replaces trust",
+    REG["premise"].textContent.indexOf("hardware memory protection") > -1, true);
+
+// Goal 2 promised to name what the kernel uses instead, and the name appeared
+// once on the whole page -- in the next chapter's heading.
+chk("the body names the fence rather than describing it",
+    REG["closing"].textContent.indexOf("memory protection unit") > -1, true);
+
+// Chapter 3's next card promised what the isolation costs to run, and the
+// chapter delivered the memory cost only.
+chk("the run-time cost is on the page too",
+    REG["runcost"].textContent.indexOf("every single visit to a process") > -1, true);
+chk("and it is counted rather than gestured at",
+    REG["runcost"].textContent.indexOf("Six operations") > -1, true);
+
+// ---- Figure 11: the limits section was prose only ----
+// Chapter 3's second pass found exactly this shape -- the section about what a
+// chapter does not buy, sitting on the skim path as a bare heading.
+chk("figure 11 opens on the first of the three",
+    REG["tb-0"].getAttribute("aria-pressed"), "true");
+walk("tb-", "tbp-", 3, "figure 11");
+REG["tb-0"].fire("click");
+chk("the header panel says total_size is believed outright",
+    REG["tbp-0"].textContent.indexOf("believed outright") > -1, true);
+chk("the app_break panel hands enforcement to chapter 5",
+    REG["tbp-1"].textContent.indexOf("chapter 5") > -1, true);
+chk("and the timeslice is named as the one that already works",
+    REG["tbp-2"].textContent.indexOf("already works") > -1, true);
+
+// ---- The reader has this board on the desk ----
+// Nothing in chapters 1 to 3 was actionable. This one describes a thing with an
+// observable consequence, so it says how to cause it.
+chk("the two objcopy flags are both on the page",
+    REG["pairs-install"].textContent.indexOf("--set-section-flags") > -1
+      && REG["pairs-install"].textContent.indexOf("--update-section") > -1, true);
+chk("and the app lands where figure 3 starts looking",
+    REG["pairs-install"].textContent.indexOf("0x10040000") > -1, true);
+
+// ---- Every glossary word is used again ----
+// The section promises "repeated in context below", and two of the eleven were
+// not: `userspace` and `TBF` appeared once each, in the list itself. The
+// general rule is a static check now; these are the two places that were fixed.
+chk("userspace is used where the line it names is drawn",
+    REG["userspaceline"].textContent.indexOf("userspace") > -1, true);
+chk("and TBF is used where the chapter is about a TBF header",
+    REG["trusts"].textContent.indexOf("TBF header") > -1, true);
+
+// ---- The self-check cannot be passed on length ----
+// Chapter 3 shipped with the right answer as the structurally odd option. The
+// fix there was parallel phrasing, which left length unguarded: here the right
+// answer was never longer than any distractor in any of the four questions.
+(function () {
+  var CASE = [["qa-", 0], ["qb-", 0], ["qc-", 1], ["qd-", 1]];
+  var i, j, len, right, uniqueShortest = 0;
+  for (i = 0; i < CASE.length; i++) {
+    len = [];
+    for (j = 0; j < 3; j++) {
+      len.push(REG[CASE[i][0] + j].textContent.split(/\s+/).length);
+    }
+    right = len[CASE[i][1]];
+    if (len.filter(function (n) { return n < right; }).length === 0
+        && len.filter(function (n) { return n === right; }).length === 1) {
+      uniqueShortest++;
+    }
+  }
+  chk("the right answer is never the one shortest option", uniqueShortest, 0);
 }());

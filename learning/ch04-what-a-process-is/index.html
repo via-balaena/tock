@@ -715,7 +715,8 @@ dfn {
   <h2>The compiler saw the capsule. It never sees the app.</h2>
   <p>Chapter 3's answer rested on one fact that was never said out loud. Every line of a capsule went through the same compiler, in the same build, under a rule its crate could not switch off.</p>
   <p>Take that away and there is nothing left. An application is not built here. It is a separate binary, produced by a separate set of tools, and the kernel meets it for the first time as bytes sitting in flash.</p>
-  <p>Tock's own specification is blunt about how far that goes. Applications, it says, may be "written in C (or even assembly)" and are still meant to work.</p>
+  <p id="premise">Tock's specification states the position outright. Applications are <em>untrusted</em>, and so "the kernel uses hardware memory protection to isolate the kernel from processes".</p>
+  <p id="userspaceline">That is what buys the rest. Applications may be "written in C (or even assembly)" and are still meant to work, because none of the guarantee depends on how they were built. Everything on the far side of that line, Tock calls <dfn>userspace</dfn>.</p>
   <p>So chapter 3's question &mdash; what may this code touch? &mdash; has to be answered a second time, and none of the first answer survives.</p>
 </section>
 
@@ -736,7 +737,7 @@ dfn {
     <div class="blksay">
       <p class="blkp is-on" id="twp-0"><b>Capsule:</b> the same build as the kernel, in this tree, at the same moment. <b>Process:</b> not here. It was built somewhere else, possibly on another machine and possibly years earlier, and it arrives as bytes.</p>
       <p class="blkp" id="twp-1"><b>Capsule:</b> Rust, and Rust with <b>#![forbid(unsafe_code)]</b> at the top of its crate. <b>Process:</b> anything at all that ends up as instructions this processor will execute.</p>
-      <p class="blkp" id="twp-2"><b>Capsule:</b> inside the kernel binary, in the 255&nbsp;kB of flash it is linked into. <b>Process:</b> a separate 256&nbsp;kB region that the kernel binary reserves and then never writes to.</p>
+      <p class="blkp" id="twp-2"><b>Capsule:</b> inside the kernel binary, in the 255&nbsp;kB of flash it is linked into. <b>Process:</b> a separate 256&nbsp;kB region that the kernel binary reserves and does not occupy.</p>
       <p class="blkp" id="twp-3"><b>Capsule:</b> the compiler, once, before anything ran. <b>Process:</b> sixteen bytes of header at boot, and hardware for every instruction after that. Figure 2 is the sixteen bytes.</p>
       <p class="blkp" id="twp-4"><b>Capsule:</b> nothing. Chapter 3 ended on exactly that. <b>Process:</b> the scheduler. A process has a timeslice, and the kernel gets the processor back whether the process agrees or not.</p>
     </div>
@@ -746,7 +747,7 @@ dfn {
 
 <section class="col">
   <h2>Sixteen bytes the kernel does trust</h2>
-  <p>Something has to be trusted, or the kernel cannot even work out where one application ends and the next begins. What it trusts is small, fixed in size, and sits right at the front.</p>
+  <p id="trusts">Something has to be trusted, or the kernel cannot even work out where one application ends and the next begins. What it trusts is small, fixed in size, and sits right at the front: the five required fields of a TBF header.</p>
 </section>
 
 <figure class="instrument">
@@ -768,7 +769,7 @@ dfn {
       <p class="vtp" id="hdp-1">How many bytes of header follow. Below 16 is refused, because 16 is what these five fields take. Above <b>total_size</b> is refused too, because a header cannot be longer than the thing containing it.</p>
       <p class="vtp" id="hdp-2">The length of the whole application: header, code, everything. This is the number that says where the next one starts, and it is believed before anything has been verified. The parsing code says so in as many words: "we trust the value in flash".</p>
       <p class="vtp" id="hdp-3">The lowest bit of this word is an on switch. An application with that bit clear is skipped rather than started, which is how a tool can leave one installed and switched off without erasing it.</p>
-      <p class="vtp" id="hdp-4">Every four-byte word of the header, exclusive-or'd together. It catches a header damaged on the way in. It is not a signature and does not pretend to be one: anyone who can write flash can write a matching checksum.</p>
+      <p class="vtp" id="hdp-4">Every four-byte word of the header <em>except this one</em>, exclusive-or'd together &mdash; the loop that builds it has an empty body for word three, which is this field. It catches a header damaged on the way in. It is not a signature and does not pretend to be one: anyone who can write flash can write a matching checksum.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that all five describe the container and none describe the program. Nothing here says what the application does &mdash; only how long it is, and where the next one begins.</div>
@@ -788,14 +789,14 @@ dfn {
     <p class="dothis">Click a step. The last one is the interesting one, because nothing marks the end.</p>
     <div class="seq" role="group" aria-label="Six steps in the kernel's search for applications">
       <button type="button" id="wk-0" aria-pressed="true"><span class="seq-n">1</span><span>start at <b>_sapps</b> <span class="seq-src">main.rs:444</span></span></button>
-      <button type="button" id="wk-1" aria-pressed="false"><span class="seq-n">2</span><span>read eight bytes <span class="seq-src">process_loading.rs:302</span></span></button>
+      <button type="button" id="wk-1" aria-pressed="false"><span class="seq-n">2</span><span>read eight bytes <span class="seq-src">process_loading.rs:307</span></span></button>
       <button type="button" id="wk-2" aria-pressed="false"><span class="seq-n">3</span><span>is the version 2? <span class="seq-src">parse.rs:38</span></span></button>
       <button type="button" id="wk-3" aria-pressed="false"><span class="seq-n">4</span><span>is the header a sane size? <span class="seq-src">parse.rs:52</span></span></button>
       <button type="button" id="wk-4" aria-pressed="false"><span class="seq-n">5</span><span>skip forward <b>total_size</b> <span class="seq-src">process_loading.rs:347</span></span></button>
       <button type="button" id="wk-5" aria-pressed="false"><span class="seq-n">6</span><span>go back to step 2 <span class="seq-src">process_loading.rs:329</span></span></button>
     </div>
     <div class="dbgsay">
-      <p class="dbgp is-on" id="wkp-0">A name the linker script leaves behind, and nothing else. On this board it works out to <b>0x10040000</b>, the first address past the end of the kernel. Whatever has been written there since is what the kernel is about to find.</p>
+      <p class="dbgp is-on" id="wkp-0">A name the linker script leaves behind, and nothing else. On this board it works out to <code class="addr">0x10040000</code>, the first address past the end of the kernel. Whatever has been written there since is what the kernel is about to find.</p>
       <p class="dbgp" id="wkp-1">Eight is enough: version, then <b>header_size</b>, then <b>total_size</b>. That is all it takes to know how long this application claims to be, which is all it takes to find the next.</p>
       <p class="dbgp" id="wkp-2">Two is the only version this kernel knows. Any other value ends the walk, and the comment beside it says why: "it is very possible the header we started to parse is intentionally invalid to signal the end of apps".</p>
       <p class="dbgp" id="wkp-3">Under sixteen bytes cannot hold the five fields; longer than the application cannot fit inside it. Either way this one is skipped &mdash; but the walk carries on, because <b>total_size</b> is trusted on its own.</p>
@@ -830,14 +831,31 @@ dfn {
       <div class="costcell"><span class="costcell-k">ends at</span><span class="costcell-v" id="rg-hi">0x10000400</span></div>
     </div>
     <div class="costsay">
-      <p class="costp is-on" id="rgp-0">Chapter 2's kilobyte. The boot ROM reads this before a single instruction of Tock runs, and everything after it depends on what it finds here.</p>
-      <p class="costp" id="rgp-1">Everything in this tree that ends up in the binary: the scheduler, the syscall layer, the chip crate, and every capsule chapter 3 was about. Two hundred and fifty-five kilobytes for all of it.</p>
-      <p class="costp" id="rgp-2">The applications, and the kernel never writes a byte of it. The linker even marks the section as one the loader should not fill in, which is why applications are flashed as a separate step. <b>_sapps</b> is the first of these addresses.</p>
+      <p class="costp is-on" id="rgp-0">Chapter 2's kilobyte. The boot ROM searches the first four kilobytes of flash for the block that lives in here, before a single instruction of Tock runs.</p>
+      <p class="costp" id="rgp-1">Everything in this tree that ends up in the binary: the scheduler, the syscall layer, the chip crate, and every capsule chapter 3 was about. The 255&nbsp;kB is what the region reserves, not what the binary comes to; the slack at the end is unused flash.</p>
+      <p class="costp" id="rgp-2">The applications. The linker marks this section as one the loader should not fill in, which is why applications are flashed separately from the kernel. Tock does have a capsule that lets an application write its own slice of it back; this board does not include one. <b>_sapps</b> is the first of these addresses.</p>
       <p class="costp" id="rgp-3">The only one of the four whose start is not a round number. It begins wherever the kernel's own zeroed data happens to end, so it moves whenever the kernel is rebuilt, and it runs to the last byte of the 520&nbsp;kB this chip has.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the two halves are divided in different ways. Flash is cut up by the linker before anything runs and cannot move. RAM is cut up while the kernel is running, one process at a time.</div>
 </figure>
+
+<section class="col">
+  <h2>How one gets there</h2>
+  <p>Nothing in this repository builds an application. They are built out of tree, in whatever language, and arrive as a <code>.tbf</code> file: a TBF header with a program behind it.</p>
+  <p>Putting one on this board is two lines of <code>objcopy</code> in the board's Makefile, and both of them are about the section Figure 4 just showed.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary inline" id="pairs-install">
+    <dt>--set-section-flags</dt><dd><code>.apps=LOAD,ALLOC</code> &mdash; the section the linker marked as one not to load becomes one the loader will write</dd>
+    <dt>--update-section</dt><dd><code>.apps=&lt;your file&gt;</code> &mdash; the <code>.tbf</code> goes in at <code class="addr">0x10040000</code>, where Figure 3's walk begins</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <p>The target that runs those two lines is <code>make program APP=...</code>, and then the result is copied over as a UF2 the same way the kernel was. One caution: this board's README says <code>make flash-app</code>, which is what several other boards call it. This one does not define that target.</p>
+</section>
 
 <section class="col">
   <h2>One process's memory</h2>
@@ -893,12 +911,17 @@ dfn {
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="ksp-0">The kernel's whole record of this process: which state it is in, its saved registers, its identifier, its counters. The reservation is written as <b>size_of::&lt;ProcessStandard&gt;()</b> plus its alignment, so the structure describing the process is stored in the process.</p>
-      <p class="blkp" id="ksp-1">Room for ten calls waiting to go back into the application. Ten is a single constant, <b>CALLBACK_LEN</b>, and it is the same ten on every board. What puts things in this queue is chapter 6.</p>
+      <p class="blkp" id="ksp-1">Room for ten calls waiting to go back into the application. Ten is a single constant, <b>CALLBACK_LEN</b>, and it belongs to the process implementation rather than to the board &mdash; every board in the tree uses that one. What puts things in this queue is chapter 6.</p>
       <p class="blkp" id="ksp-2">One empty slot for every grant the board's capsules declared, counted once at boot and never counted again. Filling them is chapter 7, and this reservation is the reason that chapter can exist.</p>
     </div>
   </div>
   <div class="instrument-note">Notice what this makes true. A process's memory is what the application asked for plus everything the kernel needs in order to remember it &mdash; and the second part is charged to the first.</div>
 </figure>
+
+<section class="col" id="runcost">
+  <p>That is what isolation costs in memory. It costs something in time too, and the shape is the same &mdash; the charge falls on every single visit to a process.</p>
+  <p>Six operations wrap each one. The kernel programs the fence, turns it on, arms a timer, hands over the processor, disarms the timer, and turns the fence off again.</p>
+</section>
 
 <section class="col">
   <h2>Told where it is</h2>
@@ -1034,8 +1057,29 @@ argument3: app_break,</pre></button>
   </dl>
 </div>
 
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 11</span>
+    <span class="instrument-title">Three things taken on trust, and what backs each</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each one. Two of the three are held up by nothing this chapter has shown you.</p>
+    <div class="blk" role="group" aria-label="Three things the kernel takes on trust">
+      <button type="button" id="tb-0" aria-pressed="true">the sixteen bytes</button>
+      <button type="button" id="tb-1" aria-pressed="false">app_break</button>
+      <button type="button" id="tb-2" aria-pressed="false">the timeslice</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="tbp-0">The checksum catches a header damaged on the way in, and that is the whole of what it catches. <b>total_size</b> is believed outright, before anything has been verified. Anyone who can write this flash can write a header saying whatever they like, and Figure 3's walk will follow it.</p>
+      <p class="blkp" id="tbp-1">A field in a struct. Chapter 1's store instruction does not read fields, and no arrangement of Rust could make it. What refuses the write is a block of hardware holding the same number, and putting the number there is chapter 5.</p>
+      <p class="blkp" id="tbp-2">The one fence in this chapter that already works. A hardware timer is armed before the switch and disarmed after it, and when it fires the processor returns to the kernel whether the application cooperates or not.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that only the last one is finished. The chapter has spent its length drawing boundaries, and the only one enforced by anything it has shown you is the boundary in time.</div>
+</figure>
+
 <section class="col">
-  <p>So this chapter has described a fence and not built one. The part that builds it is a small piece of hardware inside the processor, it has to be reprogrammed on every switch, and it is chapter 5.</p>
+  <p id="closing">So this chapter has described a fence and not built one. The thing that builds it is the <em>memory protection unit</em>: a small block inside the processor, reprogrammed before every switch into a process. Chapter 5 is about it.</p>
 </section>
 
 <section class="col">
@@ -1047,16 +1091,16 @@ argument3: app_break,</pre></button>
     <p class="q-ask">The first four bytes of an application read <code>02 00 60 00</code>. What has the kernel learned?</p>
     <div class="q-opts" role="group" aria-label="Answers to the first question">
       <button type="button" class="q-opt" id="qa-0" aria-pressed="false">The version is 2, and the header is 96 bytes long</button>
-      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">The version is 2, and the whole application is 96 bytes</button>
-      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">The version is 2, and the next application is 96 bytes on</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">The version is 2, and the application is 96 bytes long</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">The version is 2, and the next one is 96 bytes on</button>
     </div>
     <p class="q-answer" id="qan">The header. Bytes 0 and 1 are the version, lowest byte first, so <code>02 00</code> is 2. Bytes 2 and 3 are <code>header_size</code> the same way, so <code>60 00</code> is 0x0060, which is 96. The length of the whole thing is in the next four bytes, which have not been read yet.</p>
   </div>
   <div class="q">
     <p class="q-ask">Why is a process told the address of its own memory as it starts?</p>
     <div class="q-opts" role="group" aria-label="Answers to the second question">
-      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">Because nothing rewrote its addresses when it was placed</button>
-      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Because the kernel wants it to confirm where it has been put</button>
+      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">Because nothing rewrote its addresses when the kernel put it there</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Because the kernel wants it to confirm where it was put</button>
       <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Because the hardware fence is built from what the process reports</button>
     </div>
     <p class="q-answer" id="qbn">Because it was placed rather than adapted. Figure 7's first option is the one nobody took. No code in this kernel edits an application's binary, so it arrives still holding whatever addresses it was built with, and has to be told the rest.</p>
@@ -1064,9 +1108,9 @@ argument3: app_break,</pre></button>
   <div class="q">
     <p class="q-ask">A process is given two kilobytes of RAM. How much may it touch at its first instruction?</p>
     <div class="q-opts" role="group" aria-label="Answers to the third question">
-      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">All of it, less whatever the grant pointers take</button>
-      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">Thirty-two bytes, until it asks the kernel for more</button>
-      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">Half of it, with the rest held back for its stack</button>
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">All of it, less whatever the grant pointers take up</button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">Thirty-two bytes, until it asks the kernel for more room</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">Half of it, with the rest reserved for its stack</button>
     </div>
     <p class="q-answer" id="qcn">Thirty-two. <code>app_break</code> starts one exception frame above the bottom, which is the least that lets the kernel switch into the process at all. Raising it is a syscall, and it is one of the first things any application does.</p>
   </div>
@@ -1102,7 +1146,7 @@ argument3: app_break,</pre></button>
     <li>Version 2 being the only version parsed, and the sixteen-byte floor &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:36&ndash;56</li>
     <li>"we trust the value in flash", of <code>total_size</code> &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:44&ndash;47</li>
     <li>The enable switch being the lowest bit of <code>flags</code> &mdash; <code>libraries/tock-tbf/src/types.rs</code>:698&ndash;702. The comment there calls it "bit 1"; the code tests <code>flags &amp; 0x00000001</code>, which is bit 0</li>
-    <li>The checksum being every four-byte word of the header exclusive-or'd together &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:81&ndash;95</li>
+    <li>The checksum being every four-byte word of the header <em>except the checksum field itself</em>, exclusive-or'd together &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:81&ndash;95, where the loop body for <code>i == 3</code> is a comment and nothing else</li>
     <li>The walk: eight bytes, then <code>total_size</code> forward, then again &mdash; <code>kernel/src/process_loading.rs</code>:295&ndash;354</li>
     <li>A header "intentionally invalid to signal the end of apps" &mdash; <code>kernel/src/process_loading.rs</code>:329&ndash;333</li>
     <li>The board declaring <code>_sapps</code>, <code>_eapps</code>, <code>_sappmem</code> and <code>_eappmem</code>, and handing all four to the loader &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:444&ndash;463</li>
@@ -1128,6 +1172,12 @@ argument3: app_break,</pre></button>
     <li>Seven fault policies existing &mdash; <code>capsules/system/src/process_policies.rs</code>, at :16, :25, :36, :49, :58, :75 and :100</li>
     <li>The Pico 2 choosing <code>PanicFaultPolicy</code> and imix choosing <code>StopFaultPolicy</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:71 and <code>boards/imix/src/main.rs</code>:95</li>
     <li>Four process slots on this board &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:75</li>
+    <li>Applications being built out of tree, and arriving as a <code>.tbf</code> file &mdash; <code>boards/raspberry_pi_pico_2/README.md</code>:44&ndash;51</li>
+    <li>The two <code>objcopy</code> lines that put one in the reserved section, and the <code>program</code> target that runs them &mdash; <code>boards/raspberry_pi_pico_2/Makefile</code>:33&ndash;39</li>
+    <li>That README naming the target <code>make flash-app</code>, which this board's Makefile does not define &mdash; <code>README.md</code>:50 against <code>Makefile</code>:33. Several other boards do define it; <code>boards/apollo3/redboard_artemis_nano/Makefile</code>:36 is one</li>
+    <li>A capsule existing that lets an application write its own flash region, and this board not instantiating one &mdash; <code>capsules/extra/src/app_flash_driver.rs</code>:5&ndash;8 and :105, reaching it through <code>ProcessId::get_editable_flash_range</code> at <code>kernel/src/process.rs</code>:208</li>
+    <li>The six operations wrapping every switch into a process &mdash; <code>kernel/src/kernel.rs</code>:536&ndash;562, where the fence is configured and enabled, the timer armed and disarmed either side of <code>switch_to</code>, and the fence disabled again</li>
+    <li>The timer behind the timeslice being the Cortex-M SysTick, calibrated at 125&nbsp;MHz &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:436</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
 </section>
@@ -1215,6 +1265,9 @@ argument3: app_break,</pre></button>
 
   /* ---------------- Figure 10: two boards, two policies ---------------- */
   group("fp-", "fpp-", 2, "is-on", "is-on", "");
+
+  /* ---------------- Figure 11: what backs each boundary ---------------- */
+  group("tb-", "tbp-", 3, "", "is-on", "is-off");
 
   /* ---------------- Check yourself ----------------
      The answer text is in the markup; this only reveals it and marks which

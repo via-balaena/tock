@@ -478,7 +478,7 @@
   {
     "id": "ch04-fence-ch05",
     "in": "ch04",
-    "says": "and it is chapter 5",
+    "says": "Chapter 5 is about it",
     "about": "ch05",
     "kept_by": "memory protection unit"
   },
@@ -502,5 +502,12 @@
     "says": "_eapps one length later",
     "about": null,
     "why": "'later' here is a position in flash, not a later chapter: _eapps sits one region-length past _sapps, which is what that source line is stating."
+  },
+  {
+    "id": "ch04-fig11-fence-ch05",
+    "in": "ch04",
+    "says": "putting the number there is chapter 5",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
   }
 ]
