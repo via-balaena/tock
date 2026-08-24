@@ -1,0 +1,1100 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>The Memory Protection Unit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #616D72;
+  --rule:        #D3DBD8;
+  --rule-strong: #7D918A;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #77858C;
+    --rule:        #252F34;
+    --rule-strong: #556A73;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #77858C;
+  --rule:        #252F34;
+  --rule-strong: #556A73;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+p { margin: 0; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+.addr { color: var(--hot); font-weight: 500; }
+
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+
+/* A small muted aside: provenance lines, caveats, footnotes. */
+/* An instrument whose content is a single code block, so the block can sit
+   flush against the frame instead of inside the usual padding. */
+
+/* An instrument that should hold the reading column's width rather than
+   breaking out wide. */
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Beginner scaffolding. Everything below exists to lower reading cost:
+   a word defined where it is first used, a stated goal, an instruction above
+   each figure, a guess before each reveal, and a way to check yourself after.
+   --------------------------------------------------------------------------- */
+
+/* A word being defined, right where the reader meets it. */
+dfn {
+  font-style: normal;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+/* What the reader will be able to do. Stated before the work, not after. */
+.goals {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.goals h2 {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.goals ul { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals .cost {
+  font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem;
+}
+
+/* An imperative naming the control, immediately above the figure it drives. */
+.dothis {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--accent);
+  display: flex;
+  gap: .5rem;
+  align-items: baseline;
+}
+.dothis::before {
+  content: "\2192";
+  font-weight: 700;
+}
+
+/* Check yourself. Question visible, answer one click away. */
+.selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way every panel on this
+   page is, so a reader with no scripting gets all four answers rather than
+   none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+/* The words, collected. */
+.glossary {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: .55rem 1.1rem;
+  margin: 0;
+  font-size: .97rem;
+  line-height: 1.55;
+}
+.glossary dt {
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: .12rem;
+}
+.glossary dd { margin: 0; color: var(--ink-soft); }
+
+
+/* The nine-word list at the top. Terms are short here, so the two columns
+   line up at the top of each row rather than centring. */
+.glossary.cast { align-items: start; }
+
+/* ---------- Two cards side by side: Figure 6 ---------- */
+.mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }
+.mo-fig.two { grid-template-columns: repeat(2, 1fr); }
+.mo {
+  border: 1px solid var(--rule); background: var(--surface-sunk);
+  padding: .7rem .8rem; border-radius: 2px;
+  /* Centred on purpose: three equal cards read as a timeline. A button is
+     centred by default, so saying it here is the difference between a decision
+     and an accident -- and the phone rule below overrides it, because a
+     full-width stacked card centred reads as a mistake. */
+  text-align: center;
+}
+.mo.is-on { border-color: var(--hot); background: var(--hot-soft); }
+.mo-when {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.mo.is-on .mo-when { color: var(--hot); }
+.mo-who { font-family: var(--mono); font-size: .9rem; color: var(--ink); }
+.mosay { display: flex; flex-direction: column; gap: .45rem; }
+.mop {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.mop b, .dbgp b, .costp b, .vtp b {
+  font-family: var(--mono); font-weight: 500; font-size: .88rem;
+}
+.mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+
+/* ---------- A row of buttons over stacked panels: Figures 1, 8 and 9 ---------- */
+.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
+/* Words of a program image, so they are addresses and must not be uppercased. */
+.blk button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.blk button[aria-pressed="true"] {
+  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
+}
+.blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
+.blkp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.blkp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+/* Seven explanations at once is a wall. The script shows one; with no
+   scripting none of that runs and all seven stay readable. */
+.blkp.is-off { display: none; }
+.blkp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- A label beside a name: Figures 2, 4 and 5 ---------- */
+.vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
+.vt button {
+  display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.vt button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.vt-at { color: var(--hot); }
+.vtsay { display: flex; flex-direction: column; gap: .45rem; }
+.vtp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.vtp.is-off { display: none; }
+
+@media (max-width: 30rem) {
+  .vt button { grid-template-columns: 1fr; gap: .1rem; }
+}
+
+/* ---------- Buttons over a three-cell readout: Figure 3 ---------- */
+.costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
+/* These are lines of Rust, so their case is the content. */
+.costs button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  /* Lines of Rust. The longest wraps, and a button centres by default. */
+  text-align: left;
+  padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+.costgrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
+}
+.costcell {
+  border: 1px solid var(--rule); background: var(--surface-sunk); padding: .55rem .7rem;
+}
+.costcell-k {
+  font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
+.costsay { display: flex; flex-direction: column; gap: .45rem; }
+.costp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.costp.is-off { display: none; }
+@media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
+
+/* ---------- Numbered steps: Figure 7 ---------- */
+.seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
+.seq button {
+  display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
+  align-items: baseline; text-align: left; width: 100%;
+  font-family: var(--body); font-size: .95rem; font-weight: 400; line-height: 1.5;
+  text-transform: none; letter-spacing: 0;
+  padding: .42rem .6rem; background: transparent;
+  border: 1px solid transparent; border-left: 2px solid var(--rule);
+  border-radius: 0; color: var(--ink-faint);
+}
+.seq button[aria-pressed="true"] {
+  color: var(--ink); background: var(--hot-soft); border-left-color: var(--hot);
+}
+.seq-n { font-family: var(--mono); font-size: .8rem; color: var(--ink-faint); }
+.seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
+.seq b { font-family: var(--mono); font-weight: 500; }
+.seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
+
+/* The panels Figure 7's numbered steps open. Named for the figure in
+   chapter 4 these rules were copied from, and kept because renaming a class
+   across markup, script and assertions buys nothing a comment cannot. */
+.dbgsay { display: flex; flex-direction: column; gap: .45rem; }
+.dbgp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.dbgp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.dbgp.is-off { display: none; }
+
+@media (max-width: 30rem) {
+  .mo-fig { grid-template-columns: 1fr; }
+  .mo { text-align: left; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 5</p>
+  <h1>The Memory Protection Unit</h1>
+  <p class="standfirst">Chapter 4 ended on a sentence with a hole in it. Every edge it drew &mdash; where a process starts, where its memory ends, how far up it may reach &mdash; was a number the kernel was holding. Not one of them stops an instruction. This is the thing that stops the instruction.</p>
+  <noscript>
+    <style>.dothis, .ifjs { display: none; }</style>
+    <p class="noscript-note">JavaScript appears to be off. Every explanation
+    this chapter relies on is in the prose and the drawn diagrams, and the lines
+    telling you to click things are hidden rather than left pointing at
+    nothing.</p>
+  </noscript>
+</header>
+
+<section class="col">
+  <div class="goals" id="goalbox">
+    <h2>What you'll be able to do at the end</h2>
+    <ul>
+      <li>Say what the <dfn>memory protection unit</dfn> checks on every access, and three things it never checks.</li>
+      <li>Read one real <dfn>region</dfn> out of the two registers that describe it, and get back the addresses the kernel put in.</li>
+      <li>Say how many regions this board has, which one is spoken for before your process starts, and what runs out first.</li>
+      <li>Follow one forbidden store from the instruction to the stopped process, naming every step in between.</li>
+    </ul>
+    <p class="cost">Plan on forty minutes. Chapter 4 is assumed: what a process is, and the seven boundaries through its memory. Chapter 1 comes back too &mdash; a register with fields in it, except that this time the fields govern what other addresses may be touched.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Nine words, before we start</h2>
+  <p>Each is one sentence now and repeated in context below. Three of them are names of exceptions, and two of those three never fire on this board.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary cast" id="words">
+    <dt><dfn>memory protection unit</dfn></dt><dd>Hardware inside the processor that checks the address of every access before the access is allowed to finish.</dd>
+    <dt><dfn>privileged</dfn></dt><dd>The mode the kernel runs in. On this chip the unit's rules do not apply to it.</dd>
+    <dt><dfn>unprivileged</dfn></dt><dd>The mode a process runs in, and the only mode the rules are enforced against.</dd>
+    <dt><dfn>permissions</dfn></dt><dd>What may be done at an address: read it, write it, execute it, or some of the three.</dd>
+    <dt><dfn>region</dfn></dt><dd>One run of addresses, described by two registers, carrying one set of permissions.</dd>
+    <dt><dfn>execute-never</dfn></dt><dd>One bit per region saying no instruction may be fetched from it.</dd>
+    <dt><dfn>fault</dfn></dt><dd>The exception the hardware raises when an access breaks the rules. Chapter 4 used the word; this is where it comes from.</dd>
+    <dt><dfn>MemManage</dfn></dt><dd>The exception a protection violation raises, on a chip where it has been switched on. On this board it has not.</dd>
+    <dt><dfn>HardFault</dfn></dt><dd>The catch-all exception everything else escalates into, and the one this board actually handles.</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <h2>The gap chapter 4 left</h2>
+  <p id="gapline">Chapter 4 drew a process's memory as seven boundaries and named the field behind each one. <code>app_break</code>, <code>kernel_memory_break</code>, <code>memory_start</code>: all of them real, all of them held by the kernel, and every one of them a number in a struct.</p>
+  <p>A number in a struct is a note about what should happen. The processor executing a store does not consult it. Between the moment a process issues an instruction and the moment memory changes, no kernel code runs at all &mdash; that is what running means.</p>
+  <p id="unitline">So the enforcement cannot be in the kernel. It is in the processor, next to the thing doing the accessing, and it is the one piece of this series that is not software. The RP2350 datasheet lists what it is for in three lines: "enforce privilege rules", "separate processes", "manage memory attributes".</p>
+  <p>The first two are this chapter. The third is a detail the kernel sets once and never varies.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">Five things the unit is asked, and one it never sees</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each one. The last is the one that decides what this hardware can and cannot be used for.</p>
+    <div class="blk" role="group" aria-label="What the memory protection unit checks">
+      <button type="button" id="ck-0" aria-pressed="true">when</button>
+      <button type="button" id="ck-1" aria-pressed="false">against whom</button>
+      <button type="button" id="ck-2" aria-pressed="false">what it compares</button>
+      <button type="button" id="ck-3" aria-pressed="false">what it answers</button>
+      <button type="button" id="ck-4" aria-pressed="false">what it never sees</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="ckp-0">Before the access completes, on every load, every store and every instruction fetch. Not on a sample of them and not afterwards. There is no window in which a forbidden access half-happens.</p>
+      <p class="blkp" id="ckp-1">Only <dfn>unprivileged</dfn> code, which on this board means only processes. The line that turns the unit on also hands <dfn>privileged</dfn> code the whole default memory map, and the kernel runs privileged. Figure 8 is that line.</p>
+      <p class="blkp" id="ckp-2">The address, against the enabled regions. This chip gives Tock eight of them, and each is a start, an end, and a set of permissions.</p>
+      <p class="blkp" id="ckp-3">Allowed, or not allowed, for the verb being attempted. Reading, writing and executing are three separate answers, so a region can be readable and not writable, or executable and not readable.</p>
+      <p class="blkp" id="ckp-4">The value. A store of the right bytes to the wrong address and a store of the wrong bytes to the right address are indistinguishable here. Nothing in this hardware knows what a program is trying to do &mdash; only where.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice what that last one rules out. This unit cannot tell a bug from an attack, and cannot tell a correct program from an incorrect one. It answers a question about addresses, and every guarantee built on it is a guarantee about addresses.</div>
+</figure>
+
+<section class="col">
+  <h2>One region, two registers</h2>
+  <p>Chapter 1 spent itself on a register with fields packed into it: bits that meant something to hardware rather than to the program. This is the same shape and a different job. Instead of a bit per pin, the fields describe a stretch of addresses and what may be done inside it.</p>
+  <p id="whereregs">The block sits at <code class="addr">0xE000ED90</code>. Three registers matter for one region: <b>MPU_RNR</b> at <code class="addr">0xE000ED98</code> picks which of the eight you are talking about, and then <b>MPU_RBAR</b> and <b>MPU_RLAR</b>, at <code class="addr">0xE000ED9C</code> and <code class="addr">0xE000EDA0</code>, describe it.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">Two registers, six fields, one region</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each field. The first and fourth carry the addresses; the rest are one or two bits each.</p>
+    <div class="vt" role="group" aria-label="The fields of MPU_RBAR and MPU_RLAR">
+      <button type="button" id="rf-0" aria-pressed="true"><span class="vt-at">RBAR</span><span>BASE, bits 31:5</span></button>
+      <button type="button" id="rf-1" aria-pressed="false"><span class="vt-at">RBAR</span><span>AP, bits 2:1</span></button>
+      <button type="button" id="rf-2" aria-pressed="false"><span class="vt-at">RBAR</span><span>XN, bit 0</span></button>
+      <button type="button" id="rf-3" aria-pressed="false"><span class="vt-at">RLAR</span><span>LIMIT, bits 31:5</span></button>
+      <button type="button" id="rf-4" aria-pressed="false"><span class="vt-at">RLAR</span><span>ATTRINDX, bits 3:1</span></button>
+      <button type="button" id="rf-5" aria-pressed="false"><span class="vt-at">RLAR</span><span>ENABLE, bit 0</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="rfp-0">The first address of the region, with its bottom five bits missing. The kernel writes <b>logical_start &gt;&gt; 5</b>, so what the hardware stores is the address in units of 32 bytes. Those five absent bits are the entire size rule on this chip: a region may start on any multiple of 32 and nothing else is required of it.</p>
+      <p class="vtp" id="rfp-1">Two bits, four values, and only two of them get used for a process: <b>ReadWrite</b> and <b>ReadOnly</b>. The other two are the privileged-only pair, and they grant unprivileged code nothing at all &mdash; which for a process means no access to that region. Figure 4 is where each one comes from.</p>
+      <p class="vtp" id="rfp-2">One bit, and the reason this chapter has the phrase <dfn>execute-never</dfn> in it. Set the bit and no instruction may be fetched from the region. The names in the Tock source read backwards at first glance: <b>XN::Disable</b> is the value that sets the bit, because what it disables is execution.</p>
+      <p class="vtp" id="rfp-3">The last address of the region, inclusive, in the same 32-byte units. The kernel writes <b>(logical_end - 1) &gt;&gt; 5</b>, and the comment above that line says why. The limit counts the last byte that is <em>in</em>. Passing the end address itself would stretch the region 32 bytes past where it should stop.</p>
+      <p class="vtp" id="rfp-4">Three bits pointing at one of eight attribute slots. Every region Tock builds points at slot 0, and the only line that ever writes those slots sets slot 0 to normal, non-cacheable memory. It is set on every configure and never varies.</p>
+      <p class="vtp" id="rfp-5">The switch. A region with this bit clear is ignored no matter what else is in the pair, which is how the unit holds eight regions when a process only needs two. An unused slot is written as a base of zero and this bit cleared.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice what the pair does not hold. Bits 4 to 0 of the start, and bits 4 to 0 of the end: ten bits the hardware has nowhere to put. A region that begins at an odd address cannot be described, so the kernel is never allowed to want one.</div>
+</figure>
+
+<section class="col">
+  <h2>A region you can work out by hand</h2>
+  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. Here is what the two registers hold at three moments in that process's life.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">The same region, three moments, two registers</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a moment. The readouts are what the kernel writes into the hardware.</p>
+    <div class="costs" role="group" aria-label="One process's RAM region at three moments">
+      <button type="button" id="mm-0" aria-pressed="true">first instruction</button>
+      <button type="button" id="mm-1" aria-pressed="false">after asking for 2&nbsp;kB</button>
+      <button type="button" id="mm-2" aria-pressed="false">asking for one byte more</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">RBAR</span><span class="costcell-v addr" id="mm-rbar">0x20008003</span></div>
+      <div class="costcell"><span class="costcell-k">RLAR</span><span class="costcell-v addr" id="mm-rlar">0x20008011</span></div>
+      <div class="costcell"><span class="costcell-k">reachable</span><span class="costcell-v" id="mm-len">32 bytes</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="mmp-0">One 32-byte block, which is the smallest region this hardware can describe and exactly the size of the exception frame the processor pushes on the way in. <b>RBAR</b> is the base with three low bits of permission stuck on it: <b>0x20008000</b>, plus <b>0b01</b> in the access field for read-write, plus the execute-never bit. <b>RLAR</b>'s limit field holds the same block number as the base, because the first block and the last block are the same block.</p>
+      <p class="costp" id="mmp-1"><b>RBAR</b> has not moved and will not: the start of a process's memory is fixed when it is loaded. Only the limit changes. <b>0x20008800</b> minus one, shifted down five and back up, lands on <b>0x200087E0</b>, and the two low bits are the privileged-execute-never bit and the enable bit, giving <b>0x200087F1</b>.</p>
+      <p class="costp" id="mmp-2">Ask for 2049 bytes and you are given 2080. The kernel rounds the requested end <em>up</em> to the next multiple of 32 before it builds the region, because it has nowhere to put a finer answer. The rounding always goes the process's way, and a process that asks in small pieces gets a little more than it asked for every time.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice which number never changes. A process's memory cannot be moved once it is running, because its own compiled addresses point into it &mdash; chapter 4's four arguments were how it learned them. Growth happens at one end only.</div>
+</figure>
+
+<section class="col">
+  <h2>Five words for permission</h2>
+  <p>The kernel does not write those bit patterns at the call site. It names a permission, and the chip's implementation turns the name into a pair of fields. There are five names.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">Five names, and the two fields each becomes</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each name. Two of the five are the ones this board actually uses; the fifth is the strange one.</p>
+    <div class="vt" role="group" aria-label="The five Permissions variants and the fields they set">
+      <button type="button" id="pm-0" aria-pressed="true"><span class="vt-at">1</span><span>ReadWriteExecute</span></button>
+      <button type="button" id="pm-1" aria-pressed="false"><span class="vt-at">2</span><span>ReadWriteOnly</span></button>
+      <button type="button" id="pm-2" aria-pressed="false"><span class="vt-at">3</span><span>ReadExecuteOnly</span></button>
+      <button type="button" id="pm-3" aria-pressed="false"><span class="vt-at">4</span><span>ReadOnly</span></button>
+      <button type="button" id="pm-4" aria-pressed="false"><span class="vt-at">5</span><span>ExecuteOnly</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="pmp-0">Access field <b>ReadWrite</b>, execute allowed. Everything permitted. Nothing in the loading path asks for this, and a region that is both writable and executable is the arrangement every other mechanism in this chapter exists to avoid.</p>
+      <p class="vtp" id="pmp-1">Access field <b>ReadWrite</b>, execute-never bit set. This is what a process's RAM gets. A process may keep whatever it likes in its own memory and may not run it, so a buffer that arrives full of instructions is still only a buffer.</p>
+      <p class="vtp" id="pmp-2">Access field <b>ReadOnly</b>, execute allowed. This is what a process's flash gets, asked for by name when the process is loaded. A process cannot rewrite its own code, which is the other half of the pair above.</p>
+      <p class="vtp" id="pmp-3">Access field <b>ReadOnly</b>, execute-never. Readable data that is neither writable nor runnable. Nothing on this board asks for it, but it costs nothing to offer.</p>
+      <p class="vtp" id="pmp-4">The odd one. It sets the access field to <b>ReadOnlyPrivilegedOnly</b> and leaves execution allowed, so unprivileged code may run the instructions and may not read them back. Nothing in this tree asks for it either; it is here because the hardware can express it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the two the loader uses are the two that split writing from running. Flash: read and execute, never write. RAM: read and write, never execute. Between them there is no address a process can both write and later run.</div>
+</figure>
+
+<section class="col">
+  <h2>Eight regions, and who has them</h2>
+  <p id="eightline">The datasheet says the unit "supports 16 memory regions: 8 secure and 8 non-secure", banked so that each security state has its own set. Tock asks for eight, in one line of the chip crate: <b>cortexm33::mpu::MPU&lt;8&gt;</b>.</p>
+  <p>By the time a process runs its first instruction, two of those eight are already spoken for, and one of the two was never up for discussion.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">Where the eight go, and the request that gets nothing</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. The last one is a slot that does not exist, and what happens when something asks for it.</p>
+    <div class="vt" role="group" aria-label="How the eight MPU regions are allocated">
+      <button type="button" id="rn-0" aria-pressed="true"><span class="vt-at">0</span><span>the process's RAM</span></button>
+      <button type="button" id="rn-1" aria-pressed="false"><span class="vt-at">1</span><span>the process's flash</span></button>
+      <button type="button" id="rn-2" aria-pressed="false"><span class="vt-at">2&ndash;7</span><span>six, for anything else</span></button>
+      <button type="button" id="rn-3" aria-pressed="false"><span class="vt-at">&mdash;</span><span>the seventh request</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="rnp-0">Not chosen. A constant named <b>APP_MEMORY_REGION_MAX_NUM</b> is set to 0. The routine that places a process's memory writes region 0 and nothing else, and the routine that hands out spare regions skips index 0 on every pass. The one region whose limit moves while the process runs is the one region nobody else can be given.</p>
+      <p class="vtp" id="rnp-1">The first thing asked for when a process is loaded, before its RAM is even placed: the whole of its flash, read and execute, no write. It goes into region 1 for no better reason than that region 1 is the first slot the allocator will hand out.</p>
+      <p class="vtp" id="rnp-2">Whatever else a process is given access to later &mdash; a buffer shared with a driver, a second stretch of flash &mdash; comes out of these. Six, and no more, because the array in the kernel that remembers them is declared six long.</p>
+      <p class="vtp" id="rnp-3">There is no seventh. The request returns nothing and the caller is told no. Two separate limits produce that answer on this chip: seven allocatable hardware slots minus the one flash took is six, and the kernel's own array is six. They agree exactly, and nothing in the source makes them agree.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the number eight is written by hand. The trait offers a method that asks the hardware how many regions it really has; four architectures implement it, and no line in this tree calls it.</div>
+</figure>
+
+<section class="col">
+  <h2>The same interface, two very different chips</h2>
+  <p id="twochips">Everything above is one implementation of a trait. The kernel never touches <b>MPU_RBAR</b>. It asks for a region of at least so many bytes, with these permissions, somewhere inside this stretch of free memory. A file under <code>arch/</code> works out the rest. That file is different on the older Cortex-M cores, and the difference is not a detail.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">One request, two hardware answers</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a chip. Both are asked for a region of 3&nbsp;kB starting wherever is convenient.</p>
+    <div class="mo-fig two" role="group" aria-label="Two Cortex-M memory protection unit designs">
+      <button type="button" class="mo is-on" id="tc-0" aria-pressed="true">
+        <span class="mo-when">Cortex-M33</span><span class="mo-who">base and limit</span></button>
+      <button type="button" class="mo" id="tc-1" aria-pressed="false">
+        <span class="mo-when">Cortex-M0+ to M7</span><span class="mo-who">power of two, plus subregions</span></button>
+    </div>
+    <div class="mosay">
+      <p class="mop is-on" id="tcp-0">Round the start up to a multiple of 32, round the end up to a multiple of 32, write both. 3&nbsp;kB is already a multiple of 32, so the region is 3&nbsp;kB and the process gets what it asked for. The whole size rule is one function, seven lines long, that aligns a pointer.</p>
+      <p class="mop" id="tcp-1">A region's size must be a power of two, and it must start on a multiple of its own size. 3&nbsp;kB is not a power of two, so the first condition already fails. The older code answers by allocating a larger region &mdash; the next power of two &mdash; cutting it into eight equal subregions, and switching off the ones the process should not have. That branch runs to sixty-four lines. The newer file's whole size rule is a nine-line function that rounds a pointer up.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice which one this board has. Most Tock boards run the older unit, where the size rule really does shape how much memory an application can be given. On the RP2350 it does not: the granularity is 32 bytes and the rounding is invisible.</div>
+</figure>
+
+<section class="col">
+  <h2>The instant a process gets it wrong</h2>
+  <p id="instantline">A process stores one byte past the end of its region. The <dfn>fault</dfn> that follows is the point of everything above, and it takes six steps to turn into a stopped process. The chip's own documentation names the first destination, and this board never goes there.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">Six steps from a refused store to a stopped process</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a step. Step 3 is the one that explains why this board has no handler named after the thing that went wrong.</p>
+    <div class="seq" role="group" aria-label="Six steps from a protection violation to a stopped process">
+      <button type="button" id="fl-0" aria-pressed="true"><span class="seq-n">1</span><span>the store is refused <span class="seq-src">in hardware</span></span></button>
+      <button type="button" id="fl-1" aria-pressed="false"><span class="seq-n">2</span><span>the chip raises <b>MemManage</b> <span class="seq-src">datasheet &sect;3.7.4.7</span></span></button>
+      <button type="button" id="fl-2" aria-pressed="false"><span class="seq-n">3</span><span>which nobody switched on <span class="seq-src">scb.rs:388</span></span></button>
+      <button type="button" id="fl-3" aria-pressed="false"><span class="seq-n">4</span><span>one bit picks the handler's path <span class="seq-src">cortex-v7m/lib.rs:573</span></span></button>
+      <button type="button" id="fl-4" aria-pressed="false"><span class="seq-n">5</span><span>five registers are copied out <span class="seq-src">cortex-v7m/lib.rs:612</span></span></button>
+      <button type="button" id="fl-5" aria-pressed="false"><span class="seq-n">6</span><span>the kernel asks why it is back <span class="seq-src">syscall.rs:450</span></span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="flp-0">No kernel code has run yet and none is about to. The address did not match an enabled region, or matched one that forbids writing, and the write never reaches memory. This is the only step in the whole series that is not a line of source.</p>
+      <p class="dbgp" id="flp-1">The datasheet is exact about it: "MPU mismatches and permission violations invoke the MemManage handler." That is the architecture's answer, and it is what would happen on a board that had asked for it.</p>
+      <p class="dbgp" id="flp-2">This one has not. The enable bit for MemManage sits in <b>SHCSR</b> and resets to zero; no line in this kernel sets it. Tock's own comment on the routine that clears that bit says what the consequence is: it "escalates the exception to a HardFault instead". So the <dfn>HardFault</dfn> handler runs, and <dfn>MemManage</dfn> never does.</p>
+      <p class="dbgp" id="flp-3">The handler's first job is to find out who faulted, and it is settled by bit 2 of the link register: <b>tst lr, #4</b>. Set means the process's stack was in use, clear means the kernel's. Clear branches to a handler that never returns and takes the board down. Set carries on to step 5.</p>
+      <p class="dbgp" id="flp-4">Five words are copied into a global before anything else can overwrite them: <b>CCR</b>, <b>CFSR</b>, <b>HFSR</b>, <b>MMFAR</b>, <b>BFAR</b>. <b>MMFAR</b> is the one that matters here &mdash; it holds the address that was refused. Then a flag is set, the processor is put back into privileged mode, and the handler returns into the kernel.</p>
+      <p class="dbgp" id="flp-5">Back in the kernel, one <b>if</b> reads that flag. It takes priority over everything else, and the switch reason comes out as <b>Fault</b>. From here it is chapter 4's story: the board's fault policy decides what it costs, and on the Pico&nbsp;2 that means the whole machine stops.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that step 4 is where a memory bug in a process and a memory bug in the kernel stop being the same event. One bit of one register decides whether the board keeps running, and the process's own code cannot reach it.</div>
+</figure>
+
+<section class="col">
+  <h2>Three bits, once per context switch</h2>
+  <p id="ctrlline">The regions are written before every switch into a process, and the unit is turned on immediately after. Turning it on is a single write of three fields to <b>MPU_CTRL</b>, and two of the three are about who is <em>not</em> being protected against.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-title">One write, three fields, two exemptions</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each field. The second is the one to sit with.</p>
+    <div class="blk" role="group" aria-label="The three fields written to MPU_CTRL">
+      <button type="button" id="cb-0" aria-pressed="true">ENABLE, set</button>
+      <button type="button" id="cb-1" aria-pressed="false">PRIVDEFENA, set</button>
+      <button type="button" id="cb-2" aria-pressed="false">HFNMIENA, clear</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="cbp-0">The unit is on. Until this bit is set the regions are inert, which is the state the board boots into and the state the kernel returns to the moment a process stops running.</p>
+      <p class="blkp" id="cbp-1">Privileged code gets the default memory map behind the regions, so anything the regions do not cover is still reachable from the kernel. The comment on the line calls it "allow privileged code access to all unprotected memory". So turning the unit off for the kernel has nothing to undo. That routine clears the enable bit and stops, under a comment reading "the MPU is not enabled for privileged mode, so we don't have to do anything".</p>
+      <p class="blkp" id="cbp-2">Inside a HardFault or an NMI the unit does not apply. The handler that runs because a process reached somewhere it should not have runs with the regions switched off. That is exactly what lets it reach into the process's own stack and read out what happened.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that this is chapter 3's conclusion again, in hardware this time. Nothing here is protecting the board from the kernel. The unit was only ever pointed one way.</div>
+</figure>
+
+<section class="col">
+  <h2>What this does not buy</h2>
+  <p>A process cannot reach the kernel's memory, cannot reach another process's memory, cannot write its own code and cannot run its own data. That is a real, hardware-backed list, and it is worth being clear about what is not on it.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-title">Three things the fence is not, and what each one means</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. None of these is a flaw; each is a boundary of what this mechanism was for.</p>
+    <div class="blk" role="group" aria-label="Three limits of memory protection on this board">
+      <button type="button" id="nt-0" aria-pressed="true">not around the kernel</button>
+      <button type="button" id="nt-1" aria-pressed="false">not around the memory</button>
+      <button type="button" id="nt-2" aria-pressed="false">not a checked number</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="ntp-0">The regions constrain unprivileged code and nothing else. A bug in a capsule can write any address on the chip, exactly as chapter 3 said, and this hardware will not notice. What the unit adds is a second kind of code that the first kind is protected from.</p>
+      <p class="blkp" id="ntp-1">It fences the process, not the process's memory. The kernel reads and writes inside a process's allocation as a matter of course, and chapter 4's three structures live up there. Chapter 7 is entirely about a driver keeping state inside a process. The barrier only ever faces outward.</p>
+      <p class="blkp" id="ntp-2">Eight is a number written by hand. <b>MPU_TYPE</b> would report what the hardware really has, the trait offers a method that reads it, four architectures implement that method, and nothing in the tree calls it. If the const generic and the silicon disagreed, nothing here would say so.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the first two are design and the third is an absence. The trait's own safety note asks implementors to ensure "applications only have access to the configured MPU regions and no kernel memory" &mdash; a promise made in a comment, checked by review.</div>
+</figure>
+
+<section class="col">
+  <h2>Check yourself</h2>
+</section>
+
+<div class="col selfcheck">
+  <div class="q">
+    <p class="q-ask">A region's <b>MPU_RBAR</b> reads <code class="addr">0x20008003</code>. What is the first address the process may touch?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the first question">
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false"><code class="addr">0x20008003</code>, the value as written</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false"><code class="addr">0x20008000</code>, with the low bits being fields</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false"><code class="addr">0x40010006</code>, the value shifted up five</button>
+    </div>
+    <p class="q-answer" id="qan">The second. Only bits 31 down to 5 are the address, so the bottom five bits belong to other fields &mdash; here the two access bits reading <b>0b01</b> for read-write, and the execute-never bit set. Mask them off and the base is <code class="addr">0x20008000</code>. The third answer is the mistake worth naming: the stored value is the address already, not a number waiting to be shifted.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A process asks the kernel to move its break up by one byte. How much more memory can it reach?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the second question">
+      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">One byte, exactly as asked</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Thirty-two bytes, rounded up</button>
+      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Nothing, because one byte is below the minimum</button>
+    </div>
+    <p class="q-answer" id="qbn">Thirty-two. The new end is rounded up to the next multiple of 32 before the region is rebuilt, because the limit field has nowhere to record a finer boundary. The request is not refused and the rounding is not reported &mdash; the process simply finds it can reach a little further than it asked to.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">Which of these does the unit refuse on this board?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the third question">
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">A capsule writing to address zero</button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">A process reading its own code</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">A process writing its own code</button>
+    </div>
+    <p class="q-answer" id="qcn">The third. A process's flash is asked for as read-and-execute, so writing it is refused. Reading it is allowed, which is why the second is not the answer. And the first is not refused at all: a capsule runs privileged, where the regions do not apply.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">Why does this board handle <b>HardFault</b> rather than <b>MemManage</b>, when the datasheet names <b>MemManage</b>?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the fourth question">
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The Cortex-M33 does not implement MemManage</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">Its enable bit resets to zero and nothing sets it</button>
+      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">Tock clears the bit during board setup</button>
+    </div>
+    <p class="q-answer" id="qdn">The second. The chip implements it perfectly well, and Tock has a routine that would clear the enable bit, but nothing calls that routine. The bit simply resets to zero and is never written, and a fault with no enabled handler of its own escalates to <b>HardFault</b>.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>What you can say now</h2>
+  <p id="closing">A process is confined by eight pairs of registers inside the processor, checked on every access it makes. Two of the eight are spoken for before it starts: its RAM, read-write and never executable, and its flash, read-execute and never writable. The addresses in those registers are stored in units of 32 bytes, which is the only size rule this chip has, and it rounds in the process's favour.</p>
+  <p>When a process reaches past them the store never happens. A handler works out from one bit whether the kernel or the process was running, records the address that was refused, and hands the decision to the policy chapter 4 described.</p>
+  <p>None of it applies to the kernel. That was never an oversight &mdash; it is the shape of the whole design, and it is why the door in this wall has to be built so carefully.</p>
+</section>
+
+<div class="col next">
+  <p class="eyebrow forward">Next</p>
+  <h3 style="margin-top:0">Chapter 6 &mdash; Asking the kernel</h3>
+  <p>A process fenced this tightly cannot print, cannot read a button and cannot wait a second. Everything it does that reaches the world goes through one instruction and eight classes of request. On the way: how a buffer crosses a boundary that exists to stop exactly that.</p>
+</div>
+
+<section class="col sources">
+  <h3>Everything above, checked against source</h3>
+  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>, the same commit chapters 3 and 4 were pinned to. Hardware claims come from the RP2350 datasheet, build of 2025-07-29.</p>
+  <ul>
+    <li>What the unit is for, in three lines &mdash; RP2350 datasheet &sect;3.7.4.7: "enforce privilege rules", "separate processes", "manage memory attributes"</li>
+    <li>"MPU mismatches and permission violations invoke the MemManage handler" &mdash; the same section</li>
+    <li>"The MPU supports 16 memory regions: 8 secure and 8 non-secure" &mdash; the same section</li>
+    <li>The register block at <code class="addr">0xE000ED90</code> &mdash; <code>arch/cortex-m33/src/lib.rs</code>:20&ndash;21, and the datasheet's system control space table, which lists <code>MPU_TYPE</code> at offset <code>0x0ed90</code></li>
+    <li>The layout of the block, so <b>RNR</b>, <b>RBAR</b> and <b>RLAR</b> land at +<code>0x08</code>, +<code>0x0C</code> and +<code>0x10</code> &mdash; <code>arch/cortex-m33/src/mpu_v8m.rs</code>:27&ndash;58</li>
+    <li>Every field in Figure 2, with its offset and width &mdash; the same file, :80&ndash;110</li>
+    <li>The base being written as <b>logical_start &gt;&gt; 5</b> &mdash; :346</li>
+    <li>The limit being written as <b>(logical_end - 1) &gt;&gt; 5</b>, and the comment saying why &mdash; :358&ndash;363</li>
+    <li>The end address having to be a multiple of 32, checked before the region is built &mdash; :353&ndash;356</li>
+    <li>The smallest region being 32 bytes &mdash; <code>CORTEXM_MIN_REGION_SIZE</code> at :25, tested at :330</li>
+    <li>Rounding a pointer up to the next multiple of 32, which is the whole of the size rule here &mdash; <code>align32</code>, nine lines at :188&ndash;196, used at :468&ndash;469, :550&ndash;551 and :623</li>
+    <li>The five permission names and the two fields each becomes &mdash; <code>kernel/src/platform/mpu.rs</code>:11&ndash;17 and <code>mpu_v8m.rs</code>:335&ndash;343</li>
+    <li><b>ExecuteOnly</b> mapping to privileged-only read with execution left on &mdash; :340&ndash;342</li>
+    <li>A process's flash being asked for as read-and-execute, before its RAM is placed &mdash; <code>kernel/src/process_standard.rs</code>:1783&ndash;1794</li>
+    <li>A process's RAM being asked for as read-write &mdash; the same file, :1928&ndash;1935</li>
+    <li>The accessible part starting at 32 bytes &mdash; <code>initial_process_app_brk_size</code> returning <code>SVC_FRAME_SIZE</code>, <code>arch/cortex-m/src/syscall.rs</code>:273&ndash;277 and :196</li>
+    <li>Region 0 being reserved for a process's RAM &mdash; <code>APP_MEMORY_REGION_MAX_NUM</code> at <code>mpu_v8m.rs</code>:251, written at :583 and :648, and skipped by <code>unused_region_number</code> at :288&ndash;292</li>
+    <li>Six slots for everything else &mdash; <code>mpu_regions: [Cell&lt;Option&lt;mpu::Region&gt;&gt;; 6]</code>, <code>kernel/src/process_standard.rs</code>:548, filled at :927&ndash;935</li>
+    <li>Eight regions asked for by the chip crate &mdash; <code>chips/rp2350/src/chip.rs</code>:27 and :49</li>
+    <li>The Cortex-M33 supporting more than that &mdash; the comment at <code>arch/cortex-m33/src/lib.rs</code>:17, "Cortex-M33 supports up to 16 regions"</li>
+    <li>A method that would ask the hardware how many regions exist &mdash; <code>number_total_regions</code>, declared at <code>kernel/src/platform/mpu.rs</code>:136, implemented at <code>mpu_v8m.rs</code>:421, <code>arch/cortex-m/src/mpu.rs</code>:405, <code>arch/riscv/src/pmp.rs</code>:1058 and <code>arch/x86/src/mpu.rs</code>:308, and called nowhere in the tree</li>
+    <li>The older unit needing power-of-two sizes aligned to themselves, and using subregions when that fails &mdash; <code>arch/cortex-m/src/mpu.rs</code>:468&ndash;471, with the branch it opens running to :534</li>
+    <li>The three fields written to turn the unit on &mdash; <code>mpu_v8m.rs</code>:407&ndash;413, with the same three in the older file at <code>arch/cortex-m/src/mpu.rs</code>:391&ndash;397</li>
+    <li>Turning it off being one line, because it was never on for the kernel &mdash; <code>mpu_v8m.rs</code>:415&ndash;419</li>
+    <li>The regions being written before the switch and the unit enabled after &mdash; <code>kernel/src/kernel.rs</code>:542&ndash;543, and disabled again at :560&ndash;562</li>
+    <li>The hardware write being skipped when the same configuration is already loaded and unchanged &mdash; <code>mpu_v8m.rs</code>:654&ndash;672</li>
+    <li>Attribute slot 0 being set to normal, non-cacheable memory on every configure &mdash; :655&ndash;658, with every region pointing at slot 0 at :365</li>
+    <li>MemManage's enable bit resetting to zero &mdash; the datasheet's <code>SHCSR</code> table, <code>MEMFAULTENA</code>, reset <code>0x0</code>; the same bit in Tock at <code>arch/cortex-m/src/scb.rs</code>:193</li>
+    <li>Clearing that bit escalating the exception instead of removing it &mdash; the note on <code>disable_memfault</code>, <code>arch/cortex-m/src/scb.rs</code>:388&ndash;397, a function with no callers</li>
+    <li>The handler deciding between kernel and process on bit 2 of the link register &mdash; <code>arch/cortex-v7m/src/lib.rs</code>:573&ndash;577, branching at :606&ndash;609</li>
+    <li>The five status registers copied out on a process fault, <b>MMFAR</b> among them &mdash; the same file, :612&ndash;623</li>
+    <li>The flag the kernel reads afterwards &mdash; <code>APP_HARD_FAULT</code> set at :625&ndash;627, declared at <code>arch/cortex-m/src/syscall.rs</code>:39, read at :443 and turned into a fault at :450&ndash;453</li>
+    <li>The trait being <code>unsafe</code>, and what it asks of implementors &mdash; <code>kernel/src/platform/mpu.rs</code>:82&ndash;89, "applications only have access to the configured MPU regions and no kernel memory"</li>
+    <li>The board's fault policy being what decides the cost &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:71</li>
+  </ul>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here. The RP2350 datasheet is quoted in short passages with attribution and is not relicensed here either.</p>
+</section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Same shape as chapters 3 and 4: one group of buttons, one group of panels,
+     same index. The panel class differs between components only because each
+     was styled for its own figure. */
+  function group(btn, panel, n, cls, onCls, offCls, extra) {
+    function pick(k) {
+      var i, b, p;
+      for (i = 0; i < n; i++) {
+        b = document.getElementById(btn + i);
+        p = document.getElementById(panel + i);
+        b.setAttribute("aria-pressed", i === k ? "true" : "false");
+        if (cls) { b.classList.toggle(cls, i === k); }
+        p.classList.toggle(onCls, i === k);
+        if (offCls) { p.classList.toggle(offCls, i !== k); }
+      }
+      if (extra) { extra(k); }
+    }
+    var i, opening = 0;
+    for (i = 0; i < n; i++) {
+      (function (k) {
+        document.getElementById(btn + k)
+          .addEventListener("click", function () { pick(k); });
+      }(i));
+      if (document.getElementById(btn + i)
+            .getAttribute("aria-pressed") === "true") { opening = i; }
+    }
+    // The markup ships every panel showing, so a reader with no JavaScript
+    // meets all of them rather than one. Putting the rest away is this
+    // function's first job, not the markup's.
+    pick(opening);
+  }
+
+  /* ---------------- Figure 1: what the unit checks ---------------- */
+  group("ck-", "ckp-", 5, "", "is-on", "is-off");
+
+  /* ---------------- Figure 2: the six fields ---------------- */
+  group("rf-", "rfp-", 6, "", "is-on", "is-off");
+
+  /* ---------------- Figure 3: one region at three moments ----------------
+     Every number here is the arithmetic in mpu_v8m.rs run by hand on a base of
+     0x20008000. RBAR is base | AP(ReadWrite) | XN set, which never changes
+     once a process is placed. RLAR is ((end - 1) >> 5) << 5, plus the
+     privileged-execute-never bit and the enable bit, which is why every value
+     ends in 1. The third row is the rounding: 2049 bytes asked for becomes
+     2080 reachable, because align32 rounds the end up. */
+  (function () {
+    var MOMENTS = [
+      ["0x20008003", "0x20008011", "32 bytes"],
+      ["0x20008003", "0x200087F1", "2048 bytes"],
+      ["0x20008003", "0x20008811", "2080 bytes"]
+    ];
+    group("mm-", "mmp-", 3, "", "is-on", "is-off", function (k) {
+      document.getElementById("mm-rbar").textContent = MOMENTS[k][0];
+      document.getElementById("mm-rlar").textContent = MOMENTS[k][1];
+      document.getElementById("mm-len").textContent = MOMENTS[k][2];
+    });
+  }());
+
+  /* ---------------- Figure 4: the five permission names ---------------- */
+  group("pm-", "pmp-", 5, "", "is-on", "is-off");
+
+  /* ---------------- Figure 5: where the eight regions go ---------------- */
+  group("rn-", "rnp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 6: two chips, one interface ---------------- */
+  group("tc-", "tcp-", 2, "is-on", "is-on", "");
+
+  /* ---------------- Figure 7: the fault path ---------------- */
+  group("fl-", "flp-", 6, "", "is-on", "is-off");
+
+  /* ---------------- Figure 8: the three control bits ---------------- */
+  group("cb-", "cbp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 9: what the fence is not ---------------- */
+  group("nt-", "ntp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Check yourself ----------------
+     The answer text is in the markup; this only reveals it and marks which
+     option was right, so nothing a reader needs is stored in here. */
+  (function () {
+    function quiz(prefix, n, right, answer) {
+      var i;
+      // Same rule: the answer is in the markup, visible, and script is what
+      // hides it until the reader has committed to a guess.
+      document.getElementById(answer).classList.add("is-off");
+      for (i = 0; i < n; i++) {
+        (function (k) {
+          document.getElementById(prefix + k)
+            .addEventListener("click", function () {
+              var j, b;
+              for (j = 0; j < n; j++) {
+                b = document.getElementById(prefix + j);
+                b.setAttribute("aria-pressed", j === k ? "true" : "false");
+                b.classList.toggle("is-right", j === right);
+                b.classList.toggle("is-wrong", j === k && k !== right);
+              }
+              document.getElementById(answer).classList.remove("is-off");
+            });
+        }(i));
+      }
+    }
+    quiz("qa-", 3, 1, "qan");
+    quiz("qb-", 3, 1, "qbn");
+    quiz("qc-", 3, 2, "qcn");
+    quiz("qd-", 3, 1, "qdn");
+  }());
+
+}());
+</script>

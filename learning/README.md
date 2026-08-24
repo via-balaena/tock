@@ -25,7 +25,7 @@ arc closes where the first chapter said it would.
 | 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
 | 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
 | 4 | [What a Process Is](ch04-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
-| 5 | The memory protection unit | The hardware fence the kernel programs around a process before letting it run | planned |
+| 5 | [The Memory Protection Unit](ch05-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | published |
 | 6 | Asking the kernel | The eight syscall classes, upcalls and allowed buffers: the only door through that fence | planned |
 | 7 | Grants | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator | planned |
 
@@ -54,7 +54,8 @@ across four chapters, which is what a cross-chapter notation pass is for.
 **Size.** Chapter 4 came out at 12 figures against the 8 to 10 below, which is
 the target doing its job rather than failing: three of those twelve were added
 by review passes, and each one replaced a section that was prose only on the
-skim path. Chapter 1 runs to about 10,900 prose words across 17 figures, and is
+skim path. Chapter 5 landed inside it first time, at 4,800 words and 9 figures,
+which is what a chapter looks like when the vocabulary is already there. Chapter 1 runs to about 10,900 prose words across 17 figures, and is
 the outlier on purpose -- it defines the vocabulary from nothing and has no
 chapter to lean on. Later chapters inherit that vocabulary and should be roughly
 half: aim under 6,000 words and 8 to 10 figures. Nothing enforces this; it is a

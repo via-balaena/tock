@@ -523,5 +523,138 @@
     "says": "but chapter 3's panic blink does",
     "about": "ch03",
     "kept_by": "blinks nothing you can see"
+  },
+  {
+    "id": "ch05-hole-ch04",
+    "in": "ch05",
+    "says": "Chapter 4 ended on a sentence with a hole in it",
+    "about": "ch04",
+    "kept_by": "Not one of them stops an instruction"
+  },
+  {
+    "id": "ch05-assumes-ch04",
+    "in": "ch05",
+    "says": "Chapter 4 is assumed",
+    "about": "ch04",
+    "kept_by": "Seven boundaries divide it"
+  },
+  {
+    "id": "ch05-assumes-ch01",
+    "in": "ch05",
+    "says": "Chapter 1 comes back too",
+    "about": "ch01",
+    "kept_by": "one bit per pin"
+  },
+  {
+    "id": "ch05-fault-ch04",
+    "in": "ch05",
+    "says": "Chapter 4 used the word",
+    "about": "ch04",
+    "kept_by": "What the hardware raises when code touches memory"
+  },
+  {
+    "id": "ch05-gap-head-ch04",
+    "in": "ch05",
+    "says": "The gap chapter 4 left",
+    "about": "ch04",
+    "kept_by": "Not one of them stops an instruction"
+  },
+  {
+    "id": "ch05-seven-ch04",
+    "in": "ch05",
+    "says": "Chapter 4 drew a process's memory as seven boundaries",
+    "about": "ch04",
+    "kept_by": "Seven boundaries divide it"
+  },
+  {
+    "id": "ch05-regs-ch01",
+    "in": "ch05",
+    "says": "Chapter 1 spent itself on a register with fields packed into it",
+    "about": "ch01",
+    "kept_by": "one bit per pin"
+  },
+  {
+    "id": "ch05-brk32-ch04",
+    "in": "ch05",
+    "says": "Chapter 4 said the accessible part starts at 32 bytes",
+    "about": "ch04",
+    "kept_by": "Thirty-two"
+  },
+  {
+    "id": "ch05-args-ch04",
+    "in": "ch05",
+    "says": "chapter 4's four arguments were how it learned them",
+    "about": "ch04",
+    "kept_by": "four arguments"
+  },
+  {
+    "id": "ch05-policy-ch04",
+    "in": "ch05",
+    "says": "From here it is chapter 4's story",
+    "about": "ch04",
+    "kept_by": "PanicFaultPolicy"
+  },
+  {
+    "id": "ch05-again-ch03",
+    "in": "ch05",
+    "says": "Notice that this is chapter 3's conclusion again",
+    "about": "ch03",
+    "kept_by": "Memory safety, then, and not good behaviour"
+  },
+  {
+    "id": "ch05-capsule-ch03",
+    "in": "ch05",
+    "says": "exactly as chapter 3 said",
+    "about": "ch03",
+    "kept_by": "semi-trusted"
+  },
+  {
+    "id": "ch05-structs-ch04",
+    "in": "ch05",
+    "says": "chapter 4's three structures live up there",
+    "about": "ch04",
+    "kept_by": "Three things above the line"
+  },
+  {
+    "id": "ch05-grants-ch07",
+    "in": "ch05",
+    "says": "Chapter 7 is entirely about a driver keeping state inside a process",
+    "about": "ch07",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch05-decision-ch04",
+    "in": "ch05",
+    "says": "hands the decision to the policy chapter 4 described",
+    "about": "ch04",
+    "kept_by": "PanicFaultPolicy"
+  },
+  {
+    "id": "ch05-next-ch06",
+    "in": "ch05",
+    "says": "Chapter 6 - Asking the kernel",
+    "about": "ch06",
+    "kept_by": "syscall"
+  },
+  {
+    "id": "ch05-pin-ch03",
+    "in": "ch05",
+    "says": "the same commit chapters 3 and 4 were pinned to",
+    "about": "ch03",
+    "kept_by": "08894c2e0"
+  },
+  {
+    "id": "ch05-later-run",
+    "in": "ch05",
+    "says": "no address a process can both write and later run",
+    "about": null,
+    "why": "'later' here is the order of two operations on one address -- write it, then try to execute it -- not a later chapter."
+  },
+  {
+    "id": "ch05-later-given",
+    "in": "ch05",
+    "says": "Whatever else a process is given access to later",
+    "about": null,
+    "why": "'later' here means after the process has started running, as opposed to at load time. It is a moment in one process's life, not a chapter."
   }
 ]

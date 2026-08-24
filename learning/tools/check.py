@@ -1665,6 +1665,11 @@ MUST_DEFINE = {
         "fault", "grant", "heap", "panic", "process", "scheduler", "stack",
         "syscall", "TBF", "timeslice", "userspace",
     ],
+    "ch05": [
+        "execute-never", "fault", "HardFault", "MemManage",
+        "memory protection unit", "permissions", "privileged", "region",
+        "unprivileged",
+    ],
 }
 
 # Words this series has decided not to use, and why. Seeded from the places a
