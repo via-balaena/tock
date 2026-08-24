@@ -896,13 +896,13 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <div class="costcell"><span class="costcell-k">what comes back</span><span class="costcell-v" id="bf-out">accepted</span></div>
     </div>
     <div class="costsay">
-      <p class="costp is-on" id="bfp-0">The ordinary case. Both ends land inside the span, so the kernel builds a checked handle and files it, and hands back whichever allowed buffer that driver held before. It also raises a mark: the highest address ever offered, which the process can no longer shrink below.</p>
+      <p class="costp is-on" id="bfp-0">The ordinary case. Both ends land inside the span, so the kernel builds a checked handle and files it, and hands back whichever allowed buffer that driver held before. It also raises a mark: the highest address ever offered, which the process cannot shrink below for as long as it keeps running.</p>
       <p class="costp" id="bfp-1">Refused, with an invalid-argument error, and nothing about the fence in chapter 5 was involved. The comparison is arithmetic on two pointers, made before any handle exists, and the same comparison would refuse a length so large it wrapped around the end of the address space.</p>
       <p class="costp" id="bfp-2">Accepted, and only because it is read-only. A read-write offer is checked against the process's memory alone; a read-only offer is checked against its memory or its flash, and a constant string lives in flash. This is why printing a literal works without copying it into RAM first.</p>
       <p class="costp" id="bfp-3">Accepted without any bounds check whatsoever, deliberately. A length of zero is how a process takes a buffer back. It replaces whatever the driver held with something that cannot be read or written, so no address it could name would make it unsafe.</p>
     </div>
   </div>
-  <div class="instrument-note" id="bf-note">Notice the mark in the first panel. Once a process has offered a stretch of memory, it may not move its break back below the far end of it, ever, and nothing lowers that mark again. The kernel has no way to know a driver has finished with an allowed buffer, so it assumes none of them ever has. That is a permanent cost, paid to make a temporary loan safe.</div>
+  <div class="instrument-note" id="bf-note">Notice the mark in the first panel. Once a process has offered a stretch of memory, it may not move its break back below the far end of it, and nothing a running process can do lowers that mark. The kernel has no way to know a driver has finished with an allowed buffer, so it assumes none of them ever has. One thing does clear it: the restart variant of exit, back in Figure 2, which rebuilds the process's memory from the start. So the cost is permanent for the life of a process, and the only refund is not being that process any more.</div>
 </figure>
 
 <section class="col">
@@ -1030,8 +1030,9 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <li>The two addresses that decide it &mdash; <code>in_app_owned_memory</code>, the same file, :2545&ndash;2556, comparing against <code>mem_start()</code> and <code>app_break</code></li>
     <li>Those being the same two the region was built from &mdash; <code>memory_start</code> set to what the unit handed back at :2215 and :1937, and the region's far end moved to the break at :979&ndash;983</li>
     <li>A length of zero accepting any address &mdash; the same file, :1067&ndash;1082 and :1129&ndash;1144</li>
-    <li>The mark that never comes down, and the break that cannot pass it &mdash; the same file, :1089&ndash;1090 and :975</li>
-    <li>Why the mark never comes down, in the kernel's own words &mdash; <code>kernel/src/processbuffer.rs</code>:440&ndash;456, "a given <code>Process</code> implementation must assume that the memory described by a once-allowed <code>ProcessBuffer</code> is still in use"</li>
+    <li>The mark that goes up and the break that cannot pass it &mdash; the same file, :1089&ndash;1090 and :975</li>
+    <li>The only thing that lowers it being a restart, which rebuilds the whole layout &mdash; <code>reset</code>, the same file, :2463, reached from <code>try_restart</code> at :795 and from exit variant 1 at <code>kernel/src/kernel.rs</code>:1406&ndash;1408</li>
+    <li>Why nothing a running process does lowers it, in the kernel's own words &mdash; <code>kernel/src/processbuffer.rs</code>:440&ndash;456, "a given <code>Process</code> implementation must assume that the memory described by a once-allowed <code>ProcessBuffer</code> is still in use"</li>
     <li>The three-value success having one caller in the tree, returning counters about a network device &mdash; <code>capsules/extra/src/ethernet_tap.rs</code>:488&ndash;492</li>
     <li>The failure-carrying-a-value shape having none &mdash; <code>CommandReturn::failure_u32</code>, <code>kernel/src/syscall_driver.rs</code>:36&ndash;40, whose only caller in the tree is its own unit test at :423&ndash;424</li>
     <li>What the one userspace-readable capsule publishes &mdash; <code>capsules/extra/src/read_only_state.rs</code>:23&ndash;32, a switch count, a pending-task count and a time in ticks</li>

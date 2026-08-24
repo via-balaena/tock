@@ -866,5 +866,229 @@
     "says": "the constant chapter 4 named",
     "about": "ch04",
     "kept_by": "CALLBACK_LEN"
+  },
+  {
+    "id": "ch07-files-ch06",
+    "in": "ch07",
+    "says": "Chapter 6 handed the kernel two things",
+    "about": "ch06",
+    "kept_by": "allowed buffer"
+  },
+  {
+    "id": "ch07-assumes-ch04",
+    "in": "ch07",
+    "says": "Chapter 4 drew the memory this chapter fills",
+    "about": "ch04",
+    "kept_by": "Seven boundaries divide it"
+  },
+  {
+    "id": "ch07-assumes-ch06",
+    "in": "ch07",
+    "says": "chapter 6 left the two things it files",
+    "about": "ch06",
+    "kept_by": "upcall"
+  },
+  {
+    "id": "ch07-assumes-ch03",
+    "in": "ch07",
+    "says": "chapter 3 asked the question it answers",
+    "about": "ch03",
+    "kept_by": "no_std"
+  },
+  {
+    "id": "ch07-gloss-ch04",
+    "in": "ch07",
+    "says": "Chapter 4 defined a grant in one line and pointed here",
+    "about": "ch04",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch07-head-ch03",
+    "in": "ch07",
+    "says": "The problem chapter 3 named",
+    "about": "ch03",
+    "kept_by": "no_std"
+  },
+  {
+    "id": "ch07-waiting-ch03",
+    "in": "ch07",
+    "says": "Chapter 3 ended on a sentence that has been waiting six chapters",
+    "about": "ch03",
+    "kept_by": "no_std"
+  },
+  {
+    "id": "ch07-seven-ch04",
+    "in": "ch07",
+    "says": "Chapter 4 drew a process's memory as seven boundaries",
+    "about": "ch04",
+    "kept_by": "Seven boundaries divide it"
+  },
+  {
+    "id": "ch07-fence-ch05",
+    "in": "ch07",
+    "says": "Chapter 5's region for a process's RAM stops at",
+    "about": "ch05",
+    "kept_by": "app_break"
+  },
+  {
+    "id": "ch07-named-ch04",
+    "in": "ch07",
+    "says": "Chapter 4 named it; this chapter is what moves it",
+    "about": "ch04",
+    "kept_by": "kernel_memory_break"
+  },
+  {
+    "id": "ch07-farend-ch05",
+    "in": "ch07",
+    "says": "the far end of the region chapter 5 built",
+    "about": "ch05",
+    "kept_by": "region"
+  },
+  {
+    "id": "ch07-mark-ch06",
+    "in": "ch07",
+    "says": "the mark chapter 6 left",
+    "about": "ch06",
+    "kept_by": "allowed buffer"
+  },
+  {
+    "id": "ch07-walked-ch04",
+    "in": "ch07",
+    "says": "Everything chapter 4 walked through",
+    "about": "ch04",
+    "kept_by": "heap"
+  },
+  {
+    "id": "ch07-console-ch06",
+    "in": "ch07",
+    "says": "because chapter 6 used it",
+    "about": "ch06",
+    "kept_by": "syscall"
+  },
+  {
+    "id": "ch07-appdata-ch06",
+    "in": "ch07",
+    "says": "the word the process passed at subscribe time that chapter 6 traced",
+    "about": "ch06",
+    "kept_by": "upcall"
+  },
+  {
+    "id": "ch07-roflash-ch06",
+    "in": "ch07",
+    "says": "which chapter 6 said may sit in flash",
+    "about": "ch06",
+    "kept_by": "flash"
+  },
+  {
+    "id": "ch07-lower-ch06",
+    "in": "ch07",
+    "says": "The mark chapter 6 said a running process could never lower",
+    "about": "ch06",
+    "kept_by": "allowed buffer"
+  },
+  {
+    "id": "ch07-mainrs-ch03",
+    "in": "ch07",
+    "says": "Chapter 3 said a board's main.rs decides what exists",
+    "about": "ch03",
+    "kept_by": "capsule"
+  },
+  {
+    "id": "ch07-keepsboth-ch06",
+    "in": "ch07",
+    "says": "Chapter 6 said the core kernel keeps both",
+    "about": "ch06",
+    "kept_by": "upcall"
+  },
+  {
+    "id": "ch07-rule-ch03",
+    "in": "ch07",
+    "says": "This is chapter 3's rule again, one level down",
+    "about": "ch03",
+    "kept_by": "allowed to touch"
+  },
+  {
+    "id": "ch07-line-ch06",
+    "in": "ch07",
+    "says": "the same line chapter 6 drew between a request the kernel cannot parse",
+    "about": "ch06",
+    "kept_by": "cannot parse"
+  },
+  {
+    "id": "ch07-rewritten-ch05",
+    "in": "ch07",
+    "says": "the region chapter 5 builds is rewritten to match",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch07-question-ch01",
+    "in": "ch07",
+    "says": "Where that leaves chapter 1's question",
+    "about": "ch01",
+    "kept_by": "any code can write any address"
+  },
+  {
+    "id": "ch07-sentence-ch01",
+    "in": "ch07",
+    "says": "Chapter 1 ended on one sentence",
+    "about": "ch01",
+    "kept_by": "any code can write any address"
+  },
+  {
+    "id": "ch07-answer-ch01",
+    "in": "ch07",
+    "says": "That is the answer to chapter 1's question",
+    "about": "ch01",
+    "kept_by": "any code can write any address"
+  },
+  {
+    "id": "ch07-fourregs-ch06",
+    "in": "ch07",
+    "says": "the same four registers chapter 6 described",
+    "about": "ch06",
+    "kept_by": "four registers"
+  },
+  {
+    "id": "ch07-borrow-ch03",
+    "in": "ch07",
+    "says": "which is chapter 3's rule applied to memory that belongs to somebody else",
+    "about": "ch03",
+    "kept_by": "allowed to touch"
+  },
+  {
+    "id": "ch07-asked-ch01",
+    "in": "ch07",
+    "says": "Chapter 1 asked why nothing stops a store from landing anywhere",
+    "about": "ch01",
+    "kept_by": "store"
+  },
+  {
+    "id": "ch07-pin-ch03",
+    "in": "ch07",
+    "says": "the same commit chapters 3 to 6 were pinned to",
+    "about": "ch03",
+    "kept_by": "08894c2e0"
+  },
+  {
+    "id": "ch07-outside-ch06",
+    "in": "ch07",
+    "says": "the swap promises chapter 6 described",
+    "about": "ch06",
+    "kept_by": "upcall"
+  },
+  {
+    "id": "ch07-no-eight",
+    "in": "ch07",
+    "says": "There is no chapter 8",
+    "about": null,
+    "why": "There is no eighth chapter to owe anything to. The series is seven, which learning/README.md fixed before chapter 1 was written, and this sentence is the page saying so rather than promising anything."
+  },
+  {
+    "id": "ch07-later-life",
+    "in": "ch07",
+    "says": "Everything else happens later, per process",
+    "about": null,
+    "why": "'later' here is the life of one grant -- boot, then a process's first call -- rather than a later chapter. There is no later chapter."
   }
 ]

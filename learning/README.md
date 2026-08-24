@@ -27,7 +27,7 @@ arc closes where the first chapter said it would.
 | 4 | [What a Process Is](ch04-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
 | 5 | [The Memory Protection Unit](ch05-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | published |
 | 6 | [Asking the Kernel](ch06-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | published |
-| 7 | Grants | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator | planned |
+| 7 | [Grants](ch07-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and never given back while the process lives | published |
 
 **Why those seven and not the five chapter 1 promises.** Chapter 1 commits to
 itself, to chapter 2 by name, and then to three more in a single clause:
@@ -52,7 +52,10 @@ third spelling before this was written down -- three conventions for one unit
 across four chapters, which is what a cross-chapter notation pass is for.
 
 **Size.** Chapter 6 is the longest of the later chapters -- 9 figures, and
-about a fifth more words than chapter 5 by the same measure. Some of that is
+about a fifth more words than chapter 5 by the same measure. Chapter 7 lands
+between them at 7,100 and 9 figures, which is where a closing chapter should
+sit: it introduces one mechanism and spends the rest of its length paying off
+eight promises made by four earlier chapters. Some of that is
 the subject: it is the only chapter that has to teach a calling convention,
 which means naming four registers three times over. Some of it is not, and a
 review pass should ask which. Chapter 4 came out at 12 figures against the 8 to
@@ -125,8 +128,26 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Twenty-six more static checks exist because each caught a live defect. Keep the
+Twenty-seven more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A byte count a figure printed without compiling anything.** Chapter 7's
+  whole argument is a number: what one driver costs one process. The first
+  version of that number was 72, arrived at by adding up the field widths of
+  the three slot types and the driver's own struct -- and wrong, because
+  `grant_size` begins with a counters word that nobody adding up slots would
+  think to include. The answer is 76. So the chapter ships `grant-sizes.rs`,
+  which transcribes `grant_size` rather than approximating it, and the gate
+  compiles it for the board's target with the toolchain `rust-toolchain.toml`
+  pins and reads the answers out of the object file. The check runs from the
+  probe to the page: the totals the probe produces have to be somewhere on the
+  page. The reverse -- sweeping every number the page spells and demanding the
+  probe made it -- was written first and failed correct work immediately, since
+  "forty bytes" of gap and "twelve drivers" are not claims about a grant's
+  size. Both forms need a boundary a hyphen does not satisfy: `76` sits inside
+  the citation `:376-396` on that very page and `twenty` sits inside
+  `twenty-four`, and matching either was enough to pass a page that had stopped
+  saying the number at all.
 
 - **A citation whose line number is not in the file it resolves to.** The
   sources lists say "the same file" a lot, because repeating a path for every

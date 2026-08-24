@@ -382,8 +382,12 @@ chk("the section says what the class actually buys",
     REG["consentline"].textContent.indexOf("a record of consent") > -1, true);
 chk("and that the two bounds are the ones the region was built from",
     REG["checkline"].textContent.indexOf("start at or after the start of the process's memory") > -1, true);
-chk("the note says the mark never comes down",
-    REG["bf-note"].textContent.indexOf("nothing lowers that mark") > -1, true);
+// The mark does come down, once: a restart rebuilds the layout. The chapter
+// documented the exit variant that gets there and still said "ever".
+chk("the note scopes the mark to a running process",
+    REG["bf-note"].textContent.indexOf("nothing a running process can do lowers that mark") > -1, true);
+chk("and names the one thing that clears it",
+    REG["bf-note"].textContent.indexOf("the restart variant of exit") > -1, true);
 REG["bf-0"].fire("click");
 
 // ---- Figure 9: three refusals ----

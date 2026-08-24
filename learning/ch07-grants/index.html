@@ -1,0 +1,1127 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>Grants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #616D72;
+  --rule:        #D3DBD8;
+  --rule-strong: #7D918A;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #77858C;
+    --rule:        #252F34;
+    --rule-strong: #556A73;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #77858C;
+  --rule:        #252F34;
+  --rule-strong: #556A73;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+p { margin: 0; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Beginner scaffolding. Everything below exists to lower reading cost:
+   a word defined where it is first used, a stated goal, an instruction above
+   each figure, a guess before each reveal, and a way to check yourself after.
+   --------------------------------------------------------------------------- */
+
+/* A word being defined, right where the reader meets it. */
+dfn {
+  font-style: normal;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+/* What the reader will be able to do. Stated before the work, not after. */
+.goals {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.goals h2 {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.goals ul { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals .cost {
+  font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem;
+}
+
+/* An imperative naming the control, immediately above the figure it drives. */
+.dothis {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--accent);
+}
+/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+   flex item of every inline child, so an emphasis or a code span inside one
+   of these lines came out with a half-rem gap on each side and the
+   punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
+   orphaned full stop since it was published. Tag names are spelled out here
+   rather than written as markup, because the tag-balance check counts what a
+   stylesheet comment says too. The arrow carries its own spacing instead. */
+.dothis::before {
+  content: "\2192";
+  font-weight: 700;
+  margin-right: .5rem;
+}
+
+/* Check yourself. Question visible, answer one click away. */
+.selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+/* A register name anywhere in a question. All three parts of a card are set
+   in the body face, and this chapter's questions are mostly about r0 and r1,
+   so leaving them in it would put the same name in two families on one card.
+   Chapter 5's questions name registers as words -- MPU_RBAR, HardFault -- and
+   its cards are left in the body face on purpose. */
+.q-ask b, .q-opt b, .q-answer b {
+  font-family: var(--mono); font-weight: 500; text-transform: none;
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way every panel on this
+   page is, so a reader with no scripting gets all four answers rather than
+   none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+/* The words, collected. */
+.glossary {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: .55rem 1.1rem;
+  margin: 0;
+  font-size: .97rem;
+  line-height: 1.55;
+}
+.glossary dt {
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: .12rem;
+}
+.glossary dd { margin: 0; color: var(--ink-soft); }
+
+
+/* The eleven-word list at the top. Terms are short here, so the two columns
+   line up at the top of each row rather than centring. */
+.glossary.cast { align-items: start; }
+
+/* One shared rule: a register name or a line of source set inside a
+   panel, whichever component the panel belongs to. */
+.dbgp b, .costp b, .vtp b {
+  font-family: var(--mono); font-weight: 500; font-size: .88rem;
+}
+
+/* ---------- The assembled request: Figure 3's preamble ---------- */
+.asm {
+  font-family: var(--mono); font-size: .82rem; line-height: 1.7;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .7rem .85rem; margin: 0;
+  overflow-x: auto;
+}
+/* The shared inline-code rule paints a box round every `code`, which inside a
+   listing draws a box round the whole block. */
+.asm code {
+  background: none; border: 0; border-radius: 0; padding: 0;
+  font-size: inherit; word-break: normal; white-space: pre;
+}
+.asm-c { color: var(--ink-faint); }
+
+/* ---------- A row of buttons over stacked panels: Figures 4 and 9 ---------- */
+.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
+/* Words of a program image, so they are addresses and must not be uppercased. */
+.blk button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.blk button[aria-pressed="true"] {
+  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
+}
+.blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
+.blkp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.blkp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+/* Every explanation at once is a wall. The script shows one; with no
+   scripting none of that runs and they all stay readable. */
+.blkp.is-off { display: none; }
+.blkp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- A label beside a name: Figures 2 and 7 ---------- */
+.vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
+.vt button {
+  display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.vt button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.vt-at { color: var(--hot); }
+.vtsay { display: flex; flex-direction: column; gap: .45rem; }
+.vtp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.vtp.is-off { display: none; }
+
+@media (max-width: 30rem) {
+  .vt button { grid-template-columns: 1fr; gap: .1rem; }
+}
+
+/* ---------- Buttons over a readout of three or four cells: Figures 1, 3, 5 and 8 ---------- */
+.costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
+/* These are lines of Rust, so their case is the content. */
+.costs button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  /* Lines of Rust. The longest wraps, and a button centres by default. */
+  text-align: left;
+  padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+.costgrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
+}
+.costcell {
+  border: 1px solid var(--rule); background: var(--surface-sunk); padding: .55rem .7rem;
+}
+.costcell-k {
+  font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
+.costsay { display: flex; flex-direction: column; gap: .45rem; }
+.costp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.costp.is-off { display: none; }
+@media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
+
+/* ---------- Numbered steps: Figure 6 ---------- */
+.seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
+.seq button {
+  display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
+  align-items: baseline; text-align: left; width: 100%;
+  font-family: var(--body); font-size: .95rem; font-weight: 400; line-height: 1.5;
+  text-transform: none; letter-spacing: 0;
+  padding: .42rem .6rem; background: transparent;
+  border: 1px solid transparent; border-left: 2px solid var(--rule);
+  border-radius: 0; color: var(--ink-faint);
+}
+.seq button[aria-pressed="true"] {
+  color: var(--ink); background: var(--hot-soft); border-left-color: var(--hot);
+}
+.seq-n { font-family: var(--mono); font-size: .8rem; color: var(--ink-faint); }
+.seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
+.seq b { font-family: var(--mono); font-weight: 500; }
+.seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
+
+/* The panels Figure 6's numbered steps open. Named for the figure in
+   chapter 4 these rules were first written for, and kept because renaming a
+   class across markup, script and assertions buys nothing a comment cannot. */
+.dbgsay { display: flex; flex-direction: column; gap: .45rem; }
+.dbgp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.dbgp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.dbgp.is-off { display: none; }
+
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 7</p>
+  <h1>Grants</h1>
+  <p class="standfirst">Chapter 6 handed the kernel two things and said it files them somewhere. Somewhere turns out to be inside the process's own memory, above a line that process can never reach. This is the last mechanism in the series, and the kernel running it cannot ask for memory.</p>
+  <noscript>
+    <style>.dothis, .ifjs { display: none; }</style>
+    <p class="noscript-note">JavaScript appears to be off. Every explanation
+    this chapter relies on is in the prose and the drawn diagrams, and the lines
+    telling you to click things are hidden rather than left pointing at
+    nothing.</p>
+  </noscript>
+</header>
+
+<section class="col">
+  <div class="goals" id="goalbox">
+    <h2>What you'll be able to do at the end</h2>
+    <ul>
+      <li>Say where a driver's per-process state lives, who owns that memory, and which of them can read it.</li>
+      <li>Add up what one driver costs one process, in bytes, and say which of those bytes are never used.</li>
+      <li>Name the four moments in a <dfn>grant</dfn>'s life, and the one that gives the memory back.</li>
+      <li>Say why reaching into a grant twice at once stops the board, and what that buys.</li>
+    </ul>
+    <p class="cost">Plan on forty-five minutes. Chapter 4 drew the memory this chapter fills, chapter 6 left the two things it files, and chapter 3 asked the question it answers. If you have read those three, nothing here is new vocabulary except the mechanism itself.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Nine words, before we start</h2>
+  <p id="wordcount">Each is one sentence now and repeated in context below. Chapter 4 defined a grant in one line and pointed here; the first entry is that line with the rest of the sentence attached.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary cast" id="words">
+    <dt><dfn>grant</dfn></dt><dd>Memory a driver is lent inside a process, to keep that process's state in. One per driver per process, cut out of the process's own allocation.</dd>
+    <dt><dfn>allocator</dfn></dt><dd>The thing that hands out memory on demand and takes it back. This kernel does not have one, which is the whole reason this chapter exists.</dd>
+    <dt><dfn>grant region</dfn></dt><dd>The top of a process's memory, which the process cannot reach and the kernel cuts grants from, working downward.</dd>
+    <dt><dfn>grant number</dfn></dt><dd>A driver's index into the table of grants every process carries. Fixed when the board boots and never changes.</dd>
+    <dt><dfn>entering</dfn></dt><dd>The only way to reach what is inside a grant: the kernel hands it to a closure, and takes it back the moment that closure returns.</dd>
+    <dt><dfn>slot</dfn></dt><dd>One filed function pointer or one filed buffer, of a fixed size, in a grant. How many a driver gets is part of its type.</dd>
+    <dt><dfn>counters word</dfn></dt><dd>Four bytes at the bottom of every grant, holding how many slots of each of the three kinds it has. Three bytes used, one spare.</dd>
+    <dt><dfn>custom grant</dfn></dt><dd>Extra memory a capsule can cut from the same region when its fixed size is not enough. Rare, and it comes out of the same place.</dd>
+    <dt><dfn>bump</dfn></dt><dd>Allocating by moving one pointer and never moving it back. It is what the grant region does, and it is why nothing here is ever freed.</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <h2>The problem chapter 3 named</h2>
+  <p id="noalloc">Chapter 3 ended on a sentence that has been waiting six chapters for an answer. The kernel is <b>no_std</b> and never asks for memory it did not already have. There is no <dfn>allocator</dfn> anywhere in it. Nothing calls <b>malloc</b>, nothing calls <b>Box::new</b>, and there is no heap for either to work from.</p>
+  <p id="needstate">That is easy to live with until a driver needs to remember something about a process. The console has to know how many bytes of a write are still outstanding. It cannot keep one copy, because two processes can be printing at once, and it cannot keep an array of copies without knowing how many processes there will be.</p>
+  <p id="fourways">There are four ways out of that, and this kernel has ruled out three of them.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">Four ways to keep state for each process, and what each costs</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. The last is the one this kernel takes, and it is the strangest.</p>
+    <div class="blk" role="group" aria-label="Four ways a driver could keep per-process state">
+      <button type="button" id="wy-0" aria-pressed="false">an array sized for the worst case</button>
+      <button type="button" id="wy-1" aria-pressed="false">a heap</button>
+      <button type="button" id="wy-2" aria-pressed="false">one copy in the driver</button>
+      <button type="button" id="wy-3" aria-pressed="true">take it from the process</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp" id="wyp-0">Give the driver an array with a slot for every process the board could ever run. It works, and it is paid for in flash and RAM whether the processes exist or not. Every driver pays for every process, and the board's maximum has to be decided at compile time by somebody who does not know what will be installed.</p>
+      <p class="blkp" id="wyp-1">Ask for the memory when the driver needs it. This is what a larger operating system does, and it is not available here: there is nothing to ask. A heap also brings the failure this kernel is built to avoid, where one driver's appetite becomes another's crash at an unpredictable moment.</p>
+      <p class="blkp" id="wyp-2">Keep one process's worth of state and refuse the second caller. Some drivers really do this, and a driver for a single sensor may only make sense one process at a time anyway. But it turns a shared peripheral into a private one, and the console cannot work that way.</p>
+      <p class="blkp is-on" id="wyp-3">Take the memory out of the process that caused the need. The process is already holding an allocation the kernel gave it. If a driver needs eighty bytes because of what this process asked for, take eighty bytes from this process. Nothing is shared, nothing is global, and a process that never uses a driver never pays for it.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="wy-note">Notice what the fourth one does to the accounting. The cost of a driver stops being a property of the driver and becomes a property of the process using it, which means it can be charged rather than estimated. It also means a process's memory is no longer only the process's, and the rest of this chapter is about the care that takes.</div>
+</figure>
+
+<section class="col">
+  <h2>Where the memory comes from</h2>
+  <p id="topdown">Chapter 4 drew a process's memory as seven boundaries and said one of them starts at the very top and moves downward as grants are handed out. This is that movement. Everything above <b>kernel_memory_break</b> belongs to the kernel; everything below <b>app_break</b> belongs to the process; the gap between them is what neither has claimed yet.</p>
+  <p id="fenceagain">The process cannot read any of it. Chapter 5's region for a process's RAM stops at <b>app_break</b>, so the grant region is outside the fence &mdash; inside the process's allocation and outside its reach. The kernel is on the privileged side, where those regions do not apply, so it can read both.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">One process's memory, top down, and which end each thing grows from</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each band. The two in the middle are the ones that move, and they move towards each other.</p>
+    <div class="vt" role="group" aria-label="The bands of one process's memory">
+      <button type="button" id="bd-0" aria-pressed="true"><span class="vt-at">top</span><span>the grant pointer table</span></button>
+      <button type="button" id="bd-1" aria-pressed="false"><span class="vt-at">down</span><span>the grants themselves</span></button>
+      <button type="button" id="bd-2" aria-pressed="false"><span class="vt-at">line</span><span>kernel_memory_break</span></button>
+      <button type="button" id="bd-3" aria-pressed="false"><span class="vt-at">gap</span><span>nobody's yet</span></button>
+      <button type="button" id="bd-4" aria-pressed="false"><span class="vt-at">line</span><span>app_break</span></button>
+      <button type="button" id="bd-5" aria-pressed="false"><span class="vt-at">up</span><span>the process's own memory</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="bdp-0">Cut first, before the process runs a single instruction, and never resized. One entry per <dfn>grant number</dfn> the board declared, each holding a driver number and a pointer, eight bytes on this chip. Every process carries the whole table whether it uses any of those drivers or not, and every entry starts null.</p>
+      <p class="vtp" id="bdp-1">Cut one at a time, downward, the first time a driver is entered for this process. Each is the size that driver needs, rounded to its alignment. Each is a <dfn>bump</dfn> and only ever downward, so the order of the grants below the table is the order in which this process first used those drivers.</p>
+      <p class="vtp" id="bdp-2">The bottom of what the kernel has taken. Every new grant lowers it by that grant's size, and nothing raises it while the process runs. Chapter 4 named it; this chapter is what moves it.</p>
+      <p class="vtp" id="bdp-3">Unclaimed. The process can grow into it from below by moving its break, and the kernel can grow into it from above by cutting a grant, and whichever asks first gets it. When it is gone, both requests start failing.</p>
+      <p class="vtp" id="bdp-4">The top of what the process can touch, and the far end of the region chapter 5 built. A process asking for more heap is asking to move this line up, and the kernel refuses if it would pass the mark chapter 6 left or reach what the kernel has taken.</p>
+      <p class="vtp" id="bdp-5">Everything chapter 4 walked through: the process's stack, its data, its heap, and at the bottom the thirty-two bytes the first context switch needs. All of it readable and writable by the process, none of it readable by another one.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="bd-note">Notice that the table at the top is eager and the grants under it are lazy. Every process pays for a table entry per driver the board has, at once, before it starts; it pays for a driver's grant only if it actually calls that driver. The table is what makes the second half possible &mdash; a null pointer in a fixed slot is how the kernel knows a grant has not been cut yet.</div>
+</figure>
+
+<section class="col">
+  <h2>What one driver costs one process</h2>
+  <p id="costline">The console is a good one to price, because chapter 6 used it and because its per-process state is four fields. It declares how much of everything it wants in its own type, which is where the arithmetic starts:</p>
+  <pre class="asm" id="conslist"><code>apps: Grant&lt;
+    App,                                  <span class="asm-c">// four fields, 16 bytes</span>
+    UpcallCount&lt;{ upcall::COUNT }&gt;,       <span class="asm-c">// 3</span>
+    AllowRoCount&lt;{ ro_allow::COUNT }&gt;,    <span class="asm-c">// 2</span>
+    AllowRwCount&lt;{ rw_allow::COUNT }&gt;,    <span class="asm-c">// 2</span>
+&gt;,</code></pre>
+  <p id="custom">A capsule that needs more than its fixed size can cut a <dfn>custom grant</dfn> from the same region, which is rare and comes out of the same place as everything else here.</p>
+  <p id="constgen">Those three counts are constants in the type, not values in a variable. How many function pointers the console can hold for one process is fixed when the kernel is compiled, and a capsule that wants one more has to be recompiled to get it.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">The console's grant, added up</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click down the parts. The running total on the right is what one process pays to have printed anything.</p>
+    <div class="costs" role="group" aria-label="The parts of the console's grant">
+      <button type="button" id="pt-0" aria-pressed="true">the counters word</button>
+      <button type="button" id="pt-1" aria-pressed="false">3 upcall slots</button>
+      <button type="button" id="pt-2" aria-pressed="false">2 read-only slots</button>
+      <button type="button" id="pt-3" aria-pressed="false">2 read-write slots</button>
+      <button type="button" id="pt-4" aria-pressed="false">padding</button>
+      <button type="button" id="pt-5" aria-pressed="false">the driver's own state</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">this part</span><span class="costcell-v" id="pt-size">4 bytes</span></div>
+      <div class="costcell"><span class="costcell-k">running total</span><span class="costcell-v" id="pt-total">4</span></div>
+      <div class="costcell"><span class="costcell-k">used by the console</span><span class="costcell-v" id="pt-used">3 of 4 bytes</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="ptp-0">Every grant starts with one word holding how many slots of each kind it has. One byte for upcalls, one for read-only buffers, one for read-write buffers, and a fourth the source's own diagram marks unused. The kernel reads it back to find where each array starts, because the arrays are different lengths in every grant.</p>
+      <p class="costp" id="ptp-1">Eight bytes each: a function pointer, and the word the process passed at subscribe time that chapter 6 traced all the way back to the callback. Three of them, because the console's upcall numbers are 1 and 2 and counting starts at 0.</p>
+      <p class="costp" id="ptp-2">Eight bytes each: an address and a length, which is exactly what the process handed over. Two of them, and the console uses one &mdash; the buffer a write comes out of, which chapter 6 said may sit in flash.</p>
+      <p class="costp" id="ptp-3">Eight bytes each, the same shape, for buffers the kernel writes into. Two again, and the console uses one, for the buffer a read is delivered into.</p>
+      <p class="costp" id="ptp-4">None, here. The kernel pads between its own part and the driver's so the driver's type lands on its alignment, and the console's state wants four-byte alignment while the kernel's part has come to sixty. Sixty is already a multiple of four, so nothing is wasted. A driver whose state wanted eight-byte alignment would pay four bytes here.</p>
+      <p class="costp" id="ptp-5">The console's four fields: how long the current write is, how much of it is still waiting, whether a write is pending at all, and how long the current read is. Three words and a flag, which the compiler lays out in sixteen bytes.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="pt-note">Seventy-six bytes, then, for one process to have used the console. That is not a number worked out by adding up field widths on this page. It is what the kernel's own <b>grant_size</b> returns, transcribed into <code>grant-sizes.rs</code> beside this chapter and compiled for this board. The same driver with no slots at all would be twenty.</div>
+</figure>
+
+<section class="col">
+  <h2>The twenty-four bytes nobody uses</h2>
+  <p id="wasteline">Three of those seven slots are never touched. The console's upcall numbers are 1 and 2, its read-only buffer is number 1, and its read-write buffer is number 1. Arrays are indexed from zero, so declaring the highest number you use declares every number below it too, and slot zero of all three arrays sits in every process that has ever printed, empty.</p>
+  <p id="whyzero">The source says why, in the same comment three times over. "Before the allow syscall was handled by the kernel, console used allow number 1, so to preserve compatibility we still use allow number 1 now."</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">Three slots paid for and never filled</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. All three are the same eight bytes for the same reason.</p>
+    <div class="blk" role="group" aria-label="Three unused slots in the console's grant">
+      <button type="button" id="ws-0" aria-pressed="true">upcall 0</button>
+      <button type="button" id="ws-1" aria-pressed="false">read-only buffer 0</button>
+      <button type="button" id="ws-2" aria-pressed="false">read-write buffer 0</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="wsp-0">Eight bytes for a function pointer and a word of application data, in a slot the console never schedules. Its two upcalls are numbered 1 for a finished write and 2 for a finished read, and the count in its type is therefore 3. The comment beside that count says as much: even though we only use two, indexing starts at 0.</p>
+      <p class="blkp" id="wsp-1">Eight bytes for an address and a length, in the slot before the one the console reads out of. The number kept was 1, from before the kernel handled the allow class at all, so that applications built against the old numbering would keep working.</p>
+      <p class="blkp" id="wsp-2">Eight bytes again, for the read buffer's neighbour. Same reason, same comment, same cost, and every process that opens the console pays it for as long as it lives.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="ws-note">Twenty-four bytes of a seventy-six-byte grant, spent on numbering. It is worth knowing what that buys, because it is a real trade and not an oversight: an application compiled years before this kernel still talks to this console. The interesting part is where the cost landed. It is not paid once by the kernel; it is paid again by every process, in the process's own memory, because that is where a grant comes from.</div>
+</figure>
+
+<section class="col">
+  <h2>A grant's whole life</h2>
+  <p id="lifeline">A driver holds its grant from the moment the board boots, and that object contains no memory at all. It is two numbers: which driver this is, and which index in every process's table belongs to it. Everything else happens later, per process, and only if that process asks.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">Five moments, and the only one that gives memory back</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each step. Three of the five allocate nothing.</p>
+    <div class="seq" role="group" aria-label="Five moments in the life of one grant">
+      <button type="button" id="lf-0" aria-pressed="true"><span class="seq-n">1</span><span>The board boots and the driver is given a grant <span class="seq-src">kernel.rs:246</span></span></button>
+      <button type="button" id="lf-1" aria-pressed="false"><span class="seq-n">2</span><span>A process starts and gets a table entry, null <span class="seq-src">process_standard.rs:2102</span></span></button>
+      <button type="button" id="lf-2" aria-pressed="false"><span class="seq-n">3</span><span>That process uses the driver for the first time <span class="seq-src">process_standard.rs:1256</span></span></button>
+      <button type="button" id="lf-3" aria-pressed="false"><span class="seq-n">4</span><span>It uses it again, and again <span class="seq-src">grant.rs:1373</span></span></button>
+      <button type="button" id="lf-4" aria-pressed="false"><span class="seq-n">5</span><span>The process restarts <span class="seq-src">process_standard.rs:2460</span></span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="lfp-0">No memory anywhere. The kernel hands out a grant number, counts up by one, and the driver keeps that number for the life of the board. Once the first process is created the count is finalised and no driver can be given another, because every process's table was sized from it.</p>
+      <p class="dbgp" id="lfp-1">Eight bytes, in the table at the very top of the process's memory, holding a driver number of zero and a null pointer. Null is the flag: the kernel cannot use the driver number to tell whether a grant exists, because zero is a real driver number, so the pointer carries that meaning instead.</p>
+      <p class="dbgp" id="lfp-2">Now it costs something. The kernel works out the size from the driver's type, moves <b>kernel_memory_break</b> down by it, aligns it, checks it has not run into the process's own break, and writes the pointer into the table. This is the only moment in the five where the region gets smaller.</p>
+      <p class="dbgp" id="lfp-3">Free, every time after the first. The pointer is already in the table, so entering is a bounds check and a closure call. A driver that talks to a process a thousand times allocates once.</p>
+      <p class="dbgp" id="lfp-4">Everything goes back. Restarting recomputes the whole layout from the process's original allocation. The table is rebuilt, <b>kernel_memory_break</b> returns to the top, and every grant is gone. The mark chapter 6 said a running process could never lower comes down with them. It is the only refund in this chapter, and the price is that the process is no longer the one that was running.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="lf-note">Notice which way the laziness runs. A driver installed on the board and never called by a process costs that process eight bytes and not one more. Chapter 3 said a board's <b>main.rs</b> decides what exists. This is the other half of it: what exists is decided at build time, and what it costs is decided by each process, one first call at a time.</div>
+</figure>
+
+<section class="col">
+  <h2>Getting at what is inside</h2>
+  <p id="enterline">A capsule never holds a pointer into a grant. What it holds is the two numbers, and to reach the bytes it has to ask, once, for as long as one closure runs. The kernel opens the grant, hands the closure two references, and closes it again when that closure returns. It closes it even on an early return, because closing is what happens when the kernel's own bookkeeping value is dropped.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Four steps from two numbers to a mutable reference</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. Only the last one has any of the process's memory in it.</p>
+    <div class="vt" role="group" aria-label="The chain from a grant to its contents">
+      <button type="button" id="ch-0" aria-pressed="true"><span class="vt-at">holds</span><span>Grant</span></button>
+      <button type="button" id="ch-1" aria-pressed="false"><span class="vt-at">names</span><span>ProcessGrant</span></button>
+      <button type="button" id="ch-2" aria-pressed="false"><span class="vt-at">opens</span><span>GrantData and GrantKernelData</span></button>
+      <button type="button" id="ch-3" aria-pressed="false"><span class="vt-at">ends</span><span>the closure returns</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="chp-0">What the capsule was handed at boot, and what it keeps in a field for the life of the board. A driver number and a grant number, plus the types that carry the three slot counts. It refers to no memory and can be copied freely, which is why a driver can hold one without holding anything belonging to any process.</p>
+      <p class="vtp" id="chp-1">The same two numbers with one process attached. Producing one is where allocation can happen. If that process has no grant at this number yet, this is the step that cuts it, and the step that can fail for want of room. A capsule that wants to know whether the memory exists asks for this and looks at the answer.</p>
+      <p class="vtp" id="chp-2">Two references, valid only inside the closure. The first is a mutable reference to the driver's own state. The second is the kernel's half &mdash; the filed function pointers and the filed buffers &mdash; and a capsule can schedule an upcall or read a buffer through it but cannot take either out. Chapter 6 said the core kernel keeps both; this is the shape of keeping them.</p>
+      <p class="vtp" id="chp-3">The grant is marked not-entered again, by a value going out of scope rather than by anything the capsule remembers to call. That matters because a closure can return early, and an early return that skipped the closing would leave the grant locked for the rest of the board's life.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="ch-note">Notice that the mutable reference exists only for the duration of one call, and that nothing the capsule can write down outlives it. This is chapter 3's rule again, one level down: a capsule reaches what it is handed, for as long as it is handed it. The difference is that here the thing being handed over belongs to a process.</div>
+</figure>
+
+<section class="col">
+  <h2>The rule that stops the board</h2>
+  <p id="reenter">Entering a grant that is already entered does not fail politely. It panics, and the board stops. That is a deliberate choice made against the alternative, and the source explains itself at length where it happens.</p>
+  <p id="whypanic">The reason is that entering twice would produce two mutable references to the same bytes, which is the one thing Rust's rules exist to prevent. The kernel cannot hand out the second reference and stay honest, and it will not hand out something weaker, so it stops. What makes this a real risk rather than a theoretical one is a common shape in capsules. A loop walks every process's grant, and something inside the loop reaches for one particular process's grant.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">Three requests a grant refuses, and only one of them stops the board</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. The first is a mistake in a capsule; the other two are ordinary answers.</p>
+    <div class="blk" role="group" aria-label="Three requests a grant refuses">
+      <button type="button" id="rf-0" aria-pressed="true">enter it while it is entered</button>
+      <button type="button" id="rf-1" aria-pressed="false">a second grant for the same driver</button>
+      <button type="button" id="rf-2" aria-pressed="false">a grant that will not fit</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="rfp-0">Panic. Two mutable references to one object cannot both exist, so the kernel refuses to create the second and takes the board down rather than weaken the guarantee. There is a second way in, used by the loop over every process, which silently skips a grant that is already open instead of panicking. So a capsule that means to iterate can, and a capsule that reaches in twice by accident finds out at once.</p>
+      <p class="blkp" id="rfp-1">An error, returned. Every grant a process holds carries the driver number it was cut for, and asking to allocate a second one for a driver number already in the table is refused before any memory moves. One driver, one grant, one process.</p>
+      <p class="blkp" id="rfp-2">An error, returned, and the most ordinary of the three. The kernel works out where <b>kernel_memory_break</b> would land, sees it below the process's own break, and gives up without moving anything. The capsule finds out that this process cannot afford it, which is a different thing from the board being unable to afford it.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="rf-note">Notice which one is treated as a bug. Running out of room is a fact about a process and comes back as a value; asking for two mutable references is a fact about the capsule's code and stops everything. That is the same line chapter 6 drew between a request the kernel cannot parse and one it cannot satisfy, drawn this time inside the kernel rather than at its edge.</div>
+</figure>
+
+<section class="col">
+  <h2>Two breaks, one gap</h2>
+  <p id="gapline">The process grows its heap upward by moving <b>app_break</b>. The kernel grows its grants downward by moving <b>kernel_memory_break</b>. Between them is memory neither has claimed, and it is the same memory: there is no separate pool for grants and no reserve held back for the heap.</p>
+  <p id="whofirst">Which of them gets a given byte is decided by which asks first, and neither is told about the other's appetite in advance. A process cannot know how much its drivers will want, and a driver cannot know how much heap its process will want.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-title">Three requests into the same gap</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. Suppose the gap is forty bytes when the request arrives.</p>
+    <div class="costs" role="group" aria-label="Three requests into the gap between the two breaks">
+      <button type="button" id="gp-0" aria-pressed="true">the process asks for 32 bytes of heap</button>
+      <button type="button" id="gp-1" aria-pressed="false">the console asks for its first grant</button>
+      <button type="button" id="gp-2" aria-pressed="false">the process asks after the console has</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">which line moves</span><span class="costcell-v" id="gp-line">app_break</span></div>
+      <div class="costcell"><span class="costcell-k">which way</span><span class="costcell-v" id="gp-way">up</span></div>
+      <div class="costcell"><span class="costcell-k">gap left</span><span class="costcell-v" id="gp-left">8 bytes</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="gpp-0">Granted. The break moves up by thirty-two, the region chapter 5 builds is rewritten to match, and eight bytes are left. The process is told where its new break is and knows nothing about what is above it.</p>
+      <p class="costp" id="gpp-1">Refused. Seventy-six will not fit in forty, so the kernel works out where the break would land, sees it below the process's own break, and moves nothing. The console gets an error and the process never hears about it &mdash; the syscall that triggered it comes back with a no-memory error instead.</p>
+      <p class="costp" id="gpp-2">Also refused, for the mirror reason: with the grant taken there is no gap left. The process asked for heap it could have had a moment earlier, and the thing that consumed it was a driver acting on the process's own earlier request. The failure is real and the process has no way to see the cause.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="gp-note">Notice what the second and third have in common. Neither is a bug in anything; both are one allocation deciding another's fate, in a system with no allocator to arbitrate. What the design buys instead is that the damage is contained: a process that runs out has run out of its own memory, and no other process on the board is any worse off.</div>
+</figure>
+
+<section class="col">
+  <h2>Where that leaves chapter 1's question</h2>
+  <p id="closingq">Chapter 1 ended on one sentence: any code can write any address, and nothing on the chip stops it. Six chapters have been taking pieces out of that, and this is the last of them.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-title">Seven chapters, and what each one took out of that sentence</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each chapter. The sentence is still true of the kernel and no longer true of a process.</p>
+    <div class="vt" role="group" aria-label="What each chapter took out of chapter 1's sentence">
+      <button type="button" id="ar-0" aria-pressed="true"><span class="vt-at">one</span><span>any code, any address</span></button>
+      <button type="button" id="ar-1" aria-pressed="false"><span class="vt-at">two</span><span>where the first instruction comes from</span></button>
+      <button type="button" id="ar-2" aria-pressed="false"><span class="vt-at">three</span><span>what a driver may touch</span></button>
+      <button type="button" id="ar-3" aria-pressed="false"><span class="vt-at">four</span><span>what a process is</span></button>
+      <button type="button" id="ar-4" aria-pressed="false"><span class="vt-at">five</span><span>the fence</span></button>
+      <button type="button" id="ar-5" aria-pressed="false"><span class="vt-at">six</span><span>the door</span></button>
+      <button type="button" id="ar-6" aria-pressed="false"><span class="vt-at">seven</span><span>the filing cabinet</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="arp-0">The problem, stated. A store is a store, and a peripheral register is an address like any other. The processor running the instruction has no opinion about which address it lands on. Everything after this is somebody deciding which code gets to run that instruction.</p>
+      <p class="vtp" id="arp-1">Nothing taken away yet, but the ground laid: the first instruction is at an address the chip is wired to fetch, and everything running afterwards is there because something earlier put it there. Trust starts somewhere physical.</p>
+      <p class="vtp" id="arp-2">The first real cut, and it is not the hardware's. A capsule can only reach what its board handed it, because the type system will not compile a capsule that reaches for anything else. Nothing stops a capsule writing a wild address at run time; what stops it is that the code saying so was never written.</p>
+      <p class="vtp" id="arp-3">A second kind of code, compiled separately, that the kernel did not write and cannot check. Everything after this is about that second kind, because the first kind is handled by the compiler and this one cannot be.</p>
+      <p class="vtp" id="arp-4">The cut that is hardware. Two pairs of registers, checked on every access a process makes. The sentence stops being true of a process: it may write its own memory and nothing else, and no wrong pointer changes that.</p>
+      <p class="vtp" id="arp-5">The one way back out, made so narrow that no pointer can find it. Not an address the process may write, but an instruction that stops it, and eight kinds of question it may ask on the way through.</p>
+      <p class="vtp" id="arp-6">And the last piece: the kernel's own answer to needing memory it never asked for. It takes it from whoever caused the need, in the process's own allocation, above the fence, and never gives it back until that process is not that process any more.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="ar-note">Notice that only one of the seven is enforced by hardware. The rest are enforced by a compiler, by a type, by a boot sequence and by a convention. Every one of them is a decision somebody made and wrote down in a file this series has quoted. That is the answer to chapter 1's question: nothing on the chip stops it, so people did, in software, one mechanism at a time.</div>
+</figure>
+
+<section class="col">
+  <h2>Check yourself</h2>
+</section>
+
+<div class="col selfcheck">
+  <div class="q">
+    <p class="q-ask">A board has twelve drivers that use grants. A process starts and never makes a single syscall. How much of its memory has the kernel taken?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the first question">
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false">None. Grants are cut on first use, and there has not been one</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">Ninety-six bytes: one table entry per grant, allocated before it ran</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">All twelve grants, each sized from its driver's type</button>
+    </div>
+    <p class="q-answer" id="qan">The second. The table is eager and the grants are lazy. Twelve entries of eight bytes each are cut from the top before the process runs, every one of them holding a null pointer. The first answer is right about the grants and forgets what makes them possible &mdash; the kernel needs a fixed place to record that a grant does not exist yet.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A capsule enters a grant, and inside that closure enters the same grant again. What happens?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the second question">
+      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">The board panics</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">The second one returns an error the capsule can handle</button>
+      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">The second one waits until the first closure returns</button>
+    </div>
+    <p class="q-answer" id="qbn">The first. Two mutable references to the same bytes cannot both exist, and the kernel would rather stop than hand out something weaker. The third answer is the one to be careful with: there is nothing to wait on, because the first closure is on the stack below the second and will not return until it does.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A process calls exit-restart. What becomes of the seventy-six bytes its console grant was using?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the third question">
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">They stay taken, because a grant is never freed</button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">They come back as each driver notices the process has gone</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">The whole region goes back to the top and the grant is gone</button>
+    </div>
+    <p class="q-answer" id="qcn">The third. Restarting recomputes the layout from the original allocation, so the break returns to the top and every grant with it. The first answer is true of a running process and only of a running process, which is the distinction worth keeping: nothing frees one grant, and one thing frees them all.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">The gap between the two breaks is forty bytes, and a driver needs seventy-six for its grant. What does the process see?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the fourth question">
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">A no-memory error, from the syscall that caused the driver to ask</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">A fault, because the kernel could not do what it was asked</button>
+      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">Nothing, because the kernel takes the memory from somewhere else</button>
+    </div>
+    <p class="q-answer" id="qdn">The first. Running out of grant region is an ordinary failure with an ordinary answer, and it arrives back through the same four registers chapter 6 described. The second answer is the interesting mistake: a fault is what a malformed request gets, and this request was perfectly well formed &mdash; it just could not be afforded.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>What you can say now</h2>
+  <p id="closing">A driver keeps its state about a process inside that process's own memory, above the line the process can reach and below a table cut before the process started. The memory is taken the first time that driver is used by that process, by moving one pointer down, and nothing moves it back while the process lives. What it costs is a number you can add up: for the console on this board, seventy-six bytes, twenty-four of them slots kept empty so that an older numbering still works.</p>
+  <p id="closing2">A capsule never holds any of it. It holds two numbers, and it borrows the bytes for the length of one closure, which is chapter 3's rule applied to memory that belongs to somebody else. Reaching for the same grant twice at once stops the board, because the alternative is two mutable references to one object and the kernel will not pretend otherwise.</p>
+  <p id="lastline">And that is the last mechanism. Chapter 1 asked why nothing stops a store from landing anywhere. The answer took seven chapters, and it is that nothing on the chip does, so the rest was built. A compiler that will not compile the reach. A header the kernel parses before it trusts anything. Two registers per region, checked on every access. One instruction wide enough for eight kinds of question. And this, the place where the kernel puts what it has been handed. Every one of them is in a file this series has quoted, and every one is a decision somebody wrote down.</p>
+</section>
+
+<div class="col next">
+  <p class="eyebrow forward">The end</p>
+  <h3 style="margin-top:0">Seven chapters, one question</h3>
+  <p>There is no chapter 8. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names a file and a line, and all of them are still there. The most useful next thing is not more reading &mdash; it is <code>make program</code> in <code>boards/raspberry_pi_pico_2</code>, and then breaking something on purpose to watch which of these seven mechanisms catches it.</p>
+</div>
+
+<section class="col sources">
+  <h3>Everything above, checked against source</h3>
+  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>, the same commit chapters 3 to 6 were pinned to. The byte counts were compiled rather than added up: <code>grant-sizes.rs</code> ships beside this page and the gate runs it.</p>
+  <ul>
+    <li>The kernel having no allocator to ask &mdash; <code>kernel/src/lib.rs</code>:93, <code>#![no_std]</code>, with no allocator crate anywhere in its dependencies</li>
+    <li>What a grant is, in the kernel's own overview &mdash; <code>kernel/src/grant.rs</code>:5&ndash;40, "Grants allow capsules to dynamically allocate memory from a process to hold state on the process's behalf"</li>
+    <li>A grant not existing until it is entered, and not existing for one process because another entered it &mdash; the same file, :17&ndash;27</li>
+    <li>Upcalls and buffers being stored outside the driver's own type, so the kernel can keep the swap promises chapter 6 described &mdash; the same file, :29&ndash;32</li>
+    <li>The layout of one grant, drawn &mdash; the same file, :185&ndash;211, with the counters word broken out at :212&ndash;221</li>
+    <li>The arithmetic this chapter adds up &mdash; <code>grant_size</code>, the same file, :376&ndash;396: a counters word, then the three arrays, then padding to the driver type's alignment, then the type</li>
+    <li>The three slot types, one pointer-pair each &mdash; the same file, :752&ndash;788; <code>MachineRegister</code> and <code>CapabilityPtr</code> are both <code>#[repr(transparent)]</code> over one pointer, at <code>kernel/src/utilities/machine_register.rs</code>:29 and <code>kernel/src/utilities/capability_ptr.rs</code>:29</li>
+    <li>Seventy-six bytes for the console, and twenty for the same driver with no slots &mdash; <code>grant-sizes.rs</code> beside this page, which transcribes <code>grant_size</code> and is compiled for <code>thumbv8m.main-none-eabi</code> with the nightly <code>rust-toolchain.toml</code> pins</li>
+    <li>The console declaring its counts in its own type &mdash; <code>capsules/core/src/console.rs</code>:104&ndash;109</li>
+    <li>Those counts, and why slot 0 of each is skipped &mdash; the same file, :59&ndash;92: "Even though we only use two, indexing starts at 0", and twice more, "so to preserve compatibility we still use allow number 1 now"</li>
+    <li>The console's four fields &mdash; the same file, :94&ndash;100</li>
+    <li>A table entry per grant, eight bytes, holding a driver number and a pointer &mdash; <code>GrantPointerEntry</code>, <code>kernel/src/process_standard.rs</code>:400&ndash;410, and null being the flag rather than the driver number, at :403&ndash;406</li>
+    <li>That table cut from the top before the process runs &mdash; the same file, :2102&ndash;2128, sized from the grant count at :1811&ndash;1813</li>
+    <li>The count being finalised once the first process exists &mdash; <code>get_grant_count_and_finalize</code>, <code>kernel/src/kernel.rs</code>:273&ndash;276, with grants created at :246</li>
+    <li>Cutting a grant: size and alignment from the type, the pointer written into the table &mdash; <code>allocate_grant</code>, <code>kernel/src/process_standard.rs</code>:1213&ndash;1275, calling the region allocator at :1256</li>
+    <li>A second grant for a driver number already in the table being refused &mdash; the same file, :1239&ndash;1251</li>
+    <li>The bump itself: down by the size, aligned down, and never back up &mdash; <code>allocate_in_grant_region_internal</code>, the same file, :2583&ndash;2622</li>
+    <li>The check that stops it reaching the process's own memory &mdash; the same file, :2604, comparing the would-be break against <code>app_break</code></li>
+    <li>The same gap seen from the other side, where a process asking for heap is refused &mdash; the same file, :975&ndash;983</li>
+    <li>Entering, and the panic when it is entered twice &mdash; <code>kernel/src/grant.rs</code>:1360&ndash;1400, "we panic!() to notify the developer that they tried to enter the same grant twice which is prohibited because it would result in two mutable references existing for the same memory"</li>
+    <li>The loop over every process skipping an entered grant instead of panicking &mdash; the same file, :1261&ndash;1263</li>
+    <li>The grant being closed by a value going out of scope rather than by a call &mdash; the same file, :222&ndash;227, "On <code>Drop</code>, we leave the grant. This protects against calling <code>grant.enter()</code> without calling the corresponding <code>grant.leave()</code>"</li>
+    <li>A restart rebuilding the layout and giving every grant back &mdash; <code>reset</code>, <code>kernel/src/process_standard.rs</code>:2447&ndash;2463, reached from <code>try_restart</code> at :795 and from exit variant 1 at <code>kernel/src/kernel.rs</code>:1406&ndash;1408</li>
+    <li>Capsules being able to ask for more from the same region &mdash; <code>allocate_custom_grant</code>, <code>kernel/src/process_standard.rs</code>:1278&ndash;1300</li>
+  </ul>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here, as does <code>grant-sizes.rs</code> beside this page, which is source rather than prose.</p>
+</section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Same shape as chapters 3 to 6: one group of buttons, one group of panels,
+     same index. The panel class differs between components only because each
+     was styled for its own figure. */
+  function group(btn, panel, n, cls, onCls, offCls, extra) {
+    function pick(k) {
+      var i, b, p;
+      for (i = 0; i < n; i++) {
+        b = document.getElementById(btn + i);
+        p = document.getElementById(panel + i);
+        b.setAttribute("aria-pressed", i === k ? "true" : "false");
+        if (cls) { b.classList.toggle(cls, i === k); }
+        p.classList.toggle(onCls, i === k);
+        if (offCls) { p.classList.toggle(offCls, i !== k); }
+      }
+      if (extra) { extra(k); }
+    }
+    var i, opening = 0;
+    for (i = 0; i < n; i++) {
+      (function (k) {
+        document.getElementById(btn + k)
+          .addEventListener("click", function () { pick(k); });
+      }(i));
+      if (document.getElementById(btn + i)
+            .getAttribute("aria-pressed") === "true") { opening = i; }
+    }
+    // The markup ships every panel showing, so a reader with no JavaScript
+    // meets all of them rather than one. Putting the rest away is this
+    // function's first job, not the markup's.
+    pick(opening);
+  }
+
+  /* ---------------- Figure 1: four ways to keep state ----------------
+     Opens on the fourth, which is the one this kernel takes. The first three
+     are the alternatives it has ruled out, and leading with a ruled-out one
+     would be teaching the wrong thing first. */
+  group("wy-", "wyp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 2: the bands of process memory ---------------- */
+  group("bd-", "bdp-", 6, "", "is-on", "is-off");
+
+  /* ---------------- Figure 3: the console's grant, added up ----------------
+     Every number is grant_size run on the console's declared counts: a
+     counters word, then 3 upcalls, 2 read-only and 2 read-write slots at eight
+     bytes each, then no padding because sixty is already a multiple of the
+     driver type's four-byte alignment, then sixteen for the type. The running
+     total is the point of the figure, so it is computed here from the parts
+     rather than typed out, and the parts are what the compiled probe beside
+     this page reports. */
+  (function () {
+    var PARTS = [
+      [4,  "3 of 4 bytes"],
+      [24, "2 of 3 slots"],
+      [16, "1 of 2 slots"],
+      [16, "1 of 2 slots"],
+      [0,  "none needed"],
+      [16, "all of it"]
+    ];
+    group("pt-", "ptp-", 6, "", "is-on", "is-off", function (k) {
+      var i, total = 0;
+      for (i = 0; i <= k; i++) { total += PARTS[i][0]; }
+      document.getElementById("pt-size").textContent =
+        PARTS[k][0] + (PARTS[k][0] === 1 ? " byte" : " bytes");
+      document.getElementById("pt-total").textContent = String(total);
+      document.getElementById("pt-used").textContent = PARTS[k][1];
+    });
+  }());
+
+  /* ---------------- Figure 4: the slots nobody fills ---------------- */
+  group("ws-", "wsp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 5: a grant's life ---------------- */
+  group("lf-", "lfp-", 5, "", "is-on", "is-off");
+
+  /* ---------------- Figure 6: from two numbers to a reference ---------------- */
+  group("ch-", "chp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 7: three refusals ---------------- */
+  group("rf-", "rfp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 8: three requests into one gap ----------------
+     The gap is forty bytes. The heap request is 32 and fits, leaving 8; the
+     grant is 76 and does not, so nothing moves; and after the grant would have
+     been taken there is nothing left for the heap either. */
+  (function () {
+    var GAP = [
+      ["app_break", "up", "8 bytes"],
+      ["neither", "nothing moves", "40 bytes"],
+      ["neither", "nothing moves", "40 bytes"]
+    ];
+    group("gp-", "gpp-", 3, "", "is-on", "is-off", function (k) {
+      document.getElementById("gp-line").textContent = GAP[k][0];
+      document.getElementById("gp-way").textContent = GAP[k][1];
+      document.getElementById("gp-left").textContent = GAP[k][2];
+    });
+  }());
+
+  /* ---------------- Figure 9: what the seven chapters took ---------------- */
+  group("ar-", "arp-", 7, "", "is-on", "is-off");
+
+  /* ---------------- Check yourself ----------------
+     The answer text is in the markup; this only reveals it and marks which
+     option was right, so nothing a reader needs is stored in here. */
+  (function () {
+    function quiz(prefix, n, right, answer) {
+      var i;
+      // Same rule: the answer is in the markup, visible, and script is what
+      // hides it until the reader has committed to a guess.
+      document.getElementById(answer).classList.add("is-off");
+      for (i = 0; i < n; i++) {
+        (function (k) {
+          document.getElementById(prefix + k)
+            .addEventListener("click", function () {
+              var j, b;
+              for (j = 0; j < n; j++) {
+                b = document.getElementById(prefix + j);
+                b.setAttribute("aria-pressed", j === k ? "true" : "false");
+                b.classList.toggle("is-right", j === right);
+                b.classList.toggle("is-wrong", j === k && k !== right);
+              }
+              document.getElementById(answer).classList.remove("is-off");
+            });
+        }(i));
+      }
+    }
+    // Chapter 5's were 1, 2, 0, 1 and chapter 6's were 2, 1, 0, 2. These are
+    // 1, 0, 2, 0, which repeats neither.
+    quiz("qa-", 3, 1, "qan");
+    quiz("qb-", 3, 0, "qbn");
+    quiz("qc-", 3, 2, "qcn");
+    quiz("qd-", 3, 0, "qdn");
+  }());
+
+}());
+</script>

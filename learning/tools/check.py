@@ -603,6 +603,104 @@ def demo_asm_checks(html, chapter_dir):
     return problems
 
 
+_ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven",
+         "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+         "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+_TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy",
+         "eighty", "ninety"]
+
+
+def _spell(n):
+    """`76` as "seventy-six", for the range a grant's size can land in."""
+    if n < 20:
+        return _ONES[n]
+    if n < 100:
+        return _TENS[n // 10] + ("-" + _ONES[n % 10] if n % 10 else "")
+    return None
+
+
+def compiled_size_checks(html, chapter_dir):
+    """A byte count a figure printed without compiling anything.
+
+    Chapter 7's whole argument is a number: what one driver costs one process.
+    The first version of that number was 72, arrived at by adding up the field
+    widths of the three slot types and the driver's own struct -- and it was
+    wrong, because `grant_size` begins with a counters word that nobody adding
+    up slots would think to include. The answer is 76.
+
+    So the chapter ships `grant-sizes.rs`, which transcribes `grant_size`
+    rather than approximating it, and this compiles it for the board's target
+    with the toolchain the tree pins and reads the answers back out of the
+    object file. Every number the page prints as a byte count of a grant has to
+    be one the probe produced.
+
+    Skipped where the pinned toolchain, the target or the cross-objdump is
+    missing, the way the Rust demo in chapter 1 is skipped without a target.
+    """
+    problems = []
+    demo = os.path.join(chapter_dir, "grant-sizes.rs")
+    if not os.path.exists(demo):
+        return problems
+    if subprocess.run(["git", "check-ignore", "-q", demo]).returncode == 0:
+        return ["grant-sizes.rs is ignored by git, so a clone would not have "
+                "it and this check would skip without saying so"]
+    if not shutil.which("rustup") or not shutil.which("arm-none-eabi-objdump"):
+        return problems
+    toolchain = os.path.join(ROOT, "..", "rust-toolchain.toml")
+    if not os.path.exists(toolchain):
+        return problems
+    with open(toolchain, encoding="utf-8") as fh:
+        channel = re.search(r'channel\s*=\s*"([^"]+)"', fh.read())
+    if not channel:
+        return problems
+
+    with tempfile.TemporaryDirectory() as tmp:
+        obj = os.path.join(tmp, "sizes.o")
+        built = subprocess.run(
+            ["rustup", "run", channel.group(1), "rustc",
+             "--target", "thumbv8m.main-none-eabi", "--crate-type", "lib",
+             "--emit", "obj", "-O", demo, "-o", obj],
+            capture_output=True, text=True)
+        if built.returncode != 0:
+            return ["grant-sizes.rs does not compile: %s"
+                    % built.stderr.strip().split("\n")[0][:120]]
+        dumped = subprocess.run(
+            ["arm-none-eabi-objdump", "-s", "-j", ".rodata.SIZES", obj],
+            capture_output=True, text=True)
+    words = []
+    for line in dumped.stdout.split("\n"):
+        cells = re.match(r"\s*[0-9a-f]{4}\s+((?:[0-9a-f]{8}\s+){1,4})", line)
+        if cells:
+            for group in cells.group(1).split():
+                words.append(int.from_bytes(bytes.fromhex(group), "little"))
+    if not words:
+        return ["nothing came back from compiling grant-sizes.rs"]
+
+    # The check runs from the probe to the page, not the other way. Sweeping
+    # every spelled number on the page and demanding the probe produced it
+    # fails correct work at once -- a page saying "forty bytes" of gap or
+    # "twelve drivers" is not making a claim about a grant's size. What the
+    # probe's own totals do have to be is somewhere on the page, which is what
+    # catches the page going quietly back to a number nothing compiled.
+    text = " ".join(html_module.unescape(re.sub(r"<[^>]+>", " ", html)).lower().split())
+    headline = words[-2] if len(words) >= 2 else words[-1]
+    bare = words[-1]
+    for value, what in ((headline, "the total"), (bare, "the slotless total")):
+        spelled = _spell(value)
+        if spelled is None:
+            continue
+        # Both forms need a boundary that a hyphen does not satisfy. `76` sits
+        # inside the citation ":376-396" on this very page, and `twenty` sits
+        # inside `twenty-four`; the first version of this check matched both
+        # and so passed a page that had stopped saying either number.
+        edge = r"(?<![\w-])%s(?![\w-])"
+        if (not re.search(edge % re.escape(spelled), text)
+                and not re.search(edge % value, text)):
+            problems.append("the probe reports %s as %d and the page spells "
+                            "neither %r nor %d" % (what, value, spelled, value))
+    return problems
+
+
 def citation_chain_checks(html):
     """A citation whose line number is not in the file it resolves to.
 
@@ -1439,6 +1537,10 @@ RETIRED_PHRASES = {
                                     "process can already revoke and re-allow"),
         ("Figure 3's answer", "figure 3 shows four request registers and no "
                               "answer at all"),
+        ("nothing lowers that mark", "reset() lowers it, reached from the "
+                                     "exit-restart this chapter documents two "
+                                     "figures earlier"),
+        ("never comes down", "same claim, same reason"),
     ],
 }
 
@@ -1823,6 +1925,7 @@ def static_checks(html, name):
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(assembled_listing_checks(html, os.path.join(ROOT, name)))
     problems.extend(citation_chain_checks(html))
+    problems.extend(compiled_size_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
     problems.extend(glossary_use_checks(html))
@@ -2035,6 +2138,10 @@ MUST_DEFINE = {
     "ch06": [
         "allowed buffer", "command", "driver number", "exception frame",
         "subscribe", "svc", "syscall", "syscall class", "upcall", "yield",
+    ],
+    "ch07": [
+        "allocator", "bump", "counters word", "custom grant", "entering",
+        "grant", "grant number", "grant region", "slot",
     ],
 }
 
