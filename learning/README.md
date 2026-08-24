@@ -9,8 +9,9 @@ written from the position of someone actually learning them rather than someone
 who already knows.
 
 Each chapter is a self-contained, interactive HTML page. Every technical claim is
-quoted from this repository at a known commit, with file and line given, so a
-reader can verify rather than trust.
+checked against this repository and cited by file, with the line and the commit
+wherever a chapter's argument turns on a line, so a reader can verify rather
+than trust.
 
 ## Chapters
 
@@ -21,7 +22,7 @@ arc closes where the first chapter said it would.
 
 | # | Title | Covers | Status |
 |---|-------|--------|--------|
-| 1 | [Everything Is Memory](ch01-everything-is-memory/) | One store, from `str` to 3.3 V on a pin, and why nothing stops it landing anywhere | published |
+| 1 | [Everything Is Memory](ch01-everything-is-memory/) | One `str` instruction to 3.3 V on a pin, and why, before anything later introduces a protection, nothing stops it landing anywhere | published |
 | 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
 | 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
 | 4 | [What a Process Is](ch04-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
@@ -109,7 +110,7 @@ the same sentence.
 
 ## Why this lives in the Tock repository
 
-The chapters cite kernel source by file and line. Keeping them in a branch of the
+The chapters cite kernel source by file, and by line where the line is the point. Keeping them in a branch of the
 tree they describe means those citations can always be checked against the exact
 commit the branch sits on — and when a rebase moves a line we quoted, that is
 information we want, not an inconvenience.

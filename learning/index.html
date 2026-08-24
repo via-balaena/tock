@@ -212,7 +212,6 @@ code {
   padding-top: .1rem;
 }
 .entry.lit .ord { color: var(--accent); }
-.entry.read .ord { color: var(--accent); }
 
 .entry h3 { margin: 0 0 .3rem; }
 .entry h3 a {
@@ -282,14 +281,15 @@ code {
 
 /* ---------- closing blocks ---------- */
 
-.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1.6rem; margin: 0 0 3rem; }
+.tail { margin-bottom: 3rem; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 1.6rem 2rem; align-items: start; margin: 0 0 3rem; }
 .panel {
   border-top: 2px solid var(--ink);
   padding-top: 1rem;
 }
 .panel p { max-width: 40ch; font-size: .97rem; }
 .panel p:last-child { margin-bottom: 0; }
-.tail { margin-bottom: 3rem; }
 
 .warnbox {
   background: var(--hot-soft);
@@ -318,6 +318,7 @@ pre {
   border-radius: .4rem;
   padding: .8rem 1rem;
   margin: .8rem 0 0;
+  max-width: var(--measure);
   overflow-x: auto;
 }
 
@@ -356,8 +357,8 @@ pre {
 <section class="stance">
   <p class="kicker">How to read a claim here</p>
   <h2>Nothing on these pages asks to be believed</h2>
-  <p>Claims about the kernel are checked against the Tock tree and cited by file, and wherever a chapter's argument turns on a particular line, it gives the line and the commit it is pinned to. Where a chapter rests on the RP2350 or Pico&nbsp;2 datasheet instead, it says so and cites the section.</p>
-  <p>Three chapters ship the source a figure rests on, so that what those figures print is compiled or assembled rather than transcribed &mdash; listings in two of them, and in the third a byte count. That is not a stylistic preference: the first draft of that byte count was wrong by four bytes, and no amount of careful reading had caught it.</p>
+  <p>Claims about the kernel are checked against the Tock tree and cited by file, and wherever a chapter's argument turns on a particular line, it gives the line and the commit it is pinned to. Where a chapter rests on the RP2350 or Pico&nbsp;2 datasheet instead, it says so, and gives the section wherever a fact turns on one.</p>
+  <p>Three chapters ship the source a figure rests on, so that what those figures print is compiled or assembled rather than transcribed &mdash; listings in chapters 1 and 6, and in chapter 7 a byte count. That is not a stylistic preference: the first draft of that byte count was wrong by four bytes, and no amount of careful reading had caught it.</p>
 </section>
 
 <section class="contents">
@@ -371,7 +372,7 @@ pre {
       <div class="ord">1</div>
       <div>
         <h3><a href="ch01-everything-is-memory/">Everything Is Memory</a></h3>
-        <p class="hook">One store, from a string in flash to 3.3&nbsp;volts on a pin &mdash; and why, before any of the protections the later chapters describe, a write can land anywhere at all.</p>
+        <p class="hook">One <code>str</code> instruction, and the 3.3&nbsp;volts it puts on a pin at the other end &mdash; and why, before any of the protections the later chapters describe, a write can land anywhere at all.</p>
         <p class="needs"><b>Start here</b></p>
       </div>
       <button class="mark" type="button" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
