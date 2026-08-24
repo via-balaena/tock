@@ -62,14 +62,14 @@ chk("and it is the one that names chapter 1's block",
     REG["srp-11"].textContent.indexOf("gpio_out_set") > -1, true);
 
 // ---- Figure 1: the declaration ----
-walk("sg-", "sgp-", 4, "figure 1");
+walk("sg-", "sgp-", 5, "figure 1");
 chk("the field panel is the one that says there is a single field",
-    REG["sgp-3"].textContent.indexOf("one field") > -1, true);
+    REG["sgp-4"].textContent.indexOf("one field") > -1, true);
 chk("and the type-parameter panel names the trait's five methods",
-    REG["sgp-1"].textContent.indexOf("five methods") > -1, true);
+    REG["sgp-2"].textContent.indexOf("five methods") > -1, true);
 REG["sg-0"].fire("click");
 chk("clicking back to the first releases the others",
-    onlyOne("sg-", 4, "is-on") + REG["sg-1"].getAttribute("aria-pressed"),
+    onlyOne("sg-", 5, "is-on") + REG["sg-1"].getAttribute("aria-pressed"),
     "0false");
 
 // ---- Figure 2: which line compiles ----
@@ -199,7 +199,7 @@ chk("and in how many LEDs they have",
 // The three goals at the top, each tied to the thing on the page that delivers
 // it. A goal nothing answers is the failure mode these exist to catch.
 chk("goal 1, the one field, is delivered by figure 1",
-    REG["sgp-3"].textContent.indexOf("whole of what the driver can reach") > -1, true);
+    REG["sgp-4"].textContent.indexOf("whole of what the driver can reach") > -1, true);
 chk("goal 2, why a driver cannot corrupt the kernel, is delivered by figure 2",
     REG["cdp-1"].textContent.indexOf("forbids the word") > -1, true);
 chk("goal 3, which layer knows the chip, is delivered by figure 4",
@@ -221,7 +221,7 @@ REG["qd-0"].fire("click");
 chk("a wrong answer to it still reveals", REG["qdn"].classList.contains("is-off"), false);
 chk("and marks the right one", REG["qd-2"].classList.contains("is-right"), true);
 chk("its answer says why nothing stops it",
-    REG["qdn"].textContent.indexOf("timeslice governs a process") > -1, true);
+    REG["qdn"].textContent.indexOf("not scheduled") > -1, true);
 
 // The four lint levels were a table written as a paragraph -- four items each
 // with a behaviour, which is the shape chapter 1 converted seven times.
@@ -236,9 +236,9 @@ chk("and it says which one can be turned back off",
 // The bounds check is not there because the length is known. It is there
 // because indexing past the end panics, which finding 1 is the cost of.
 chk("the NUM_LEDS panel gives the real reason for the bounds check",
-    REG["sgp-2"].textContent.indexOf("it panics") > -1, true);
+    REG["sgp-3"].textContent.indexOf("it panics") > -1, true);
 chk("and no longer claims the known length is the cause",
-    REG["sgp-2"].textContent.indexOf("Because the length is known"), -1);
+    REG["sgp-3"].textContent.indexOf("Because the length is known"), -1);
 
 // "That line is real" has to survive being checked verbatim; the real one is a
 // module-level const, not a let binding inside a function.
@@ -291,3 +291,34 @@ chk("and none of its options begins with yes or no",
 chk("the two words are tied together in the prose as well",
     document.getElementById("wordpair").textContent
       .indexOf("both words for the same thing") > -1, true);
+
+// ---- what the third review pass found ----
+// The goals were written before the chapter had a fourth thing to teach: the
+// boundary section and Figure 8 both arrived in later passes and neither was
+// promised at the top.
+chk("the goals promise the boundary as well as the guarantee",
+    REG["goalbox"].textContent.indexOf("still do to you anyway") > -1, true);
+// The prerequisite line named two chapters and no Rust, while Figure 1 opens on
+// a lifetime and a const generic.
+chk("and the prerequisites name the Rust as well as the chapters",
+    REG["goalbox"].textContent.indexOf("lifetime and a type parameter") > -1, true);
+
+// `'a` was a visible part of a declaration under an imperative that says to
+// click the parts of it, and had no button.
+chk("the lifetime is one of the parts you can click",
+    REG["sg-1"].textContent.indexOf("'a") > -1, true);
+chk("and its panel ties it to what Figure 7 shows",
+    REG["sgp-1"].textContent.indexOf("'static") > -1, true);
+// Both halves of Figure 1's imperative -- what a part lets in, and what it
+// leaves out -- now land on every panel rather than two of four.
+chk("the name panel says what the name leaves out",
+    REG["sgp-0"].textContent.indexOf("leaves out") > -1, true);
+chk("and the count panel says what the count is not",
+    REG["sgp-3"].textContent.indexOf("not: a pin number") > -1, true);
+
+// The chapter's central picture is the simplest capsule in the tree. The rule
+// survives the field count; the picture does not, and the note said nothing.
+chk("the note places this driver in the distribution",
+    REG["fig1note"].textContent.indexOf("the largest has thirty-one") > -1, true);
+chk("and says the rule survives the count",
+    REG["fig1note"].textContent.indexOf("does not change the rule") > -1, true);

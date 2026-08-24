@@ -678,14 +678,15 @@ dfn {
 </header>
 
 <section class="col">
-  <div class="goals">
+  <div class="goals" id="goalbox">
     <h2>What you'll be able to do at the end</h2>
     <ul>
       <li>Name the one thing that decides everything a driver can reach.</li>
-      <li>Explain why a bug in a driver cannot corrupt the kernel, and point at the line that makes that true.</li>
+      <li>Explain why a bug in a driver cannot corrupt the kernel's memory, and point at the line that makes that true.</li>
       <li>Follow a call from the LED driver down to the store from chapter 1, and say which layer first knows what chip this is.</li>
+      <li>Say what a driver can still do to you anyway, and why the compiler has nothing to say about it.</li>
     </ul>
-    <p class="cost">Plan on forty minutes. Chapters 1 and 2 are assumed: what an address is, what a store does, and how the kernel got started.</p>
+    <p class="cost">Plan on forty minutes. Chapters 1 and 2 are assumed: what an address is, what a store does, and how the kernel got started. So is enough Rust to read a struct with a lifetime and a type parameter on it, which the Rust Book reaches in its chapter 10.</p>
   </div>
 </section>
 
@@ -726,18 +727,20 @@ dfn {
 }</pre>
     <div class="blk" role="group" aria-label="The parts of the LedDriver declaration">
       <button type="button" id="sg-0" aria-pressed="true">LedDriver</button>
-      <button type="button" id="sg-1" aria-pressed="false">L: led::Led</button>
-      <button type="button" id="sg-2" aria-pressed="false">NUM_LEDS</button>
-      <button type="button" id="sg-3" aria-pressed="false">leds</button>
+      <button type="button" id="sg-1" aria-pressed="false">'a</button>
+      <button type="button" id="sg-2" aria-pressed="false">L: led::Led</button>
+      <button type="button" id="sg-3" aria-pressed="false">NUM_LEDS</button>
+      <button type="button" id="sg-4" aria-pressed="false">leds</button>
     </div>
     <div class="blksay">
-      <p class="blkp is-on" id="sgp-0">The driver for the LEDs on every board Tock runs on. Not one per chip &mdash; one, in <b>capsules/core/src/led.rs</b>, 158 lines including its own documentation.</p>
-      <p class="blkp is-off" id="sgp-1"><b>L</b> stands for whatever type the board hands over. The bound after the colon is everything this driver knows about it: that it implements <b>led::Led</b>, a trait of five methods &mdash; init, on, off, toggle, read. Which chip <b>L</b> belongs to is not knowable here.</p>
-      <p class="blkp is-off" id="sgp-2">How many there are, fixed when the board is compiled. The driver checks against it by hand, one line above the call: <b>if data &gt;= NUM_LEDS</b>. It has to, because indexing past the end of an array in safe Rust does not corrupt anything &mdash; it panics. What a panic in a capsule costs is the last section of this chapter.</p>
-      <p class="blkp is-off" id="sgp-3">The one field: a reference to an array of references. This is the whole of what the driver can reach, and there is not a number in it.</p>
+      <p class="blkp is-on" id="sgp-0">The driver for the LEDs on every board Tock runs on. Not one per chip &mdash; one, in <b>capsules/core/src/led.rs</b>, 158 lines including its own documentation. What the name leaves out is any chip at all: nothing here or in that file says RP2350.</p>
+      <p class="blkp is-off" id="sgp-1">A lifetime, and the only one this driver has. It says the references in <b>leds</b> outlive the driver holding them. The board is what guarantees that, by handing over things that live for the whole run &mdash; Figure 7 shows the same slot filled in with <b>'static</b>.</p>
+      <p class="blkp is-off" id="sgp-2"><b>L</b> stands for whatever type the board hands over. The bound after the colon is everything this driver knows about it: that it implements <b>led::Led</b>, a trait of five methods &mdash; init, on, off, toggle, read. Which chip <b>L</b> belongs to is not knowable here.</p>
+      <p class="blkp is-off" id="sgp-3">How many there are, fixed when the board is compiled. The driver checks against it by hand, one line above the call: <b>if data &gt;= NUM_LEDS</b>. It has to, because indexing past the end of an array in safe Rust does not corrupt anything &mdash; it panics, and what that costs is Figure 8. Note what it is not: a pin number. This driver never learns which pins these are.</p>
+      <p class="blkp is-off" id="sgp-4">The one field: a reference to an array of references. This is the whole of what the driver can reach, and there is not a number in it.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice that there is one field. Everything this driver does to the machine, it does through that.</div>
+  <div class="instrument-note" id="fig1note">Notice that there is one field. This driver is the simplest in the tree; the middle capsule has four, and the largest has thirty-one. The count does not change the rule: a capsule reaches the machine through the fields it was handed, and nowhere else.</div>
 </figure>
 
 <section class="col">
@@ -1039,7 +1042,7 @@ dfn {
       <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The kernel notices and restarts the capsule</button>
       <button type="button" class="q-opt" id="qd-2" aria-pressed="false">The rest of the kernel waits for it to finish</button>
     </div>
-    <p class="q-answer is-off" id="qdn">Nothing. A timeslice governs a process; a capsule is <em>called</em> by the kernel and runs until it returns. This is the half of "semi-trusted" that the type system does not cover.</p>
+    <p class="q-answer is-off" id="qdn">Nothing. A capsule is not scheduled, so there is no moment at which the kernel gets control back and could decide anything about it. This is the half of "semi-trusted" the type system does not cover.</p>
   </div>
   <div class="q">
     <p class="q-ask">A board author hands the same pin to two capsules. What catches it?</p>
@@ -1071,6 +1074,7 @@ dfn {
     <li>The declaration in Figure 1, and the bounds check one line above the call &mdash; <code>capsules/core/src/led.rs</code>:71 and :112</li>
     <li>The five methods of the <code>Led</code> trait &mdash; <code>kernel/src/hil/led.rs</code>:19&ndash;32</li>
     <li>The capsule being 158 lines &mdash; <code>wc -l capsules/core/src/led.rs</code> at that commit</li>
+    <li>The middle capsule having four fields and the largest thirty-one &mdash; the 290 <code>pub struct</code> declarations under <code>capsules/</code> at that commit, excluding tests and virtualizers; the largest is <code>extra/src/rf233.rs</code></li>
     <li>The kernel having no allocator &mdash; <code>#![no_std]</code> at <code>kernel/src/lib.rs</code>:93, and no crate under <code>kernel/</code> or <code>chips/</code> declaring <code>extern crate alloc</code></li>
     <li>Four capsules on one serial port and two on one timer &mdash; <code>uart_mux</code> and <code>mux_alarm</code> in <code>boards/raspberry_pi_pico_2/src/main.rs</code>:318&ndash;411</li>
     <li>What a virtualizer is for &mdash; <code>capsules/core/src/virtualizers/virtual_uart.rs</code>:3, "this allows multiple Tock capsules to use the same UART bus"</li>
@@ -1125,7 +1129,7 @@ dfn {
   }
 
   /* ---------------- Figure 1: the declaration ---------------- */
-  group("sg-", "sgp-", 4, "", "is-on", "is-off");
+  group("sg-", "sgp-", 5, "", "is-on", "is-off");
 
   /* ---------------- Figure 2: which one compiles ---------------- */
   group("cd-", "cdp-", 3, "", "is-on", "is-off");

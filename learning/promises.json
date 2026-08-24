@@ -327,5 +327,12 @@
     "says": "never asks for memory it did not already have, which is the problem chapter 7 is about",
     "about": "ch07",
     "kept_by": "grant"
+  },
+  {
+    "id": "ch03-rust-book-chapter-10",
+    "in": "ch03",
+    "says": "which the Rust Book reaches in its chapter 10",
+    "about": null,
+    "why": "The Rust Book's chapter 10, not this series'. A prerequisite named for the reader, not a promise anybody here owes."
   }
 ]
