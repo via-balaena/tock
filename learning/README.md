@@ -24,7 +24,7 @@ arc closes where the first chapter said it would.
 | 1 | [Everything Is Memory](ch01-everything-is-memory/) | One store, from `str` to 3.3 V on a pin, and why nothing stops it landing anywhere | published |
 | 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
 | 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
-| 4 | What a process is | Kernel against application -- how an app is loaded, what its memory looks like, and why it is not simply more kernel | planned |
+| 4 | [What a Process Is](ch04-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
 | 5 | The memory protection unit | The hardware fence the kernel programs around a process before letting it run | planned |
 | 6 | Asking the kernel | The eight syscall classes, upcalls and allowed buffers: the only door through that fence | planned |
 | 7 | Grants | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator | planned |
@@ -322,6 +322,15 @@ sitting behind buttons a reader might never press. Four rules are enforced:
    what stops a term defined inline but absent from `MUST_DEFINE` from going
    missing at the end -- `compiler` had, while the chapter's own text promised
    every word it uses is collected there.
+   A chapter's own name is not running prose, and counting it made this rule
+   refuse correct work: chapter 4 is called "What a Process Is", so `process`
+   appeared at character 21 of what the scan called prose, several hundred
+   characters before the glossary that defines it. `<title>` is never rendered
+   in the page at all and `<h1>` is the masthead, so both are now cut before
+   the scan; chapters 5 and 7 are titled the same way and would have hit it
+   too. Everything else in the masthead -- the eyebrow, the standfirst -- is
+   prose a reader reads, and still counts, which a mutation confirms: put a
+   bare `process` in chapter 4's standfirst and the rule fires again.
 2. No sentence introduces more than two new technical terms, and none runs past
    34 words. The novel-term limit is the one with a mechanism behind it --
    cognitive load theory measures difficulty as how many unfamiliar things must

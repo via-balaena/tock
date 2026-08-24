@@ -1509,6 +1509,10 @@ MUST_DEFINE = {
         "board", "capsule", "generic", "HIL", "process", "struct", "trait",
         "unsafe", "virtualizer",
     ],
+    "ch04": [
+        "fault", "grant", "heap", "panic", "process", "scheduler", "stack",
+        "syscall", "TBF", "timeslice", "userspace",
+    ],
 }
 
 # Words this series has decided not to use, and why. Seeded from the places a
@@ -1561,6 +1565,16 @@ def _strip_for_prose(html):
     text = re.sub(r"<pre.*?</pre>", " ", text, flags=re.S)
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
     text = re.sub(r'<div class="sources">.*', " ", text, flags=re.S)
+    # A chapter's own name is not running prose. `<title>` is never rendered in
+    # the page at all -- it is the browser tab -- and `<h1>` is the masthead.
+    # Counting them was not a strict reading of the rule, it was measuring the
+    # wrong text: chapter 4 is called "What a Process Is", so the word `process`
+    # appeared at character 21, several hundred characters before the glossary
+    # that defines it, and the ordering rule refused a chapter for naming its
+    # own subject. Chapters 5 and 7 are titled the same way. Everything else in
+    # the masthead -- the eyebrow, the standfirst -- is prose and still counts.
+    text = re.sub(r"<title>.*?</title>", " ", text, flags=re.S | re.I)
+    text = re.sub(r"<h1[^>]*>.*?</h1>", " ", text, flags=re.S | re.I)
     # Diagram labels are not sentences, and a verbatim quotation cannot be
     # rewritten to suit a house style, so neither is held to the prose limits.
     text = re.sub(r"<svg.*?</svg>", " ", text, flags=re.S)

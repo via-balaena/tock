@@ -1,0 +1,1251 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>What a Process Is</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #616D72;
+  --rule:        #D3DBD8;
+  --rule-strong: #7D918A;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #77858C;
+    --rule:        #252F34;
+    --rule-strong: #556A73;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #77858C;
+  --rule:        #252F34;
+  --rule-strong: #556A73;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+p { margin: 0; }
+strong { font-weight: 600; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+.addr { color: var(--hot); font-weight: 500; }
+
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible,
+summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
+
+/* A small muted aside: provenance lines, caveats, footnotes. */
+/* An instrument whose content is a single code block, so the block can sit
+   flush against the frame instead of inside the usual padding. */
+
+/* An instrument that should hold the reading column's width rather than
+   breaking out wide. */
+
+/* ---------- code block ---------- */
+
+pre {
+  font-family: var(--mono);
+  font-size: .84rem;
+  line-height: 1.6;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  padding: .9rem 1rem;
+  overflow-x: auto;
+  margin: 0;
+  border-radius: 2px;
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+.next ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .35rem; }
+.next li::marker { font-family: var(--mono); color: var(--hot); }
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Beginner scaffolding. Everything below exists to lower reading cost:
+   a word defined where it is first used, a stated goal, an instruction above
+   each figure, a guess before each reveal, and a way to check yourself after.
+   --------------------------------------------------------------------------- */
+
+/* A word being defined, right where the reader meets it. */
+dfn {
+  font-style: normal;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+/* What the reader will be able to do. Stated before the work, not after. */
+.goals {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.goals h2 {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.goals ol { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals .cost {
+  font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem;
+}
+
+/* An imperative naming the control, immediately above the figure it drives. */
+.dothis {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--accent);
+  display: flex;
+  gap: .5rem;
+  align-items: baseline;
+}
+.dothis::before {
+  content: "\2192";
+  font-weight: 700;
+}
+
+/* Check yourself. Question visible, answer one click away. */
+.selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+/* Figure 12 keeps one <details> inside a .selfcheck, so these rules are still
+   load-bearing even though the six questions below no longer use any. Deleting
+   them along with the questions stripped that reveal of its box, and only a
+   render showed it. */
+.selfcheck details {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .75rem .95rem;
+}
+.selfcheck summary { cursor: pointer; font-weight: 600; line-height: 1.5; }
+.selfcheck summary::marker { color: var(--accent); }
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way Figure 14's cases are,
+   so a reader with no scripting gets all six answers rather than none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+/* The words, collected. */
+.glossary {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: .55rem 1.1rem;
+  margin: 0;
+  font-size: .97rem;
+  line-height: 1.55;
+}
+.glossary dt {
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: .12rem;
+}
+.glossary dd { margin: 0; color: var(--ink-soft); }
+
+/* Term against meaning, inline in the prose. Reuses the glossary's grid,
+   because that is the same shape and the reader meets it again at the end.
+   Three passages used to say this in sentences -- "X is A, meaning B. Y is C,
+   meaning D." -- which is a table asking to be held in the head. */
+.glossary.inline {
+  margin: .8rem 0;
+  grid-template-columns: minmax(6.5rem, auto) 1fr;
+  gap: .4rem 1rem;
+  font-size: .93rem;
+}
+/* The end-of-chapter glossary is a reference and is set quietly. These carry
+   the argument, so they read at the weight of the prose around them rather
+   than below it. */
+.glossary.inline dd { color: var(--ink); }
+
+/* ---------- shared by the three opening figures ---------- */
+
+.instrument-body svg {
+  width: 100%; height: auto; max-width: 100%;
+  color: var(--ink); overflow: visible; display: block;
+}
+
+.glossary.cast { align-items: start; }
+
+/* ---------- Figure 7: two boards, one capsule ---------- */
+.mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }
+.mo-fig.two { grid-template-columns: repeat(2, 1fr); }
+.mo {
+  border: 1px solid var(--rule); background: var(--surface-sunk);
+  padding: .7rem .8rem; border-radius: 2px;
+  /* Centred on purpose: three equal cards read as a timeline. A button is
+     centred by default, so saying it here is the difference between a decision
+     and an accident -- and the phone rule below overrides it, because a
+     full-width stacked card centred reads as a mistake. */
+  text-align: center;
+}
+.mo.is-on { border-color: var(--hot); background: var(--hot-soft); }
+.mo-when {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.mo.is-on .mo-when { color: var(--hot); }
+.mo-who { font-family: var(--mono); font-size: .9rem; color: var(--ink); }
+.mosay { display: flex; flex-direction: column; gap: .45rem; }
+.mop {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.mop b, .dbgp b, .loopp b, .costp b, .vtp b {
+  font-family: var(--mono); font-weight: 500; font-size: .88rem;
+}
+.mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+
+/* ---------- Figure 1: the parts of a declaration ---------- */
+.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
+/* Words of a program image, so they are addresses and must not be uppercased. */
+.blk button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.blk button[aria-pressed="true"] {
+  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
+}
+.blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
+.blkp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.blkp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+/* Seven explanations at once is a wall. The script shows one; with no
+   scripting none of that runs and all seven stay readable. */
+.blkp.is-off { display: none; }
+.blkp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- Figure 6: the board's two lines ---------- */
+.vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
+.vt button {
+  display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.vt button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.vt-at { color: var(--hot); }
+.vtsay { display: flex; flex-direction: column; gap: .45rem; }
+.vtp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.vtp.is-off { display: none; }
+
+/* ---------- Figure 2: three candidate lines ---------- */
+.loops { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; margin: .2rem 0 1rem; }
+.loops.three { grid-template-columns: repeat(3, 1fr); }
+.loop {
+  border: 1px solid var(--rule); background: var(--surface-sunk);
+  padding: .6rem .7rem; text-align: left; width: 100%;
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+}
+.loop[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.loop-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .35rem;
+}
+.loop[aria-pressed="true"] .loop-k { color: var(--hot); }
+.loop pre { margin: 0; font-family: var(--mono); font-size: .78rem; line-height: 1.5; color: var(--ink); white-space: pre; overflow-x: auto; }
+.loopsay { display: flex; flex-direction: column; gap: .45rem; }
+.loopp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.loopp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.loopp.is-off { display: none; }
+@media (max-width: 30rem) {
+  .loops { grid-template-columns: 1fr; }
+  .vt button { grid-template-columns: 1fr; gap: .1rem; }
+}
+
+/* ---------- Figure 3: counting the word ---------- */
+.costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
+/* These are lines of Rust, so their case is the content. */
+.costs button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  /* Lines of Rust. The longest wraps, and a button centres by default. */
+  text-align: left;
+  padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+.costgrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
+}
+.costcell {
+  border: 1px solid var(--rule); background: var(--surface-sunk); padding: .55rem .7rem;
+}
+.costcell-k {
+  font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
+.costcell-v.hot { color: var(--hot); }
+.costsay { display: flex; flex-direction: column; gap: .45rem; }
+.costp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.costp.is-off { display: none; }
+@media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
+
+/* ---------- Figure 4: six steps ---------- */
+.seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
+.seq button {
+  display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
+  align-items: baseline; text-align: left; width: 100%;
+  font-family: var(--body); font-size: .95rem; font-weight: 400; line-height: 1.5;
+  text-transform: none; letter-spacing: 0;
+  padding: .42rem .6rem; background: transparent;
+  border: 1px solid transparent; border-left: 2px solid var(--rule);
+  border-radius: 0; color: var(--ink-faint);
+}
+.seq button[aria-pressed="true"] {
+  color: var(--ink); background: var(--hot-soft); border-left-color: var(--hot);
+}
+.seq-n { font-family: var(--mono); font-size: .8rem; color: var(--ink-faint); }
+.seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
+.seq b { font-family: var(--mono); font-weight: 500; }
+.seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
+
+/* ---------- Figure 5: twelve addresses ---------- */
+.dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
+.dbg button {
+  display: grid; grid-template-columns: minmax(6.6rem, auto) minmax(6.6rem, auto) 1fr;
+  gap: .7rem; align-items: baseline;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .35rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.dbg button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.sr-at { color: var(--ink-faint); }
+.sr-ad { color: var(--hot); font-weight: 500; }
+.dbgsay { display: flex; flex-direction: column; gap: .45rem; }
+.dbgp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.dbgp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.dbgp.is-off { display: none; }
+
+@media (max-width: 30rem) {
+  .mo-fig { grid-template-columns: 1fr; }
+  .mo { text-align: left; }
+  /* Twelve rows of three fixed columns do not fit a phone; the address is what
+     the reader is scanning for, so it keeps the line and the rest wraps under. */
+  .dbg button { grid-template-columns: 1fr auto; gap: .1rem .6rem; }
+  .sr-at { grid-column: 1 / -1; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 4</p>
+  <h1>What a Process Is</h1>
+  <p class="standfirst">Chapter 3's guarantee came from the compiler: a capsule cannot reach what it cannot name. That works because the compiler saw every line. This chapter is about code the compiler never saw.</p>
+  <noscript>
+    <style>.dothis, .ifjs { display: none; }</style>
+    <p class="noscript-note">JavaScript appears to be off. Every explanation
+    this chapter relies on is in the prose and the drawn diagrams, and the lines
+    telling you to click things are hidden rather than left pointing at
+    nothing.</p>
+  </noscript>
+</header>
+
+<section class="col">
+  <div class="goals" id="goalbox">
+    <h2>What you'll be able to do at the end</h2>
+    <ul>
+      <li>Say what a <dfn>process</dfn> is on this board: what sits in flash, and what sits in RAM.</li>
+      <li>Explain why the kernel cannot make chapter 3's promise about one, and name what it uses instead.</li>
+      <li>Walk the search that finds every application at boot, and say what makes that search stop.</li>
+      <li>Say what a process is handed the moment it starts, and why it has to be handed anything.</li>
+    </ul>
+    <p class="cost">Plan on forty minutes. Chapters 1 to 3 are assumed: what an address is, how the kernel gets started, and what a capsule may touch. There is no new Rust here. Almost every line in this chapter is arithmetic.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Eleven words, before we start</h2>
+  <p>Each is one sentence now and repeated in context below. Two of them are about time rather than memory, which is new for this series.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary cast" id="words">
+    <dt><dfn>process</dfn></dt><dd>An application the kernel loads and runs, built somewhere else and never compiled by this tree.</dd>
+    <dt><dfn>userspace</dfn></dt><dd>Everything running under the kernel's supervision rather than as part of it.</dd>
+    <dt><dfn>TBF</dfn></dt><dd>Tock Binary Format: a header wrapped round an application so the kernel can find it and size it.</dd>
+    <dt><dfn>stack</dfn></dt><dd>The memory a running program uses for local variables and for remembering where to return to.</dd>
+    <dt><dfn>heap</dfn></dt><dd>The memory a program asks for while it is running, as opposed to memory it was given at the start.</dd>
+    <dt><dfn>scheduler</dfn></dt><dd>The part of the kernel that decides which process runs next.</dd>
+    <dt><dfn>timeslice</dfn></dt><dd>How long a process may run before the kernel takes the processor back.</dd>
+    <dt><dfn>fault</dfn></dt><dd>What the hardware raises when code touches memory it is not allowed to touch.</dd>
+    <dt><dfn>panic</dfn></dt><dd>Rust's word for stopping because something happened that never should have. Chapter 3 met the handler.</dd>
+    <dt><dfn>syscall</dfn></dt><dd>The one way a process may ask the kernel for anything at all. Chapter 6 is the whole of it.</dd>
+    <dt><dfn>grant</dfn></dt><dd>Memory a driver is lent inside a process, to keep that process's state in. Chapter 7 is about them.</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <h2>The compiler saw the capsule. It never sees the app.</h2>
+  <p>Chapter 3's answer rested on one fact that was never said out loud. Every line of a capsule went through the same compiler, in the same build, under a rule its crate could not switch off.</p>
+  <p>Take that away and there is nothing left. An application is not built here. It is a separate binary, produced by a separate set of tools, and the kernel meets it for the first time as bytes sitting in flash.</p>
+  <p>Tock's own specification is blunt about how far that goes. Applications, it says, may be "written in C (or even assembly)" and are still meant to work.</p>
+  <p>So chapter 3's question &mdash; what may this code touch? &mdash; has to be answered a second time, and none of the first answer survives.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">Five questions, asked of both kinds of code</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a question. Each panel answers it twice: once for a capsule, once for a process.</p>
+    <div class="blk" role="group" aria-label="Five questions asked of a capsule and of a process">
+      <button type="button" id="tw-0" aria-pressed="true">who compiled it</button>
+      <button type="button" id="tw-1" aria-pressed="false">what language</button>
+      <button type="button" id="tw-2" aria-pressed="false">where it lands</button>
+      <button type="button" id="tw-3" aria-pressed="false">what checks it</button>
+      <button type="button" id="tw-4" aria-pressed="false">what stops it</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="twp-0"><b>Capsule:</b> the same build as the kernel, in this tree, at the same moment. <b>Process:</b> not here. It was built somewhere else, possibly on another machine and possibly years earlier, and it arrives as bytes.</p>
+      <p class="blkp" id="twp-1"><b>Capsule:</b> Rust, and Rust with <b>#![forbid(unsafe_code)]</b> at the top of its crate. <b>Process:</b> anything at all that ends up as instructions this processor will execute.</p>
+      <p class="blkp" id="twp-2"><b>Capsule:</b> inside the kernel binary, in the 255&nbsp;kB of flash it is linked into. <b>Process:</b> a separate 256&nbsp;kB region that the kernel binary reserves and then never writes to.</p>
+      <p class="blkp" id="twp-3"><b>Capsule:</b> the compiler, once, before anything ran. <b>Process:</b> sixteen bytes of header at boot, and hardware for every instruction after that. Figure 2 is the sixteen bytes.</p>
+      <p class="blkp" id="twp-4"><b>Capsule:</b> nothing. Chapter 3 ended on exactly that. <b>Process:</b> the scheduler. A process has a timeslice, and the kernel gets the processor back whether the process agrees or not.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that only one of the five is about the code itself. A process is not defined by what it is written in. It is defined by the fact that nobody here compiled it.</div>
+</figure>
+
+<section class="col">
+  <h2>Sixteen bytes the kernel does trust</h2>
+  <p>Something has to be trusted, or the kernel cannot even work out where one application ends and the next begins. What it trusts is small, fixed in size, and sits right at the front.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">Every application starts with these five fields</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a field. The offsets are byte positions from the very start of the application.</p>
+    <div class="vt" role="group" aria-label="The five required fields of a TBF version 2 header">
+      <button type="button" id="hd-0" aria-pressed="true"><span class="vt-at">0&ndash;1</span><span>version</span></button>
+      <button type="button" id="hd-1" aria-pressed="false"><span class="vt-at">2&ndash;3</span><span>header_size</span></button>
+      <button type="button" id="hd-2" aria-pressed="false"><span class="vt-at">4&ndash;7</span><span>total_size</span></button>
+      <button type="button" id="hd-3" aria-pressed="false"><span class="vt-at">8&ndash;11</span><span>flags</span></button>
+      <button type="button" id="hd-4" aria-pressed="false"><span class="vt-at">12&ndash;15</span><span>checksum</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="hdp-0">Must be 2. On anything else the kernel does not try to read further, and it does not report a broken application either &mdash; it treats what it found as the end of the list. This is the field that ends the search, and Figure 3 is why that matters.</p>
+      <p class="vtp" id="hdp-1">How many bytes of header follow. Below 16 is refused, because 16 is what these five fields take. Above <b>total_size</b> is refused too, because a header cannot be longer than the thing containing it.</p>
+      <p class="vtp" id="hdp-2">The length of the whole application: header, code, everything. This is the number that says where the next one starts, and it is believed before anything has been verified. The parsing code says so in as many words: "we trust the value in flash".</p>
+      <p class="vtp" id="hdp-3">The lowest bit of this word is an on switch. An application with that bit clear is skipped rather than started, which is how a tool can leave one installed and switched off without erasing it.</p>
+      <p class="vtp" id="hdp-4">Every four-byte word of the header, exclusive-or'd together. It catches a header damaged on the way in. It is not a signature and does not pretend to be one: anyone who can write flash can write a matching checksum.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that all five describe the container and none describe the program. Nothing here says what the application does &mdash; only how long it is, and where the next one begins.</div>
+</figure>
+
+<section class="col">
+  <h2>Walking the list</h2>
+  <p>With those sixteen bytes the kernel can do the only thing it needs to do at boot: find every application, one after another, starting from a single address.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">Six steps that find every application, and one that stops</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a step. The last one is the interesting one, because nothing marks the end.</p>
+    <div class="seq" role="group" aria-label="Six steps in the kernel's search for applications">
+      <button type="button" id="wk-0" aria-pressed="true"><span class="seq-n">1</span><span>start at <b>_sapps</b> <span class="seq-src">main.rs:444</span></span></button>
+      <button type="button" id="wk-1" aria-pressed="false"><span class="seq-n">2</span><span>read eight bytes <span class="seq-src">process_loading.rs:302</span></span></button>
+      <button type="button" id="wk-2" aria-pressed="false"><span class="seq-n">3</span><span>is the version 2? <span class="seq-src">parse.rs:38</span></span></button>
+      <button type="button" id="wk-3" aria-pressed="false"><span class="seq-n">4</span><span>is the header a sane size? <span class="seq-src">parse.rs:52</span></span></button>
+      <button type="button" id="wk-4" aria-pressed="false"><span class="seq-n">5</span><span>skip forward <b>total_size</b> <span class="seq-src">process_loading.rs:347</span></span></button>
+      <button type="button" id="wk-5" aria-pressed="false"><span class="seq-n">6</span><span>go back to step 2 <span class="seq-src">process_loading.rs:329</span></span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="wkp-0">A name the linker script leaves behind, and nothing else. On this board it works out to <b>0x10040000</b>, the first address past the end of the kernel. Whatever has been written there since is what the kernel is about to find.</p>
+      <p class="dbgp" id="wkp-1">Eight is enough: version, then <b>header_size</b>, then <b>total_size</b>. That is all it takes to know how long this application claims to be, which is all it takes to find the next.</p>
+      <p class="dbgp" id="wkp-2">Two is the only version this kernel knows. Any other value ends the walk, and the comment beside it says why: "it is very possible the header we started to parse is intentionally invalid to signal the end of apps".</p>
+      <p class="dbgp" id="wkp-3">Under sixteen bytes cannot hold the five fields; longer than the application cannot fit inside it. Either way this one is skipped &mdash; but the walk carries on, because <b>total_size</b> is trusted on its own.</p>
+      <p class="dbgp" id="wkp-4">Applications are laid back to back with nothing between them. Adding <b>total_size</b> to where this one started gives where the next one starts. There is no pointer anywhere: the length is the link.</p>
+      <p class="dbgp" id="wkp-5">Erased flash reads as <b>0xFF</b> in every byte, so a region nobody has written has a version field of <b>0xFFFF</b>, which is not 2. The list ends because the next entry fails to be an entry at all.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice what never happens. No table of installed applications is read from anywhere, and no count is stored. The kernel finds them by walking, every boot, from one number.</div>
+</figure>
+
+<section class="col">
+  <h2>Where that number comes from</h2>
+  <p>That address is not a decision the kernel makes while it runs. It is fixed when the kernel is built, by the linker script: the file that decides what lands where. On this board it comes out at <code class="addr">0x10040000</code>, and the same file divides the whole chip in four.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">The Pico 2, divided in four</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a region. Every number here is read off this board's linker script.</p>
+    <div class="costs" role="group" aria-label="The four regions this board's linker script defines">
+      <button type="button" id="rg-0" aria-pressed="true">bootloader</button>
+      <button type="button" id="rg-1" aria-pressed="false">kernel</button>
+      <button type="button" id="rg-2" aria-pressed="false">applications</button>
+      <button type="button" id="rg-3" aria-pressed="false">application RAM</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">starts at</span><span class="costcell-v" id="rg-lo">0x10000000</span></div>
+      <div class="costcell"><span class="costcell-k">length</span><span class="costcell-v hot" id="rg-len">1 kB</span></div>
+      <div class="costcell"><span class="costcell-k">ends at</span><span class="costcell-v" id="rg-hi">0x10000400</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="rgp-0">Chapter 2's kilobyte. The boot ROM reads this before a single instruction of Tock runs, and everything after it depends on what it finds here.</p>
+      <p class="costp" id="rgp-1">Everything in this tree that ends up in the binary: the scheduler, the syscall layer, the chip crate, and every capsule chapter 3 was about. Two hundred and fifty-five kilobytes for all of it.</p>
+      <p class="costp" id="rgp-2">The applications, and the kernel never writes a byte of it. The linker even marks the section as one the loader should not fill in, which is why applications are flashed as a separate step. <b>_sapps</b> is the first of these addresses.</p>
+      <p class="costp" id="rgp-3">The only one of the four whose start is not a round number. It begins wherever the kernel's own zeroed data happens to end, so it moves whenever the kernel is rebuilt, and it runs to the last byte of the 520&nbsp;kB this chip has.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the two halves are divided in different ways. Flash is cut up by the linker before anything runs and cannot move. RAM is cut up while the kernel is running, one process at a time.</div>
+</figure>
+
+<section class="col">
+  <h2>One process's memory</h2>
+  <p>A process gets one contiguous run of RAM and nothing else. Seven boundaries divide it, and they are not all owned by the same side.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">Seven lines through one allocation, top to bottom</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a boundary. The left column says which side of the machine owns what is above it.</p>
+    <div class="dbg" role="group" aria-label="The seven named boundaries in a process's memory">
+      <button type="button" id="mm-0" aria-pressed="false"><span class="sr-at">kernel</span><span class="sr-ad">memory_start + memory_len</span><span>the top</span></button>
+      <button type="button" id="mm-1" aria-pressed="false"><span class="sr-at">kernel</span><span class="sr-ad">kernel_memory_break</span><span>grants grow down</span></button>
+      <button type="button" id="mm-2" aria-pressed="true"><span class="sr-at">app</span><span class="sr-ad">app_break</span><span>the ceiling</span></button>
+      <button type="button" id="mm-3" aria-pressed="false"><span class="sr-at">app</span><span class="sr-ad">app_heap_start</span><span>heap grows up</span></button>
+      <button type="button" id="mm-4" aria-pressed="false"><span class="sr-at">app</span><span class="sr-ad">data_start_pointer</span><span>globals</span></button>
+      <button type="button" id="mm-5" aria-pressed="false"><span class="sr-at">app</span><span class="sr-ad">current_stack_pointer</span><span>stack grows down</span></button>
+      <button type="button" id="mm-6" aria-pressed="false"><span class="sr-at">app</span><span class="sr-ad">memory_start</span><span>the bottom</span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp" id="mmp-0">The end of the allocation. Everything between here and <b>kernel_memory_break</b> belongs to the kernel, sits inside the process's own slice of RAM, and is what Figure 6 is about.</p>
+      <p class="dbgp" id="mmp-1">The kernel's floor. It starts at the very top and moves downward as grants are handed out, which is chapter 7. Below it is the process's.</p>
+      <p class="dbgp is-on" id="mmp-2">The ceiling, and the only line here the process can move. Above it is refused. It begins thirty-two bytes above <b>memory_start</b> &mdash; thirty-two, not thirty-two thousand &mdash; and the application has to raise it with a syscall before it can do anything at all.</p>
+      <p class="dbgp" id="mmp-3">Where the heap begins. It grows upward, towards <b>app_break</b>, and the distance between the two is how much room the application has left.</p>
+      <p class="dbgp" id="mmp-4">The application's globals: whatever it started life knowing. Below this line the stack begins, and the two never move towards each other.</p>
+      <p class="dbgp" id="mmp-5">How far down the stack has got so far. Everything between here and <b>memory_start</b> is unused, and running out of it means running into the bottom.</p>
+      <p class="dbgp" id="mmp-6">The bottom, and the number the kernel hands the process as its second argument in Figure 8. The process is told this address. It has no way to work it out.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that three of the seven move while the process runs, and that two of those three move towards each other. The heap climbs, the kernel's floor descends, and the gap between them is all there is.</div>
+</figure>
+
+<section class="col">
+  <h2>What the kernel keeps inside your memory</h2>
+  <p>Chapter 3 noticed something in passing that pays off here: there is no allocator. The kernel never asks for memory, because there is nothing to ask.</p>
+  <p>So when it needs somewhere to keep its record of a process, there is exactly one place available &mdash; the memory it has just handed that process.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Three things above the line, in your allocation</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each one. All three sit above <code>kernel_memory_break</code>, inside the process's own RAM.</p>
+    <div class="blk" role="group" aria-label="Three kernel structures kept inside a process's memory">
+      <button type="button" id="ks-0" aria-pressed="true">the control block</button>
+      <button type="button" id="ks-1" aria-pressed="false">the upcall queue</button>
+      <button type="button" id="ks-2" aria-pressed="false">the grant pointers</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="ksp-0">The kernel's whole record of this process: which state it is in, its saved registers, its identifier, its counters. The reservation is written as <b>size_of::&lt;ProcessStandard&gt;()</b> plus its alignment, so the structure describing the process is stored in the process.</p>
+      <p class="blkp" id="ksp-1">Room for ten calls waiting to go back into the application. Ten is a single constant, <b>CALLBACK_LEN</b>, and it is the same ten on every board. What puts things in this queue is chapter 6.</p>
+      <p class="blkp" id="ksp-2">One empty slot for every grant the board's capsules declared, counted once at boot and never counted again. Filling them is chapter 7, and this reservation is the reason that chapter can exist.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice what this makes true. A process's memory is what the application asked for plus everything the kernel needs in order to remember it &mdash; and the second part is charged to the first.</div>
+</figure>
+
+<section class="col">
+  <h2>Told where it is</h2>
+  <p>An application is built without knowing where it will end up. Its RAM depends on how much the board has and what else is installed, and neither is known when it is compiled.</p>
+  <p>There are three ways out of that, and two of them are in this tree.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">Three answers to one problem, one of them Tock's</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Guess which one this kernel does by default, then click it.</p>
+    <div class="loops three" role="group" aria-label="Three ways to place a program that was built without knowing where it would go">
+      <button type="button" class="loop" id="pl-0" aria-pressed="true">
+        <span class="loop-k">rewrite it</span>
+<pre>for each address in binary:
+    address += where_it_landed</pre></button>
+      <button type="button" class="loop" id="pl-1" aria-pressed="false">
+        <span class="loop-k">demand a spot</span>
+<pre>TbfHeaderV2FixedAddresses {
+  start_process_ram,
+  start_process_flash,
+}</pre></button>
+      <button type="button" class="loop" id="pl-2" aria-pressed="false">
+        <span class="loop-k">just tell it</span>
+<pre>argument0: app_start,
+argument1: memory_start,
+argument2: memory_len,
+argument3: app_break,</pre></button>
+    </div>
+    <div class="loopsay">
+      <p class="loopp is-on" id="plp-0">What a desktop operating system does, and what this kernel never does. Nothing in Tock walks an application's binary and edits it, and flash is not the kind of memory you could edit in place anyway.</p>
+      <p class="loopp" id="plp-1">Real, and rarely used. An application can state in its header exactly where it insists on being put. The kernel either finds it that spot or refuses to load it, with an error of its own: <b>MemoryAddressMismatch</b>.</p>
+      <p class="loopp" id="plp-2">The default, and the reason for the next figure. The kernel places the application wherever it likes and hands it four numbers on the way in, and the application works everything else out from those.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the third is the only one where the application does the work. The kernel does not adapt the program to the machine. It tells the program what machine it woke up on.</div>
+</figure>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-title">Four numbers, handed over at the door</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click an argument. These are registers 0 to 3 the first time the application ever runs.</p>
+    <div class="seq" role="group" aria-label="The four arguments a process is started with">
+      <button type="button" id="ag-0" aria-pressed="true"><span class="seq-n">0</span><span><b>app_start</b> &mdash; where this application's code begins</span></button>
+      <button type="button" id="ag-1" aria-pressed="false"><span class="seq-n">1</span><span><b>memory_start</b> &mdash; the bottom of its RAM</span></button>
+      <button type="button" id="ag-2" aria-pressed="false"><span class="seq-n">2</span><span><b>memory_len</b> &mdash; how much RAM it was given</span></button>
+      <button type="button" id="ag-3" aria-pressed="false"><span class="seq-n">3</span><span><b>app_break</b> &mdash; the top of what it may touch</span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="agp-0">Not the start of the header: the start of the code, past the header and past any bytes the kernel is keeping to itself. The first instruction is at another offset again, and that one goes into the program counter rather than a register.</p>
+      <p class="dbgp" id="agp-1">The bottom of Figure 5. Every address the application works out for itself is worked out from this one, which is why it is handed over rather than assumed.</p>
+      <p class="dbgp" id="agp-2">How much was allocated &mdash; and notice what that includes. The three structures in Figure 6 are inside this length. The application is told the size of a region whose top it may never touch.</p>
+      <p class="dbgp" id="agp-3">The ceiling, and the number the application will immediately try to raise. On this processor it arrives thirty-two bytes above <b>memory_start</b>, which is one stack frame and nothing else.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that not one of the four is a constant. The same application, flashed to a board with different memory or with another application already installed, gets four different numbers and runs anyway.</div>
+</figure>
+
+<section class="col">
+  <h2>Six states a capsule cannot be in</h2>
+  <p>Chapter 3 ended on a capsule that loops forever, and on the fact that nothing stops it. A process is the other case entirely: the kernel keeps a state for it, and can move it between them.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-title">The six states, and how a process leaves each</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a state. Two of the six are the ones a process ends in rather than passes through.</p>
+    <div class="blk" role="group" aria-label="The six states a process can be in">
+      <button type="button" id="ps-0" aria-pressed="true">Running</button>
+      <button type="button" id="ps-1" aria-pressed="false">Yielded</button>
+      <button type="button" id="ps-2" aria-pressed="false">YieldedFor</button>
+      <button type="button" id="ps-3" aria-pressed="false">Stopped</button>
+      <button type="button" id="ps-4" aria-pressed="false">Faulted</button>
+      <button type="button" id="ps-5" aria-pressed="false">Terminated</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="psp-0">Has work to do. Note the wording in the source: it "may not be currently scheduled", but it wants to be. Running is about willingness, not about which process holds the processor this instant.</p>
+      <p class="blkp" id="psp-1">Asked to be set aside, by making the one call that means "wake me when something happens". This is where a well-behaved application spends nearly all of its life.</p>
+      <p class="blkp" id="psp-2">The same, but narrower: wake me when <em>this particular</em> thing happens. The kernel will not schedule it until that one driver calls back, and which call it is waiting for is stored with the state.</p>
+      <p class="blkp" id="psp-3">Set aside by somebody else rather than by itself. The state carries the state it was in when it was stopped, so that resuming it puts it back where it was rather than at the beginning.</p>
+      <p class="blkp" id="psp-4">It touched something it should not have, and the hardware said so. A faulted process cannot simply be restarted &mdash; it has to be terminated first, so that everything it owned is cleaned up.</p>
+      <p class="blkp" id="psp-5">Finished, or killed. Everything it had has been released, and a process in this state can be run again from the beginning if somebody asks for it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that a capsule has none of these. It is called, it returns, and there is no state anywhere describing it in between &mdash; which is exactly why chapter 3's loop could not be stopped.</div>
+</figure>
+
+<section class="col">
+  <h2>Who decides what a fault costs</h2>
+  <p>Faulted is a state, not an outcome. What actually happens to the process next is a decision the board makes, in one line, and boards do not agree.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 10</span>
+    <span class="instrument-title">The same fault, two boards</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a board. One application faults on each; the other applications are innocent.</p>
+    <div class="mo-fig two" role="group" aria-label="Two boards with different responses to a process fault">
+      <button type="button" class="mo is-on" id="fp-0" aria-pressed="true">
+        <span class="mo-when">Pico 2</span><span class="mo-who">PanicFaultPolicy</span></button>
+      <button type="button" class="mo" id="fp-1" aria-pressed="false">
+        <span class="mo-when">imix</span><span class="mo-who">StopFaultPolicy</span></button>
+    </div>
+    <div class="mosay">
+      <p class="mop is-on" id="fpp-0">The whole board panics. Not the process &mdash; the machine. The handler chapter 3 ended on takes over, every other application stops with it, and the LED starts blinking its message out on GPIO&nbsp;25.</p>
+      <p class="mop" id="fpp-1">That one process stops and is never scheduled again. Everything else carries on, and nothing is printed. Seven of these policies exist in the tree, and choosing between them is one line of the board's <b>main.rs</b>.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice where the decision lives. This is the same shape as chapter 3's Figure 6: the mechanism is in the kernel, and which way it points is one line in a file the board author owns.</div>
+</figure>
+
+<section class="col">
+  <h2>What this does not buy</h2>
+  <p>Every boundary in this chapter is a number in a struct. <code>app_break</code> is a field. <code>memory_len</code> is a field. The kernel can read them, compare them and print them.</p>
+  <p>An application that stores one byte past <code>app_break</code> consults none of it. Chapter 1's store instruction does not ask the kernel's permission, and there is no line of Rust anywhere that could make it.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary inline" id="pairs-enforce">
+    <dt>what the kernel knows</dt><dd>where the boundary is, in a field it can read at any time</dd>
+    <dt>what enforces it</dt><dd>hardware, programmed with those same numbers before every switch into the process</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <p>So this chapter has described a fence and not built one. The part that builds it is a small piece of hardware inside the processor, it has to be reprogrammed on every switch, and it is chapter 5.</p>
+</section>
+
+<section class="col">
+  <h2>Check yourself</h2>
+</section>
+
+<div class="col selfcheck">
+  <div class="q">
+    <p class="q-ask">The first four bytes of an application read <code>02 00 60 00</code>. What has the kernel learned?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the first question">
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false">The version is 2, and the header is 96 bytes long</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">The version is 2, and the whole application is 96 bytes</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">The version is 2, and the next application is 96 bytes on</button>
+    </div>
+    <p class="q-answer" id="qan">The header. Bytes 0 and 1 are the version, lowest byte first, so <code>02 00</code> is 2. Bytes 2 and 3 are <code>header_size</code> the same way, so <code>60 00</code> is 0x0060, which is 96. The length of the whole thing is in the next four bytes, which have not been read yet.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">Why is a process told the address of its own memory as it starts?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the second question">
+      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">Because nothing rewrote its addresses when it was placed</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Because the kernel wants it to confirm where it has been put</button>
+      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Because the hardware fence is built from what the process reports</button>
+    </div>
+    <p class="q-answer" id="qbn">Because it was placed rather than adapted. Figure 7's first option is the one nobody took. No code in this kernel edits an application's binary, so it arrives still holding whatever addresses it was built with, and has to be told the rest.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A process is given two kilobytes of RAM. How much may it touch at its first instruction?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the third question">
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">All of it, less whatever the grant pointers take</button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">Thirty-two bytes, until it asks the kernel for more</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">Half of it, with the rest held back for its stack</button>
+    </div>
+    <p class="q-answer" id="qcn">Thirty-two. <code>app_break</code> starts one exception frame above the bottom, which is the least that lets the kernel switch into the process at all. Raising it is a syscall, and it is one of the first things any application does.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A process on this board stores one byte past <code>app_break</code>. What happens?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the fourth question">
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">It stops, and the other applications carry on running</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The whole board panics, and everything on it stops</button>
+      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">It restarts from the beginning with its memory cleared</button>
+    </div>
+    <p class="q-answer" id="qdn">On this board, the second. All three are real policies and four more exist beside them; which one applies is one line near the top of the board's <code>main.rs</code>. The Pico 2 names <code>PanicFaultPolicy</code>, so one misbehaving application takes the machine down with it.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>What you can say now</h2>
+  <p>A process is a binary this tree never compiled. It is found by walking flash from one linker symbol, and sized by sixteen bytes at its front. It is given a run of RAM with the kernel's own record of it hidden at the top, and told in four numbers where it landed.</p>
+  <p>Every edge in that description is a field the kernel holds. Not one of them stops an instruction. What does is a piece of hardware nobody has mentioned yet.</p>
+</section>
+
+<div class="col next">
+  <p class="eyebrow forward">Next</p>
+  <h3 style="margin-top:0">Chapter 5 &mdash; The memory protection unit</h3>
+  <p>The fence this chapter described and did not build. Eight regions, a handful of registers, and a rule about sizes that shapes how much RAM every application on the board is allowed to have. On the way: what happens in the instant a process touches the wrong address.</p>
+</div>
+
+<section class="col sources">
+  <h3>Everything above, checked against source</h3>
+  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>, the same commit chapter 3 was pinned to. Nothing here was written from memory.</p>
+  <ul>
+    <li>Applications being separate images, untrusted, and possibly "written in C (or even assembly)" &mdash; <code>doc/reference/trd104-syscalls.md</code>:24&ndash;28</li>
+    <li>The five required header fields, in the order Figure 2 shows them &mdash; <code>libraries/tock-tbf/src/types.rs</code>:114&ndash;120</li>
+    <li>Version 2 being the only version parsed, and the sixteen-byte floor &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:36&ndash;56</li>
+    <li>"we trust the value in flash", of <code>total_size</code> &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:44&ndash;47</li>
+    <li>The enable switch being the lowest bit of <code>flags</code> &mdash; <code>libraries/tock-tbf/src/types.rs</code>:698&ndash;702. The comment there calls it "bit 1"; the code tests <code>flags &amp; 0x00000001</code>, which is bit 0</li>
+    <li>The checksum being every four-byte word of the header exclusive-or'd together &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:81&ndash;95</li>
+    <li>The walk: eight bytes, then <code>total_size</code> forward, then again &mdash; <code>kernel/src/process_loading.rs</code>:295&ndash;354</li>
+    <li>A header "intentionally invalid to signal the end of apps" &mdash; <code>kernel/src/process_loading.rs</code>:329&ndash;333</li>
+    <li>The board declaring <code>_sapps</code>, <code>_eapps</code>, <code>_sappmem</code> and <code>_eappmem</code>, and handing all four to the loader &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:444&ndash;463</li>
+    <li>The four regions and their sizes in Figure 4 &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>:14&ndash;17</li>
+    <li><code>_sapps</code> at the start of the <code>prog</code> region and <code>_eapps</code> one length later &mdash; <code>boards/build_scripts/tock_kernel_layout.ld</code>:304&ndash;324</li>
+    <li>The <code>.apps</code> section marked <code>NOLOAD</code>, so applications are flashed separately from the kernel &mdash; the same file, :293&ndash;304</li>
+    <li>The four <code>0xFF</code> placeholder bytes the linker writes there &mdash; the same file, :318&ndash;321</li>
+    <li><code>_sappmem</code> beginning after the kernel's zeroed data, and <code>_eappmem</code> at the last byte of RAM &mdash; the same file, :350&ndash;366</li>
+    <li>The seven boundaries in Figure 5 &mdash; the diagram above <code>memory_start</code>, <code>kernel/src/process_standard.rs</code>:449&ndash;473</li>
+    <li>The three kernel structures reserved inside a process's allocation &mdash; <code>kernel/src/process_standard.rs</code>:1824&ndash;1829, drawn again at :1995&ndash;2015</li>
+    <li>Ten upcalls, and the constant that says so &mdash; <code>kernel/src/process_standard.rs</code>:1729</li>
+    <li>The control block reservation being <code>size_of::&lt;ProcessStandard&gt;()</code> plus its alignment &mdash; :1753 and :1755</li>
+    <li>One grant pointer per grant, counted once at boot &mdash; :1811&ndash;1813 and :2108</li>
+    <li><code>app_break</code> starting <code>initial_process_app_brk_size()</code> above <code>memory_start</code> &mdash; :1841&ndash;1843 and :2083</li>
+    <li>That size being 32 bytes, one Cortex-M exception frame &mdash; <code>arch/cortex-m/src/syscall.rs</code>:196 and :273&ndash;277</li>
+    <li>The initially accessible bytes being zeroed, so a process cannot read what a previous one left &mdash; <code>kernel/src/process_standard.rs</code>:2054&ndash;2075</li>
+    <li>The four arguments in Figure 8, and the entry point going in separately &mdash; <code>kernel/src/process_standard.rs</code>:2303&ndash;2343</li>
+    <li><code>memory_len</code> being the whole allocation, kernel structures included &mdash; :2046 and :2216</li>
+    <li>The four arguments landing in registers 0 to 3, and the entry point going into the program counter &mdash; <code>arch/cortex-m/src/syscall.rs</code>:404 and :410&ndash;413, in <code>set_process_function</code> at :376</li>
+    <li>Fixed addresses as the alternative to being told, and the error when they cannot be met &mdash; <code>libraries/tock-tbf/src/types.rs</code>:204&ndash;213 and <code>kernel/src/process_loading.rs</code>:54&ndash;58</li>
+    <li>The six states and the wording of each &mdash; <code>kernel/src/process.rs</code>:963&ndash;997</li>
+    <li>A faulted process having to be terminated before it can run again &mdash; <code>kernel/src/process.rs</code>:959&ndash;962 and :989&ndash;992</li>
+    <li>Seven fault policies existing &mdash; <code>capsules/system/src/process_policies.rs</code>, at :16, :25, :36, :49, :58, :75 and :100</li>
+    <li>The Pico 2 choosing <code>PanicFaultPolicy</code> and imix choosing <code>StopFaultPolicy</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:71 and <code>boards/imix/src/main.rs</code>:95</li>
+    <li>Four process slots on this board &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:75</li>
+  </ul>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
+</section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Same shape as chapter 3: one group of buttons, one group of panels, same
+     index. The panel class differs between components only because each was
+     styled for its own figure. */
+  function group(btn, panel, n, cls, onCls, offCls, extra) {
+    function pick(k) {
+      var i, b, p;
+      for (i = 0; i < n; i++) {
+        b = document.getElementById(btn + i);
+        p = document.getElementById(panel + i);
+        b.setAttribute("aria-pressed", i === k ? "true" : "false");
+        if (cls) { b.classList.toggle(cls, i === k); }
+        p.classList.toggle(onCls, i === k);
+        if (offCls) { p.classList.toggle(offCls, i !== k); }
+      }
+      if (extra) { extra(k); }
+    }
+    var i, opening = 0;
+    for (i = 0; i < n; i++) {
+      (function (k) {
+        document.getElementById(btn + k)
+          .addEventListener("click", function () { pick(k); });
+      }(i));
+      if (document.getElementById(btn + i)
+            .getAttribute("aria-pressed") === "true") { opening = i; }
+    }
+    // The markup ships every panel showing, so a reader with no JavaScript
+    // meets all of them rather than one. Putting the rest away is this
+    // function's first job, not the markup's.
+    pick(opening);
+  }
+
+  /* ---------------- Figure 1: capsule against process ---------------- */
+  group("tw-", "twp-", 5, "", "is-on", "is-off");
+
+  /* ---------------- Figure 2: the header fields ---------------- */
+  group("hd-", "hdp-", 5, "", "is-on", "is-off");
+
+  /* ---------------- Figure 3: the walk ---------------- */
+  group("wk-", "wkp-", 6, "", "is-on", "is-off");
+
+  /* ---------------- Figure 4: the four regions ----------------
+     Every number here is read off boards/raspberry_pi_pico_2/layout.ld. The
+     application RAM row has no fixed start, because it begins wherever the
+     kernel's own zeroed data ends, so it says that instead of a number. */
+  (function () {
+    var REGIONS = [
+      ["0x10000000", "1 kB", "0x10000400"],
+      ["0x10000400", "255 kB", "0x10040000"],
+      ["0x10040000", "256 kB", "0x10080000"],
+      ["kernel's end", "the rest", "0x20082000"]
+    ];
+    group("rg-", "rgp-", 4, "", "is-on", "is-off", function (k) {
+      document.getElementById("rg-lo").textContent = REGIONS[k][0];
+      document.getElementById("rg-len").textContent = REGIONS[k][1];
+      document.getElementById("rg-hi").textContent = REGIONS[k][2];
+    });
+  }());
+
+  /* ---------------- Figure 5: seven boundaries ----------------
+     Opens on app_break rather than the top, because that is the one boundary
+     the process itself can move and the rest are read against it. */
+  group("mm-", "mmp-", 7, "", "is-on", "is-off");
+
+  /* ---------------- Figure 6: the kernel's own structures ---------------- */
+  group("ks-", "ksp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 7: three ways to place a program ---------------- */
+  group("pl-", "plp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 8: the four arguments ---------------- */
+  group("ag-", "agp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 9: the six states ---------------- */
+  group("ps-", "psp-", 6, "", "is-on", "is-off");
+
+  /* ---------------- Figure 10: two boards, two policies ---------------- */
+  group("fp-", "fpp-", 2, "is-on", "is-on", "");
+
+  /* ---------------- Check yourself ----------------
+     The answer text is in the markup; this only reveals it and marks which
+     option was right, so nothing a reader needs is stored in here. */
+  (function () {
+    function quiz(prefix, n, right, answer) {
+      var i;
+      // Same rule: the answer is in the markup, visible, and script is what
+      // hides it until the reader has committed to a guess.
+      document.getElementById(answer).classList.add("is-off");
+      for (i = 0; i < n; i++) {
+        (function (k) {
+          document.getElementById(prefix + k)
+            .addEventListener("click", function () {
+              var j, b;
+              for (j = 0; j < n; j++) {
+                b = document.getElementById(prefix + j);
+                b.setAttribute("aria-pressed", j === k ? "true" : "false");
+                b.classList.toggle("is-right", j === right);
+                b.classList.toggle("is-wrong", j === k && k !== right);
+              }
+              document.getElementById(answer).classList.remove("is-off");
+            });
+        }(i));
+      }
+    }
+    quiz("qa-", 3, 0, "qan");
+    quiz("qb-", 3, 0, "qbn");
+    quiz("qc-", 3, 1, "qcn");
+    quiz("qd-", 3, 1, "qdn");
+  }());
+
+}());
+</script>

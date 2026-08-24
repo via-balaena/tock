@@ -334,5 +334,173 @@
     "says": "which the Rust Book reaches in its chapter 10",
     "about": null,
     "why": "The Rust Book's chapter 10, not this series'. A prerequisite named for the reader, not a promise anybody here owes."
+  },
+  {
+    "id": "ch04-thesis-ch03",
+    "in": "ch04",
+    "says": "Chapter 3's guarantee came from the compiler",
+    "about": "ch03",
+    "kept_by": "fields it was handed"
+  },
+  {
+    "id": "ch04-goal-ch03-promise",
+    "in": "ch04",
+    "says": "chapter 3's promise about one",
+    "about": "ch03",
+    "kept_by": "cannot touch memory it was never handed"
+  },
+  {
+    "id": "ch04-prereq-chapters",
+    "in": "ch04",
+    "says": "Chapters 1 to 3 are assumed",
+    "about": "ch01",
+    "kept_by": "write any address"
+  },
+  {
+    "id": "ch04-glossary-panic-ch03",
+    "in": "ch04",
+    "says": "Chapter 3 met the handler",
+    "about": "ch03",
+    "kept_by": "panic_handler"
+  },
+  {
+    "id": "ch04-glossary-syscall-ch06",
+    "in": "ch04",
+    "says": "Chapter 6 is the whole of it",
+    "about": "ch06",
+    "kept_by": "syscall"
+  },
+  {
+    "id": "ch04-glossary-grant-ch07",
+    "in": "ch04",
+    "says": "Chapter 7 is about them",
+    "about": "ch07",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch04-open-ch03-fact",
+    "in": "ch04",
+    "says": "Chapter 3's answer rested on one fact",
+    "about": "ch03",
+    "kept_by": "forbid(unsafe_code)"
+  },
+  {
+    "id": "ch04-question-again-ch03",
+    "in": "ch04",
+    "says": "So chapter 3's question",
+    "about": "ch03",
+    "kept_by": "allowed to touch"
+  },
+  {
+    "id": "ch04-fig1-stops-ch03",
+    "in": "ch04",
+    "says": "Chapter 3 ended on exactly that",
+    "about": "ch03",
+    "kept_by": "is not scheduled"
+  },
+  {
+    "id": "ch04-fig4-boot-ch02",
+    "in": "ch04",
+    "says": "Chapter 2's kilobyte",
+    "about": "ch02",
+    "kept_by": "first kilobyte"
+  },
+  {
+    "id": "ch04-fig4-capsules-ch03",
+    "in": "ch04",
+    "says": "every capsule chapter 3 was about",
+    "about": "ch03",
+    "kept_by": "capsule"
+  },
+  {
+    "id": "ch04-fig5-grants-ch07",
+    "in": "ch04",
+    "says": "as grants are handed out, which is chapter 7",
+    "about": "ch07",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch04-noalloc-ch03",
+    "in": "ch04",
+    "says": "Chapter 3 noticed something in passing",
+    "about": "ch03",
+    "kept_by": "no allocator"
+  },
+  {
+    "id": "ch04-fig6-upcalls-ch06",
+    "in": "ch04",
+    "says": "What puts things in this queue is chapter 6",
+    "about": "ch06",
+    "kept_by": "upcall"
+  },
+  {
+    "id": "ch04-fig6-grants-ch07",
+    "in": "ch04",
+    "says": "Filling them is chapter 7",
+    "about": "ch07",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch04-fig9-loop-ch03",
+    "in": "ch04",
+    "says": "Chapter 3 ended on a capsule that loops forever",
+    "about": "ch03",
+    "kept_by": "never returns"
+  },
+  {
+    "id": "ch04-fig9-note-ch03",
+    "in": "ch04",
+    "says": "why chapter 3's loop could not be stopped",
+    "about": "ch03",
+    "kept_by": "is not scheduled"
+  },
+  {
+    "id": "ch04-fig10-handler-ch03",
+    "in": "ch04",
+    "says": "The handler chapter 3 ended on takes over",
+    "about": "ch03",
+    "kept_by": "GPIO 25"
+  },
+  {
+    "id": "ch04-fig10-shape-ch03",
+    "in": "ch04",
+    "says": "the same shape as chapter 3's Figure 6",
+    "about": "ch03",
+    "kept_by": "Figure 6"
+  },
+  {
+    "id": "ch04-enforce-ch01",
+    "in": "ch04",
+    "says": "Chapter 1's store instruction",
+    "about": "ch01",
+    "kept_by": "store"
+  },
+  {
+    "id": "ch04-fence-ch05",
+    "in": "ch04",
+    "says": "and it is chapter 5",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch04-next-ch05",
+    "in": "ch04",
+    "says": "Chapter 5 - The memory protection unit",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch04-pin-ch03",
+    "in": "ch04",
+    "says": "the same commit chapter 3 was pinned to",
+    "about": "ch03",
+    "kept_by": "08894c2e0"
+  },
+  {
+    "id": "ch04-eapps-later",
+    "in": "ch04",
+    "says": "_eapps one length later",
+    "about": null,
+    "why": "'later' here is a position in flash, not a later chapter: _eapps sits one region-length past _sapps, which is what that source line is stating."
   }
 ]
