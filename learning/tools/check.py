@@ -1165,6 +1165,15 @@ def wired_checks(html):
     return problems
 
 
+# Words that head a selector part without naming an element: at-rule keywords
+# and the bare-word pieces of a media query. Plus the three elements a browser
+# creates whether or not the file writes them -- these pages open at `<title>`
+# and have no `<html>` or `<body>` tag anywhere, and `body { ... }` is the rule
+# that paints the background.
+CSS_NOT_TAGS = {"from", "to", "and", "not", "only", "screen", "print", "all",
+                "html", "body", "head"}
+
+
 def dead_css_checks(html):
     """A rule whose class or id appears nowhere else on the page.
 
@@ -1179,6 +1188,16 @@ def dead_css_checks(html):
     somebody copies the sheet again for the next chapter, and then it is
     inherited rather than found. It also makes the sheet lie about what the
     page contains, which is the thing a reader of the source trusts it for.
+
+    Class and id tokens were the whole of it for a while, which left a rule
+    made only of element names invisible. `.selfcheck details`, `.selfcheck
+    summary` and `summary:focus-visible` rode from chapter 1 into chapters 3
+    and 4, neither of which contains a `<details>` anywhere -- and the comment
+    above them asserted they were "still load-bearing", which is how they
+    survived five review passes of chapter 3. So a tag named in a selector has
+    to appear in the markup too. The test is narrow on purpose: only element
+    names occurring nowhere on the page are refused, so `p`, `button` and the
+    rest are never in question.
     """
     if "</style>" not in html:
         return []
@@ -1195,6 +1214,10 @@ def dead_css_checks(html):
     # word "cost" occurs in a figure title three screens away.
     live = set()
     markup = re.sub(r"<script.*?</script>", " ", rest, flags=re.S)
+    tags = set(t.lower() for t in re.findall(r"<([A-Za-z][\w-]*)", markup))
+    # A script can create elements as well as write classes.
+    tags.update(t.lower() for t in
+                re.findall(r'createElement\(\s*["\']([A-Za-z][\w-]*)', rest))
     for value in re.findall(r'\b(?:class|id)="([^"]*)"', markup):
         live.update(re.findall(r"[\w-]+", value))
     if "<script>" in rest:
@@ -1228,6 +1251,17 @@ def dead_css_checks(html):
                             problems.append(
                                 "%s styles .%s, which the page never uses"
                                 % (selector, token))
+                    # Type selectors: the name heading a compound, not the word
+                    # after a dot, a hash or a colon.
+                    for part in re.split(r"[\s>+~,]+", selector):
+                        name = re.match(r"([A-Za-z][\w-]*)", part)
+                        if not name:
+                            continue
+                        tag = name.group(1).lower()
+                        if tag not in tags and tag not in CSS_NOT_TAGS:
+                            problems.append(
+                                "%s styles <%s>, which the page has none of"
+                                % (selector, tag))
             depth += 1
         elif c == "}":
             depth -= 1

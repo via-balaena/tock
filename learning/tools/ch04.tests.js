@@ -441,3 +441,65 @@ chk("and TBF is used where the chapter is about a TBF header",
   }
   chk("the right answer is never the one shortest option", uniqueShortest, 0);
 }());
+
+// ---- what the second review pass found ----
+// Figure 4's last row and Figure 5 were the same memory at two scales, and
+// nothing joined them. `_sappmem` was cited in the sources and named nowhere on
+// the page, so a reader finishing Figure 5 could not say where memory_start
+// came from.
+chk("the pool and one slice out of it are joined",
+    REG["poolbridge"].textContent.indexOf("Figure 4's last row") > -1, true);
+
+// The chapter was singular end to end while two figures leaned on there being
+// more than one process. NUM_PROCS = 4 was cited and claimed nowhere.
+chk("the chapter says how many fit at a time",
+    REG["plural"].textContent.indexOf("four at a time") > -1, true);
+chk("and that they are handed memory in the order they were found",
+    REG["plural"].textContent.indexOf("in the order it found them") > -1, true);
+
+// Figures 5, 6 and 9 describe ProcessStandard. Pass 1 caught the CALLBACK_LEN
+// instance of stating an implementation's property as Tock's; this is the
+// general case, in a chapter whose method is "the board decides".
+chk("the chapter says whose implementation this is",
+    REG["whoseimpl"].textContent.indexOf("ProcessStandard") > -1, true);
+
+// Four sources bullets backed claims the page did not make. The one that was a
+// real loss: the kernel zeroes what a process can reach before it runs, which
+// is the only isolation guarantee here the kernel provides itself.
+chk("the zeroing is on the page, not only in the citations",
+    REG["mmp-6"].textContent.indexOf("written to zero first") > -1, true);
+chk("and it says what that prevents",
+    REG["mmp-6"].textContent.indexOf("the last process to hold this memory") > -1, true);
+chk("the timer is named and clocked rather than left as 'a hardware timer'",
+    REG["tbp-2"].textContent.indexOf("125") > -1, true);
+
+// The install section stopped one step short of being usable.
+chk("the reader is told where a .tbf comes from",
+    REG["installsrc"].textContent.indexOf("libtock-c") > -1, true);
+
+// Three panels opened with a deictic that has no referent once the script is
+// off and every panel is stacked.
+chk("the version panel names its field",
+    REG["hdp-0"].textContent.indexOf("The version must be 2") === 0, true);
+chk("the YieldedFor panel names its state",
+    REG["psp-2"].textContent.indexOf("YieldedFor") === 0, true);
+chk("and the imix panel names its board",
+    REG["fpp-1"].textContent.indexOf("On imix") === 0, true);
+
+// Figure 5's note counted three moving boundaries and then named the heap,
+// whose own boundary does not move.
+(function () {
+  var note = REG["mm-note"].textContent, i, named = 0;
+  var MOVERS = ["stack pointer", "app_break", "kernel_memory_break"];
+  for (i = 0; i < MOVERS.length; i++) {
+    if (note.indexOf(MOVERS[i]) > -1) { named++; }
+  }
+  chk("the note names the three boundaries that actually move", named, 3);
+}());
+
+// "Six operations" is right for this board and general as written; the hook
+// that would make it seven is now on the page.
+chk("the count is scoped to this board",
+    REG["runcost"].textContent.indexOf("on this board") > -1, true);
+chk("and the seventh has somewhere to go",
+    REG["runcost"].textContent.indexOf("hook") > -1, true);

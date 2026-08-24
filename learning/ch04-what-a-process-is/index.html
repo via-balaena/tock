@@ -101,7 +101,6 @@ body {
 }
 
 p { margin: 0; }
-strong { font-weight: 600; }
 
 /* ---------- masthead ---------- */
 
@@ -193,7 +192,6 @@ code {
 
 .addr { color: var(--hot); font-weight: 500; }
 
-a { color: var(--accent); text-underline-offset: 3px; }
 
 /* ---------- instrument (figure) ---------- */
 
@@ -263,13 +261,11 @@ button {
 }
 button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 button:disabled { opacity: .4; cursor: not-allowed; }
-button:focus-visible, input:focus-visible, [tabindex]:focus-visible,
-summary:focus-visible, a:focus-visible {
+button:focus-visible, [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 
 /* A small muted aside: provenance lines, caveats, footnotes. */
 /* An instrument whose content is a single code block, so the block can sit
@@ -305,8 +301,6 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   flex-direction: column;
   gap: .9rem;
 }
-.next ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .35rem; }
-.next li::marker { font-family: var(--mono); color: var(--hot); }
 
 .sources {
   margin-top: 2.5rem;
@@ -370,7 +364,7 @@ dfn {
   margin: 0;
   color: var(--ink-soft);
 }
-.goals ol { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals ul { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
 .goals .cost {
   font-family: var(--display);
   font-size: .82rem;
@@ -397,17 +391,6 @@ dfn {
 
 /* Check yourself. Question visible, answer one click away. */
 .selfcheck { display: flex; flex-direction: column; gap: .6rem; }
-/* Figure 12 keeps one <details> inside a .selfcheck, so these rules are still
-   load-bearing even though the six questions below no longer use any. Deleting
-   them along with the questions stripped that reveal of its box, and only a
-   render showed it. */
-.selfcheck details {
-  border: 1px solid var(--rule);
-  background: var(--surface);
-  padding: .75rem .95rem;
-}
-.selfcheck summary { cursor: pointer; font-weight: 600; line-height: 1.5; }
-.selfcheck summary::marker { color: var(--accent); }
 .q {
   border: 1px solid var(--rule);
   background: var(--surface);
@@ -427,8 +410,9 @@ dfn {
 .q-opt.is-right { border-color: var(--accent); border-width: 2px; }
 .q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
 
-/* Visible by default and hidden by the script, the way Figure 14's cases are,
-   so a reader with no scripting gets all six answers rather than none. */
+/* Visible by default and hidden by the script, the way every panel on this
+   page is, so a reader with no scripting gets all four answers rather than
+   none. */
 .q-answer {
   margin-top: .7rem;
   padding-top: .6rem;
@@ -473,14 +457,10 @@ dfn {
 
 /* ---------- shared by the three opening figures ---------- */
 
-.instrument-body svg {
-  width: 100%; height: auto; max-width: 100%;
-  color: var(--ink); overflow: visible; display: block;
-}
 
 .glossary.cast { align-items: start; }
 
-/* ---------- Figure 7: two boards, one capsule ---------- */
+/* ---------- Two cards side by side: Figure 10 ---------- */
 .mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }
 .mo-fig.two { grid-template-columns: repeat(2, 1fr); }
 .mo {
@@ -510,7 +490,7 @@ dfn {
 }
 .mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 
-/* ---------- Figure 1: the parts of a declaration ---------- */
+/* ---------- A row of buttons over stacked panels: Figures 1, 6, 9 and 11 ---------- */
 .blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
 /* Words of a program image, so they are addresses and must not be uppercased. */
 .blk button {
@@ -532,7 +512,7 @@ dfn {
 .blkp.is-off { display: none; }
 .blkp b { font-family: var(--mono); font-weight: 500; }
 
-/* ---------- Figure 6: the board's two lines ---------- */
+/* ---------- An offset beside a name: Figure 2 ---------- */
 .vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
 .vt button {
   display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
@@ -551,7 +531,7 @@ dfn {
 .vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 .vtp.is-off { display: none; }
 
-/* ---------- Figure 2: three candidate lines ---------- */
+/* ---------- Code cards: Figure 7 ---------- */
 .loops { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; margin: .2rem 0 1rem; }
 .loops.three { grid-template-columns: repeat(3, 1fr); }
 .loop {
@@ -579,7 +559,7 @@ dfn {
   .vt button { grid-template-columns: 1fr; gap: .1rem; }
 }
 
-/* ---------- Figure 3: counting the word ---------- */
+/* ---------- Buttons over a three-cell readout: Figure 4 ---------- */
 .costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
 /* These are lines of Rust, so their case is the content. */
 .costs button {
@@ -612,7 +592,7 @@ dfn {
 .costp.is-off { display: none; }
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
-/* ---------- Figure 4: six steps ---------- */
+/* ---------- Numbered steps: Figures 3 and 8 ---------- */
 .seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
 .seq button {
   display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
@@ -631,7 +611,7 @@ dfn {
 .seq b { font-family: var(--mono); font-weight: 500; }
 .seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
 
-/* ---------- Figure 5: twelve addresses ---------- */
+/* ---------- Three columns to a row: Figure 5 ---------- */
 .dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
 .dbg button {
   display: grid; grid-template-columns: minmax(6.6rem, auto) minmax(6.6rem, auto) 1fr;
@@ -765,7 +745,7 @@ dfn {
       <button type="button" id="hd-4" aria-pressed="false"><span class="vt-at">12&ndash;15</span><span>checksum</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="hdp-0">Must be 2. On anything else the kernel does not try to read further, and it does not report a broken application either &mdash; it treats what it found as the end of the list. This is the field that ends the search, and Figure 3 is why that matters.</p>
+      <p class="vtp is-on" id="hdp-0">The version must be 2. On anything else the kernel does not try to read further, and it does not report a broken application either &mdash; it treats what it found as the end of the list. This is the field that ends the search, and Figure 3 is why that matters.</p>
       <p class="vtp" id="hdp-1">How many bytes of header follow. Below 16 is refused, because 16 is what these five fields take. Above <b>total_size</b> is refused too, because a header cannot be longer than the thing containing it.</p>
       <p class="vtp" id="hdp-2">The length of the whole application: header, code, everything. This is the number that says where the next one starts, and it is believed before anything has been verified. The parsing code says so in as many words: "we trust the value in flash".</p>
       <p class="vtp" id="hdp-3">The lowest bit of this word is an on switch. An application with that bit clear is skipped rather than started, which is how a tool can leave one installed and switched off without erasing it.</p>
@@ -842,7 +822,7 @@ dfn {
 
 <section class="col">
   <h2>How one gets there</h2>
-  <p>Nothing in this repository builds an application. They are built out of tree, in whatever language, and arrive as a <code>.tbf</code> file: a TBF header with a program behind it.</p>
+  <p id="installsrc">Nothing in this repository builds an application. They are built out of tree, in whatever language, and arrive as a <code>.tbf</code> file: a TBF header with a program behind it. Tock's own getting-started guide points at two places to get one, libtock-c for C and C++ and libtock-rs for Rust.</p>
   <p>Putting one on this board is two lines of <code>objcopy</code> in the board's Makefile, and both of them are about the section Figure 4 just showed.</p>
 </section>
 
@@ -859,7 +839,9 @@ dfn {
 
 <section class="col">
   <h2>One process's memory</h2>
-  <p>A process gets one contiguous run of RAM and nothing else. Seven boundaries divide it, and they are not all owned by the same side.</p>
+  <p id="poolbridge">Figure 4's last row was the pool. This is one slice out of it.</p>
+  <p id="plural">The kernel starts at <code>_sappmem</code>, the first free byte after its own data, and hands a run of RAM to each application it found in flash, in the order it found them. This board has room for four at a time.</p>
+  <p id="whoseimpl">A process gets one such run and nothing else. Seven boundaries divide it, and they are not all owned by the same side. What follows is <b>ProcessStandard</b>, the implementation every board in this tree uses; the kernel itself asks only that a process be something the scheduler can run.</p>
 </section>
 
 <figure class="instrument">
@@ -885,10 +867,10 @@ dfn {
       <p class="dbgp" id="mmp-3">Where the heap begins. It grows upward, towards <b>app_break</b>, and the distance between the two is how much room the application has left.</p>
       <p class="dbgp" id="mmp-4">The application's globals: whatever it started life knowing. Below this line the stack begins, and the two never move towards each other.</p>
       <p class="dbgp" id="mmp-5">How far down the stack has got so far. Everything between here and <b>memory_start</b> is unused, and running out of it means running into the bottom.</p>
-      <p class="dbgp" id="mmp-6">The bottom, and the number the kernel hands the process as its second argument in Figure 8. The process is told this address. It has no way to work it out.</p>
+      <p class="dbgp" id="mmp-6">The bottom, and the number the kernel hands the process as its second argument in Figure 8. The process is told this address; it has no way to work it out. Everything it may touch at that moment has been written to zero first, so it cannot read what the last process to hold this memory left behind.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice that three of the seven move while the process runs, and that two of those three move towards each other. The heap climbs, the kernel's floor descends, and the gap between them is all there is.</div>
+  <div class="instrument-note" id="mm-note">Notice that three of the seven move while the process runs: the stack pointer, <b>app_break</b> and <b>kernel_memory_break</b>. The last two move towards each other, and the gap between them is all there is left to hand out.</div>
 </figure>
 
 <section class="col">
@@ -920,7 +902,7 @@ dfn {
 
 <section class="col" id="runcost">
   <p>That is what isolation costs in memory. It costs something in time too, and the shape is the same &mdash; the charge falls on every single visit to a process.</p>
-  <p>Six operations wrap each one. The kernel programs the fence, turns it on, arms a timer, hands over the processor, disarms the timer, and turns the fence off again.</p>
+  <p>Six operations wrap each one on this board. The kernel programs the fence, turns it on, arms a timer, hands over the processor, disarms the timer, and turns the fence off again. A board that wants a seventh has somewhere to put it: there is a hook immediately before those six, empty unless a board fills it.</p>
 </section>
 
 <section class="col">
@@ -1009,7 +991,7 @@ argument3: app_break,</pre></button>
     <div class="blksay">
       <p class="blkp is-on" id="psp-0">Has work to do. Note the wording in the source: it "may not be currently scheduled", but it wants to be. Running is about willingness, not about which process holds the processor this instant.</p>
       <p class="blkp" id="psp-1">Asked to be set aside, by making the one call that means "wake me when something happens". This is where a well-behaved application spends nearly all of its life.</p>
-      <p class="blkp" id="psp-2">The same, but narrower: wake me when <em>this particular</em> thing happens. The kernel will not schedule it until that one driver calls back, and which call it is waiting for is stored with the state.</p>
+      <p class="blkp" id="psp-2">YieldedFor is the same, but narrower: wake me when <em>this particular</em> thing happens. The kernel will not schedule it until that one driver calls back, and which call it is waiting for is stored with the state.</p>
       <p class="blkp" id="psp-3">Set aside by somebody else rather than by itself. The state carries the state it was in when it was stopped, so that resuming it puts it back where it was rather than at the beginning.</p>
       <p class="blkp" id="psp-4">It touched something it should not have, and the hardware said so. A faulted process cannot simply be restarted &mdash; it has to be terminated first, so that everything it owned is cleaned up.</p>
       <p class="blkp" id="psp-5">Finished, or killed. Everything it had has been released, and a process in this state can be run again from the beginning if somebody asks for it.</p>
@@ -1038,7 +1020,7 @@ argument3: app_break,</pre></button>
     </div>
     <div class="mosay">
       <p class="mop is-on" id="fpp-0">The whole board panics. Not the process &mdash; the machine. The handler chapter 3 ended on takes over, every other application stops with it, and the LED starts blinking its message out on GPIO&nbsp;25.</p>
-      <p class="mop" id="fpp-1">That one process stops and is never scheduled again. Everything else carries on, and nothing is printed. Seven of these policies exist in the tree, and choosing between them is one line of the board's <b>main.rs</b>.</p>
+      <p class="mop" id="fpp-1">On imix that one process stops and is never scheduled again. Everything else carries on, and nothing is printed. Seven of these policies exist in the tree, and choosing between them is one line of the board's <b>main.rs</b>.</p>
     </div>
   </div>
   <div class="instrument-note">Notice where the decision lives. This is the same shape as chapter 3's Figure 6: the mechanism is in the kernel, and which way it points is one line in a file the board author owns.</div>
@@ -1072,7 +1054,7 @@ argument3: app_break,</pre></button>
     <div class="blksay">
       <p class="blkp is-on" id="tbp-0">The checksum catches a header damaged on the way in, and that is the whole of what it catches. <b>total_size</b> is believed outright, before anything has been verified. Anyone who can write this flash can write a header saying whatever they like, and Figure 3's walk will follow it.</p>
       <p class="blkp" id="tbp-1">A field in a struct. Chapter 1's store instruction does not read fields, and no arrangement of Rust could make it. What refuses the write is a block of hardware holding the same number, and putting the number there is chapter 5.</p>
-      <p class="blkp" id="tbp-2">The one fence in this chapter that already works. A hardware timer is armed before the switch and disarmed after it, and when it fires the processor returns to the kernel whether the application cooperates or not.</p>
+      <p class="blkp" id="tbp-2">The one fence in this chapter that already works. The processor's own counter, clocked at 125&nbsp;MHz on this board, is armed before the switch and disarmed after it. When it fires, control returns to the kernel whether the application cooperates or not.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that only the last one is finished. The chapter has spent its length drawing boundaries, and the only one enforced by anything it has shown you is the boundary in time.</div>
@@ -1172,6 +1154,10 @@ argument3: app_break,</pre></button>
     <li>Seven fault policies existing &mdash; <code>capsules/system/src/process_policies.rs</code>, at :16, :25, :36, :49, :58, :75 and :100</li>
     <li>The Pico 2 choosing <code>PanicFaultPolicy</code> and imix choosing <code>StopFaultPolicy</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:71 and <code>boards/imix/src/main.rs</code>:95</li>
     <li>Four process slots on this board &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:75</li>
+    <li>Each process taking its memory out of that one pool, in the order the applications were found in flash &mdash; the loop in <code>kernel/src/process_loading.rs</code>:203&ndash;250, which carries <code>remaining_memory</code> from one to the next</li>
+    <li><code>ProcessStandard</code> being one implementation of a trait, and what the trait asks for &mdash; "a generic process that the Tock scheduler can schedule", <code>kernel/src/process.rs</code>:331&ndash;333</li>
+    <li>libtock-c and libtock-rs being where applications come from &mdash; <code>doc/Getting_Started.md</code>:246&ndash;247</li>
+    <li>The hook that sits immediately before those six operations, and its empty default body &mdash; <code>kernel/src/platform/platform.rs</code>:189 and :193&ndash;194</li>
     <li>Applications being built out of tree, and arriving as a <code>.tbf</code> file &mdash; <code>boards/raspberry_pi_pico_2/README.md</code>:44&ndash;51</li>
     <li>The two <code>objcopy</code> lines that put one in the reserved section, and the <code>program</code> target that runs them &mdash; <code>boards/raspberry_pi_pico_2/Makefile</code>:33&ndash;39</li>
     <li>That README naming the target <code>make flash-app</code>, which this board's Makefile does not define &mdash; <code>README.md</code>:50 against <code>Makefile</code>:33. Several other boards do define it; <code>boards/apollo3/redboard_artemis_nano/Makefile</code>:36 is one</li>

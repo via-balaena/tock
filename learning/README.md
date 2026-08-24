@@ -160,6 +160,33 @@ count above honest when adding one; it has now said the wrong number twice:
   is inherited rather than found. The check reads every class and id in a rule's
   selector and asks whether the page mentions it anywhere outside the `<style>`
   block, so a class the script alone adds still counts as used.
+  Classes and ids were the whole of it until chapter 4's second review pass,
+  which left a rule made only of element names invisible. `.selfcheck details`,
+  `.selfcheck summary` and `summary:focus-visible` rode from chapter 1 into
+  chapters 3 and 4, neither of which contains a `<details>` anywhere, and the
+  comment above them asserted they were "still load-bearing" -- which is how
+  they survived five review passes of chapter 3. A tag named in a selector must
+  now appear in the markup too. The test is deliberately narrow: only element
+  names occurring nowhere on the page are refused, so `p` and `button` are
+  never in question, and `html`, `body` and `head` are exempt because a browser
+  creates them whether or not the file writes them. On first run it found
+  twenty-five more rules across chapters 2, 3 and 4 -- `strong`, `a`,
+  `input[type="range"]`, `.next ol`, `.instrument-body svg` and the rest.
+  One of them was not dead but misdirected: `.goals ol` has said `ol` since
+  chapter 2 and every chapter after the first writes `<ul>`, so the flex layout
+  and the gap it sets had never once applied to a goals list. That one was
+  repointed rather than deleted.
+  What this still cannot see is a rule whose element exists somewhere else on
+  the page: `.next ol` is dead in chapter 1 too, and chapter 1 has an `<ol>`.
+
+- **A stylesheet comment naming a figure the chapter does not have.** Not a
+  check -- a habit the checks cannot enforce, recorded because it went wrong
+  once. Chapter 4 inherited chapter 3's sheet, and with it seven section
+  comments naming chapter 3's figure numbers: `/* Figure 7: two boards, one
+  capsule */` heads the component chapter 4 uses for Figure 10, which has no
+  capsule in it. Two of the seven named Figure 12 and Figure 14, which exist in
+  chapter *one* and have never existed in chapter 3 or 4. Name the component by
+  what it does and put this chapter's figures after it.
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
   and are served both from this repository and as standalone uploads, so a raw

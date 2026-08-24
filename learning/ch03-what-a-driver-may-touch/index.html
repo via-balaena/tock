@@ -101,7 +101,6 @@ body {
 }
 
 p { margin: 0; }
-strong { font-weight: 600; }
 
 /* ---------- masthead ---------- */
 
@@ -193,7 +192,6 @@ code {
 
 .addr { color: var(--hot); font-weight: 500; }
 
-a { color: var(--accent); text-underline-offset: 3px; }
 
 /* ---------- instrument (figure) ---------- */
 
@@ -263,13 +261,11 @@ button {
 }
 button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 button:disabled { opacity: .4; cursor: not-allowed; }
-button:focus-visible, input:focus-visible, [tabindex]:focus-visible,
-summary:focus-visible, a:focus-visible {
+button:focus-visible, [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
 
 /* A small muted aside: provenance lines, caveats, footnotes. */
 /* An instrument whose content is a single code block, so the block can sit
@@ -305,8 +301,6 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
   flex-direction: column;
   gap: .9rem;
 }
-.next ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .35rem; }
-.next li::marker { font-family: var(--mono); color: var(--hot); }
 
 .sources {
   margin-top: 2.5rem;
@@ -370,7 +364,7 @@ dfn {
   margin: 0;
   color: var(--ink-soft);
 }
-.goals ol { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals ul { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
 .goals .cost {
   font-family: var(--display);
   font-size: .82rem;
@@ -397,17 +391,6 @@ dfn {
 
 /* Check yourself. Question visible, answer one click away. */
 .selfcheck { display: flex; flex-direction: column; gap: .6rem; }
-/* Figure 12 keeps one <details> inside a .selfcheck, so these rules are still
-   load-bearing even though the six questions below no longer use any. Deleting
-   them along with the questions stripped that reveal of its box, and only a
-   render showed it. */
-.selfcheck details {
-  border: 1px solid var(--rule);
-  background: var(--surface);
-  padding: .75rem .95rem;
-}
-.selfcheck summary { cursor: pointer; font-weight: 600; line-height: 1.5; }
-.selfcheck summary::marker { color: var(--accent); }
 .q {
   border: 1px solid var(--rule);
   background: var(--surface);
@@ -427,8 +410,9 @@ dfn {
 .q-opt.is-right { border-color: var(--accent); border-width: 2px; }
 .q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
 
-/* Visible by default and hidden by the script, the way Figure 14's cases are,
-   so a reader with no scripting gets all six answers rather than none. */
+/* Visible by default and hidden by the script, the way every panel on this
+   page is, so a reader with no scripting gets all four answers rather than
+   none. */
 .q-answer {
   margin-top: .7rem;
   padding-top: .6rem;
@@ -473,14 +457,10 @@ dfn {
 
 /* ---------- shared by the three opening figures ---------- */
 
-.instrument-body svg {
-  width: 100%; height: auto; max-width: 100%;
-  color: var(--ink); overflow: visible; display: block;
-}
 
 .glossary.cast { align-items: start; }
 
-/* ---------- Figure 7: two boards, one capsule ---------- */
+/* ---------- Two cards side by side: Figure 7 ---------- */
 .mo-fig { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin: .3rem 0 1rem; }
 .mo-fig.two { grid-template-columns: repeat(2, 1fr); }
 .mo {
@@ -510,7 +490,7 @@ dfn {
 }
 .mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 
-/* ---------- Figure 1: the parts of a declaration ---------- */
+/* ---------- A row of buttons over stacked panels: Figures 1 and 8 ---------- */
 .blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
 /* Words of a program image, so they are addresses and must not be uppercased. */
 .blk button {
@@ -532,7 +512,7 @@ dfn {
 .blkp.is-off { display: none; }
 .blkp b { font-family: var(--mono); font-weight: 500; }
 
-/* ---------- Figure 6: the board's two lines ---------- */
+/* ---------- An offset beside a name: Figure 6 ---------- */
 .vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
 .vt button {
   display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
@@ -551,7 +531,7 @@ dfn {
 .vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 .vtp.is-off { display: none; }
 
-/* ---------- Figure 2: three candidate lines ---------- */
+/* ---------- Code cards: Figure 2 ---------- */
 .loops { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; margin: .2rem 0 1rem; }
 .loops.three { grid-template-columns: repeat(3, 1fr); }
 .loop {
@@ -579,7 +559,7 @@ dfn {
   .vt button { grid-template-columns: 1fr; gap: .1rem; }
 }
 
-/* ---------- Figure 3: counting the word ---------- */
+/* ---------- Buttons over a three-cell readout: Figure 3 ---------- */
 .costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
 /* These are lines of Rust, so their case is the content. */
 .costs button {
@@ -612,7 +592,7 @@ dfn {
 .costp.is-off { display: none; }
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
-/* ---------- Figure 4: six steps ---------- */
+/* ---------- Numbered steps: Figure 4 ---------- */
 .seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
 .seq button {
   display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
@@ -631,7 +611,7 @@ dfn {
 .seq b { font-family: var(--mono); font-weight: 500; }
 .seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
 
-/* ---------- Figure 5: twelve addresses ---------- */
+/* ---------- Three columns to a row: Figure 5 ---------- */
 .dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
 .dbg button {
   display: grid; grid-template-columns: minmax(6.6rem, auto) minmax(6.6rem, auto) 1fr;
