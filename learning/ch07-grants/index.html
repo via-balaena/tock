@@ -946,10 +946,10 @@ dfn {
   <p id="lastline">And that is the last mechanism. Chapter 1 said that nothing stops a store from landing anywhere. The answer took seven chapters, and it is that nothing on the chip does, so the rest was built. A compiler that will not compile the reach. A header the kernel parses before it trusts anything. Two registers per region, checked on every access. One instruction wide enough for eight kinds of question. And this, the place where the kernel puts what it has been handed. Every one of them is in a file this series has quoted, and every one is a decision somebody wrote down.</p>
 </section>
 
-<div class="col next">
+<div class="col next" id="endbox">
   <p class="eyebrow forward">The end</p>
   <h3 style="margin-top:0">Seven chapters, one question</h3>
-  <p>There is no chapter 8. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names where it came from: a file and a line in this tree, or a section of the datasheet. All of them are still there at the commit these pages pin. The most useful next thing is not more reading &mdash; it is <code>make program</code> in <code>boards/raspberry_pi_pico_2</code>, and then breaking something on purpose to watch which of these seven mechanisms catches it.</p>
+  <p>There is no chapter 8. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names where it came from: a file and a line in this tree, or a section of the datasheet. All of them are still there at the commit these pages pin. The most useful next thing is not more reading. It is <code>make flash-openocd</code> in <code>boards/raspberry_pi_pico_2</code>, which pushes the kernel down the debug probe and needs no mounted drive at all. Chapter 4 is where the other route is, and why it does nothing on a Mac. Then break something on purpose, and watch which of these seven mechanisms catches it.</p>
 </div>
 
 <section class="col sources">
@@ -979,6 +979,7 @@ dfn {
     <li>The loop over every process skipping an entered grant instead of panicking &mdash; the same file, :1261&ndash;1263</li>
     <li>The grant being closed by a value going out of scope rather than by a call &mdash; the same file, :222&ndash;227, "On <code>Drop</code>, we leave the grant. This protects against calling <code>grant.enter()</code> without calling the corresponding <code>grant.leave()</code>"</li>
     <li>A restart recomputing the layout, after which every grant is gone &mdash; <code>reset</code>, <code>kernel/src/process_standard.rs</code>:2447&ndash;2463, reached from <code>try_restart</code> at :795 and from exit variant 1 at <code>kernel/src/kernel.rs</code>:1406&ndash;1408</li>
+    <li>The target this chapter ends on &mdash; <code>flash-openocd</code>, <code>boards/raspberry_pi_pico_2/Makefile</code>:23&ndash;25, which needs no <code>APP</code> and no mounted drive; the drive route is <code>flash</code> at :27&ndash;30, tested against <code>BOOTSEL_FOLDER</code> at :13</li>
     <li>Capsules being able to ask for more from the same region &mdash; <code>allocate_custom_grant</code>, <code>kernel/src/process_standard.rs</code>:1278&ndash;1300</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here, as does <code>grant-sizes.rs</code> beside this page, which is source rather than prose.</p>

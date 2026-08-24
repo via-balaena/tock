@@ -368,7 +368,8 @@ REG["ar-0"].fire("click");
     ["closingq",   "Six chapters have been taking pieces out of"],
     ["wordcount",  "Chapter 4 defined a grant in one line"],
     ["lf-note",    "A driver installed on the board and never called by a process"],
-    ["closing2",   "It holds two numbers"]
+    ["closing2",   "It holds two numbers"],
+    ["custom",     "cut extra memory from the same region"]
   ];
   var i, missing = [];
   for (i = 0; i < CLAIMS.length; i++) {
@@ -379,6 +380,18 @@ REG["ar-0"].fire("click");
   chk("every anchored paragraph still makes the claim it was anchored for",
       missing.join("; "), "");
 }());
+
+// ---- The one thing this chapter tells the reader to run ----
+// Seven chapters checked every assertion and none checked an imperative. The
+// series ended on `make program`, which errors without an APP, does nothing on
+// a Mac, and ignores the debug probe the same sentence says the reader has --
+// all three of which chapter 4 had already documented.
+chk("the closing instruction names the debug-probe target",
+    REG["endbox"].textContent.indexOf("make flash-openocd") > -1, true);
+chk("and says it needs no mounted drive",
+    REG["endbox"].textContent.indexOf("needs no mounted drive") > -1, true);
+chk("and hands the other route to the chapter that documents it",
+    REG["endbox"].textContent.indexOf("why it does nothing on a Mac") > -1, true);
 
 // ---- Two counts and a quotation ----
 // Chapter 3 to chapter 7 is four chapters, not six, and the source puts its

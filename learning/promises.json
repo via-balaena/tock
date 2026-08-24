@@ -1104,5 +1104,12 @@
     "says": "Chapter 6's instruction is hardware as well",
     "about": "ch06",
     "kept_by": "svc"
+  },
+  {
+    "id": "ch07-flashroute-ch04",
+    "in": "ch07",
+    "says": "Chapter 4 is where the other route is",
+    "about": "ch04",
+    "kept_by": "program-openocd"
   }
 ]

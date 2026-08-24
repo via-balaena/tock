@@ -510,6 +510,37 @@ Two more are preventive rather than forensic:
   A listing with no script computing addresses is left alone, since printing
   one statically is a perfectly good thing to do.
 
+**Two review lenses that are deliberately not gates.** Both were written as
+checks, both failed correct work, and the reasons are worth keeping because the
+temptation to gate them will come back.
+
+- **An instruction the chapter tells the reader to run.** Seven chapters
+  checked every assertion against source and none of them ever checked an
+  *imperative*. Chapter 7 ended the series on "it is `make program` in
+  `boards/raspberry_pi_pico_2`", which errors out without an `APP` variable,
+  does nothing on a Mac, and ignores the debug probe the same sentence says the
+  reader has -- all three of which chapter 4 had already documented with
+  citations, and two review passes read that sentence without checking it. The
+  gate written for it checks that a named `make` target exists, which **would
+  not have caught this**: `program` exists, and the defect was that it is the
+  wrong target. It also fails chapter 4, which names `make flash-app` on
+  purpose to report that the board's README sends readers to a target the board
+  does not define. So: run it by hand. Read every command a chapter prints,
+  open the Makefile, and ask whether it does what the sentence claims *on the
+  reader's machine and hardware*.
+
+- **A prose anchor nothing reads.** An id on a paragraph exists so an assertion
+  can pin what it claims. Chapter 5 shipped three unread, chapter 6 fifteen,
+  chapter 7 twelve. The exemption is what cannot be got right: it has to let
+  through the ids a figure builds without letting through a hand-written
+  anchor, and three versions each failed differently -- stripping digits
+  swallowed `closing2` because `closing` is asserted; no exemption reported 38
+  of chapter 7's 137; assuming the shape `prefix-N` reported twenty of chapter
+  1's, which builds ids as `"dd-" + a word`. Asking the script which prefixes
+  it builds gets closest and still reports chapter 1's SVG marker defs, its
+  section ids and its `aria-labelledby` targets, none of which any script
+  should read. Run it by hand and ignore those three categories.
+
 **Pedagogy checks**, which exist because an audit of chapter 1 found roughly
 forty technical terms used without ever being defined, and a third of the prose
 sitting behind buttons a reader might never press. Four rules are enforced:
