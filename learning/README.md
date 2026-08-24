@@ -28,7 +28,7 @@ arc closes where the first chapter said it would.
 | 4 | [What a Process Is](ch04-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
 | 5 | [The Memory Protection Unit](ch05-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | published |
 | 6 | [Asking the Kernel](ch06-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | published |
-| 7 | [Grants](ch07-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and never given back while the process lives | published |
+| 7 | [Grants](ch07-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and not freed until the process exits | published |
 
 ## The cover
 
@@ -147,8 +147,9 @@ repository root:
 python3 learning/tools/check.py
 ```
 
-This runs four kinds of check against every chapter and exits non-zero if any
-fails, so it can gate a commit.
+This runs three kinds of check against every chapter -- static, pedagogy and
+behavioral -- then one on the cover and two across the chapters together, and
+exits non-zero if any fails, so it can gate a commit.
 
 **Static checks** on the page: duplicate ids, unbalanced tags, JavaScript
 reaching for ids that do not exist, CSS variables used but never defined, and
