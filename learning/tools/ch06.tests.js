@@ -472,14 +472,16 @@ chk("the chapter says what puts things in chapter 4's queue",
     REG["queueline"].textContent.indexOf("This is what fills it") > -1, true);
 chk("and hands the reader on to grants",
     REG["lastline"].textContent.indexOf("last mechanism this series has left") > -1, true);
-// ---- What the first review pass changed ----
-// A fix pass writes prose nobody has reviewed, so the sentences it wrote are
-// covered here rather than left to the next pass to find.
+// ---- The claims a review pass had to correct once ----
+// Each of these was wrong on the page at some point, so each is pinned here.
+// Written as what the page says rather than as what changed: this suite is
+// what a later pass reads to decide what is already covered, and a
+// description dated to one afternoon tells that reader nothing.
 (function () {
   var g = REG["words"].textContent;
   // `word` was used twenty times in two senses and no chapter had defined it.
-  chk("the glossary now says what a word is", g.indexOf("Four bytes") > -1, true);
-  chk("and owns up to the list's own use of the word",
+  chk("the glossary says what a word is", g.indexOf("Four bytes") > -1, true);
+  chk("and which sense the list itself is using",
       g.indexOf("in the ordinary sense") > -1, true);
   // The frame entry claimed everything a request carries travels in it, which
   // is what figure 1's note exists to deny.
@@ -488,21 +490,21 @@ chk("and hands the reader on to grants",
   chk("and figure 1's note is the other half of that",
       REG["sv-note"].textContent.indexOf("not in a register") > -1, true);
   // A subscribed upcall is not one-shot.
-  chk("subscribe keeps the pointer until it is replaced",
+  chk("a subscribed pointer is not one-shot",
       g.indexOf("keeps it until the process hands over another") > -1, true);
 }());
 (function () {
   // Two return shapes were illustrated with invented uses. One has a single
   // caller in the tree and one has none, and the page now says so.
   REG["rt-2"].fire("click");
-  chk("the three-value success names its one caller",
+  chk("the three-value success has one caller and the page names it",
       REG["rtp-2"].textContent.indexOf("One capsule in the tree returns it") > -1, true);
   chk("and says what that caller hands back",
       REG["rtp-2"].textContent.indexOf("three counters about a network device") > -1, true);
   REG["rt-4"].fire("click");
-  chk("the failure-with-a-value shape names its only caller",
+  chk("the failure-with-a-value shape is returned by no driver",
       REG["rtp-4"].textContent.indexOf("the unit test that checks it encodes correctly") > -1, true);
-  chk("and still says why the ABI has it",
+  chk("and the page still says why the ABI carries it",
       REG["rtp-4"].textContent.indexOf("numbered from opposite ends") > -1, true);
   REG["rt-0"].fire("click");
 }());
@@ -510,13 +512,40 @@ chk("and hands the reader on to grants",
   // `shape` is this chapter's coinage and now says so, and the specification's
   // own names for the two endings are on the page rather than only in a
   // source bullet.
-  chk("the chapter owns its coinage",
+  chk("shape is marked as the chapter's own word",
       REG["firstword"].textContent.indexOf("Shape is this chapter's word for it") > -1, true);
-  chk("and gives the kernel's name for the same thing",
+  chk("and the kernel's name for the same thing is given",
       REG["firstword"].textContent.indexOf("the kernel calls them variants") > -1, true);
-  chk("the two endings are named where the reader meets them",
-      REG["blline"].textContent.indexOf("direct resume") > -1
-        && REG["blline"].textContent.indexOf("pushed callback") > -1, true);
+  // The specification's reason for class 7 is cost, not simultaneity: a
+  // process can already revoke, read and re-allow, and this class exists so
+  // it need not pay a syscall to do it.
+  REG["tm-1"].fire("click");
+  chk("the shared-buffer class is explained by what it saves",
+      REG["tmp-1"].textContent.indexOf("exists to save a syscall") > -1, true);
+  chk("and by what a process would otherwise have to do",
+      REG["tmp-1"].textContent.indexOf("revoke a buffer, read it and hand it back") > -1, true);
+  // command takes four parameters and only two of them are data. The chapter
+  // counted "arguments" three different ways before this was pinned.
+  REG["tm-0"].fire("click");
+  chk("the command panel counts parameters, not data words",
+      REG["tmp-0"].textContent.indexOf("Four parameters in") > -1, true);
+  chk("and says which of the four the two data words are",
+      REG["tmp-0"].textContent.indexOf("two words of data, and which process is asking") > -1, true);
+  chk("and the buffer section counts only the data",
+      REG["bufline"].textContent.indexOf("two words of data and nothing more") > -1, true);
+  REG["tm-0"].fire("click");
+  // `allowed buffer` was in the glossary with a single use, in a sentence
+  // written to satisfy the glossary-use gate. Four uses is a term earning it.
+  (function () {
+    var i, n = 0, ids = ["bufline", "bfp-0", "bf-note", "lastline"];
+    for (i = 0; i < ids.length; i++) {
+      if (REG[ids[i]].textContent.indexOf("allowed buffer") > -1) { n++; }
+    }
+    chk("the term the glossary defines is used where it is the precise one", n, 4);
+  }());
+  chk("the two endings carry the specification's names",
+      REG["blline"].textContent.indexOf("Direct Resume") > -1
+        && REG["blline"].textContent.indexOf("Pushed Callback") > -1, true);
 }());
 (function () {
   // One queued call, one word for it. The chapter used upcall, note and task

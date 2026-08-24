@@ -1368,6 +1368,11 @@ RETIRED_PHRASES = {
                               "pointer stays until the process swaps it"),
         ("most of a working application", "there are no applications in this "
                                           "tree to check it against"),
+        ("both sides want to read", "the specification gives cost as the "
+                                    "reason for class 7, not simultaneity; a "
+                                    "process can already revoke and re-allow"),
+        ("Figure 3's answer", "figure 3 shows four request registers and no "
+                              "answer at all"),
     ],
 }
 

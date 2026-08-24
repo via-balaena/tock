@@ -645,7 +645,7 @@ dfn {
     </div>
     <div class="costsay">
       <p class="costp" id="svp-0">Class zero, <b>yield</b>, which gives the processor back. It is also the only class whose first register the decoder checks: three values are legal there, and anything else is treated as a broken request rather than a request for something missing.</p>
-      <p class="costp is-on" id="svp-1">Class two, <b>command</b>. This is the one in the LED request two figures down. It is one of only two classes that reach a driver's own code, and the one the rest of this chapter keeps coming back to.</p>
+      <p class="costp is-on" id="svp-1">Class two, <b>command</b>. This is the class the LED request further down uses. It is one of only two classes that reach a driver's own code, and the one the rest of this chapter keeps coming back to.</p>
       <p class="costp" id="svp-2">Class four, the read-only kind of handing memory over. Classes three, four and seven are three flavours of the same idea, which is why the numbers on their own tell you so little.</p>
       <p class="costp" id="svp-3">Nothing. The kernel converts eight-bit numbers into requests by matching zero through seven, and eight matches nothing, so the conversion returns nothing at all. A request that will not decode ends the process, which is the same ending chapter 5's forbidden store had.</p>
       <p class="costp" id="svp-4">The kernel's own, going the other way. Tock enters a process by executing <b>svc 0xff</b>, and the comment beside that line says it does not matter which number is used, because nothing reads it. What sorts the two directions apart is a single bit of the link register, which is the same bit chapter 5's fault handler branched on.</p>
@@ -656,7 +656,7 @@ dfn {
 
 <section class="col">
   <h2>Eight kinds of question</h2>
-  <p id="eightline">The kernel's own list of them disagrees with itself, and it is worth seeing why before trusting any count. The file that defines them opens with the sentence "Tock supports six system calls", names six, describes a seventh three lines further down, and then declares an enumeration with eight in it. The enumeration is the one the hardware path uses. Eight is the number.</p>
+  <p id="eightline">The kernel's own list of syscall classes disagrees with itself, and it is worth seeing why before trusting any count. The file that defines them opens with the sentence "Tock supports six system calls", names six, describes a seventh three lines further down, and then declares an enumeration with eight in it. The enumeration is the one the hardware path uses. Eight is the number.</p>
   <p id="fiveline">A useful way to hold them is by how far each one travels. Five of the eight begin with a driver number, so the kernel has to look up a capsule before it can go on. The other three never leave the core kernel: it can answer them out of what it already knows about the process.</p>
 </section>
 
@@ -753,8 +753,8 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <button type="button" id="tm-2" aria-pressed="false">allocate_grant</button>
     </div>
     <div class="blksay">
-      <p class="blkp is-on" id="tmp-0">Four arguments in, one answer out. The answer is a wrapper around a small set of shapes: success, success carrying up to three values, or failure carrying an error. A driver that does not recognise the operation says so with an unsupported-operation error, and that is also what the trait does for a driver that does not write this method at all.</p>
-      <p class="blkp" id="tmp-1">The seventh class, and the only allow that a driver sees. It exists because sometimes both sides want to read the same bytes while the kernel is filling them. The default is a refusal, and one capsule in the whole tree replaces it. That one publishes three of the kernel's own numbers into a buffer: how many times the process has been switched to, how much work is waiting for it, and the time. After one allow to hand the buffer over, a process reads all three without another syscall.</p>
+      <p class="blkp is-on" id="tmp-0">Four parameters in, one answer out: which operation, two words of data, and which process is asking. The answer is a wrapper around a small set of shapes: success, success carrying up to three values, or failure carrying an error. A driver that does not recognise the operation says so with an unsupported-operation error, and that is also what the trait does for a driver that does not write this method at all.</p>
+      <p class="blkp" id="tmp-1">The seventh class, and the only allow that a driver sees. It exists to save a syscall. A process can revoke a buffer, read it and hand it back; the specification says this class is for the cases where paying a syscall to do that costs too much. The default is a refusal, and one capsule in the whole tree replaces it. That one publishes three of the kernel's own numbers into a buffer: how many times the process has been switched to, how much work is waiting for it, and the time. After one allow to hand the buffer over, a process reads all three without another syscall.</p>
       <p class="blkp" id="tmp-2">Not a request. The kernel calls it when a subscribe or an allow needs filing for a process that has never used this driver before. It has to ask, because only the capsule knows how large its own per-process storage is. It is the one method with no default, so a driver author cannot forget it silently.</p>
     </div>
   </div>
@@ -800,7 +800,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 
 <section class="col">
   <h2>Things that do not finish</h2>
-  <p id="splitline">Turning on an LED finishes inside the call. The pin is high before the process runs again, which is why Figure 3's answer had nothing in it. Most of what a process wants is not like that. A byte from the console arrives when somebody types it, and no amount of waiting inside a driver will make that sooner.</p>
+  <p id="splitline">Turning on an LED finishes inside the call. The pin is high before the process runs again, and Figure 5 showed what that comes back as: a success with nothing in it. Most of what a process wants is not like that. A byte from the console arrives when somebody types it, and no amount of waiting inside a driver will make that sooner.</p>
   <p id="twoparts">So a request that cannot finish is split in two. First <b>subscribe</b>, leaving a function pointer with the kernel. Then <b>command</b>, which starts the work and returns immediately, having promised nothing except that it started. Later the driver has something, and asks the kernel to run that function.</p>
   <p id="queueline">The kernel cannot. The process is not running, and even if it were, interrupting it to run one of its own functions would land a callback in the middle of whatever else it was doing. So the kernel writes down an upcall instead: which function, which three values, and which subscription it answers. Chapter 4 found where those upcalls go: room for ten of them, a constant belonging to the process implementation rather than to any board. This is what fills it.</p>
 </section>
@@ -835,7 +835,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 <section class="col">
   <h2>One frame, three jobs</h2>
   <p id="frameline">The exception frame is eight words. The processor pushes them when it takes the exception and pops the same eight back when the handler returns. That is the opening the kernel uses: change the words while they are sitting there, and the process resumes into something else.</p>
-  <p id="blline">The comment above the function that does it says what it amounts to in one line: "In effect, this converts <b>svc</b> into <b>bl callback</b>." The instruction the process executed was a request. By the time it finishes, it has become a call to a function, with the address after the request left behind as the place to come back to. The specification has names for the two endings: a request that is simply answered is a <em>direct resume</em>, and one that comes back inside a function is a <em>pushed callback</em>.</p>
+  <p id="blline">The comment above the function that does it says what it amounts to in one line: "In effect, this converts <b>svc</b> into <b>bl callback</b>." The instruction the process executed was a request. By the time it finishes, it has become a call to a function, with the address after the request left behind as the place to come back to. The specification has names for the two endings: a request that is simply answered is a <em>Direct Resume</em>, and one that comes back inside a function is a <em>Pushed Callback</em>.</p>
   <p id="thumbline">Two of the eight words are addresses of instructions, and both are written with their lowest bit set. That is not an odd address. On this processor an address used as a branch target carries one bit saying which instruction set to decode. This chip has only one of the two, the compact set called Thumb, so the bit is always set and the address underneath it is always even.</p>
 </section>
 
@@ -872,7 +872,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 
 <section class="col">
   <h2>A buffer through the wall</h2>
-  <p id="bufline">Two of those eight words reach a driver as arguments, and that is everything a command can carry. A line of text to print is not two numbers, and neither is a reading to be filled in. For anything larger the process hands over a piece of its own memory: an address and a length, in a class made for it. What the kernel ends up holding is an allowed buffer, and the classes that make one are three of the eight.</p>
+  <p id="bufline">A command hands a driver two words of data and nothing more. A line of text to print is not two numbers, and neither is a reading to be filled in. For anything larger the process hands over a piece of its own memory: an address and a length, in a class made for it. What the kernel ends up holding is an allowed buffer, and the classes that make one are three of the eight.</p>
   <p id="consentline">Which sounds like exactly what chapter 5's fence exists to prevent, and is not. The fence stops a process reaching out. This is a process letting the kernel reach in, and the kernel runs on the privileged side, where chapter 5's regions do not apply at all. It could read that memory unasked. What the class buys is not access. It is a record of consent, with the bounds checked.</p>
   <p id="checkline">The check is software this time, in the process implementation rather than in the processor, and it lands on the same two addresses. The buffer must start at or after the start of the process's memory, and end at or before its break. Those are the two numbers chapter 5 wrote into a hardware register to build the region; here they are compared in Rust to answer a different question about the same span.</p>
 </section>
@@ -896,13 +896,13 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <div class="costcell"><span class="costcell-k">what comes back</span><span class="costcell-v" id="bf-out">accepted</span></div>
     </div>
     <div class="costsay">
-      <p class="costp is-on" id="bfp-0">The ordinary case. Both ends land inside the span, so the kernel builds a checked handle and files it, and hands back whichever buffer that driver held before. It also raises a mark: the highest address ever offered, which the process can no longer shrink below.</p>
+      <p class="costp is-on" id="bfp-0">The ordinary case. Both ends land inside the span, so the kernel builds a checked handle and files it, and hands back whichever allowed buffer that driver held before. It also raises a mark: the highest address ever offered, which the process can no longer shrink below.</p>
       <p class="costp" id="bfp-1">Refused, with an invalid-argument error, and nothing about the fence in chapter 5 was involved. The comparison is arithmetic on two pointers, made before any handle exists, and the same comparison would refuse a length so large it wrapped around the end of the address space.</p>
       <p class="costp" id="bfp-2">Accepted, and only because it is read-only. A read-write offer is checked against the process's memory alone; a read-only offer is checked against its memory or its flash, and a constant string lives in flash. This is why printing a literal works without copying it into RAM first.</p>
       <p class="costp" id="bfp-3">Accepted without any bounds check whatsoever, deliberately. A length of zero is how a process takes a buffer back. It replaces whatever the driver held with something that cannot be read or written, so no address it could name would make it unsafe.</p>
     </div>
   </div>
-  <div class="instrument-note" id="bf-note">Notice the mark in the first panel. Once a process has offered a stretch of memory, it may not move its break back below the far end of it, ever, and nothing lowers that mark again. The kernel has no way to know a driver has finished with a buffer, so it assumes none of them ever has. That is a permanent cost, paid to make a temporary loan safe.</div>
+  <div class="instrument-note" id="bf-note">Notice the mark in the first panel. Once a process has offered a stretch of memory, it may not move its break back below the far end of it, ever, and nothing lowers that mark again. The kernel has no way to know a driver has finished with an allowed buffer, so it assumes none of them ever has. That is a permanent cost, paid to make a temporary loan safe.</div>
 </figure>
 
 <section class="col">
@@ -978,7 +978,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
   <h2>What you can say now</h2>
   <p id="closing">A process reaches the kernel through one instruction, and the kind of request it is making is a number inside that instruction rather than in any register it can corrupt. There are eight kinds. Three are answered by the core kernel out of what it knows about the process. Five name a capsule, and of those, exactly one reaches a line of that capsule's own code in the ordinary case.</p>
   <p>The four argument registers land in the frame that instruction pushes. They mean different things on the way out and on the way back, and the kernel answers by writing into them where they sit. When something arrives later, the same eight words are edited again, so that resuming the process runs one of its own functions and then carries on from the request that started it.</p>
-  <p id="lastline">Two things crossed the boundary in this chapter that the chapter could not finish. One is the function pointer a process leaves behind for an upcall, which the kernel files somewhere. The other is the buffer it lends, which the kernel files in the same place. That place is inside the process's own memory, it has no allocator behind it, and it is the last mechanism this series has left to explain.</p>
+  <p id="lastline">Two things crossed the boundary in this chapter that the chapter could not finish. One is the function pointer a process leaves behind for an upcall, which the kernel files somewhere. The other is the allowed buffer it lends, which the kernel files in the same place. That place is inside the process's own memory, it has no allocator behind it, and it is the last mechanism this series has left to explain.</p>
 </section>
 
 <div class="col next">
