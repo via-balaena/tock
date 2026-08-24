@@ -7,3 +7,11 @@
 # to it, and that should not show up as untracked work. This file is repository
 # tooling configuration and keeps the Tock license, as learning/.lcignore does.
 *.s
+
+# Except one that is a source rather than build output. Chapter 6 ships the
+# assembly its figures quote, and check.py assembles it on every run, so a
+# clone without this file would run the gate green with the check silently
+# skipped and the page citing a file that is not there. Which is what happened:
+# the rule above was written for chapter 1's build artefact and swallowed
+# chapter 6's source the first time it was committed.
+!ch06-asking-the-kernel/syscall-demo.s

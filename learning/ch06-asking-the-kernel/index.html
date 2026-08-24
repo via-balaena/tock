@@ -1,0 +1,1206 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>Asking the Kernel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #616D72;
+  --rule:        #D3DBD8;
+  --rule-strong: #7D918A;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #77858C;
+    --rule:        #252F34;
+    --rule-strong: #556A73;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #77858C;
+  --rule:        #252F34;
+  --rule-strong: #556A73;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+p { margin: 0; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Beginner scaffolding. Everything below exists to lower reading cost:
+   a word defined where it is first used, a stated goal, an instruction above
+   each figure, a guess before each reveal, and a way to check yourself after.
+   --------------------------------------------------------------------------- */
+
+/* A word being defined, right where the reader meets it. */
+dfn {
+  font-style: normal;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+/* What the reader will be able to do. Stated before the work, not after. */
+.goals {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.goals h2 {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.goals ul { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals .cost {
+  font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem;
+}
+
+/* An imperative naming the control, immediately above the figure it drives. */
+.dothis {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--accent);
+}
+/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+   flex item of every inline child, so an emphasis or a code span inside one
+   of these lines came out with a half-rem gap on each side and the
+   punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
+   orphaned full stop since it was published. Tag names are spelled out here
+   rather than written as markup, because the tag-balance check counts what a
+   stylesheet comment says too. The arrow carries its own spacing instead. */
+.dothis::before {
+  content: "\2192";
+  font-weight: 700;
+  margin-right: .5rem;
+}
+
+/* Check yourself. Question visible, answer one click away. */
+.selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+/* A register name anywhere in a question. All three parts of a card are set
+   in the body face, and this chapter's questions are mostly about r0 and r1,
+   so leaving them in it would put the same name in two families on one card.
+   Chapter 5's questions name registers as words -- MPU_RBAR, HardFault -- and
+   its cards are left in the body face on purpose. */
+.q-ask b, .q-opt b, .q-answer b {
+  font-family: var(--mono); font-weight: 500; text-transform: none;
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way every panel on this
+   page is, so a reader with no scripting gets all four answers rather than
+   none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+/* The words, collected. */
+.glossary {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: .55rem 1.1rem;
+  margin: 0;
+  font-size: .97rem;
+  line-height: 1.55;
+}
+.glossary dt {
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: .12rem;
+}
+.glossary dd { margin: 0; color: var(--ink-soft); }
+
+
+/* The ten-word list at the top. Terms are short here, so the two columns
+   line up at the top of each row rather than centring. */
+.glossary.cast { align-items: start; }
+
+/* One shared rule: a register name or a line of source set inside a
+   panel, whichever component the panel belongs to. */
+.dbgp b, .costp b, .vtp b {
+  font-family: var(--mono); font-weight: 500; font-size: .88rem;
+}
+
+/* ---------- The assembled request: Figure 3's preamble ---------- */
+.asm {
+  font-family: var(--mono); font-size: .82rem; line-height: 1.7;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .7rem .85rem; margin: 0;
+  overflow-x: auto;
+}
+/* The shared inline-code rule paints a box round every `code`, which inside a
+   listing draws a box round the whole block. */
+.asm code {
+  background: none; border: 0; border-radius: 0; padding: 0;
+  font-size: inherit; word-break: normal; white-space: pre;
+}
+.asm-c { color: var(--ink-faint); }
+
+/* ---------- A row of buttons over stacked panels: Figures 4 and 9 ---------- */
+.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
+/* Words of a program image, so they are addresses and must not be uppercased. */
+.blk button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.blk button[aria-pressed="true"] {
+  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
+}
+.blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
+.blkp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.blkp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+/* Every explanation at once is a wall. The script shows one; with no
+   scripting none of that runs and they all stay readable. */
+.blkp.is-off { display: none; }
+.blkp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- A label beside a name: Figures 2 and 7 ---------- */
+.vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
+.vt button {
+  display: grid; grid-template-columns: 3.6rem 1fr; gap: .8rem;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.vt button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.vt-at { color: var(--hot); }
+.vtsay { display: flex; flex-direction: column; gap: .45rem; }
+.vtp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.vtp.is-off { display: none; }
+
+@media (max-width: 30rem) {
+  .vt button { grid-template-columns: 1fr; gap: .1rem; }
+}
+
+/* ---------- Buttons over a readout of three or four cells: Figures 1, 3, 5 and 8 ---------- */
+.costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
+/* These are lines of Rust, so their case is the content. */
+.costs button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  /* Lines of Rust. The longest wraps, and a button centres by default. */
+  text-align: left;
+  padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+.costgrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
+}
+/* Four registers is what the calling convention here is made of, so three
+   figures need a fourth column. */
+.costgrid.four { grid-template-columns: repeat(4, 1fr); }
+.costcell {
+  border: 1px solid var(--rule); background: var(--surface-sunk); padding: .55rem .7rem;
+}
+.costcell-k {
+  font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem;
+}
+.costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
+.costsay { display: flex; flex-direction: column; gap: .45rem; }
+.costp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.costp.is-off { display: none; }
+@media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
+
+/* ---------- Numbered steps: Figure 6 ---------- */
+.seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
+.seq button {
+  display: grid; grid-template-columns: 1.7rem 1fr; gap: .7rem;
+  align-items: baseline; text-align: left; width: 100%;
+  font-family: var(--body); font-size: .95rem; font-weight: 400; line-height: 1.5;
+  text-transform: none; letter-spacing: 0;
+  padding: .42rem .6rem; background: transparent;
+  border: 1px solid transparent; border-left: 2px solid var(--rule);
+  border-radius: 0; color: var(--ink-faint);
+}
+.seq button[aria-pressed="true"] {
+  color: var(--ink); background: var(--hot-soft); border-left-color: var(--hot);
+}
+.seq-n { font-family: var(--mono); font-size: .8rem; color: var(--ink-faint); }
+.seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
+.seq b { font-family: var(--mono); font-weight: 500; }
+.seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
+
+/* The panels Figure 6's numbered steps open. Named for the figure in
+   chapter 4 these rules were first written for, and kept because renaming a
+   class across markup, script and assertions buys nothing a comment cannot. */
+.dbgsay { display: flex; flex-direction: column; gap: .45rem; }
+.dbgp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.dbgp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.dbgp.is-off { display: none; }
+
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 6</p>
+  <h1>Asking the Kernel</h1>
+  <p class="standfirst">Chapter 5 finished a wall. A process may reach its own code and its own memory, and the hardware refuses everything else &mdash; no pin, no timer, no neighbour. So a process cannot switch on a light. There is exactly one way to ask for anything, and it is one instruction wide.</p>
+  <noscript>
+    <style>.dothis, .ifjs { display: none; }</style>
+    <p class="noscript-note">JavaScript appears to be off. Every explanation
+    this chapter relies on is in the prose and the drawn diagrams, and the lines
+    telling you to click things are hidden rather than left pointing at
+    nothing.</p>
+  </noscript>
+</header>
+
+<section class="col">
+  <div class="goals" id="goalbox">
+    <h2>What you'll be able to do at the end</h2>
+    <ul>
+      <li>Name the instruction a process uses to reach the kernel, and say where the number picking a <dfn>syscall class</dfn> is kept.</li>
+      <li>List the eight classes, and say which three never reach a driver and which two reach a line of its code.</li>
+      <li>Read one request the way the kernel reads it: four registers, meaning four different things depending on the class.</li>
+      <li>Follow one event from inside a driver to a function running inside a process, naming the queue it waited in.</li>
+    </ul>
+    <p class="cost">Plan on forty-five minutes. Chapters 4 and 5 are assumed: what a process is, and the fence the hardware puts round it. Chapter 3 comes back at the far end, because the thing that answers a request is the capsule chapter 3 was about.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Ten words, before we start</h2>
+  <p id="wordcount">Each is one sentence now and repeated in context below. Three of them are the names of particular requests, and the last is the only one describing traffic going the other way.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary cast" id="words">
+    <dt><dfn>syscall</dfn></dt><dd>The one way a process may ask the kernel for anything at all. Chapter 4 named it; this chapter is the whole of it.</dd>
+    <dt><dfn>syscall class</dfn></dt><dd>One of eight kinds of request. Which kind is being made is an eight-bit number, and it travels inside the instruction rather than in a register.</dd>
+    <dt><dfn>svc</dfn></dt><dd>The Arm instruction that raises an exception deliberately. It carries a process into the kernel, and going the other way it carries the kernel into a process.</dd>
+    <dt><dfn>exception frame</dfn></dt><dd>The eight words the processor pushes onto a stack when it takes an exception. Everything a request and its answer carry travels in it.</dd>
+    <dt><dfn>driver number</dfn></dt><dd>The part of a request that names a capsule. A board maps each one to a driver, or to nothing.</dd>
+    <dt><dfn>command</dfn></dt><dd>The class that tells a driver to do something now. It is the request that reaches a driver's own code in the ordinary case.</dd>
+    <dt><dfn>subscribe</dfn></dt><dd>The class that leaves a function pointer with the kernel, to be called once when something happens. The driver never sees the pointer.</dd>
+    <dt><dfn>allowed buffer</dfn></dt><dd>A run of a process's own memory that the process has handed to the kernel to read or write, given as an address and a length.</dd>
+    <dt><dfn>yield</dfn></dt><dd>The class that gives the processor back. A process that never calls it never receives anything.</dd>
+    <dt><dfn>upcall</dfn></dt><dd>A call in the other direction: the kernel arranging for one of a process's own functions to run. Chapter 4 found the queue they wait in.</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <h2>The wall with no door in it</h2>
+  <p id="doorline">Chapter 5 left a process that can reach nothing but itself. That is the whole point of it, and it is also a problem, because a process that can touch only its own memory can compute and do nothing else. It cannot light the LED on the board in front of you. The register that lights it sits at an address the hardware now refuses.</p>
+  <p id="notaddr">The way out cannot be a second gate in the fence. A gate would be an address the process is allowed to write, and any address a process is allowed to write is one a wrong pointer can reach by accident. What is wanted is an exit no pointer can find.</p>
+  <p id="trapline">So the exit is not an address at all. It is an instruction, and its entire job is to stop the process and hand the processor to the kernel. On this chip that instruction is <b>svc</b>, and it is sixteen bits wide: eight of them say <em>svc</em>, and the low eight are a number the program chooses.</p>
+  <p id="classline">That number is the syscall class. Not the driver, not the operation, not the argument &mdash; those go in registers. What the instruction itself carries is which of eight kinds of question is being asked.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">One instruction, and the number living inside it</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. The last two are the interesting ones: one is refused, and one is the kernel's own.</p>
+    <div class="costs" role="group" aria-label="Five svc instructions and how each decodes">
+      <button type="button" id="sv-0" aria-pressed="true">svc 0</button>
+      <button type="button" id="sv-1" aria-pressed="false">svc 2</button>
+      <button type="button" id="sv-2" aria-pressed="false">svc 4</button>
+      <button type="button" id="sv-3" aria-pressed="false">svc 8</button>
+      <button type="button" id="sv-4" aria-pressed="false">svc 255</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">the halfword in flash</span><span class="costcell-v" id="sv-word">0xDF00</span></div>
+      <div class="costcell"><span class="costcell-k">low eight bits</span><span class="costcell-v" id="sv-num">0</span></div>
+      <div class="costcell"><span class="costcell-k">what the kernel makes of it</span><span class="costcell-v" id="sv-cls">Yield</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="svp-0">Class zero, <b>yield</b>, and the only class whose first register the decoder actually checks. Three values are legal there; anything else is treated as a broken request rather than a request for something missing.</p>
+      <p class="costp" id="svp-1">Class two, <b>command</b>. This is the one in the LED request two figures down, and it is the class most of a working application spends its time in.</p>
+      <p class="costp" id="svp-2">Class four, the read-only kind of handing memory over. Classes three, four and seven are three flavours of the same idea, which is why the numbers on their own tell you so little.</p>
+      <p class="costp" id="svp-3">Nothing. The kernel converts eight-bit numbers into requests by matching zero through seven, and eight matches nothing, so the conversion returns nothing at all. A request that will not decode ends the process, which is the same ending chapter 5's forbidden store had.</p>
+      <p class="costp" id="svp-4">The kernel's own, going the other way. Tock enters a process by executing <b>svc 0xff</b>, and the comment beside that line says it does not matter which number is used, because nothing reads it. What sorts the two directions apart is a single bit of the link register, which is the same bit chapter 5's fault handler branched on.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="sv-note">Notice where the class number is not. It is not in a register: it is the low byte of an instruction sitting in the process's own flash, which chapter 5 fenced as readable and executable and never writable. A process can get the contents of a request wrong. It cannot corrupt which kind of request it is making.</div>
+</figure>
+
+<section class="col">
+  <h2>Eight kinds of question</h2>
+  <p id="eightline">The kernel's own list of them disagrees with itself, and it is worth seeing why before trusting any count. The file that defines them opens with the sentence "Tock supports six system calls", names six, describes a seventh three lines further down, and then declares an enumeration with eight in it. The enumeration is the one the hardware path uses. Eight is the number.</p>
+  <p id="fiveline">A useful way to hold them is by how far each one travels. Five of the eight begin with a driver number, so the kernel has to look up a capsule before it can go on. The other three never leave the core kernel: it can answer them out of what it already knows about the process.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">Eight classes, and how far each one gets</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each class. The left column is the number that goes in the instruction.</p>
+    <div class="vt" role="group" aria-label="The eight syscall classes">
+      <button type="button" id="cl-0" aria-pressed="true"><span class="vt-at">0</span><span>Yield</span></button>
+      <button type="button" id="cl-1" aria-pressed="false"><span class="vt-at">1</span><span>Subscribe</span></button>
+      <button type="button" id="cl-2" aria-pressed="false"><span class="vt-at">2</span><span>Command</span></button>
+      <button type="button" id="cl-3" aria-pressed="false"><span class="vt-at">3</span><span>ReadWriteAllow</span></button>
+      <button type="button" id="cl-4" aria-pressed="false"><span class="vt-at">4</span><span>ReadOnlyAllow</span></button>
+      <button type="button" id="cl-5" aria-pressed="false"><span class="vt-at">5</span><span>Memop</span></button>
+      <button type="button" id="cl-6" aria-pressed="false"><span class="vt-at">6</span><span>Exit</span></button>
+      <button type="button" id="cl-7" aria-pressed="false"><span class="vt-at">7</span><span>UserspaceReadableAllow</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="clp-0">Give the processor back. Three variants: wait until something arrives, look and return either way, or wait for one particular thing. The core kernel handles it, and it is one of three classes a board's own request filter is never shown.</p>
+      <p class="vtp" id="clp-1">Leave a function pointer with the kernel. It names a driver, and the driver is never told. The kernel checks the pointer lands inside the process's own flash or its own RAM. Then it files the pointer, and hands back whichever one was there before.</p>
+      <p class="vtp" id="clp-2">Do something now. This is the class that reaches a driver's own code, and it does so in one line of the kernel: <b>d.command(subdriver_number, arg0, arg1, process.processid())</b>. Everything the driver may answer with is a value or an error.</p>
+      <p class="vtp" id="clp-3">Hand over a run of the process's memory for the kernel to read and write. It names a driver, and again the driver never receives it. The kernel checks the address and length against the process's own bounds and files the result.</p>
+      <p class="vtp" id="clp-4">The same, for memory the kernel will only read. One thing differs, and it matters: a read-only run may sit in the process's flash, where a read-write one may not. That is how a constant string gets printed.</p>
+      <p class="vtp" id="clp-5">Ask about, or move, the edges of the process's own memory, which the core kernel answers alone. Twelve operations numbered 0 to 11: two move the break chapter 4 named, five report where its own memory and flash begin and end, and the rest concern writeable flash and debugging.</p>
+      <p class="vtp" id="clp-6">Stop, and the last of the three the core kernel answers by itself. Two variants, terminate and restart, with a completion code beside them. Anything other than those two variants comes back as an ordinary unsupported-operation error, which the process is still running to read.</p>
+      <p class="vtp" id="clp-7">The third flavour of handing memory over, where the process keeps reading it while the kernel writes. This is the one other class that reaches a method on the driver, and exactly one capsule in the tree implements that method.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="cl-note">Notice that the numbers do not group anything. Classes 3, 4 and 7 are three versions of one request, and 7 sits three slots away from its siblings. Nothing about the numbering says so, and nothing in the kernel depends on which class sits beside which. It is a record of what was needed when, not a taxonomy.</div>
+</figure>
+
+<section class="col">
+  <h2>Turning on the light</h2>
+  <p id="ledline">Chapter 3 left a request half-finished on purpose. A process asks for its first LED to be turned on; chapter 3 picked the request up on the kernel's side, inside the capsule, and left the crossing for here. Here is the crossing, and on this board it is five instructions and a return.</p>
+  <p id="ledreq">The LED driver's number is <code>0x00002</code>. Command number 1 means turn one on, and the argument beside it says which one. So the request is four numbers in four registers, and then the instruction that sends them:</p>
+  <pre class="asm" id="ledasm"><code>2002      movs r0, #2      <span class="asm-c">// driver number: the LED driver</span>
+2101      movs r1, #1      <span class="asm-c">// command number: on</span>
+2200      movs r2, #0      <span class="asm-c">// which LED: the first</span>
+2300      movs r3, #0      <span class="asm-c">// unused by this command</span>
+df02      svc 2            <span class="asm-c">// class 2: command</span>
+4770      bx lr</code></pre>
+  <p id="ledtwelve">Twelve bytes. The column on the left is what the assembler produced, and the last instruction is the wrapper returning, not part of the request. Notice <code>df02</code>: the <code>02</code> is the class, exactly as Figure 1 had it. The <code>02</code> at the end of <code>2002</code>, four lines up, is the driver number, which on this board happens to be 2 as well. The two have nothing to do with each other.</p>
+  <p id="ledboard">One board note. That LED is on GPIO&nbsp;25, and this board's driver is built with exactly one of them, which is why the next figure can show an index of 1 being refused. On a Pico&nbsp;2&nbsp;W, chapter 1 said, GPIO&nbsp;25 is the radio's chip-select line rather than the LED, and this tree has no crate for that board at all.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">One class, four requests, four registers</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each request. Every one of them is <b>svc 2</b>; only the registers change.</p>
+    <div class="costs" role="group" aria-label="Four command requests and their registers">
+      <button type="button" id="rq-0" aria-pressed="true">how many LEDs are there?</button>
+      <button type="button" id="rq-1" aria-pressed="false">turn LED 0 on</button>
+      <button type="button" id="rq-2" aria-pressed="false">turn LED 1 on</button>
+      <button type="button" id="rq-3" aria-pressed="false">is anyone home at driver 3?</button>
+    </div>
+    <div class="costgrid four">
+      <div class="costcell"><span class="costcell-k">r0 &mdash; driver</span><span class="costcell-v" id="rq-r0">0x00002</span></div>
+      <div class="costcell"><span class="costcell-k">r1 &mdash; command</span><span class="costcell-v" id="rq-r1">0</span></div>
+      <div class="costcell"><span class="costcell-k">r2 &mdash; argument</span><span class="costcell-v" id="rq-r2">0</span></div>
+      <div class="costcell"><span class="costcell-k">r3 &mdash; argument</span><span class="costcell-v" id="rq-r3">0</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="rqp-0">Command 0 is a convention rather than a rule: ask a driver for command 0 and a driver that is there answers. This one answers with how many LEDs it was built with, so on this board it comes back as 1.</p>
+      <p class="costp" id="rqp-1">The request from the listing above. The driver compares the argument against the number of LEDs it holds, finds 0 is in range, and turns that one on before the call returns. Nothing waits; the pin is already high.</p>
+      <p class="costp" id="rqp-2">Refused, and refused by the driver. It holds one LED, so index 1 is out of range and the answer is an invalid-argument error. The class was fine, the driver was found, and the argument was wrong.</p>
+      <p class="costp" id="rqp-3">Refused earlier, and by the board. Driver 3 is the buttons driver, and this board's lookup lists five numbers: alarm, console, LED, GPIO and inter-process communication. Three is not among them, so no driver is consulted and the answer is a no-such-device error.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="rq-note">Notice that the last two both fail and fail in different places. One is a driver saying no; the other is a board having nothing at that number, which the kernel discovers before any driver code runs. To the process both look the same &mdash; a number in <b>r0</b> saying failure and a number in <b>r1</b> saying which &mdash; and telling them apart is the whole reason command 0 exists.</div>
+</figure>
+
+<section class="col">
+  <h2>What a driver is actually asked</h2>
+  <p id="traitline">Five classes begin with a driver number, so it would be reasonable to expect a driver to have five things to implement. The trait every driver implements has three methods, and only two of them are requests.</p>
+  <p id="threemeth">One is <b>command</b>. One is the seventh class, the shared-buffer flavour, which exactly one capsule in the tree uses. The third is not a request at all: it is the kernel asking a capsule to set aside its per-process storage, which is chapter 7's subject and appears here only as the method's name.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">Three methods, and the six classes that reach none of them</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each method. The third is the one that is not a request.</p>
+    <div class="blk" role="group" aria-label="The three methods a driver implements">
+      <button type="button" id="tm-0" aria-pressed="true">command</button>
+      <button type="button" id="tm-1" aria-pressed="false">allow_userspace_readable</button>
+      <button type="button" id="tm-2" aria-pressed="false">allocate_grant</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="tmp-0">Four arguments in, one answer out. The answer is a wrapper around a small set of shapes: success, success carrying up to three values, or failure carrying an error. A driver that does not recognise the operation says so with an unsupported-operation error, and that is also what the trait does for a driver that does not write this method at all.</p>
+      <p class="blkp" id="tmp-1">The seventh class, and the only allow that a driver sees. It exists because sometimes both sides want to read the same bytes while the kernel is filling them. The default is a refusal, and one capsule in the whole tree replaces it: the one that lets a process read the kernel's own idea of the time without a syscall at all.</p>
+      <p class="blkp" id="tmp-2">Not a request. The kernel calls it when a subscribe or an allow needs filing for a process that has never used this driver before. It has to ask, because only the capsule knows how large its own per-process storage is. It is the one method with no default, so a driver author cannot forget it silently.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="tm-note">Notice what is absent. There is no subscribe method and no read-write allow method, so a driver cannot see the function pointer a process registered and cannot be handed the buffer a process offered. The core kernel takes both, checks both, and files both. Chapter 3 said a capsule reaches only what it was handed; this is the same rule one level up, applied to what a process hands it.</div>
+</figure>
+
+<section class="col">
+  <h2>The answer, in the same four words</h2>
+  <p id="backline">There is no returning from a syscall in the ordinary sense. The kernel is not on a stack the process can return through, and by the time the answer exists the process is not running. What the kernel does instead is write into the exception frame the <b>svc</b> pushed. The four words that carried the request out are the four words that carry the answer back.</p>
+  <p id="firstword">The first of the four says what shape the other three are in, and the numbering is the useful part. Of the ten shapes defined, every failure is numbered below 128 and every success is 128 or above, so a process can sort one from the other by looking at a single bit.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">Five answers, and which registers each one touches</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each answer. Watch which cells stay marked as untouched.</p>
+    <div class="costs" role="group" aria-label="Five syscall return shapes">
+      <button type="button" id="rt-0" aria-pressed="true">Success</button>
+      <button type="button" id="rt-1" aria-pressed="false">SuccessU32</button>
+      <button type="button" id="rt-2" aria-pressed="false">SuccessU32U32U32</button>
+      <button type="button" id="rt-3" aria-pressed="false">Failure</button>
+      <button type="button" id="rt-4" aria-pressed="false">FailureU32</button>
+    </div>
+    <div class="costgrid four">
+      <div class="costcell"><span class="costcell-k">r0 &mdash; shape</span><span class="costcell-v" id="rt-r0">128</span></div>
+      <div class="costcell"><span class="costcell-k">r1</span><span class="costcell-v" id="rt-r1">untouched</span></div>
+      <div class="costcell"><span class="costcell-k">r2</span><span class="costcell-v" id="rt-r2">untouched</span></div>
+      <div class="costcell"><span class="costcell-k">r3</span><span class="costcell-v" id="rt-r3">untouched</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="rtp-0">It worked and there is nothing to say about it. One register written, three left alone. This is what turning on an LED comes back as.</p>
+      <p class="costp" id="rtp-1">It worked and here is a number. Asking the LED driver how many LEDs it has comes back this way, with the 1 in <b>r1</b>.</p>
+      <p class="costp" id="rtp-2">The widest success shape there is: three values, filling every register the frame has for the purpose. Time-of-day and sensor readings are what tend to need it.</p>
+      <p class="costp" id="rtp-3">It did not work, and <b>r1</b> says why. There are thirteen errors in the whole kernel, numbered 1 to 13, with names like invalid-argument and no-such-device. A process compares against a number rather than parsing anything.</p>
+      <p class="costp" id="rtp-4">It did not work, and there is a number worth having anyway &mdash; how much of a buffer was consumed before the trouble, say. Failure shapes and success shapes are numbered from opposite ends for exactly this reason. A failure can carry data of its own without any chance of being read as a success.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="rt-note">Notice what "untouched" means. The kernel writes only the registers a shape needs, and the rest of the frame still holds what the process put there before the <b>svc</b> &mdash; its own arguments. So a process that reads <b>r2</b> after a plain success reads back the argument it sent. That is an accident of the encoding rather than a promise, and the specification says nothing about it.</div>
+</figure>
+
+<section class="col">
+  <h2>Things that do not finish</h2>
+  <p id="splitline">Turning on an LED finishes inside the call. The pin is high before the process runs again, which is why Figure 3's answer had nothing in it. Most of what a process wants is not like that. A byte from the console arrives when somebody types it, and no amount of waiting inside a driver will make that sooner.</p>
+  <p id="twoparts">So a request that cannot finish is split in two. First <b>subscribe</b>, leaving a function pointer with the kernel. Then <b>command</b>, which starts the work and returns immediately, having promised nothing except that it started. Later the driver has something, and asks the kernel to run that function.</p>
+  <p id="queueline">The kernel cannot. The process is not running, and even if it were, interrupting it to run one of its own functions would land a callback in the middle of whatever else it was doing. So the kernel writes down an upcall instead: which function, which three values, and which subscription it answers. Chapter 4 found where those notes go: room for ten of them, a constant belonging to the process implementation rather than to any board. This is what fills it.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Six steps from a driver's event to a function running in a process</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each step. Step four is the one that is not an action.</p>
+    <div class="seq" role="group" aria-label="Six steps in delivering an upcall">
+      <button type="button" id="uc-0" aria-pressed="true"><span class="seq-n">1</span><span>The driver has something, and asks for the process's function to be run <span class="seq-src">grant.rs:610</span></span></button>
+      <button type="button" id="uc-1" aria-pressed="false"><span class="seq-n">2</span><span>The kernel builds a note out of it: three values from the driver, and a fourth the driver never saw <span class="seq-src">upcall.rs:183</span></span></button>
+      <button type="button" id="uc-2" aria-pressed="false"><span class="seq-n">3</span><span>The note goes on the end of the process's queue <span class="seq-src">process_standard.rs:598</span></span></button>
+      <button type="button" id="uc-3" aria-pressed="false"><span class="seq-n">4</span><span>Nothing happens <span class="seq-src">no code at all</span></span></button>
+      <button type="button" id="uc-4" aria-pressed="false"><span class="seq-n">5</span><span>The process calls <b>yield</b>, and the kernel takes one note off the queue <span class="seq-src">kernel.rs:607</span></span></button>
+      <button type="button" id="uc-5" aria-pressed="false"><span class="seq-n">6</span><span>The frame is rewritten so the process resumes at the function <span class="seq-src">kernel.rs:628</span></span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="ucp-0">A driver does not call the process's function and does not hold its address. It has a handle that lets it say "number two of mine, with these three values", and the kernel finds the pointer it filed at subscribe time. A driver asking for a number it has no upcall for gets an error and nothing is scheduled.</p>
+      <p class="dbgp" id="ucp-1">The fourth value is the one worth knowing about. When the process subscribed, it passed a word of its own alongside the pointer, and the kernel kept it. It comes back here untouched. A callback can therefore tell which of its own requests it is answering, and the driver was never told anything about that.</p>
+      <p class="dbgp" id="ucp-2">Ten slots, shared by every driver a process uses. A full queue does not block and does not fault: the note is dropped and the driver is told the queue was full. What happens next is then the driver's business, because the kernel keeps nothing to retry from.</p>
+      <p class="dbgp" id="ucp-3">This is the step that surprises people. The process is running, and a running process is never stopped to take one of these. It runs until it asks for something, uses up its slice of time, or yields. Until one of those, the note sits in the queue and the driver's event has visibly happened to nobody.</p>
+      <p class="dbgp" id="ucp-4">Yielding puts the process into a state where notes can be delivered, and the kernel takes exactly one. If the queue holds three, the other two wait for the next yield. This is also why a process that never yields never receives anything: its queue fills to ten and the eleventh is dropped.</p>
+      <p class="dbgp" id="ucp-5">The last step is the one in the next section. The kernel does not call the function; it edits the eight words on the process's stack so that resuming the process lands inside the function instead of after the <b>svc</b>.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="uc-note">Notice that an upcall is nothing like an interrupt reaching into the process, which is what the word suggests to anyone who has met one on a larger machine. There is no thread, and nothing that stops the process to hand it one. There is a queue, and a moment the process chooses, and delivery happens at that moment or not at all.</div>
+</figure>
+
+<section class="col">
+  <h2>One frame, three jobs</h2>
+  <p id="frameline">The exception frame is eight words. The processor pushes them when it takes the exception and pops the same eight back when the handler returns. That is the opening the kernel uses: change the words while they are sitting there, and the process resumes into something else.</p>
+  <p id="blline">The comment above the function that does it says what it amounts to in one line: "In effect, this converts <b>svc</b> into <b>bl callback</b>." The instruction the process executed was a request. By the time it finishes, it has become a call to a function, with the address after the request left behind as the place to come back to.</p>
+  <p id="thumbline">Two of the eight words are addresses of instructions, and both are written with their lowest bit set. That is not an odd address. On this processor an address used as a branch target carries one bit saying which instruction set to decode. This chip has only one of the two, the compact set called Thumb, so the bit is always set and the address underneath it is always even.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">Eight words, and the three jobs each one does</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each word. The left column is how far up the frame it sits.</p>
+    <div class="vt" role="group" aria-label="The eight words of the exception frame">
+      <button type="button" id="fr-0" aria-pressed="true"><span class="vt-at">+0</span><span>r0</span></button>
+      <button type="button" id="fr-1" aria-pressed="false"><span class="vt-at">+4</span><span>r1</span></button>
+      <button type="button" id="fr-2" aria-pressed="false"><span class="vt-at">+8</span><span>r2</span></button>
+      <button type="button" id="fr-3" aria-pressed="false"><span class="vt-at">+12</span><span>r3</span></button>
+      <button type="button" id="fr-4" aria-pressed="false"><span class="vt-at">+16</span><span>r12</span></button>
+      <button type="button" id="fr-5" aria-pressed="false"><span class="vt-at">+20</span><span>lr</span></button>
+      <button type="button" id="fr-6" aria-pressed="false"><span class="vt-at">+24</span><span>pc</span></button>
+      <button type="button" id="fr-7" aria-pressed="false"><span class="vt-at">+28</span><span>xPSR</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="frp-0">Going out: the driver number, or the yield variant, or the exit variant, depending on the class. Coming back: which shape the answer is. Carrying a callback: the driver's first value. Three different meanings, one word, and which one applies is never written down anywhere in the frame.</p>
+      <p class="vtp" id="frp-1">Going out: the command or subscribe number within the driver. Coming back: an error code, or the first value of a success. Carrying a callback: the driver's second value.</p>
+      <p class="vtp" id="frp-2">Going out: an argument, or the address of a buffer, or a function pointer. Coming back: a second value. Carrying a callback: the driver's third and last value.</p>
+      <p class="vtp" id="frp-3">Going out: an argument, or a buffer's length, or the word a process wants handed back to its own callback. Coming back: a third value. Carrying a callback: that same word, returned untouched.</p>
+      <p class="vtp" id="frp-4">Nothing, ever. The source is blunt about it: "Stack offset 4 is R12, which the syscall interface ignores". The processor saves it because the calling convention says a called function may destroy it, and the syscall path has no use for it in either direction.</p>
+      <p class="vtp" id="frp-5">Where to resume when the thing at <b>pc</b> returns. For a plain answer nothing is written here. To deliver a callback the kernel writes the address just after the <b>svc</b>, so that when the callback returns, the process carries on from the request as though it had simply come back.</p>
+      <p class="vtp" id="frp-6">Where to resume now. For a plain answer this is already the instruction after the <b>svc</b> and is left alone. To deliver a callback the kernel writes the function's address here instead. This one word is the whole of the trick.</p>
+      <p class="vtp" id="frp-7">The condition flags and a little processor state. Saved on the way in and put back on the way out. Where a callback is being delivered the kernel writes back the value it saved from the original request, rather than inventing one.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="fr-note">Notice that answering a request and delivering a call are the same operation on the same eight words. Two of the three jobs write only the first four; the third writes seven, leaving out exactly the one the interface ignores. Nothing in the frame records which job was done, because nothing needs to: the process resumes at whatever <b>pc</b> now says, and finds out from the code it lands in.</div>
+</figure>
+
+<section class="col">
+  <h2>A buffer through the wall</h2>
+  <p id="bufline">A command carries two numbers. A line of text to print is not two numbers, and neither is a reading to be filled in. For anything larger the process hands over a piece of its own memory: an address and a length, in a class made for it. What the kernel ends up holding is an allowed buffer, and the classes that make one are three of the eight.</p>
+  <p id="consentline">Which sounds like exactly what chapter 5's fence exists to prevent, and is not. The fence stops a process reaching out. This is a process letting the kernel reach in, and the kernel runs on the privileged side, where chapter 5's regions do not apply at all. It could read that memory unasked. What the class buys is not access. It is a record of consent, with the bounds checked.</p>
+  <p id="checkline">The check is software this time, in the process implementation rather than in the processor, and it lands on the same two addresses. The buffer must start at or after the start of the process's memory, and end at or before its break. Those are the two numbers chapter 5 wrote into a hardware register to build the region; here they are compared in Rust to answer a different question about the same span.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 8</span>
+    <span class="instrument-title">Four buffers offered, and what decides each one</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each offer. Two are accepted for different reasons, and one is accepted with no check at all.</p>
+    <div class="costs" role="group" aria-label="Four buffers a process offers the kernel">
+      <button type="button" id="bf-0" aria-pressed="true">64 bytes on my own stack</button>
+      <button type="button" id="bf-1" aria-pressed="false">64 bytes just past my break</button>
+      <button type="button" id="bf-2" aria-pressed="false">a string in my flash, read-only</button>
+      <button type="button" id="bf-3" aria-pressed="false">length zero, address anything</button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">where it points</span><span class="costcell-v" id="bf-where">inside my memory</span></div>
+      <div class="costcell"><span class="costcell-k">what decides</span><span class="costcell-v" id="bf-test">start and break</span></div>
+      <div class="costcell"><span class="costcell-k">what comes back</span><span class="costcell-v" id="bf-out">accepted</span></div>
+    </div>
+    <div class="costsay">
+      <p class="costp is-on" id="bfp-0">The ordinary case. Both ends land inside the span, so the kernel builds a checked handle and files it, and hands back whichever buffer that driver held before. It also raises a mark: the highest address ever offered, which the process can no longer shrink below.</p>
+      <p class="costp" id="bfp-1">Refused, with an invalid-argument error, and nothing about the fence in chapter 5 was involved. The comparison is arithmetic on two pointers, made before any handle exists, and the same comparison would refuse a length so large it wrapped around the end of the address space.</p>
+      <p class="costp" id="bfp-2">Accepted, and only because it is read-only. A read-write offer is checked against the process's memory alone; a read-only offer is checked against its memory or its flash, and a constant string lives in flash. This is why printing a literal works without copying it into RAM first.</p>
+      <p class="costp" id="bfp-3">Accepted without any bounds check whatsoever, deliberately. A length of zero is how a process takes a buffer back. It replaces whatever the driver held with something that cannot be read or written, so no address it could name would make it unsafe.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="bf-note">Notice the mark in the first panel. Once a process has offered a stretch of memory, it may not move its break back below the far end of it, ever, and nothing lowers that mark again. The kernel has no way to know a driver has finished with a buffer, so it assumes none of them ever has. That is a permanent cost, paid to make a temporary loan safe.</div>
+</figure>
+
+<section class="col">
+  <h2>Three requests the door refuses</h2>
+  <p id="refuseline">A door that cannot refuse is a hole. This one refuses in two quite different ways, and the difference is worth more than either case on its own. One kind ends the process, without any driver being asked and without anything being returned to read. The other is an ordinary answer, which the process collects and carries on from. Which of the two a bad request gets turns on whether the kernel could make sense of it at all.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-title">Three refusals, and only one of them survivable</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. The third is the odd one out, and the reason is the point of the figure.</p>
+    <div class="blk" role="group" aria-label="Three requests the kernel refuses">
+      <button type="button" id="rf-0" aria-pressed="true">svc 8</button>
+      <button type="button" id="rf-1" aria-pressed="false">yield, variant 3</button>
+      <button type="button" id="rf-2" aria-pressed="false">command to driver 3</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="rfp-0">There is no class 8. The step that turns four registers and a number into a request matches 0 through 7 and returns nothing for anything else, and the caller turns that nothing into a fault. The process is stopped, and the board's policy decides what stopping means, exactly as in chapter 5.</p>
+      <p class="blkp" id="rfp-1">The same ending, one step further in. Yield is the only class whose first register the decoder validates: 0, 1 and 2 are the three variants, and a 3 there makes the whole request undecodable rather than unsupported. The class was real, the argument was not, and the result is a stopped process either way.</p>
+      <p class="blkp" id="rfp-2">An answer. The request decoded, the class exists, the board looked 3 up and had nothing there, so a no-such-device error goes back in <b>r1</b> and the process keeps running. Nothing is faulted, because nothing was malformed &mdash; the process asked a well-formed question about something absent.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="rf-note">Notice the line the kernel is drawing. A request it cannot parse is treated as a broken process, because a process that emits nonsense at the boundary has already lost the plot. A request it can parse but cannot satisfy is treated as a conversation. Exit is the same shape: an unknown exit variant comes back as an unsupported-operation error rather than a fault, and the process that asked to stop is still running to read it.</div>
+</figure>
+
+<section class="col">
+  <h2>Check yourself</h2>
+</section>
+
+<div class="col selfcheck">
+  <div class="q">
+    <p class="q-ask">Where does the kernel find out which class of request a process made?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the first question">
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false">In <b>r0</b>, the first of the four argument registers</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">In a word of the exception frame the processor pushed</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">In the low byte of the <b>svc</b> instruction, read back out of the process's flash</button>
+    </div>
+    <p class="q-answer" id="qan">The third. The handler has no register to read it from. It takes the program counter off the frame, steps back one halfword to the instruction that caused the exception, reads it, and masks off the low eight bits. <b>r0</b> is the driver number for five of the eight classes, which is what makes the first answer tempting.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A process subscribes, sends a command, and then never yields. When does its callback run?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the second question">
+      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">As soon as the driver has something, since the kernel runs privileged and can do it</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Never &mdash; a running process is not stopped to take one</button>
+      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">At the end of its timeslice, when the scheduler stops it anyway</button>
+    </div>
+    <p class="q-answer" id="qbn">The second. Notes are only taken off the queue for a process that has yielded, so a process that never yields accumulates ten of them and then starts losing them. The third answer is the near miss worth naming. Losing the processor at the end of a timeslice is not yielding: it puts the process back in line to run again, not into the state where notes are delivered.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">A syscall comes back with 1 in <b>r0</b>. What did the process get?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the third question">
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">A failure, with an error code in <b>r1</b></button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">A success carrying one 32-bit value</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">Driver number 1, echoed back to confirm the request</button>
+    </div>
+    <p class="q-answer" id="qcn">The first. Failures are numbered from 0 and successes from 128, so 1 is the second failure shape: an error code and one extra value. The success carrying one value is 129, which is the same idea shifted by the one bit that separates the two families.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">Why can a driver not hold on to a buffer a process allowed it?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the fourth question">
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The memory protection unit refuses the driver that address</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The buffer sits in flash, which a driver may not write</button>
+      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">A driver is never handed it &mdash; the core kernel checks it and files it</button>
+    </div>
+    <p class="q-answer" id="qdn">The third. There is no method on the trait through which a read-write buffer could arrive, so the question of holding one does not come up. The first answer is the one to be careful with: the unit really does not refuse it, because a driver runs privileged and chapter 5's regions were never pointed at the kernel.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>What you can say now</h2>
+  <p id="closing">A process reaches the kernel through one instruction, and the kind of request it is making is a number inside that instruction rather than in any register it can corrupt. There are eight kinds. Three are answered by the core kernel out of what it knows about the process. Five name a capsule, and of those, exactly one reaches a line of that capsule's own code in the ordinary case.</p>
+  <p>The four argument registers land in the frame that instruction pushes. They mean different things on the way out and on the way back, and the kernel answers by writing into them where they sit. When something arrives later, the same eight words are edited again, so that resuming the process runs one of its own functions and then carries on from the request that started it.</p>
+  <p id="lastline">Two things crossed the boundary in this chapter that the chapter could not finish. One is the function pointer a process leaves behind for an upcall, which the kernel files somewhere. The other is the buffer it lends, which the kernel files in the same place. That place is inside the process's own memory, it has no allocator behind it, and it is the last mechanism this series has left to explain.</p>
+</section>
+
+<div class="col next">
+  <p class="eyebrow forward">Next</p>
+  <h3 style="margin-top:0">Chapter 7 &mdash; Grants</h3>
+  <p>Chapter 7 is entirely about that place. A driver keeps state for each process that uses it, inside that process's own memory, bounded, with nothing that can be asked for more. It is the last thing chapter 1 promised, and the reason this series needed seven chapters rather than five.</p>
+</div>
+
+<section class="col sources">
+  <h3>Everything above, checked against source</h3>
+  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>, the same commit chapters 3, 4 and 5 were pinned to. The instruction encodings in Figure 1 and in the listing were assembled rather than looked up, from <code>syscall-demo.s</code> beside this page.</p>
+  <ul>
+    <li>The eight classes and their numbers &mdash; <code>SyscallClass</code>, <code>kernel/src/syscall.rs</code>:87&ndash;96, converted from a byte at :101&ndash;116</li>
+    <li>The file's own opening line saying six, three lines before it describes a seventh &mdash; the same file, :9&ndash;22</li>
+    <li>The decoded request, one shape per class &mdash; <code>Syscall</code>, the same file, :150&ndash;236</li>
+    <li>Which classes carry a driver number &mdash; <code>driver_number</code>, the same file, :239&ndash;268, returning something for five of the eight</li>
+    <li>Four registers and a number becoming one of those shapes &mdash; <code>syscall_from_register_arguments_trd104</code>, <code>kernel/src/utilities/arch_helpers.rs</code>:42&ndash;107</li>
+    <li>Yield being the only class whose first register is checked there, and 0, 1 and 2 being the whole of it &mdash; the same function, :50&ndash;66</li>
+    <li>Anything that will not decode becoming a fault &mdash; <code>arch/cortex-m/src/syscall.rs</code>:509&ndash;512</li>
+    <li>The class number coming out of the instruction rather than a register &mdash; the same file, :478&ndash;497, stepping the program counter back one halfword and masking the low eight bits</li>
+    <li>Which register each architecture uses, in a table &mdash; <code>doc/reference/trd104-syscalls.md</code>:103&ndash;108, where the row for the class identifier says <code>svc</code></li>
+    <li>The kernel entering a process with the same instruction, and the number there meaning nothing &mdash; <code>arch/cortex-v7m/src/lib.rs</code>:293&ndash;298, "It doesn't matter which SVC number we use here as it is not used in the exception handler"</li>
+    <li>One bit of the link register sorting the two directions apart &mdash; the same file, :73&ndash;82, the same bit chapter 5's fault handler branched on</li>
+    <li>This board using that handler &mdash; <code>arch/cortex-m33/src/lib.rs</code>:47</li>
+    <li>The frame being eight words &mdash; <code>arch/cortex-m/src/syscall.rs</code>:195&ndash;196, "Space for 8 u32s: r0-r3, r12, lr, pc, and xPSR"</li>
+    <li>Three classes a board's request filter is never shown &mdash; <code>kernel/src/kernel.rs</code>:761&ndash;771</li>
+    <li>Five classes routed by driver number &mdash; the same file, :850&ndash;857</li>
+    <li>The one line that reaches a driver's own code &mdash; <code>d.command(subdriver_number, arg0, arg1, process.processid())</code>, the same file, :1035</li>
+    <li>A driver number a board does not list &mdash; the same file, :1036, and the board's own lookup at <code>boards/raspberry_pi_pico_2/src/main.rs</code>:105&ndash;112, which names five</li>
+    <li>Subscribe checking the pointer against the process's flash or its RAM &mdash; the same file, :903&ndash;911, and <code>is_valid_upcall_function_pointer</code>, <code>kernel/src/process_standard.rs</code>:1416&ndash;1422</li>
+    <li>Subscribe returning the previous pointer, and clearing pending calls only on success &mdash; <code>kernel/src/kernel.rs</code>:936 and :1005&ndash;1011</li>
+    <li>An unknown exit variant coming back as an error rather than a fault &mdash; the same file, :1411&ndash;1417</li>
+    <li>The trait a driver implements, and its three methods &mdash; <code>kernel/src/syscall_driver.rs</code>:262&ndash;390: <code>command</code> at :268, <code>allow_userspace_readable</code> at :288, <code>allocate_grant</code> at :390</li>
+    <li><code>allocate_grant</code> being the one with no default, "to help prevent accidentally forgetting to implement this function" &mdash; the same file, :312&ndash;313</li>
+    <li>Failures numbered from 0 and successes from 128 &mdash; <code>TRD104SyscallReturnVariant</code>, <code>kernel/src/utilities/arch_helpers.rs</code>:187&ndash;198</li>
+    <li>Only the registers a shape needs being written &mdash; <code>encode_syscall_return_trd104</code>, the same file, :285&ndash;296, where a plain failure writes two of the four</li>
+    <li>The upcall's fourth argument being the word the process passed at subscribe time &mdash; <code>encode_upcall_trd104_ptr</code>, the same file, :649&ndash;663, and <code>argument3: self.appdata</code> at <code>kernel/src/upcall.rs</code>:188</li>
+    <li>A driver scheduling a call by number, with three values &mdash; <code>schedule_upcall</code>, <code>kernel/src/grant.rs</code>:610&ndash;614</li>
+    <li>The note being built and queued &mdash; <code>kernel/src/upcall.rs</code>:183&ndash;190, into <code>enqueue_task</code> at <code>kernel/src/process_standard.rs</code>:598, which returns out-of-memory on a full ring at :625&ndash;628</li>
+    <li>Ten slots &mdash; <code>CALLBACK_LEN</code>, the same file, :1729, the constant chapter 4 named</li>
+    <li>Notes being delivered only to a process that has yielded &mdash; <code>kernel/src/kernel.rs</code>:602&ndash;628</li>
+    <li>Exactly one of them per yield, because delivering it puts the process back into the running state &mdash; <code>set_process_function</code>, <code>kernel/src/process_standard.rs</code>:1483&ndash;1515, setting <code>State::Running</code> at :1514</li>
+    <li>The frame being edited so the process resumes at the function &mdash; <code>set_process_function</code>, <code>arch/cortex-m/src/syscall.rs</code>:364&ndash;418, with "In effect, this converts <code>svc</code> into <code>bl callback</code>" at :375 and the writes at :404&ndash;418</li>
+    <li>R12 being pushed and ignored &mdash; the same file, :393, "Stack offset 4 is R12, which the syscall interface ignores"</li>
+    <li>The low bit on an address meaning Thumb rather than an odd address &mdash; the line above it, :392, "Instruction addresses require <code>|1</code> to indicate thumb code", and the two places it is written: <code>callback.pc.addr() | 1</code> and <code>state.yield_pc | 1</code> at :404&ndash;405</li>
+    <li>The two cases named &mdash; <code>doc/reference/trd104-syscalls.md</code>:310&ndash;337, "Direct Resume" and "Pushed Callback"</li>
+    <li>A read-write buffer being checked against the process's memory alone &mdash; <code>build_readwrite_process_buffer</code>, <code>kernel/src/process_standard.rs</code>:1054&ndash;1113, refusing with an invalid-argument error at :1111</li>
+    <li>A read-only buffer being allowed to sit in flash &mdash; <code>build_readonly_process_buffer</code>, the same file, :1145&ndash;1147</li>
+    <li>The two addresses that decide it &mdash; <code>in_app_owned_memory</code>, the same file, :2545&ndash;2556, comparing against <code>mem_start()</code> and <code>app_break</code></li>
+    <li>Those being the same two the region was built from &mdash; <code>memory_start</code> set to what the unit handed back at :2215 and :1937, and the region's far end moved to the break at :979&ndash;983</li>
+    <li>A length of zero accepting any address &mdash; the same file, :1067&ndash;1082 and :1129&ndash;1144</li>
+    <li>The mark that never comes down, and the break that cannot pass it &mdash; the same file, :1089&ndash;1090 and :975</li>
+    <li>Why the mark never comes down, in the kernel's own words &mdash; <code>kernel/src/processbuffer.rs</code>:440&ndash;456, "a given <code>Process</code> implementation must assume that the memory described by a once-allowed <code>ProcessBuffer</code> is still in use"</li>
+    <li>Thirteen errors in the whole kernel, numbered 1 to 13 &mdash; <code>ErrorCode</code>, <code>kernel/src/errorcode.rs</code>:13&ndash;44</li>
+    <li>One capsule implementing <code>allow_userspace_readable</code> &mdash; <code>capsules/extra/src/read_only_state.rs</code>:98, the only implementation in the tree besides the trait's own default</li>
+    <li>Twelve memop operations, and what each one is for &mdash; <code>kernel/src/memop.rs</code>:14&ndash;44, dispatched at :48&ndash;160</li>
+    <li>The LED driver's number, and its command numbers &mdash; <code>capsules/core/src/led.rs</code>:67 and :102&ndash;153, with the driver numbers themselves at <code>capsules/core/src/driver.rs</code>:15&ndash;19</li>
+    <li>This board having one LED, on <code>GPIO 25</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:97 and :383&ndash;385</li>
+    <li>Command 0 being the convention for asking whether a driver is there &mdash; <code>kernel/src/syscall.rs</code>:34&ndash;41, and the LED driver answering with its count at <code>capsules/core/src/led.rs</code>:108</li>
+    <li><code>svc</code> assembling to <code>0xDF00</code> plus its argument, in one halfword &mdash; observed, not looked up: <code>syscall-demo.s</code> beside this page, through <code>arm-none-eabi-as -mcpu=cortex-m33 -mthumb</code> and <code>arm-none-eabi-objdump -d</code></li>
+  </ul>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here, as does <code>syscall-demo.s</code> beside this page, which is source rather than prose.</p>
+</section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Same shape as chapters 3, 4 and 5: one group of buttons, one group of
+     panels, same index. The panel class differs between components only
+     because each was styled for its own figure. */
+  function group(btn, panel, n, cls, onCls, offCls, extra) {
+    function pick(k) {
+      var i, b, p;
+      for (i = 0; i < n; i++) {
+        b = document.getElementById(btn + i);
+        p = document.getElementById(panel + i);
+        b.setAttribute("aria-pressed", i === k ? "true" : "false");
+        if (cls) { b.classList.toggle(cls, i === k); }
+        p.classList.toggle(onCls, i === k);
+        if (offCls) { p.classList.toggle(offCls, i !== k); }
+      }
+      if (extra) { extra(k); }
+    }
+    var i, opening = 0;
+    for (i = 0; i < n; i++) {
+      (function (k) {
+        document.getElementById(btn + k)
+          .addEventListener("click", function () { pick(k); });
+      }(i));
+      if (document.getElementById(btn + i)
+            .getAttribute("aria-pressed") === "true") { opening = i; }
+    }
+    // The markup ships every panel showing, so a reader with no JavaScript
+    // meets all of them rather than one. Putting the rest away is this
+    // function's first job, not the markup's.
+    pick(opening);
+  }
+
+  /* ---------------- Figure 1: one instruction ----------------
+     The halfwords are assembler output, from syscall-demo.s beside this page:
+     svc N is 0xDF00 with N in the low byte, one 16-bit instruction, which is
+     what lets the kernel find the class by reading back the halfword before
+     the program counter. */
+  (function () {
+    var SVC = [
+      ["0xDF00", "0", "Yield"],
+      ["0xDF02", "2", "Command"],
+      ["0xDF04", "4", "ReadOnlyAllow"],
+      ["0xDF08", "8", "nothing at all"],
+      ["0xDFFF", "255", "not read"]
+    ];
+    group("sv-", "svp-", 5, "", "is-on", "is-off", function (k) {
+      document.getElementById("sv-word").textContent = SVC[k][0];
+      document.getElementById("sv-num").textContent = SVC[k][1];
+      document.getElementById("sv-cls").textContent = SVC[k][2];
+    });
+  }());
+
+  /* ---------------- Figure 2: the eight classes ---------------- */
+  group("cl-", "clp-", 8, "", "is-on", "is-off");
+
+  /* ---------------- Figure 3: four requests to one driver ----------------
+     r0 is the driver number, r1 the command number, r2 and r3 its arguments.
+     0x00002 is the LED driver and 0x00003 is buttons, which this board does
+     not have. */
+  (function () {
+    var REQ = [
+      ["0x00002", "0", "0", "0"],
+      ["0x00002", "1", "0", "0"],
+      ["0x00002", "1", "1", "0"],
+      ["0x00003", "0", "0", "0"]
+    ];
+    group("rq-", "rqp-", 4, "", "is-on", "is-off", function (k) {
+      var i, ids = ["rq-r0", "rq-r1", "rq-r2", "rq-r3"];
+      for (i = 0; i < 4; i++) {
+        document.getElementById(ids[i]).textContent = REQ[k][i];
+      }
+    });
+  }());
+
+  /* ---------------- Figure 4: the three trait methods ---------------- */
+  group("tm-", "tmp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 5: five answers ----------------
+     r0 carries the shape: failures from 0, successes from 128. A register the
+     shape has no use for is not written, so it still holds what the process
+     put there before the svc. */
+  (function () {
+    var RET = [
+      ["128", "untouched", "untouched", "untouched"],
+      ["129", "a value", "untouched", "untouched"],
+      ["132", "a value", "a value", "a value"],
+      ["0", "an error code", "untouched", "untouched"],
+      ["1", "an error code", "a value", "untouched"]
+    ];
+    group("rt-", "rtp-", 5, "", "is-on", "is-off", function (k) {
+      var i, ids = ["rt-r0", "rt-r1", "rt-r2", "rt-r3"];
+      for (i = 0; i < 4; i++) {
+        document.getElementById(ids[i]).textContent = RET[k][i];
+      }
+    });
+  }());
+
+  /* ---------------- Figure 6: delivering an upcall ---------------- */
+  group("uc-", "ucp-", 6, "", "is-on", "is-off");
+
+  /* ---------------- Figure 7: the eight words of the frame ---------------- */
+  group("fr-", "frp-", 8, "", "is-on", "is-off");
+
+  /* ---------------- Figure 8: four buffers offered ---------------- */
+  (function () {
+    var BUF = [
+      ["inside my memory", "start and break", "accepted"],
+      ["past my break", "start and break", "refused"],
+      ["inside my flash", "start and break, or flash", "accepted"],
+      ["anywhere at all", "nothing is checked", "accepted"]
+    ];
+    group("bf-", "bfp-", 4, "", "is-on", "is-off", function (k) {
+      document.getElementById("bf-where").textContent = BUF[k][0];
+      document.getElementById("bf-test").textContent = BUF[k][1];
+      document.getElementById("bf-out").textContent = BUF[k][2];
+    });
+  }());
+
+  /* ---------------- Figure 9: three refusals ---------------- */
+  group("rf-", "rfp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Check yourself ----------------
+     The answer text is in the markup; this only reveals it and marks which
+     option was right, so nothing a reader needs is stored in here. */
+  (function () {
+    function quiz(prefix, n, right, answer) {
+      var i;
+      // Same rule: the answer is in the markup, visible, and script is what
+      // hides it until the reader has committed to a guess.
+      document.getElementById(answer).classList.add("is-off");
+      for (i = 0; i < n; i++) {
+        (function (k) {
+          document.getElementById(prefix + k)
+            .addEventListener("click", function () {
+              var j, b;
+              for (j = 0; j < n; j++) {
+                b = document.getElementById(prefix + j);
+                b.setAttribute("aria-pressed", j === k ? "true" : "false");
+                b.classList.toggle("is-right", j === right);
+                b.classList.toggle("is-wrong", j === k && k !== right);
+              }
+              document.getElementById(answer).classList.remove("is-off");
+            });
+        }(i));
+      }
+    }
+    // Positions spread on purpose. Chapter 5's were 1, 2, 0, 1; repeating a
+    // sequence across chapters is a pattern a reader can play rather than
+    // think through, so these are 2, 1, 0, 2.
+    quiz("qa-", 3, 2, "qan");
+    quiz("qb-", 3, 1, "qbn");
+    quiz("qc-", 3, 0, "qcn");
+    quiz("qd-", 3, 2, "qdn");
+  }());
+
+}());
+</script>

@@ -603,6 +603,105 @@ def demo_asm_checks(html, chapter_dir):
     return problems
 
 
+def assembled_listing_checks(html, chapter_dir):
+    """A halfword the page prints must be one the assembler actually produced.
+
+    Chapter 6 rests on a fact about an instruction encoding -- that `svc N` is
+    `0xDF00` with N in its low byte, which is why the class of a request cannot
+    be corrupted by anything the process does to its registers. A chapter that
+    prints hex for that had better have run an assembler, and the way to prove
+    it did is to run one here.
+
+    The chapter ships `syscall-demo.s` beside the page. Two things are checked
+    against what comes back from it:
+
+    - every line of the `<pre class="asm">` listing, halfword and instruction
+      together, against the same pairing in the disassembly;
+    - every bare four-digit hex halfword anywhere on the page, which must be
+      one the assembler emitted at all.
+
+    Between them a listing cannot drift from its source and a readout cannot
+    invent an encoding. What neither reaches is a *pairing* printed apart from
+    its instruction -- Figure 1 keeps its halfwords in a script table -- so the
+    behavioural suite re-derives that arithmetic from the button's own label.
+
+    Skipped where the cross-assembler is not installed, the way the Rust demo
+    above is skipped without a target.
+    """
+    problems = []
+    demo = os.path.join(chapter_dir, "syscall-demo.s")
+    if not os.path.exists(demo):
+        return problems
+
+    # A gate that skips when its input is missing has to be sure the input
+    # ships. `learning/.gitignore` ignores `*.s`, because following chapter 1's
+    # build line drops one beside `optimizer-demo.rs`, and it swallowed this
+    # file the first time it was committed. Nothing noticed: the page cited a
+    # file that would not have been in the clone, and this check would have
+    # skipped in silence on every machine but the one it was written on.
+    if subprocess.run(["git", "check-ignore", "-q", demo]).returncode == 0:
+        return ["syscall-demo.s is ignored by git, so a clone would not have "
+                "it and this check would skip without saying so"]
+
+    if not shutil.which("arm-none-eabi-as") or not shutil.which("arm-none-eabi-objdump"):
+        return problems
+
+    with tempfile.TemporaryDirectory() as tmp:
+        obj = os.path.join(tmp, "demo.o")
+        built = subprocess.run(
+            ["arm-none-eabi-as", "-mcpu=cortex-m33", "-mthumb", demo, "-o", obj],
+            capture_output=True, text=True)
+        if built.returncode != 0:
+            return ["syscall-demo.s does not assemble: %s"
+                    % built.stderr.strip()[:120]]
+        dumped = subprocess.run(["arm-none-eabi-objdump", "-d", obj],
+                                capture_output=True, text=True)
+        if dumped.returncode != 0:
+            return ["syscall-demo.s does not disassemble"]
+
+    # "   0:\tdf00      \tsvc\t0" -> {"df00": "svc 0"}. A trailing "@ 0xff"
+    # is objdump's own gloss on the operand, not part of the instruction.
+    emitted = {}
+    for line in dumped.stdout.split("\n"):
+        fields = [f.strip() for f in line.split("\t")]
+        if len(fields) < 3 or not fields[0].rstrip(":").strip():
+            continue
+        word = fields[1].replace(" ", "")
+        if not re.fullmatch(r"[0-9a-f]{4,8}", word):
+            continue
+        rest = " ".join(f for f in fields[2:] if f).split("@")[0]
+        emitted[word] = " ".join(rest.split())
+
+    if not emitted:
+        return ["nothing came back from disassembling syscall-demo.s"]
+
+    for block in re.findall(r'<pre class="asm"[^>]*>(.*?)</pre>', html, re.S):
+        text = html_module.unescape(re.sub(r"<[^>]+>", "", block))
+        for line in text.split("\n"):
+            line = line.split("//")[0].strip()
+            if not line:
+                continue
+            match = re.match(r"([0-9a-f]{4,8})\s+(.+)$", line)
+            if not match:
+                problems.append("a listing line names no halfword: %r" % line[:60])
+                continue
+            word, shown = match.group(1), " ".join(match.group(2).split())
+            if word not in emitted:
+                problems.append("the listing shows %s, which the assembler "
+                                "never produced" % word)
+            elif emitted[word] != shown:
+                problems.append("the listing pairs %s with %r, and the "
+                                "assembler pairs it with %r"
+                                % (word, shown, emitted[word]))
+
+    body = re.sub(r"<style.*?</style>", " ", html, flags=re.S)
+    for word in set(re.findall(r"0x([0-9A-Fa-f]{4})\b", body)):
+        if word.lower() not in emitted:
+            problems.append("the page prints the halfword 0x%s, which the "
+                            "assembler never produced" % word)
+    return problems
+
+
 def _mono_without_case(body):
     """A declaration block that asks for the code face and ignores case."""
     return bool(re.search(r"font(?:-family)?\s*:[^;]*var\(--mono\)", body)
@@ -1281,6 +1380,118 @@ def retired_phrase_checks(name, html):
     return problems
 
 
+# Tags that are a phrase inside a sentence rather than a block of their own.
+# A flex or grid container holding one of these next to bare text is a
+# paragraph being laid out as a row of items.
+INLINE_TAGS = {"a", "b", "code", "dfn", "em", "i", "q", "small", "span",
+               "strong", "sub", "sup", "u", "var"}
+
+# Tags whose whole job is to hold a sentence. A `<div>` is a layout box and
+# may legitimately be a row of terms; a `<p>` is a promise of prose.
+PROSE_TAGS = {"p", "li", "dd", "dt", "figcaption",
+              "h1", "h2", "h3", "h4", "h5", "h6"}
+
+
+def flex_prose_checks(html):
+    """A sentence laid out as a flex row.
+
+    `display: flex` makes a flex item of every direct child, including an
+    `<em>` or a `<code>` in the middle of a sentence -- and `gap` then puts
+    space on both sides of it. The words after it become a separate item too,
+    so punctuation drifts away from whatever it belongs to.
+
+    The instruction line over every interactive figure was a flex row from
+    chapter 1 onward. Chapter 1 shipped "then try `the hardware's way` ." with
+    the full stop half a rem adrift and it survived every review pass of every
+    chapter, because nothing here can see layout and nobody re-rendered Figure
+    13 once it worked. Chapter 6 found it by putting an `svc 2` in one.
+
+    The test is deliberately narrow, in two ways. It wants a direct inline
+    child with words on *both* sides of it, because words on one side only is
+    the badge-and-label idiom -- chapter 1's roadmap chips are a numbered
+    `<span>` and then a label, and the gap between them is the point of the
+    layout rather than a defect in it. And it only looks at tags that promise
+    prose. A `<div>` laid out as a row of terms is a layout box doing its job:
+    chapter 1's fill-in-the-blank equations are `base [addr] + offset [addr] =`
+    in monospace, and the even gaps between those terms are wanted. What that
+    leaves uncovered is a sentence written into a `<div>`, which this series
+    does not do and a review pass would have to catch by eye.
+    """
+    style = "".join(re.findall(r"<style[^>]*>(.*?)</style>", html, flags=re.S))
+    style = re.sub(r"/\*.*?\*/", " ", style, flags=re.S)
+
+    # Classes that end a selector setting flex or grid. A selector finishing in
+    # a bare tag (`.seq button`) is left alone: those containers hold only the
+    # spans a figure builds out of them, and matching them properly would need
+    # a real tree rather than a tag stack.
+    rowish = set()
+    for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", style):
+        if not re.search(r"display\s*:\s*(inline-)?(flex|grid)", body):
+            continue
+        for one in selector.split(","):
+            parts = one.strip().split()
+            if not parts:
+                continue
+            rowish.update(re.findall(r"\.([A-Za-z0-9_-]+)", parts[-1]))
+    if not rowish:
+        return []
+
+    body_html = re.sub(r"<style.*?</style>", " ", html, flags=re.S)
+    body_html = re.sub(r"<script.*?</script>", " ", body_html, flags=re.S)
+    body_html = re.sub(r"<!--.*?-->", " ", body_html, flags=re.S)
+
+    def words(chunk):
+        return re.findall(r"[A-Za-z]{2,}",
+                          html_module.unescape(re.sub(r"<[^>]*>", " ", chunk)))
+
+    problems, stack = [], []
+    for match in re.finditer(r"<(/?)([a-zA-Z][\w-]*)([^>]*?)(/?)>", body_html):
+        closing, tag, attrs, self_closed = match.groups()
+        tag = tag.lower()
+        if closing:
+            while stack:
+                frame = stack.pop()
+                if frame["tag"] != tag:
+                    continue
+                frame["seq"].append(("text", body_html[frame["cursor"]:match.start()]))
+                if stack:
+                    # The parent's own text stops where this child starts and
+                    # picks up again after it ends.
+                    parent = stack[-1]
+                    parent["seq"].append(
+                        ("text", body_html[parent["cursor"]:frame["open"]]))
+                    parent["seq"].append(("el", tag))
+                    parent["cursor"] = match.end()
+                hit = frame["classes"] & rowish
+                if hit and tag in PROSE_TAGS:
+                    seq = frame["seq"]
+                    for i, (kind, value) in enumerate(seq):
+                        if kind != "el" or value not in INLINE_TAGS:
+                            continue
+                        before = [w for k, v in seq[:i] if k == "text"
+                                  for w in words(v)]
+                        after = [w for k, v in seq[i + 1:] if k == "text"
+                                 for w in words(v)]
+                        if before and after:
+                            problems.append(
+                                'a <%s class="%s"> is laid out as a flex or '
+                                "grid row and holds a sentence: %r <%s> %r"
+                                % (tag, " ".join(sorted(hit)),
+                                   " ".join(before[-4:]), value,
+                                   " ".join(after[:4])))
+                            break
+                break
+            continue
+        if self_closed or tag in VOID_TAGS:
+            continue
+        classes = re.search(r'\bclass="([^"]*)"', attrs)
+        stack.append({"tag": tag,
+                      "classes": set(classes.group(1).split()) if classes else set(),
+                      "open": match.start(), "cursor": match.end(),
+                      "seq": []})
+    return problems
+
+
 def orphan_comment_checks(html):
     """A stylesheet comment with no rule under it.
 
@@ -1530,6 +1741,7 @@ def static_checks(html, name):
     problems.extend(run_order_checks(html))
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
+    problems.extend(assembled_listing_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
     problems.extend(glossary_use_checks(html))
@@ -1538,6 +1750,7 @@ def static_checks(html, name):
         html, os.path.join(TOOLS, name.split('-')[0] + '.tests.js')))
     problems.extend(retired_phrase_checks(name, html))
     problems.extend(orphan_comment_checks(html))
+    problems.extend(flex_prose_checks(html))
     problems.extend(wired_checks(html))
 
     return problems
@@ -1737,6 +1950,10 @@ MUST_DEFINE = {
         "execute-never", "fault", "HardFault", "MemManage",
         "memory protection unit", "permissions", "privileged", "region",
         "unprivileged",
+    ],
+    "ch06": [
+        "allowed buffer", "command", "driver number", "exception frame",
+        "subscribe", "svc", "syscall", "syscall class", "upcall", "yield",
     ],
 }
 

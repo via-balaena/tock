@@ -379,7 +379,7 @@ chk("and says why the detour comes first",
 // Every source line this chapter quotes comes from boards/raspberry_pi_pico_2,
 // and the tree has no crate for the wireless Pico 2 at all. That cost nothing
 // while the series only read source. It costs one thing here: the pin the
-// panic handler blinks is the radio's chip select on a W, so the one signal a
+// panic handler blinks is the radio's chip-select line on a W, so the one signal a
 // dying kernel gives without a console is the one that board cannot show.
 chk("the chapter says which crate every line came from",
     REG["wboard"].textContent.indexOf("boards/raspberry_pi_pico_2") > -1, true);

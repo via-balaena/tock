@@ -632,7 +632,7 @@
   {
     "id": "ch05-next-ch06",
     "in": "ch05",
-    "says": "Chapter 6 - Asking the kernel",
+    "says": "Chapter 6 - Asking the Kernel",
     "about": "ch06",
     "kept_by": "syscall"
   },
@@ -663,5 +663,208 @@
     "says": "Chapter 4 used region for the four areas a linker script cuts the chip into",
     "about": "ch04",
     "kept_by": "region by region"
+  },
+  {
+    "id": "ch06-wall-ch05",
+    "in": "ch06",
+    "says": "Chapter 5 finished a wall",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch06-assumes-ch04",
+    "in": "ch06",
+    "says": "Chapters 4 and 5 are assumed",
+    "about": "ch04",
+    "kept_by": "Seven boundaries divide it"
+  },
+  {
+    "id": "ch06-farend-ch03",
+    "in": "ch06",
+    "says": "Chapter 3 comes back at the far end",
+    "about": "ch03",
+    "kept_by": "semi-trusted"
+  },
+  {
+    "id": "ch06-named-ch04",
+    "in": "ch06",
+    "says": "Chapter 4 named it",
+    "about": "ch04",
+    "kept_by": "syscall"
+  },
+  {
+    "id": "ch06-queue-ch04",
+    "in": "ch06",
+    "says": "Chapter 4 found the queue they wait in",
+    "about": "ch04",
+    "kept_by": "CALLBACK_LEN"
+  },
+  {
+    "id": "ch06-left-ch05",
+    "in": "ch06",
+    "says": "Chapter 5 left a process that can reach nothing but itself",
+    "about": "ch05",
+    "kept_by": "region"
+  },
+  {
+    "id": "ch06-ending-ch05",
+    "in": "ch06",
+    "says": "the same ending chapter 5's forbidden store had",
+    "about": "ch05",
+    "kept_by": "HardFault"
+  },
+  {
+    "id": "ch06-lrbit-ch05",
+    "in": "ch06",
+    "says": "the same bit chapter 5's fault handler branched on",
+    "about": "ch05",
+    "kept_by": "link register"
+  },
+  {
+    "id": "ch06-fenced-ch05",
+    "in": "ch06",
+    "says": "which chapter 5 fenced as readable and executable and never writable",
+    "about": "ch05",
+    "kept_by": "read-and-execute"
+  },
+  {
+    "id": "ch06-brk-ch04",
+    "in": "ch06",
+    "says": "two move the break chapter 4 named",
+    "about": "ch04",
+    "kept_by": "app_break"
+  },
+  {
+    "id": "ch06-halffinished-ch03",
+    "in": "ch06",
+    "says": "Chapter 3 left a request half-finished on purpose",
+    "about": "ch03",
+    "kept_by": "capsule"
+  },
+  {
+    "id": "ch06-pickup-ch03",
+    "in": "ch06",
+    "says": "chapter 3 picked the request up on the kernel's side",
+    "about": "ch03",
+    "kept_by": "pick it up on the kernel's side"
+  },
+  {
+    "id": "ch06-wboard-ch01",
+    "in": "ch06",
+    "says": "chapter 1 said, GPIO 25 is the radio's chip-select line",
+    "about": "ch01",
+    "kept_by": "chip-select"
+  },
+  {
+    "id": "ch06-grantmethod-ch07",
+    "in": "ch06",
+    "says": "which is chapter 7's subject",
+    "about": "ch07",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch06-handed-ch03",
+    "in": "ch06",
+    "says": "Chapter 3 said a capsule reaches only what it was handed",
+    "about": "ch03",
+    "kept_by": "allowed to touch"
+  },
+  {
+    "id": "ch06-later-driver",
+    "in": "ch06",
+    "says": "Later the driver has something",
+    "about": null,
+    "why": "'Later' here is a moment in one request's life -- after the command has returned and before the process yields -- not a later chapter."
+  },
+  {
+    "id": "ch06-notes-ch04",
+    "in": "ch06",
+    "says": "Chapter 4 found where those notes go",
+    "about": "ch04",
+    "kept_by": "CALLBACK_LEN"
+  },
+  {
+    "id": "ch06-fence-ch05",
+    "in": "ch06",
+    "says": "exactly what chapter 5's fence exists to prevent",
+    "about": "ch05",
+    "kept_by": "unprivileged"
+  },
+  {
+    "id": "ch06-privileged-ch05",
+    "in": "ch06",
+    "says": "where chapter 5's regions do not apply at all",
+    "about": "ch05",
+    "kept_by": "privileged"
+  },
+  {
+    "id": "ch06-twonums-ch05",
+    "in": "ch06",
+    "says": "Those are the two numbers chapter 5 wrote into a hardware register",
+    "about": "ch05",
+    "kept_by": "MPU_RLAR"
+  },
+  {
+    "id": "ch06-nofence-ch05",
+    "in": "ch06",
+    "says": "nothing about the fence in chapter 5 was involved",
+    "about": "ch05",
+    "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch06-policy-ch05",
+    "in": "ch06",
+    "says": "exactly as in chapter 5",
+    "about": "ch05",
+    "kept_by": "fault policy"
+  },
+  {
+    "id": "ch06-neverpointed-ch05",
+    "in": "ch06",
+    "says": "chapter 5's regions were never pointed at the kernel",
+    "about": "ch05",
+    "kept_by": "privileged"
+  },
+  {
+    "id": "ch06-later-arrives",
+    "in": "ch06",
+    "says": "When something arrives later",
+    "about": null,
+    "why": "'later' here is the gap between a command returning and its upcall being delivered, which is measured in milliseconds rather than chapters."
+  },
+  {
+    "id": "ch06-next-ch07",
+    "in": "ch06",
+    "says": "Chapter 7 - Grants",
+    "about": "ch07",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch06-place-ch07",
+    "in": "ch06",
+    "says": "Chapter 7 is entirely about that place",
+    "about": "ch07",
+    "kept_by": "grant"
+  },
+  {
+    "id": "ch06-promised-ch01",
+    "in": "ch06",
+    "says": "the last thing chapter 1 promised",
+    "about": "ch01",
+    "kept_by": "grants"
+  },
+  {
+    "id": "ch06-pin-ch03",
+    "in": "ch06",
+    "says": "the same commit chapters 3, 4 and 5 were pinned to",
+    "about": "ch03",
+    "kept_by": "08894c2e0"
+  },
+  {
+    "id": "ch06-callbacklen-ch04",
+    "in": "ch06",
+    "says": "the constant chapter 4 named",
+    "about": "ch04",
+    "kept_by": "CALLBACK_LEN"
   }
 ]

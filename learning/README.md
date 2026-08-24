@@ -26,7 +26,7 @@ arc closes where the first chapter said it would.
 | 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
 | 4 | [What a Process Is](ch04-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
 | 5 | [The Memory Protection Unit](ch05-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | published |
-| 6 | Asking the kernel | The eight syscall classes, upcalls and allowed buffers: the only door through that fence | planned |
+| 6 | [Asking the Kernel](ch06-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | published |
 | 7 | Grants | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator | planned |
 
 **Why those seven and not the five chapter 1 promises.** Chapter 1 commits to
@@ -51,8 +51,12 @@ shipped `KB`, chapter 2 spells it out throughout, and chapter 4 arrived with a
 third spelling before this was written down -- three conventions for one unit
 across four chapters, which is what a cross-chapter notation pass is for.
 
-**Size.** Chapter 4 came out at 12 figures against the 8 to 10 below, which is
-the target doing its job rather than failing: three of those twelve were added
+**Size.** Chapter 6 is the longest of the later chapters -- 9 figures, and
+about a fifth more words than chapter 5 by the same measure. Some of that is
+the subject: it is the only chapter that has to teach a calling convention,
+which means naming four registers three times over. Some of it is not, and a
+review pass should ask which. Chapter 4 came out at 12 figures against the 8 to
+10 below, which is the target doing its job rather than failing: three of those twelve were added
 by review passes, and each one replaced a section that was prose only on the
 skim path. Chapter 5 landed inside it first time, at 4,800 words and 9 figures,
 which is what a chapter looks like when the vocabulary is already there. Chapter 1 runs to about 10,900 prose words across 17 figures, and is
@@ -121,8 +125,52 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Twenty-three more static checks exist because each caught a live defect. Keep the
+Twenty-five more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A halfword a figure printed without assembling it.** The sibling of the
+  Rust one below, for chapter 6, whose whole opening rests on `svc N` being
+  `0xDF00` with N in its low byte -- which is why the class of a request is the
+  one part of it a runaway pointer cannot touch. `syscall-demo.s` ships beside
+  that page and `arm-none-eabi-as` runs on it, and then every line of the
+  listing is checked halfword-and-instruction together, and every bare
+  four-digit hex halfword anywhere on the page has to be one the assembler
+  actually emitted. What that cannot reach is a *pairing* printed away from its
+  instruction, which is how Figure 1's readout works, so `ch06.tests.js`
+  re-derives that arithmetic from the button's own label instead. Skipped where
+  the cross-assembler is not installed.
+  A gate that skips when its input is missing has to be sure the input ships,
+  and this one nearly did not: `learning/.gitignore` ignores `*.s`, because
+  following chapter 1's build line drops one beside `optimizer-demo.rs`, and it
+  swallowed chapter 6's source the first time it was committed. Nothing noticed
+  -- the page cited a file that would not have been in the clone, and the check
+  would have skipped in silence on every machine but this one. It now refuses
+  outright if git ignores its own input. The file also carries Tock's licence
+  rather than the series' CC BY-SA, which is what `learning/.lcignore` says a
+  demo source should do, and its comments start with `#` rather than the `@` of
+  ordinary ARM assembly: the licence checker reads a file through a syntax
+  highlighter that does not know `@` begins a comment there, and a header it
+  cannot see is a header that is missing.
+
+- **A sentence laid out as a flex row.** `display: flex` makes a flex item of
+  every direct child, an `<em>` in the middle of a sentence included, and `gap`
+  then puts space on both sides of it. The words after it are a separate item
+  too, so the punctuation drifts away from what it belongs to. The instruction
+  line over every interactive figure has been a flex row since chapter 1, which
+  shipped Figure 13's "then try *the hardware's way* ." with the full stop half
+  a rem adrift and kept it through every review pass of every chapter -- nothing
+  here can see layout, and nobody re-rendered a figure that already worked.
+  Chapter 6 found it by putting an `svc 2` in one. Six lines across four
+  chapters were affected. The check is narrow twice over: it wants a direct
+  inline child with words on *both* sides of it, because words on one side only
+  is the badge-and-label idiom that chapter 1's roadmap chips are built on; and
+  it only looks at tags that promise prose, because a `<div>` laid out as a row
+  of terms is doing its job -- chapter 1's fill-in-the-blank equations are
+  `base [addr] + offset [addr] =` in monospace and want their even gaps. A
+  sentence written into a `<div>` still escapes it.
+  One thing this cost: the stylesheet comment explaining the fix originally
+  named the offending tags as markup, and the tag-balance check counts what a
+  comment says, so all six chapters failed on one unclosed `code`.
 
 - **A phrase a review pass removed, back on the page.** Chapter 5's second
   chapter-2 collision, `block`, was struck from six places in its first review

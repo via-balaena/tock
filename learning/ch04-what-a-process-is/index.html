@@ -373,13 +373,18 @@ dfn {
   font-weight: 600;
   letter-spacing: .02em;
   color: var(--accent);
-  display: flex;
-  gap: .5rem;
-  align-items: baseline;
 }
+/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+   flex item of every inline child, so an emphasis or a code span inside one
+   of these lines came out with a half-rem gap on each side and the
+   punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
+   orphaned full stop since it was published. Tag names are spelled out here
+   rather than written as markup, because the tag-balance check counts what a
+   stylesheet comment says too. The arrow carries its own spacing instead. */
 .dothis::before {
   content: "\2192";
   font-weight: 700;
+  margin-right: .5rem;
 }
 
 /* Check yourself. Question visible, answer one click away. */

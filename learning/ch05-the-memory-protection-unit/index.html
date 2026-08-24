@@ -358,13 +358,18 @@ dfn {
   font-weight: 600;
   letter-spacing: .02em;
   color: var(--accent);
-  display: flex;
-  gap: .5rem;
-  align-items: baseline;
 }
+/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+   flex item of every inline child, so an emphasis or a code span inside one
+   of these lines came out with a half-rem gap on each side and the
+   punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
+   orphaned full stop since it was published. Tag names are spelled out here
+   rather than written as markup, because the tag-balance check counts what a
+   stylesheet comment says too. The arrow carries its own spacing instead. */
 .dothis::before {
   content: "\2192";
   font-weight: 700;
+  margin-right: .5rem;
 }
 
 /* Check yourself. Question visible, answer one click away. */
@@ -936,7 +941,7 @@ dfn {
 
 <div class="col next">
   <p class="eyebrow forward">Next</p>
-  <h3 style="margin-top:0">Chapter 6 &mdash; Asking the kernel</h3>
+  <h3 style="margin-top:0">Chapter 6 &mdash; Asking the Kernel</h3>
   <p>A process fenced this tightly cannot print, cannot read a button and cannot wait a second. Everything it does that reaches the world goes through one instruction and eight classes of request. On the way: how a buffer crosses a boundary that exists to stop exactly that.</p>
 </div>
 
@@ -1027,7 +1032,6 @@ dfn {
 
   /* ---------------- Figure 3: one region at three moments ----------------
      Every number here is the arithmetic in mpu_v8m.rs run by hand on a base of
-     0x20008000. RBAR is base | AP(ReadWrite) | XN set, which never changes
      0x20008000. RBAR is base | AP(ReadWrite) | XN set, which never changes
      once a process is placed. RLAR is ((end - 1) >> 5) << 5 plus 0x11 -- bit 4
      for PXN, bit 0 for enable. The third row is the rounding: 2049 bytes asked
