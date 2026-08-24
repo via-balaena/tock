@@ -224,9 +224,12 @@ REG["nt-0"].fire("click");
 chk("goal 1, what the unit checks and does not, is delivered by figure 1",
     REG["goalbox"].textContent.indexOf("the one thing it never sees") > -1
       && REG["ckp-4"].textContent.length > 40, true);
-chk("goal 2, reading a real region, is delivered by figures 2 and 3",
+// 'real' came out of this goal in the first pass, because the worked example's
+// base is chosen rather than read. The description kept it for two passes.
+chk("goal 2, reading one region out of two registers, is delivered by figures 2 and 3",
     REG["goalbox"].textContent.indexOf("two registers that describe it") > -1
-      && REG["mm-rbar"].textContent.indexOf("0x") === 0, true);
+      && REG["goalbox"].textContent.indexOf("real region") < 0
+      && REG["rfp-0"].textContent.indexOf("logical_start >> 5") > -1, true);
 chk("goal 3, how many regions and what runs out, is delivered by figure 5",
     REG["goalbox"].textContent.indexOf("which two are spoken for") > -1
       && REG["goalbox"].textContent.indexOf("what runs out first") > -1
@@ -322,8 +325,9 @@ chk("the worked example admits its base is picked, not read off the board",
 chk("the note carries the tree-wide claim about the unused three",
     REG["pm-note"].textContent.indexOf("no caller anywhere in the tree") > -1, true);
 chk("and no panel repeats it",
-    REG["pmp-0"].textContent.indexOf("this tree")
-      === REG["pmp-3"].textContent.indexOf("this tree"), true);
+    REG["pmp-0"].textContent.indexOf("this tree") < 0
+      && REG["pmp-3"].textContent.indexOf("this tree") < 0
+      && REG["pmp-4"].textContent.indexOf("this tree") < 0, true);
 // The closing counted the same registers two ways in adjacent sentences.
 chk("the closing says two pairs confine a process, out of eight",
     REG["closing"].textContent.indexOf("two pairs of registers") > -1
@@ -334,18 +338,18 @@ chk("the closing says two pairs confine a process, out of eight",
 // and it held two errors. 'execute-never' called itself one bit while figure 2
 // had grown a second, and 'privileged' blamed the chip for a line Tock writes.
 chk("the glossary says execute-never is a pair",
-    REG["words"].textContent.indexOf("The pair carries two of them") > -1, true);
+    REG["words"].textContent.indexOf("There are two: one aimed at the process") > -1, true);
 chk("and that exempting the kernel is Tock's configuration, not the chip's",
     REG["words"].textContent.indexOf("Tock configures the unit not to constrain it") > -1, true);
 // It also miscounted its own exception names: MemManage never fires here and
 // HardFault is the handler this board installs, so one of two, not two of three.
 chk("the count of exception names is two, one of which never fires",
     REG["wordcount"].textContent.indexOf("Two of them are the names") > -1
-      && REG["wordcount"].textContent.indexOf("one of those two never fires") > -1, true);
+      && REG["wordcount"].textContent.indexOf("only one of the two ever fires") > -1, true);
 // Figure 2's note said ten bits had nowhere to go, in a figure whose rows now
 // account for all ten.
 chk("the note says the ten bits are spent rather than missing",
-    REG["rf-note"].textContent.indexOf("carrying a field in the rows above") > -1, true);
+    REG["rf-note"].textContent.indexOf("carrying the fields in the rows above") > -1, true);
 // PXN's 0x10 is added to figure 3's limits, not visible inside them.
 chk("the PXN panel says the 0x10 is added, not present",
     REG["rfp-4"].textContent.indexOf("adds to every limit") > -1, true);
@@ -353,3 +357,26 @@ chk("the PXN panel says the 0x10 is added, not present",
 chk("the imperative admits a three-bit field, because ATTRINDX is one",
     REG["rf-do"].textContent.indexOf("one, two or three bits") > -1
       && REG["rf-5"].textContent.indexOf("bits 3:1") > -1, true);
+
+// ---- what the third review pass found ----
+// A lens over every absolute claim on the page -- never, only, nothing, always,
+// every, cannot. 103 sentences of 537 carry one, and four were wrong.
+// MAIR0 is written above the dirty check, so it goes in on every configure.
+// Mutation testing caught this assertion pointing at the wrong paragraph: the
+// sentence lives one <p> further down, so the check could never have failed.
+chk("the intro no longer says the attribute is set once",
+    REG["threeuses"].textContent.indexOf("sets once") < 0
+      && REG["threeuses"].textContent.indexOf("on every configure") > -1, true);
+chk("and figure 2 says on every configure",
+    REG["rfp-5"].textContent.indexOf("set on every configure") > -1, true);
+// Chapter 2's boot ROM was the other step in the series with no source line.
+chk("the one-of-a-kind claim admits chapter 2's boot ROM",
+    REG["flp-0"].textContent.indexOf("Only twice in this series") > -1, true);
+// RLAR's five bits carry the other half of the size rule.
+chk("the base panel calls its five bits half the rule",
+    REG["rfp-0"].textContent.indexOf("half the size rule") > -1, true);
+chk("and points at the field carrying the other half",
+    REG["rfp-0"].textContent.indexOf("The limit field three rows down") > -1, true);
+// A request that is already a multiple of 32 gets exactly what it asked for.
+chk("the rounding claim is scoped to requests that need rounding",
+    REG["mmp-2"].textContent.indexOf("not already a multiple of 32") > -1, true);
