@@ -367,7 +367,8 @@ REG["ar-0"].fire("click");
     ["whofirst",   "which asks first"],
     ["closingq",   "Six chapters have been taking pieces out of"],
     ["wordcount",  "Chapter 4 defined a grant in one line"],
-    ["lf-note",    "A driver installed on the board and never called by a process"]
+    ["lf-note",    "A driver installed on the board and never called by a process"],
+    ["closing2",   "It holds two numbers"]
   ];
   var i, missing = [];
   for (i = 0; i < CLAIMS.length; i++) {
@@ -378,6 +379,21 @@ REG["ar-0"].fire("click");
   chk("every anchored paragraph still makes the claim it was anchored for",
       missing.join("; "), "");
 }());
+
+// ---- Two counts and a quotation ----
+// Chapter 3 to chapter 7 is four chapters, not six, and the source puts its
+// legacy allow number in quotation marks that the first draft dropped.
+chk("the wait is counted from chapter 3 correctly",
+    REG["noalloc"].textContent.indexOf("waiting four chapters") > -1, true);
+chk("the quoted number keeps the source's own quotation marks",
+    REG["whyzero"].textContent.indexOf("allow number \u201c1\u201d") > -1, true);
+chk("and the chapter says what those marks are doing",
+    REG["whyzero"].textContent.indexOf("what an application used to pass") > -1, true);
+// The first panel of the closing figure sets the axis for the six under it,
+// and it had the wrong axis: this series is about which addresses code may
+// reach, not which code runs.
+chk("the closing figure opens on addresses rather than on which code runs",
+    REG["arp-0"].textContent.indexOf("which addresses a given piece of code may land on") > -1, true);
 
 // ---- What a process pays before it calls anything ----
 // Figure 1 sold the design on "never pays for it" and figures 2 and 5 spend
@@ -415,7 +431,7 @@ chk("and answers chapter 1 in chapter 1's own words",
     REG["lastline"].textContent.indexOf("nothing stops a store from landing anywhere") > -1, true);
 (function () {
   var TERMS = ["allocator", "grant region", "grant number", "entering", "slot",
-               "counters word", "custom grant", "bump"];
+               "counters word", "bump"];
   var i, missing = [], text = REG["words"].textContent;
   for (i = 0; i < TERMS.length; i++) {
     if (text.indexOf(TERMS[i]) === -1) { missing.push(TERMS[i]); }

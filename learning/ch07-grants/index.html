@@ -430,7 +430,7 @@ dfn {
 .glossary dd { margin: 0; color: var(--ink-soft); }
 
 
-/* The eleven-word list at the top. Terms are short here, so the two columns
+/* The eight-word list at the top. Terms are short here, so the two columns
    line up at the top of each row rather than centring. */
 .glossary.cast { align-items: start; }
 
@@ -593,7 +593,7 @@ dfn {
 </section>
 
 <section class="col">
-  <h2>Nine words, before we start</h2>
+  <h2>Eight words, before we start</h2>
   <p id="wordcount">Each is one sentence now and repeated in context below. Chapter 4 defined a grant in one line and pointed here; the first entry is that line with the rest of the sentence attached.</p>
 </section>
 
@@ -606,14 +606,13 @@ dfn {
     <dt><dfn>entering</dfn></dt><dd>The only way to reach what is inside a grant: the kernel hands it to a closure, and takes it back the moment that closure returns.</dd>
     <dt><dfn>slot</dfn></dt><dd>One filed function pointer or one filed buffer, of a fixed size, in a grant. How many a driver gets is part of its type.</dd>
     <dt><dfn>counters word</dfn></dt><dd>Four bytes at the bottom of every grant, holding how many slots of each of the three kinds it has. Three bytes used, one spare.</dd>
-    <dt><dfn>custom grant</dfn></dt><dd>Extra memory a capsule can cut from the same region when its fixed size is not enough. Rare, and it comes out of the same place.</dd>
     <dt><dfn>bump</dfn></dt><dd>Allocating by moving one pointer and never moving it back. It is what the grant region does, and it is why nothing here is ever freed.</dd>
   </dl>
 </div>
 
 <section class="col">
   <h2>The problem chapter 3 named</h2>
-  <p id="noalloc">Chapter 3 ended on a sentence that has been waiting six chapters for an answer. The kernel is <b>no_std</b> and never asks for memory it did not already have. There is no <dfn>allocator</dfn> anywhere in it. Nothing calls <b>malloc</b>, nothing calls <b>Box::new</b>, and there is no heap for either to work from.</p>
+  <p id="noalloc">Chapter 3 ended on a sentence that has been waiting four chapters for an answer. The kernel is <b>no_std</b> and never asks for memory it did not already have. There is no <dfn>allocator</dfn> anywhere in it, and Figure 1 is about why adding one would not be the simple fix it sounds like. Nothing calls <b>malloc</b>, nothing calls <b>Box::new</b>, and there is no heap for either to work from.</p>
   <p id="needstate">That is easy to live with until a driver needs to remember something about a process. The console has to know how many bytes of a write are still outstanding. It cannot keep one copy, because two processes can be printing at once, and it cannot keep an array of copies without knowing how many processes there will be.</p>
   <p id="fourways">There are four ways out of that, and this kernel has ruled out three of them.</p>
 </section>
@@ -664,8 +663,8 @@ dfn {
     </div>
     <div class="vtsay">
       <p class="vtp is-on" id="bdp-0">Cut first, before the process runs a single instruction, and never resized. One entry per <dfn>grant number</dfn> the board declared, each holding a driver number and a pointer, eight bytes on this chip. Every process carries the whole table whether it uses any of those drivers or not, and every entry starts null.</p>
-      <p class="vtp" id="bdp-1">Cut one at a time, downward, the first time a driver is entered for this process. Each is the size that driver needs, rounded to its alignment. Each is a <dfn>bump</dfn> and only ever downward, so the order of the grants below the table is the order in which this process first used those drivers.</p>
-      <p class="vtp" id="bdp-2">The bottom of what the kernel has taken. Every new grant lowers it by that grant's size, and nothing raises it while the process runs. Chapter 4 named it; this chapter is what moves it.</p>
+      <p class="vtp" id="bdp-1">Cut one at a time by a bump downward, the first time a driver is entered for this process. Each is the size that driver needs, rounded to its alignment. Each is a <dfn>bump</dfn> and only ever downward, so the order of the grants below the table is the order in which this process first used those drivers.</p>
+      <p class="vtp" id="bdp-2">The bottom of the grant region, and of everything the kernel has taken. Every new grant lowers it by that grant's size, and nothing raises it while the process runs. Chapter 4 named it; this chapter is what moves it.</p>
       <p class="vtp" id="bdp-3">Unclaimed. The process can grow into it from below by moving its break, and the kernel can grow into it from above by cutting a grant, and whichever asks first gets it. When it is gone, both requests start failing.</p>
       <p class="vtp" id="bdp-4">The top of what the process can touch, and the far end of the region chapter 5 built. A process asking for more heap is asking to move this line up, and the kernel refuses if it would pass the mark chapter 6 left or reach what the kernel has taken.</p>
       <p class="vtp" id="bdp-5">Everything chapter 4 walked through: the process's stack, its data, its heap, and at the bottom the thirty-two bytes the first context switch needs. All of it readable and writable by the process, none of it readable by another one.</p>
@@ -683,7 +682,7 @@ dfn {
     AllowRoCount&lt;{ ro_allow::COUNT }&gt;,    <span class="asm-c">// 2</span>
     AllowRwCount&lt;{ rw_allow::COUNT }&gt;,    <span class="asm-c">// 2</span>
 &gt;,</code></pre>
-  <p id="custom">A capsule that needs more than its fixed size can cut a <dfn>custom grant</dfn> from the same region, which is rare and comes out of the same place as everything else here.</p>
+  <p id="custom">A capsule that needs more than its fixed size can cut extra memory from the same region, which is rare and comes out of the same place as everything else here.</p>
   <p id="constgen">Those three counts are constants in the type, not values in a variable. How many function pointers the console can hold for one process is fixed when the kernel is compiled, and a capsule that wants one more has to be recompiled to get it.</p>
 </section>
 
@@ -708,7 +707,7 @@ dfn {
       <div class="costcell"><span class="costcell-k">used by the console</span><span class="costcell-v" id="pt-used">3 of 4 bytes</span></div>
     </div>
     <div class="costsay">
-      <p class="costp is-on" id="ptp-0">Every grant starts with one word holding how many slots of each kind it has. One byte for upcalls, one for read-only buffers, one for read-write buffers, and a fourth the source's own diagram marks unused. The kernel reads it back to find where each array starts, because the arrays are different lengths in every grant.</p>
+      <p class="costp is-on" id="ptp-0">Every grant starts with one word holding how many slots of each kind it has. One byte for upcalls, one for read-only buffers, one for read-write buffers, and a fourth the source's own diagram marks unused. The kernel reads the counters word back to find where each array starts, because the arrays are different lengths in every grant.</p>
       <p class="costp" id="ptp-1">Eight bytes each: a function pointer, and the word the process passed at subscribe time that chapter 6 traced all the way back to the callback. Three of them, because the console's upcall numbers are 1 and 2 and counting starts at 0.</p>
       <p class="costp" id="ptp-2">Eight bytes each: an address and a length, which is exactly what the process handed over. Two of them, and the console uses one &mdash; the buffer a write comes out of, which chapter 6 said may sit in flash.</p>
       <p class="costp" id="ptp-3">Eight bytes each, the same shape, for buffers the kernel writes into. Two again, and the console uses one, for the buffer a read is delivered into.</p>
@@ -722,7 +721,7 @@ dfn {
 <section class="col">
   <h2>The twenty-four bytes nobody uses</h2>
   <p id="wasteline">Three of those seven slots are never touched. The console's upcall numbers are 1 and 2, its read-only buffer is number 1, and its read-write buffer is number 1. Arrays are indexed from zero, so declaring the highest number you use declares every number below it too, and slot zero of all three arrays sits in every process that has ever printed, empty.</p>
-  <p id="whyzero">The source says why, in the same comment three times over. "Before the allow syscall was handled by the kernel, console used allow number 1, so to preserve compatibility we still use allow number 1 now."</p>
+  <p id="whyzero">The source says why, in the same comment three times over. Watch the quotation marks in it: the quoted number is what an application used to pass, and the bare one is what it passes today. They had to stay the same. "Before the allow syscall was handled by the kernel, console used allow number &ldquo;1&rdquo;, so to preserve compatibility we still use allow number 1 now."</p>
 </section>
 
 <figure class="instrument">
@@ -885,7 +884,7 @@ dfn {
       <button type="button" id="ar-6" aria-pressed="false"><span class="vt-at">seven</span><span>the filing cabinet</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="arp-0">The problem, stated. A store is a store, and a peripheral register is an address like any other. The processor running the instruction has no opinion about which address it lands on. Everything after this is somebody deciding which code gets to run that instruction.</p>
+      <p class="vtp is-on" id="arp-0">The problem, stated. A store is a store, and a peripheral register is an address like any other. The processor running the instruction has no opinion about which address it lands on. Everything after this is somebody deciding which addresses a given piece of code may land on.</p>
       <p class="vtp" id="arp-1">Nothing taken away yet, but the ground laid. The first instruction is never yours: the chip fetches from zero, inside a boot ROM nobody can change, and that ROM hunts through flash for something it recognises. Everything after it runs because something earlier chose to run it.</p>
       <p class="vtp" id="arp-2">The first real cut, and it is not the hardware's. A capsule reaches only what its board handed it, and the crate it lives in will not compile the raw pointer that would reach anything else. Nothing stops a capsule writing a wild address while it runs. What stops it is that the code to do so was refused at build time.</p>
       <p class="vtp" id="arp-3">A second kind of code, compiled separately, that the compiler behind the kernel never saw. The kernel cannot check what it does. What it can check is sixteen bytes at the front, which it decides to trust so that it can find where one application ends and the next begins.</p>
@@ -979,7 +978,7 @@ dfn {
     <li>Entering, and the panic when it is entered twice &mdash; <code>kernel/src/grant.rs</code>:1360&ndash;1400, "we panic!() to notify the developer that they tried to enter the same grant twice which is prohibited because it would result in two mutable references existing for the same memory"</li>
     <li>The loop over every process skipping an entered grant instead of panicking &mdash; the same file, :1261&ndash;1263</li>
     <li>The grant being closed by a value going out of scope rather than by a call &mdash; the same file, :222&ndash;227, "On <code>Drop</code>, we leave the grant. This protects against calling <code>grant.enter()</code> without calling the corresponding <code>grant.leave()</code>"</li>
-    <li>A restart rebuilding the layout and giving every grant back &mdash; <code>reset</code>, <code>kernel/src/process_standard.rs</code>:2447&ndash;2463, reached from <code>try_restart</code> at :795 and from exit variant 1 at <code>kernel/src/kernel.rs</code>:1406&ndash;1408</li>
+    <li>A restart recomputing the layout, after which every grant is gone &mdash; <code>reset</code>, <code>kernel/src/process_standard.rs</code>:2447&ndash;2463, reached from <code>try_restart</code> at :795 and from exit variant 1 at <code>kernel/src/kernel.rs</code>:1406&ndash;1408</li>
     <li>Capsules being able to ask for more from the same region &mdash; <code>allocate_custom_grant</code>, <code>kernel/src/process_standard.rs</code>:1278&ndash;1300</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here, as does <code>grant-sizes.rs</code> beside this page, which is source rather than prose.</p>

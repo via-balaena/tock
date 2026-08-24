@@ -1557,6 +1557,9 @@ RETIRED_PHRASES = {
         ("only one of the seven is enforced by hardware", "chapter 6's "
                                                           "instruction is "
                                                           "hardware too"),
+        ("waiting six chapters", "chapter 3 to chapter 7 is four chapters on"),
+        ("which code gets to run", "the series constrains which addresses code "
+                                   "may reach, not which code runs"),
     ],
 }
 
@@ -2156,8 +2159,8 @@ MUST_DEFINE = {
         "subscribe", "svc", "syscall", "syscall class", "upcall", "yield",
     ],
     "ch07": [
-        "allocator", "bump", "counters word", "custom grant", "entering",
-        "grant", "grant number", "grant region", "slot",
+        "allocator", "bump", "counters word", "entering", "grant",
+        "grant number", "grant region", "slot",
     ],
 }
 
