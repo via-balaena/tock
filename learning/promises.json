@@ -509,5 +509,19 @@
     "says": "putting the number there is chapter 5",
     "about": "ch05",
     "kept_by": "memory protection unit"
+  },
+  {
+    "id": "ch03-w-board-ch01",
+    "in": "ch03",
+    "says": "which chapter 1 laid out in full",
+    "about": "ch01",
+    "kept_by": "the onboard light is pin 0 of the radio"
+  },
+  {
+    "id": "ch04-w-board-ch03",
+    "in": "ch04",
+    "says": "but chapter 3's panic blink does",
+    "about": "ch03",
+    "kept_by": "blinks nothing you can see"
   }
 ]

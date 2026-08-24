@@ -993,6 +993,14 @@ dfn {
 </figure>
 
 <section class="col">
+  <h2>If the board on your desk is a Pico 2 W</h2>
+  <p id="wboard">Every line quoted in this chapter is a fact about <code>boards/raspberry_pi_pico_2</code>, and that crate is the plain Pico&nbsp;2. This tree has no <code>raspberry_pi_pico_2_w</code> at all. The <code>_w</code> board it does have is <code>raspberry_pi_pico_w</code>, and its <code>Cargo.toml</code> depends on <code>chips/rp2040</code> &mdash; an earlier chip, not this one.</p>
+  <p id="wpin">One line above cares about the difference. The panic handler builds its own <b>LedHigh</b> on GPIO&nbsp;25, under a comment reading <b>// LED is connected to GPIO 25</b>. On a plain Pico&nbsp;2 it is. On a W that pin is the radio's chip select and the light is pin&nbsp;0 <em>of the radio</em>, which chapter 1 laid out in full.</p>
+  <p id="wblink">So on a W a panicking kernel blinks nothing you can see. The message itself still comes out, over the console on pins 0 and 1. It is the blink that goes missing &mdash; the one signal a dying kernel gives that needs no console at all.</p>
+  <p id="wscope">Nothing else here changes. Every boundary this chapter describes is drawn at compile time, and a compiler has no idea what a pin is wired to.</p>
+</section>
+
+<section class="col">
   <p>Memory safety, then, and not good behaviour. That is the whole of what a type system was ever going to give, and it is why chapter 4 is about code the kernel does not compile at all.</p>
 </section>
 

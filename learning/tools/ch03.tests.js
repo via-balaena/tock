@@ -374,3 +374,22 @@ chk("and says why the detour comes first",
 // the script, and the markup no longer carries is-off, so passing them is
 // proof the script put it there. Repeating it here after the questions have
 // been clicked would assert the opposite of what it says.
+
+// ---- the board on the reader's desk ----
+// Every source line this chapter quotes comes from boards/raspberry_pi_pico_2,
+// and the tree has no crate for the wireless Pico 2 at all. That cost nothing
+// while the series only read source. It costs one thing here: the pin the
+// panic handler blinks is the radio's chip select on a W, so the one signal a
+// dying kernel gives without a console is the one that board cannot show.
+chk("the chapter says which crate every line came from",
+    REG["wboard"].textContent.indexOf("boards/raspberry_pi_pico_2") > -1, true);
+chk("and that the _w board in the tree is a different chip",
+    REG["wboard"].textContent.indexOf("rp2040") > -1, true);
+chk("the pin is named rather than left as 'the LED pin'",
+    REG["wpin"].textContent.indexOf("GPIO 25") > -1, true);
+chk("and the reader is sent to chapter 1 rather than told twice",
+    REG["wpin"].textContent.indexOf("chapter 1") > -1, true);
+chk("what goes missing on a W is the blink, not the message",
+    REG["wblink"].textContent.indexOf("console on pins 0 and 1") > -1, true);
+chk("and the section says what does not change",
+    REG["wscope"].textContent.indexOf("compile time") > -1, true);

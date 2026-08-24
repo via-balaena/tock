@@ -39,11 +39,11 @@ chk("figure 1 opens on a question", REG["tw-0"].getAttribute("aria-pressed"), "t
 chk("figure 2 opens on the version field", REG["hd-0"].getAttribute("aria-pressed"), "true");
 chk("figure 3 opens on the first step", REG["wk-0"].getAttribute("aria-pressed"), "true");
 chk("figure 4 opens on the bootloader", REG["rg-0"].getAttribute("aria-pressed"), "true");
-chk("figure 6 opens on the control block", REG["ks-0"].getAttribute("aria-pressed"), "true");
-chk("figure 7 opens on the first option", REG["pl-0"].getAttribute("aria-pressed"), "true");
-chk("figure 8 opens on argument 0", REG["ag-0"].getAttribute("aria-pressed"), "true");
-chk("figure 9 opens on Running", REG["ps-0"].getAttribute("aria-pressed"), "true");
-chk("figure 10 opens on the Pico 2", REG["fp-0"].getAttribute("aria-pressed"), "true");
+chk("figure 7 opens on the control block", REG["ks-0"].getAttribute("aria-pressed"), "true");
+chk("figure 8 opens on the first option", REG["pl-0"].getAttribute("aria-pressed"), "true");
+chk("figure 9 opens on argument 0", REG["ag-0"].getAttribute("aria-pressed"), "true");
+chk("figure 10 opens on Running", REG["ps-0"].getAttribute("aria-pressed"), "true");
+chk("figure 11 opens on the Pico 2", REG["fp-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
     REG["twp-0"].classList.contains("is-on")
       && REG["hdp-0"].classList.contains("is-on")
@@ -57,7 +57,7 @@ chk("and every one of those has its panel open",
 
 // Figure 6 is the deliberate exception. Seven boundaries, and the one the
 // reader needs is the one the process itself can move, not the topmost.
-chk("figure 5 opens on app_break rather than the top",
+chk("figure 6 opens on app_break rather than the top",
     REG["mm-2"].getAttribute("aria-pressed"), "true");
 chk("and not on the first line", REG["mm-0"].getAttribute("aria-pressed"), "false");
 chk("the app_break panel is the open one", REG["mmp-2"].classList.contains("is-on"), true);
@@ -171,7 +171,7 @@ chk("its end is the last byte of the 520 kB this chip has",
 REG["rg-0"].fire("click");
 
 // ---- Figure 6: seven boundaries ----
-walk("mm-", "mmp-", 7, "figure 5");
+walk("mm-", "mmp-", 7, "figure 6");
 chk("there are seven and not six or eight",
     REG["mm-6"] !== undefined && REG["mm-7"] === undefined, true);
 // The left column is the whole point of the figure: two of the seven are the
@@ -185,7 +185,7 @@ chk("there are seven and not six or eight",
   chk("two boundaries are the kernel's", kernel, 2);
   chk("and five are the process's", app, 5);
 }());
-chk("the top panel hands the reader on to figure 6",
+chk("the top panel hands the reader on to figure 7",
     REG["mmp-0"].textContent.indexOf("Figure 7") > -1, true);
 chk("the kernel's floor moves downward",
     REG["mmp-1"].textContent.indexOf("downward") > -1, true);
@@ -196,7 +196,7 @@ chk("and the bottom is the number the process is told",
 REG["mm-2"].fire("click");
 
 // ---- Figure 7: what the kernel keeps inside your memory ----
-walk("ks-", "ksp-", 3, "figure 6");
+walk("ks-", "ksp-", 3, "figure 7");
 chk("the control block panel says the record is stored in what it records",
     REG["ksp-0"].textContent.indexOf("stored in the process") > -1, true);
 chk("the upcall queue gives the number and the constant that holds it",
@@ -206,7 +206,7 @@ chk("and the grant pointers panel hands the mechanism to chapter 7",
 REG["ks-0"].fire("click");
 
 // ---- Figure 8: three ways to place a program ----
-walk("pl-", "plp-", 3, "figure 7");
+walk("pl-", "plp-", 3, "figure 8");
 // Two of the three exist in the tree and one does not. If a later edit softens
 // the first panel, the figure stops making its point.
 chk("the first is the one this kernel never does",
@@ -218,19 +218,19 @@ chk("and the third is the default",
 REG["pl-0"].fire("click");
 
 // ---- Figure 9: the four arguments ----
-walk("ag-", "agp-", 4, "figure 8");
+walk("ag-", "agp-", 4, "figure 9");
 chk("there are four and not three or five",
     REG["ag-3"] !== undefined && REG["ag-4"] === undefined, true);
 chk("the first is not the start of the header",
     REG["agp-0"].textContent.indexOf("Not the start of the header") === 0, true);
 chk("the third says the kernel's own structures are inside the length",
     REG["agp-2"].textContent.indexOf("Figure 7 are inside this length") > -1, true);
-chk("and the fourth gives the same thirty-two as figure 5",
+chk("and the fourth gives the same thirty-two as figure 6",
     REG["agp-3"].textContent.indexOf("thirty-two bytes") > -1, true);
 REG["ag-0"].fire("click");
 
 // ---- Figure 10: the six states ----
-walk("ps-", "psp-", 6, "figure 9");
+walk("ps-", "psp-", 6, "figure 10");
 (function () {
   var NAMES = ["Running", "Yielded", "YieldedFor", "Stopped", "Faulted",
                "Terminated"];
@@ -312,14 +312,14 @@ chk("the first question's three options all begin the same way",
 // ---- What the chapter promised it would do ----
 // Four goals at the top, each tied to what on the page delivers it. A goal
 // nothing answers is the failure this catches.
-chk("goal 1, what a process is in flash and in RAM, is delivered by figures 4 and 5",
+chk("goal 1, what a process is in flash and in RAM, is delivered by figures 4 and 6",
     REG["rgp-2"].textContent.indexOf("flashed separately from the kernel") > -1
       && REG["mmp-6"].textContent.indexOf("The bottom") === 0, true);
 chk("goal 2, why chapter 3's promise cannot be made, is delivered by figure 1",
     REG["twp-0"].textContent.indexOf("it arrives as bytes") > -1, true);
 chk("goal 3, the search and what stops it, is delivered by figure 3",
     REG["wkp-5"].textContent.indexOf("fails to be an entry") > -1, true);
-chk("goal 4, what a process is handed, is delivered by figure 8",
+chk("goal 4, what a process is handed, is delivered by figure 9",
     REG["agp-1"].textContent.indexOf("worked out from this one") > -1, true);
 
 // ---- The rule chapter 3's fifth pass established ----
@@ -392,9 +392,9 @@ chk("and it is counted rather than gestured at",
 // ---- Figure 12: the limits section was prose only ----
 // Chapter 3's second pass found exactly this shape -- the section about what a
 // chapter does not buy, sitting on the skim path as a bare heading.
-chk("figure 11 opens on the first of the three",
+chk("figure 12 opens on the first of the three",
     REG["tb-0"].getAttribute("aria-pressed"), "true");
-walk("tb-", "tbp-", 3, "figure 11");
+walk("tb-", "tbp-", 3, "figure 12");
 REG["tb-0"].fire("click");
 chk("the header panel says total_size is believed outright",
     REG["tbp-0"].textContent.indexOf("believed outright") > -1, true);
@@ -457,7 +457,7 @@ chk("the chapter says how many fit at a time",
 chk("and that they are handed memory in the order they were found",
     REG["plural"].textContent.indexOf("in the order it found them") > -1, true);
 
-// Figures 5, 6 and 9 describe ProcessStandard. Pass 1 caught the CALLBACK_LEN
+// Figures 6, 7 and 9 describe ProcessStandard. Pass 1 caught the CALLBACK_LEN
 // instance of stating an implementation's property as Tock's; this is the
 // general case, in a chapter whose method is "the board decides".
 chk("the chapter says whose implementation this is",
@@ -512,7 +512,7 @@ chk("and the seventh has somewhere to go",
 // first used where it is named.
 chk("the run-time cost paragraph does not use a metaphor it has not introduced",
     REG["runcost"].textContent.indexOf("fence"), -1);
-chk("and figure 11 calls the timeslice a boundary rather than a fence",
+chk("and figure 12 calls the timeslice a boundary rather than a fence",
     REG["tbp-2"].textContent.indexOf("fence"), -1);
 chk("the closing names the fence in the same sentence it uses the word",
     REG["closing"].textContent.indexOf("memory protection unit") > -1
@@ -527,8 +527,8 @@ chk("hardware is no longer called a block",
 // The same defect chapter 3's second pass named, reintroduced by the pass that
 // fixed it elsewhere. It also now answers the question a reader with this
 // board on the desk asks next.
-chk("figure 12 opens on the first flag", REG["in-0"].getAttribute("aria-pressed"), "true");
-walk("in-", "inp-", 3, "figure 12");
+chk("figure 5 opens on the first flag", REG["in-0"].getAttribute("aria-pressed"), "true");
+walk("in-", "inp-", 3, "figure 5");
 REG["in-0"].fire("click");
 chk("the first flag panel ties back to figure 4's third row",
     REG["inp-0"].textContent.indexOf("Figure 4's third row") > -1, true);
@@ -540,3 +540,18 @@ chk("it warns that the default path is a Linux one",
     REG["inp-2"].textContent.indexOf("Linux") > -1, true);
 chk("and the README's third target is in the note rather than lost",
     REG["in-note"].textContent.indexOf("flash-app") > -1, true);
+
+// ---- which board the make target flashes ----
+// Figure 5 is the first instruction in the series aimed at hardware, so it has
+// to say what hardware. The crate is the plain Pico 2 and the tree has no
+// wireless one; nothing in this chapter turns on the difference, and the
+// sentence says so rather than leaving the reader to wonder.
+chk("the install section names the board the Makefile belongs to",
+    REG["inboard"].textContent.indexOf("plain Pico 2") > -1, true);
+chk("and says the tree has no wireless crate for it",
+    REG["inboard"].textContent.indexOf("raspberry_pi_pico_2_w") > -1, true);
+chk("it scopes the difference out of this chapter",
+    REG["inboard"].textContent.indexOf("does not turn") +
+      REG["inboard"].textContent.indexOf("turns on which one you own") > -2, true);
+chk("and hands the reader to the chapter it does matter in",
+    REG["inboard"].textContent.indexOf("chapter 3") > -1, true);

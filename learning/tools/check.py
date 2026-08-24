@@ -1185,6 +1185,61 @@ def figure_order_checks(html):
             % (", ".join(labels), ", ".join(want))]
 
 
+def figure_label_checks(html, tests_path):
+    """An assertion that names a figure names the one its element is in.
+
+    Written after renumbering chapter 4's twelve figures to fix the misplaced
+    Figure 12 above. The page came out right and every assertion still passed,
+    because the suite addresses elements by id and an id does not carry a
+    number. What it left behind was eight assertion descriptions naming the
+    figure the element used to be in -- a suite that reads correct, passes
+    green, and tells the reader the wrong thing about the page it is guarding.
+
+    Only two shapes are checked, and both name the element's own figure by
+    construction: a walk() label, and a "figure N opens ..." description. An
+    assertion that deliberately names a different figure -- "the top panel
+    hands the reader on to figure 7" -- is left alone.
+    """
+    if not os.path.exists(tests_path):
+        return []
+    owner = {}
+    for block in re.finditer(r"<figure\b.*?</figure>", html, re.S):
+        label = re.search(r'instrument-label">Figure (\d+)</span>', block.group(0))
+        if not label:
+            continue
+        for prefix in re.findall(r'id="([a-z]+)-0"', block.group(0)):
+            owner[prefix] = label.group(1)
+    if not owner:
+        return []
+
+    with open(tests_path, encoding="utf-8") as fh:
+        lines = fh.read().split("\n")
+    # Comments in these suites are whole lines, and they carry figure numbers
+    # for prose reasons the two patterns below should not be reading.
+    code = " ".join(l for l in lines if not l.lstrip().startswith("//"))
+
+    problems = []
+    seen = set()
+    def claim(prefix, said, shape):
+        if prefix not in owner or owner[prefix] == said:
+            return
+        key = (prefix, said, shape)
+        if key in seen:
+            return
+        seen.add(key)
+        problems.append(
+            "%s calls %s- figure %s in a %s, and the page has it in figure %s"
+            % (os.path.basename(tests_path), prefix, said, shape, owner[prefix]))
+
+    for m in re.finditer(r'walk\(\s*"([a-z]+)-"\s*,\s*"[a-z]+-"\s*,'
+                         r'\s*\d+\s*,\s*"figure (\d+)"', code):
+        claim(m.group(1), m.group(2), "walk label")
+    for m in re.finditer(r'chk\(\s*"figure (\d+) opens[^"]*"\s*,'
+                         r'\s*REG\["([a-z]+)-0"\]', code):
+        claim(m.group(2), m.group(1), '"opens on" description')
+    return problems
+
+
 # Words that head a selector part without naming an element: at-rule keywords
 # and the bare-word pieces of a media query. Plus the three elements a browser
 # creates whether or not the file writes them -- these pages open at `<title>`
@@ -1413,6 +1468,8 @@ def static_checks(html, name):
     problems.extend(dead_css_checks(html))
     problems.extend(glossary_use_checks(html))
     problems.extend(figure_order_checks(html))
+    problems.extend(figure_label_checks(
+        html, os.path.join(TOOLS, name.split('-')[0] + '.tests.js')))
     problems.extend(wired_checks(html))
 
     return problems

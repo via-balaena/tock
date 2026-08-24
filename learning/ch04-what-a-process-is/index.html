@@ -824,6 +824,7 @@ dfn {
   <h2>How an application reaches the board</h2>
   <p id="installsrc">Nothing in this repository builds an application. They are built out of tree, in whatever language, and arrive as a <code>.tbf</code> file: a TBF header with a program behind it. Tock's own getting-started guide points at two places to get one, libtock-c for C and C++ and libtock-rs for Rust.</p>
   <p>Getting one onto the board is two lines of <code>objcopy</code> and a choice of target, and all three are about the region Figure 4 just showed.</p>
+  <p id="inboard">One thing to settle before you plug anything in: the Makefile those targets come from is this board's, and this board is the plain Pico&nbsp;2. The tree has no <code>raspberry_pi_pico_2_w</code>, and the <code>_w</code> board it does have is built on <code>chips/rp2040</code>, an earlier chip. Nothing in this chapter turns on which one you own &mdash; flash and RAM do not know what the pins reach &mdash; but chapter 3's panic blink does.</p>
 </section>
 
 <figure class="instrument">

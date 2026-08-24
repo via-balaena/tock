@@ -64,6 +64,15 @@ All seven are groundable on the hardware in front of the reader -- a Pico 2 and
 a debug probe -- because `boards/raspberry_pi_pico_2` is a real port in this
 tree and every chapter can cite it.
 
+**Which board that is.** `boards/raspberry_pi_pico_2` is the plain Pico 2. This
+tree has no `raspberry_pi_pico_2_w`; the `_w` board it does have is built on
+`chips/rp2040`, an earlier chip. The series cites the plain crate throughout and
+says, in the chapter where it costs something, what a wireless board does
+differently -- chapter 1 for GPIO 25 being the radio's chip select rather than
+the LED, chapter 3 for the panic blink landing there, chapter 4 for which crate
+`make program` flashes. A new chapter that reaches for hardware owes the reader
+the same sentence.
+
 ## Why this lives in the Tock repository
 
 The chapters cite kernel source by file and line. Keeping them in a branch of the
@@ -111,8 +120,19 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Twenty more static checks exist because each caught a live defect. Keep the
+Twenty-one more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **An assertion naming the figure its element used to be in.** Fixing the
+  bullet below meant renumbering all twelve of chapter 4's figures. The page
+  came out right and every assertion still passed, because the suite addresses
+  elements by id and an id carries no number -- so eight assertion descriptions
+  were left naming the old figure. A suite that reads correct, runs green, and
+  tells you the wrong thing about the page it guards is worse than no
+  description at all. Two shapes are checked, both of which name the element's
+  own figure by construction: a `walk()` label and a "figure N opens ..."
+  description. An assertion that deliberately points at a different figure is
+  left alone.
 
 - **A figure numbered out of order.** Chapter 4's third review pass inserted a
   figure after Figure 4 and numbered it 12, which is what the last label had
