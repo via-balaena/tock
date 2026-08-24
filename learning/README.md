@@ -125,8 +125,26 @@ reaching for ids that do not exist, CSS variables used but never defined, and
 color literals outside the theme token blocks -- that last one being the usual
 way a page ends up unreadable in one of the two color schemes.
 
-Twenty-five more static checks exist because each caught a live defect. Keep the
+Twenty-six more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
+
+- **A citation whose line number is not in the file it resolves to.** The
+  sources lists say "the same file" a lot, because repeating a path for every
+  line of one function is noise. That works until a bullet names two files:
+  chapter 6's names `kernel/src/kernel.rs` and then the board crate, and the
+  "the same file, :903-911" under it therefore pointed at a 481-line file. The
+  lines it meant are in `kernel.rs`. Three review passes verified every
+  citation on that page and none of them caught it, because each verified from
+  a list with explicit paths -- the chain was never the thing under test, and a
+  reader following the bibliography is the only one who would ever have hit it.
+  Each `:N` now resolves back to the last path actually named and the tree is
+  asked, at the chapter's own pinned commit, whether that file has an Nth line.
+  A bare basename counts as a path if the full one appeared earlier in the same
+  list, which is a reader-followable abbreviation and the thing chapter 5 does
+  six times after giving `arch/cortex-m33/src/mpu_v8m.rs` once; a basename
+  nothing introduced is not. What it does not check is whether the line *says*
+  anything in particular -- that stays a review lens. Skipped where git or the
+  pinned commit is unavailable.
 
 - **A halfword a figure printed without assembling it.** The sibling of the
   Rust one below, for chapter 6, whose whole opening rests on `svc N` being

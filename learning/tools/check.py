@@ -603,6 +603,72 @@ def demo_asm_checks(html, chapter_dir):
     return problems
 
 
+def citation_chain_checks(html):
+    """A citation whose line number is not in the file it resolves to.
+
+    The sources list says "the same file" a lot, because repeating a path for
+    every line of one function is noise. That works until a bullet names two
+    files: chapter 6's bullet 17 ends on the board crate, and the "the same
+    file, :903-911" under it therefore pointed at a 481-line file. The lines
+    it meant are in `kernel/src/kernel.rs`. Every hand check of these citations
+    read them from a list with explicit paths, so the chain itself was never
+    the thing being tested -- and a reader following the bibliography is the
+    only one who would ever have found it.
+
+    So: resolve each `:N` back to the last path actually named, and ask the
+    tree at the chapter's own pinned commit whether that file has an Nth line.
+    A bare basename counts as naming a path if the full one appeared earlier in
+    the same list, because that is a reader-followable abbreviation and chapter
+    5 uses it six times after giving `arch/cortex-m33/src/mpu_v8m.rs` once. A
+    basename nothing has introduced is not.
+    This does not check that the line *says* anything in particular; that stays
+    a review lens. It catches the citation that cannot be followed at all.
+
+    Skipped where git or the pinned commit is unavailable, so a clone without
+    full history still runs the rest of the gate.
+    """
+    block = re.search(r'<section class="col sources">(.*?)</section>', html, re.S)
+    if not block:
+        return []
+    pin = re.search(r"commit <code>([0-9a-f]{7,40})</code>", block.group(1))
+    if not pin:
+        return []
+    pin = pin.group(1)
+    if subprocess.run(["git", "cat-file", "-e", pin + "^{commit}"],
+                      capture_output=True).returncode != 0:
+        return []
+
+    problems, lengths, current, seen = [], {}, None, {}
+    for item in re.findall(r"<li>(.*?)</li>", block.group(1), re.S):
+        for token in re.finditer(
+                r"<code>([A-Za-z0-9_./-]+\.(?:rs|md|s|toml))</code>|:(\d+)", item):
+            if token.group(1):
+                named = token.group(1)
+                # An abbreviation of a path this list has already given in full.
+                current = seen.get(named, named)
+                if "/" in named:
+                    seen[named.rsplit("/", 1)[1]] = named
+                continue
+            if current is None:
+                continue
+            if current not in lengths:
+                shown = subprocess.run(["git", "show", "%s:%s" % (pin, current)],
+                                       capture_output=True, text=True)
+                lengths[current] = (len(shown.stdout.split("\n"))
+                                    if shown.returncode == 0 else None)
+            total = lengths[current]
+            if total is None:
+                problems.append("a citation names %s, which is not in the tree "
+                                "at %s" % (current, pin))
+                lengths[current] = 0
+            elif total and int(token.group(2)) > total:
+                problems.append(
+                    "a citation resolves to %s:%s and that file has %d lines "
+                    "at %s -- check what the nearest 'the same file' points at"
+                    % (current, token.group(2), total, pin))
+    return problems
+
+
 def assembled_listing_checks(html, chapter_dir):
     """A halfword the page prints must be one the assembler actually produced.
 
@@ -1756,6 +1822,7 @@ def static_checks(html, name):
     problems.extend(demo_source_checks(html, os.path.join(ROOT, name)))
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(assembled_listing_checks(html, os.path.join(ROOT, name)))
+    problems.extend(citation_chain_checks(html))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
     problems.extend(glossary_use_checks(html))

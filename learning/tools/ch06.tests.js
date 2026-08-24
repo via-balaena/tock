@@ -504,7 +504,7 @@ chk("and hands the reader on to grants",
   REG["rt-4"].fire("click");
   chk("the failure-with-a-value shape is returned by no driver",
       REG["rtp-4"].textContent.indexOf("the unit test that checks it encodes correctly") > -1, true);
-  chk("and the page still says why the ABI carries it",
+  chk("and the page says why the ABI carries it",
       REG["rtp-4"].textContent.indexOf("numbered from opposite ends") > -1, true);
   REG["rt-0"].fire("click");
 }());
@@ -560,7 +560,48 @@ chk("and hands the reader on to grants",
   chk("nothing in the upcall path calls an upcall a note", stray.join(", "), "");
 }());
 
-// The glossary says ten words, and the lead sentence makes a claim about the
+// ---- The claims no assertion reached ----
+// Fifteen ids were read by neither the script nor this suite, three of them
+// figure notes -- which is where each figure states its conclusion. Each of
+// these asserts what the anchor claims, not that it exists, so a rewrite that
+// drops the claim fails rather than passing on an empty string.
+(function () {
+  var CLAIMS = [
+    ["doorline",   "can compute and do nothing else"],
+    ["notaddr",    "a wrong pointer can reach by accident"],
+    ["trapline",   "the exit is not an address at all"],
+    ["classline",  "That number is the syscall class"],
+    ["ledreq",     "Command number 1 means turn one on"],
+    ["traitline",  "has three methods, and only two of them are requests"],
+    ["threemeth",  "is not a request at all"],
+    ["backline",   "There is no returning from a syscall in the ordinary sense"],
+    ["splitline",  "no amount of waiting inside a driver will make that sooner"],
+    ["twoparts",   "a request that cannot finish is split in two"],
+    ["frameline",  "The exception frame is eight words"],
+    ["refuseline", "A door that cannot refuse is a hole"],
+    ["rq-note",    "fail in different places"],
+    ["cl-note",    "the numbers do not group anything"],
+    ["fr-note",    "the third writes seven"]
+  ];
+  var i, missing = [];
+  for (i = 0; i < CLAIMS.length; i++) {
+    if (REG[CLAIMS[i][0]].textContent.indexOf(CLAIMS[i][1]) === -1) {
+      missing.push(CLAIMS[i][0] + " no longer says " + CLAIMS[i][1]);
+    }
+  }
+  chk("every anchored paragraph still makes the claim it was anchored for",
+      missing.join("; "), "");
+  // The three figure notes are what this was really about: a note is where a
+  // figure says what to take from it, and three of the nine had nothing.
+  chk("and figure 2's note is one of the three that had nothing",
+      REG["cl-note"].textContent.indexOf("record of what was needed when") > -1, true);
+  chk("figure 3's note names where each of the two failures happens",
+      REG["rq-note"].textContent.indexOf("before any driver code runs") > -1, true);
+  chk("and figure 7's note counts the words each job writes",
+      REG["fr-note"].textContent.indexOf("leaving out exactly the one the interface ignores") > -1, true);
+}());
+
+// The glossary says eleven words, and the lead sentence makes a claim about the
 // order of them as well as the count.
 (function () {
   var TERMS = ["syscall class", "svc", "exception frame", "driver number",
