@@ -592,9 +592,9 @@ dfn {
   <div class="goals" id="goalbox">
     <h2>What you'll be able to do at the end</h2>
     <ul>
-      <li>Say what the <dfn>memory protection unit</dfn> checks on every access, and three things it never checks.</li>
-      <li>Read one real <dfn>region</dfn> out of the two registers that describe it, and get back the addresses the kernel put in.</li>
-      <li>Say how many regions this board has, which one is spoken for before your process starts, and what runs out first.</li>
+      <li>Say what the <dfn>memory protection unit</dfn> checks on every access, and the one thing it never sees.</li>
+      <li>Read one <dfn>region</dfn> out of the two registers that describe it, and get back the addresses the kernel put in.</li>
+      <li>Say how many regions this board has, which two are spoken for before your process starts, and what runs out first.</li>
       <li>Follow one forbidden store from the instruction to the stopped process, naming every step in between.</li>
     </ul>
     <p class="cost">Plan on forty minutes. Chapter 4 is assumed: what a process is, and the seven boundaries through its memory. Chapter 1 comes back too &mdash; a register with fields in it, except that this time the fields govern what other addresses may be touched.</p>
@@ -656,39 +656,42 @@ dfn {
 <section class="col">
   <h2>One region, two registers</h2>
   <p>Chapter 1 spent itself on a register with fields packed into it: bits that meant something to hardware rather than to the program. This is the same shape and a different job. Instead of a bit per pin, the fields describe a stretch of addresses and what may be done inside it.</p>
-  <p id="whereregs">The block sits at <code class="addr">0xE000ED90</code>. Three registers matter for one region: <b>MPU_RNR</b> at <code class="addr">0xE000ED98</code> picks which of the eight you are talking about, and then <b>MPU_RBAR</b> and <b>MPU_RLAR</b>, at <code class="addr">0xE000ED9C</code> and <code class="addr">0xE000EDA0</code>, describe it.</p>
+  <p id="wordregion">One warning about the word. Chapter 4 used <em>region</em> for the four areas a linker script cuts the chip into, and that sense is not this one. From here on a region is what the glossary above says: a run of addresses the hardware is checking, described by two registers.</p>
+  <p id="whereregs">The registers sit at <code class="addr">0xE000ED90</code>. Three registers matter for one region: <b>MPU_RNR</b> at <code class="addr">0xE000ED98</code> picks which of the eight you are talking about, and then <b>MPU_RBAR</b> and <b>MPU_RLAR</b>, at <code class="addr">0xE000ED9C</code> and <code class="addr">0xE000EDA0</code>, describe it.</p>
 </section>
 
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 2</span>
-    <span class="instrument-title">Two registers, six fields, one region</span>
+    <span class="instrument-title">Two registers, seven fields, one region</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each field. The first and fourth carry the addresses; the rest are one or two bits each.</p>
+    <p class="dothis">Click each field. The first and fourth carry the addresses; the rest are a bit or two each, and the fifth is the one Figure 3's arithmetic needs.</p>
     <div class="vt" role="group" aria-label="The fields of MPU_RBAR and MPU_RLAR">
       <button type="button" id="rf-0" aria-pressed="true"><span class="vt-at">RBAR</span><span>BASE, bits 31:5</span></button>
       <button type="button" id="rf-1" aria-pressed="false"><span class="vt-at">RBAR</span><span>AP, bits 2:1</span></button>
       <button type="button" id="rf-2" aria-pressed="false"><span class="vt-at">RBAR</span><span>XN, bit 0</span></button>
       <button type="button" id="rf-3" aria-pressed="false"><span class="vt-at">RLAR</span><span>LIMIT, bits 31:5</span></button>
-      <button type="button" id="rf-4" aria-pressed="false"><span class="vt-at">RLAR</span><span>ATTRINDX, bits 3:1</span></button>
-      <button type="button" id="rf-5" aria-pressed="false"><span class="vt-at">RLAR</span><span>ENABLE, bit 0</span></button>
+      <button type="button" id="rf-4" aria-pressed="false"><span class="vt-at">RLAR</span><span>PXN, bit 4</span></button>
+      <button type="button" id="rf-5" aria-pressed="false"><span class="vt-at">RLAR</span><span>ATTRINDX, bits 3:1</span></button>
+      <button type="button" id="rf-6" aria-pressed="false"><span class="vt-at">RLAR</span><span>ENABLE, bit 0</span></button>
     </div>
     <div class="vtsay">
       <p class="vtp is-on" id="rfp-0">The first address of the region, with its bottom five bits missing. The kernel writes <b>logical_start &gt;&gt; 5</b>, so what the hardware stores is the address in units of 32 bytes. Those five absent bits are the entire size rule on this chip: a region may start on any multiple of 32 and nothing else is required of it.</p>
       <p class="vtp" id="rfp-1">Two bits, four values, and only two of them get used for a process: <b>ReadWrite</b> and <b>ReadOnly</b>. The other two are the privileged-only pair, and they grant unprivileged code nothing at all &mdash; which for a process means no access to that region. Figure 4 is where each one comes from.</p>
       <p class="vtp" id="rfp-2">One bit, and the reason this chapter has the phrase <dfn>execute-never</dfn> in it. Set the bit and no instruction may be fetched from the region. The names in the Tock source read backwards at first glance: <b>XN::Disable</b> is the value that sets the bit, because what it disables is execution.</p>
       <p class="vtp" id="rfp-3">The last address of the region, inclusive, in the same 32-byte units. The kernel writes <b>(logical_end - 1) &gt;&gt; 5</b>, and the comment above that line says why. The limit counts the last byte that is <em>in</em>. Passing the end address itself would stretch the region 32 bytes past where it should stop.</p>
-      <p class="vtp" id="rfp-4">Three bits pointing at one of eight attribute slots. Every region Tock builds points at slot 0, and the only line that ever writes those slots sets slot 0 to normal, non-cacheable memory. It is set on every configure and never varies.</p>
-      <p class="vtp" id="rfp-5">The switch. A region with this bit clear is ignored no matter what else is in the pair, which is how the unit holds eight regions when a process only needs two. An unused slot is written as a base of zero and this bit cleared.</p>
+      <p class="vtp" id="rfp-4">The other execute-never bit, and the only field in the pair that speaks about nothing but privileged code. The source calls it "privileged execute-never. Defines whether code can be executed from this privileged region", and the value names read backwards here too: Tock writes <b>PXN::Disable</b> into every region it builds, which sets the bit. That is where the <code>0x10</code> in Figure 3's limit values comes from.</p>
+      <p class="vtp" id="rfp-5">Three bits pointing at one of eight attribute slots. Every region Tock builds points at slot 0, and the only line that ever writes those slots sets slot 0 to normal, non-cacheable memory. It is set on every configure and never varies.</p>
+      <p class="vtp" id="rfp-6">The switch. A region with this bit clear is ignored no matter what else is in the pair, which is how the unit holds eight regions when a process only needs two. An unused slot is written as a base of zero and this bit cleared.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice what the pair does not hold. Bits 4 to 0 of the start, and bits 4 to 0 of the end: ten bits the hardware has nowhere to put. A region that begins at an odd address cannot be described, so the kernel is never allowed to want one.</div>
+  <div class="instrument-note" id="rf-note">Notice what the pair does not hold. Bits 4 to 0 of the start, and bits 4 to 0 of the end: ten bits the hardware has nowhere to put. A region that begins at an odd address cannot be described, so the kernel is never allowed to want one. One field is left out above, <b>SH</b>: Tock writes zero into it every time and never varies.</div>
 </figure>
 
 <section class="col">
   <h2>A region you can work out by hand</h2>
-  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. Here is what the two registers hold at three moments in that process's life.</p>
+  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. That base is picked to make the arithmetic easy to follow, not read off this board like every other address in this series. Where a process's memory actually starts depends on how much RAM the kernel's own data took. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. Here is what the two registers hold at three moments in that process's life.</p>
 </section>
 
 <figure class="instrument">
@@ -709,9 +712,9 @@ dfn {
       <div class="costcell"><span class="costcell-k">reachable</span><span class="costcell-v" id="mm-len">32 bytes</span></div>
     </div>
     <div class="costsay">
-      <p class="costp is-on" id="mmp-0">One 32-byte block, which is the smallest region this hardware can describe and exactly the size of the exception frame the processor pushes on the way in. <b>RBAR</b> is the base with three low bits of permission stuck on it: <b>0x20008000</b>, plus <b>0b01</b> in the access field for read-write, plus the execute-never bit. <b>RLAR</b>'s limit field holds the same block number as the base, because the first block and the last block are the same block.</p>
-      <p class="costp" id="mmp-1"><b>RBAR</b> has not moved and will not: the start of a process's memory is fixed when it is loaded. Only the limit changes. <b>0x20008800</b> minus one, shifted down five and back up, lands on <b>0x200087E0</b>, and the two low bits are the privileged-execute-never bit and the enable bit, giving <b>0x200087F1</b>.</p>
-      <p class="costp" id="mmp-2">Ask for 2049 bytes and you are given 2080. The kernel rounds the requested end <em>up</em> to the next multiple of 32 before it builds the region, because it has nowhere to put a finer answer. The rounding always goes the process's way, and a process that asks in small pieces gets a little more than it asked for every time.</p>
+      <p class="costp is-on" id="mmp-0">A single 32-byte region, which is the smallest this hardware can describe and exactly the size of the exception frame the processor pushes on the way in. <b>RBAR</b> is the base with three low bits of permission stuck on it: <b>0b01</b> in the access field for read-write, then the execute-never bit. <b>RLAR</b>'s limit field holds the same value as the base, because a region this small starts and ends inside one multiple of 32.</p>
+      <p class="costp" id="mmp-1"><b>RBAR</b> has not moved and will not: the start of a process's memory is fixed when it is loaded. Only the limit changes. Take the new end, subtract one, shift down five and back up, then add bit 4 for privileged-execute-never and bit 0 for enable. That is the extra <code>0x11</code> added to every limit this figure shows.</p>
+      <p class="costp" id="mmp-2">Ask for one byte past a multiple of 32 and you are given the next whole multiple. The kernel rounds the requested end <em>up</em> before it builds the region, because it has nowhere to put a finer answer. The rounding always goes the process's way, and a process that asks in small pieces gets a little more than it asked for every time.</p>
     </div>
   </div>
   <div class="instrument-note">Notice which number never changes. A process's memory cannot be moved once it is running, because its own compiled addresses point into it &mdash; chapter 4's four arguments were how it learned them. Growth happens at one end only.</div>
@@ -728,7 +731,7 @@ dfn {
     <span class="instrument-title">Five names, and the two fields each becomes</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each name. Two of the five are the ones this board actually uses; the fifth is the strange one.</p>
+    <p class="dothis">Click each name. Two of the five are the only ones any code in this tree asks for; the fifth is the strange one.</p>
     <div class="vt" role="group" aria-label="The five Permissions variants and the fields they set">
       <button type="button" id="pm-0" aria-pressed="true"><span class="vt-at">1</span><span>ReadWriteExecute</span></button>
       <button type="button" id="pm-1" aria-pressed="false"><span class="vt-at">2</span><span>ReadWriteOnly</span></button>
@@ -737,11 +740,11 @@ dfn {
       <button type="button" id="pm-4" aria-pressed="false"><span class="vt-at">5</span><span>ExecuteOnly</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="pmp-0">Access field <b>ReadWrite</b>, execute allowed. Everything permitted. Nothing in the loading path asks for this, and a region that is both writable and executable is the arrangement every other mechanism in this chapter exists to avoid.</p>
+      <p class="vtp is-on" id="pmp-0">Access field <b>ReadWrite</b>, execute allowed. Everything permitted. No line in this tree asks for it, and a region that is both writable and executable is the arrangement every other mechanism in this chapter exists to avoid.</p>
       <p class="vtp" id="pmp-1">Access field <b>ReadWrite</b>, execute-never bit set. This is what a process's RAM gets. A process may keep whatever it likes in its own memory and may not run it, so a buffer that arrives full of instructions is still only a buffer.</p>
       <p class="vtp" id="pmp-2">Access field <b>ReadOnly</b>, execute allowed. This is what a process's flash gets, asked for by name when the process is loaded. A process cannot rewrite its own code, which is the other half of the pair above.</p>
-      <p class="vtp" id="pmp-3">Access field <b>ReadOnly</b>, execute-never. Readable data that is neither writable nor runnable. Nothing on this board asks for it, but it costs nothing to offer.</p>
-      <p class="vtp" id="pmp-4">The odd one. It sets the access field to <b>ReadOnlyPrivilegedOnly</b> and leaves execution allowed, so unprivileged code may run the instructions and may not read them back. Nothing in this tree asks for it either; it is here because the hardware can express it.</p>
+      <p class="vtp" id="pmp-3">Access field <b>ReadOnly</b>, execute-never. Readable data that is neither writable nor runnable. No line in this tree asks for it either, but it costs nothing to offer.</p>
+      <p class="vtp" id="pmp-4">The odd one. It sets the access field to <b>ReadOnlyPrivilegedOnly</b> and leaves execution allowed, so unprivileged code may run the instructions and may not read them back. Nothing asks for it either. Three of these five names have no caller anywhere in the tree, and this is the one the hardware would have been strangest without.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the two the loader uses are the two that split writing from running. Flash: read and execute, never write. RAM: read and write, never execute. Between them there is no address a process can both write and later run.</div>
@@ -749,7 +752,7 @@ dfn {
 
 <section class="col">
   <h2>Eight regions, and who has them</h2>
-  <p id="eightline">The datasheet says the unit "supports 16 memory regions: 8 secure and 8 non-secure", banked so that each security state has its own set. Tock asks for eight, in one line of the chip crate: <b>cortexm33::mpu::MPU&lt;8&gt;</b>.</p>
+  <p id="eightline">The datasheet says the unit "supports 16 memory regions: 8 secure and 8 non-secure" &mdash; two separate sets of eight rather than sixteen in one pool. Tock asks for eight, in one line of the chip crate: <b>cortexm33::mpu::MPU&lt;8&gt;</b>.</p>
   <p>By the time a process runs its first instruction, two of those eight are already spoken for, and one of the two was never up for discussion.</p>
 </section>
 
@@ -795,7 +798,7 @@ dfn {
         <span class="mo-when">Cortex-M0+ to M7</span><span class="mo-who">power of two, plus subregions</span></button>
     </div>
     <div class="mosay">
-      <p class="mop is-on" id="tcp-0">Round the start up to a multiple of 32, round the end up to a multiple of 32, write both. 3&nbsp;kB is already a multiple of 32, so the region is 3&nbsp;kB and the process gets what it asked for. The whole size rule is one function, seven lines long, that aligns a pointer.</p>
+      <p class="mop is-on" id="tcp-0">Round the start up to a multiple of 32, round the end up to a multiple of 32, write both. 3&nbsp;kB is already a multiple of 32, so the region is 3&nbsp;kB and the process gets what it asked for. The whole size rule is one nine-line function that rounds a pointer up.</p>
       <p class="mop" id="tcp-1">A region's size must be a power of two, and it must start on a multiple of its own size. 3&nbsp;kB is not a power of two, so the first condition already fails. The older code answers by allocating a larger region &mdash; the next power of two &mdash; cutting it into eight equal subregions, and switching off the ones the process should not have. That branch runs to sixty-four lines. The newer file's whole size rule is a nine-line function that rounds a pointer up.</p>
     </div>
   </div>
@@ -825,7 +828,7 @@ dfn {
     <div class="dbgsay">
       <p class="dbgp is-on" id="flp-0">No kernel code has run yet and none is about to. The address did not match an enabled region, or matched one that forbids writing, and the write never reaches memory. This is the only step in the whole series that is not a line of source.</p>
       <p class="dbgp" id="flp-1">The datasheet is exact about it: "MPU mismatches and permission violations invoke the MemManage handler." That is the architecture's answer, and it is what would happen on a board that had asked for it.</p>
-      <p class="dbgp" id="flp-2">This one has not. The enable bit for MemManage sits in <b>SHCSR</b> and resets to zero; no line in this kernel sets it. Tock's own comment on the routine that clears that bit says what the consequence is: it "escalates the exception to a HardFault instead". So the <dfn>HardFault</dfn> handler runs, and <dfn>MemManage</dfn> never does.</p>
+      <p class="dbgp" id="flp-2">This board has not. The enable bit for MemManage sits in <b>SHCSR</b> and resets to zero; no line in this kernel sets it. Tock's own comment on the routine that clears that bit says what the consequence is: it "escalates the exception to a HardFault instead". So the <dfn>HardFault</dfn> handler runs, and <dfn>MemManage</dfn> never does.</p>
       <p class="dbgp" id="flp-3">The handler's first job is to find out who faulted, and it is settled by bit 2 of the link register: <b>tst lr, #4</b>. Set means the process's stack was in use, clear means the kernel's. Clear branches to a handler that never returns and takes the board down. Set carries on to step 5.</p>
       <p class="dbgp" id="flp-4">Five words are copied into a global before anything else can overwrite them: <b>CCR</b>, <b>CFSR</b>, <b>HFSR</b>, <b>MMFAR</b>, <b>BFAR</b>. <b>MMFAR</b> is the one that matters here &mdash; it holds the address that was refused. Then a flag is set, the processor is put back into privileged mode, and the handler returns into the kernel.</p>
       <p class="dbgp" id="flp-5">Back in the kernel, one <b>if</b> reads that flag. It takes priority over everything else, and the switch reason comes out as <b>Fault</b>. From here it is chapter 4's story: the board's fault policy decides what it costs, and on the Pico&nbsp;2 that means the whole machine stops.</p>
@@ -837,6 +840,8 @@ dfn {
 <section class="col">
   <h2>Three bits, once per context switch</h2>
   <p id="ctrlline">The regions are written before every switch into a process, and the unit is turned on immediately after. Turning it on is a single write of three fields to <b>MPU_CTRL</b>, and two of the three are about who is <em>not</em> being protected against.</p>
+  <p id="skipline">Written, but not always. Each process's configuration carries an id and a dirty flag, and the routine that loads it into the hardware compares both against what the hardware already holds. Return to the same process without having changed its regions and the eight pairs are not rewritten at all.</p>
+  <p id="sameline">The three fields below are worth one comparison. The older unit from Figure 6 is a different design end to end, and its own enable routine writes the identical three, in the same order, under the same comment. Whatever else changed between those two chips, the answer to "who is this for" did not.</p>
 </section>
 
 <figure class="instrument">
@@ -854,7 +859,7 @@ dfn {
     <div class="blksay">
       <p class="blkp is-on" id="cbp-0">The unit is on. Until this bit is set the regions are inert, which is the state the board boots into and the state the kernel returns to the moment a process stops running.</p>
       <p class="blkp" id="cbp-1">Privileged code gets the default memory map behind the regions, so anything the regions do not cover is still reachable from the kernel. The comment on the line calls it "allow privileged code access to all unprotected memory". So turning the unit off for the kernel has nothing to undo. That routine clears the enable bit and stops, under a comment reading "the MPU is not enabled for privileged mode, so we don't have to do anything".</p>
-      <p class="blkp" id="cbp-2">Inside a HardFault or an NMI the unit does not apply. The handler that runs because a process reached somewhere it should not have runs with the regions switched off. That is exactly what lets it reach into the process's own stack and read out what happened.</p>
+      <p class="blkp" id="cbp-2">Inside a HardFault, or an NMI &mdash; a non-maskable interrupt, the one kind the processor will not put off &mdash; the unit does not apply. The handler that runs because a process reached somewhere it should not have runs with the regions switched off. That is exactly what lets it reach into the process's own stack and read out what happened.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that this is chapter 3's conclusion again, in hardware this time. Nothing here is protecting the board from the kernel. The unit was only ever pointed one way.</div>
@@ -880,7 +885,7 @@ dfn {
     <div class="blksay">
       <p class="blkp is-on" id="ntp-0">The regions constrain unprivileged code and nothing else. A bug in a capsule can write any address on the chip, exactly as chapter 3 said, and this hardware will not notice. What the unit adds is a second kind of code that the first kind is protected from.</p>
       <p class="blkp" id="ntp-1">It fences the process, not the process's memory. The kernel reads and writes inside a process's allocation as a matter of course, and chapter 4's three structures live up there. Chapter 7 is entirely about a driver keeping state inside a process. The barrier only ever faces outward.</p>
-      <p class="blkp" id="ntp-2">Eight is a number written by hand. <b>MPU_TYPE</b> would report what the hardware really has, the trait offers a method that reads it, four architectures implement that method, and nothing in the tree calls it. If the const generic and the silicon disagreed, nothing here would say so.</p>
+      <p class="blkp" id="ntp-2">Eight is a number written by hand. <b>MPU_TYPE</b> would report what the hardware really has, the trait offers a method that reads it, four architectures implement that method, and nothing in the tree calls it. If that hand-written eight and the silicon disagreed, nothing here would say so.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the first two are design and the third is an absence. The trait's own safety note asks implementors to ensure "applications only have access to the configured MPU regions and no kernel memory" &mdash; a promise made in a comment, checked by review.</div>
@@ -894,7 +899,7 @@ dfn {
   <div class="q">
     <p class="q-ask">A region's <b>MPU_RBAR</b> reads <code class="addr">0x20008003</code>. What is the first address the process may touch?</p>
     <div class="q-opts" role="group" aria-label="Answers to the first question">
-      <button type="button" class="q-opt" id="qa-0" aria-pressed="false"><code class="addr">0x20008003</code>, the value as written</button>
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false"><code class="addr">0x20008003</code>, the value exactly as the register holds it</button>
       <button type="button" class="q-opt" id="qa-1" aria-pressed="false"><code class="addr">0x20008000</code>, with the low bits being fields</button>
       <button type="button" class="q-opt" id="qa-2" aria-pressed="false"><code class="addr">0x40010006</code>, the value shifted up five</button>
     </div>
@@ -904,24 +909,24 @@ dfn {
     <p class="q-ask">A process asks the kernel to move its break up by one byte. How much more memory can it reach?</p>
     <div class="q-opts" role="group" aria-label="Answers to the second question">
       <button type="button" class="q-opt" id="qb-0" aria-pressed="false">One byte, exactly as asked</button>
-      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Thirty-two bytes, rounded up</button>
-      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Nothing, because one byte is below the minimum</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">Nothing, because one byte is below the minimum</button>
+      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">Thirty-two bytes, rounded up to the next multiple</button>
     </div>
     <p class="q-answer" id="qbn">Thirty-two. The new end is rounded up to the next multiple of 32 before the region is rebuilt, because the limit field has nowhere to record a finer boundary. The request is not refused and the rounding is not reported &mdash; the process simply finds it can reach a little further than it asked to.</p>
   </div>
   <div class="q">
     <p class="q-ask">Which of these does the unit refuse on this board?</p>
     <div class="q-opts" role="group" aria-label="Answers to the third question">
-      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">A capsule writing to address zero</button>
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">A process writing its own code</button>
       <button type="button" class="q-opt" id="qc-1" aria-pressed="false">A process reading its own code</button>
-      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">A process writing its own code</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">A capsule writing to address zero</button>
     </div>
-    <p class="q-answer" id="qcn">The third. A process's flash is asked for as read-and-execute, so writing it is refused. Reading it is allowed, which is why the second is not the answer. And the first is not refused at all: a capsule runs privileged, where the regions do not apply.</p>
+    <p class="q-answer" id="qcn">The first. A process's flash is asked for as read-and-execute, so writing it is refused. Reading it is allowed, which is why the second is not the answer. And the third is not refused at all: a capsule runs privileged, where the regions do not apply.</p>
   </div>
   <div class="q">
     <p class="q-ask">Why does this board handle <b>HardFault</b> rather than <b>MemManage</b>, when the datasheet names <b>MemManage</b>?</p>
     <div class="q-opts" role="group" aria-label="Answers to the fourth question">
-      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The Cortex-M33 does not implement MemManage</button>
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The Cortex-M33 does not implement the MemManage exception at all</button>
       <button type="button" class="q-opt" id="qd-1" aria-pressed="false">Its enable bit resets to zero and nothing sets it</button>
       <button type="button" class="q-opt" id="qd-2" aria-pressed="false">Tock clears the bit during board setup</button>
     </div>
@@ -931,7 +936,7 @@ dfn {
 
 <section class="col">
   <h2>What you can say now</h2>
-  <p id="closing">A process is confined by eight pairs of registers inside the processor, checked on every access it makes. Two of the eight are spoken for before it starts: its RAM, read-write and never executable, and its flash, read-execute and never writable. The addresses in those registers are stored in units of 32 bytes, which is the only size rule this chip has, and it rounds in the process's favour.</p>
+  <p id="closing">A process is confined by two pairs of registers inside the processor, out of the eight pairs the unit holds, and they are checked on every access it makes. Both are spoken for before it starts: its RAM, read-write and never executable, and its flash, read-execute and never writable. The addresses in those registers are stored in units of 32 bytes, which is the only size rule this chip has, and it rounds in the process's favour.</p>
   <p>When a process reaches past them the store never happens. A handler works out from one bit whether the kernel or the process was running, records the address that was refused, and hands the decision to the policy chapter 4 described.</p>
   <p>None of it applies to the kernel. That was never an oversight &mdash; it is the shape of the whole design, and it is why the door in this wall has to be built so carefully.</p>
 </section>
@@ -1025,15 +1030,15 @@ dfn {
   group("ck-", "ckp-", 5, "", "is-on", "is-off");
 
   /* ---------------- Figure 2: the six fields ---------------- */
-  group("rf-", "rfp-", 6, "", "is-on", "is-off");
+  group("rf-", "rfp-", 7, "", "is-on", "is-off");
 
   /* ---------------- Figure 3: one region at three moments ----------------
      Every number here is the arithmetic in mpu_v8m.rs run by hand on a base of
      0x20008000. RBAR is base | AP(ReadWrite) | XN set, which never changes
-     once a process is placed. RLAR is ((end - 1) >> 5) << 5, plus the
-     privileged-execute-never bit and the enable bit, which is why every value
-     ends in 1. The third row is the rounding: 2049 bytes asked for becomes
-     2080 reachable, because align32 rounds the end up. */
+     0x20008000. RBAR is base | AP(ReadWrite) | XN set, which never changes
+     once a process is placed. RLAR is ((end - 1) >> 5) << 5 plus 0x11 -- bit 4
+     for PXN, bit 0 for enable. The third row is the rounding: 2049 bytes asked
+     for becomes 2080 reachable, because align32 rounds the end up. */
   (function () {
     var MOMENTS = [
       ["0x20008003", "0x20008011", "32 bytes"],
@@ -1090,9 +1095,12 @@ dfn {
         }(i));
       }
     }
+    // Positions deliberately spread. They were 1, 1, 2, 1, and three right
+    // answers in the middle slot is a pattern a reader can play rather than
+    // think through.
     quiz("qa-", 3, 1, "qan");
-    quiz("qb-", 3, 1, "qbn");
-    quiz("qc-", 3, 2, "qcn");
+    quiz("qb-", 3, 2, "qbn");
+    quiz("qc-", 3, 0, "qcn");
     quiz("qd-", 3, 1, "qdn");
   }());
 

@@ -656,5 +656,12 @@
     "says": "Whatever else a process is given access to later",
     "about": null,
     "why": "'later' here means after the process has started running, as opposed to at load time. It is a moment in one process's life, not a chapter."
+  },
+  {
+    "id": "ch05-wordregion-ch04",
+    "in": "ch05",
+    "says": "Chapter 4 used region for the four areas a linker script cuts the chip into",
+    "about": "ch04",
+    "kept_by": "region by region"
   }
 ]

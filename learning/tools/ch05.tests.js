@@ -74,7 +74,7 @@ chk("and says what that costs, in the note",
 REG["ck-0"].fire("click");
 
 // ---- Figure 2: the six fields ----
-walk("rf-", "rfp-", 6, "figure 2");
+walk("rf-", "rfp-", 7, "figure 2");
 REG["rf-0"].fire("click");
 chk("the base panel gives the shift the kernel writes",
     REG["rfp-0"].textContent.indexOf("logical_start >> 5") > -1, true);
@@ -89,6 +89,16 @@ chk("the execute panel warns that the value names read backwards",
 REG["rf-3"].fire("click");
 chk("the limit panel gives the other shift, minus one",
     REG["rfp-3"].textContent.indexOf("(logical_end - 1) >> 5") > -1, true);
+// The first review pass found that figure 3's limit values could not be
+// derived from this figure: PXN was never named, so a reader adding up the six
+// fields shown landed 0x10 short. It is a row of its own now.
+REG["rf-4"].fire("click");
+chk("PXN has a row of its own, not a mention in another panel",
+    REG["rf-4"].textContent.indexOf("PXN, bit 4") > -1, true);
+chk("and its panel says where figure 3's spare 0x10 comes from",
+    REG["rfp-4"].textContent.indexOf("0x10") > -1, true);
+chk("the one field left out is named in the note",
+    REG["rf-note"].textContent.indexOf("SH") > -1, true);
 REG["rf-0"].fire("click");
 
 // ---- Figure 3: one region, three moments ----
@@ -111,9 +121,14 @@ chk("the base is the same in all three",
 REG["mm-0"].fire("click");
 walk("mm-", "mmp-", 3, "figure 3");
 REG["mm-2"].fire("click");
-chk("the rounding panel says which way it goes",
-    REG["mmp-2"].textContent.indexOf("2049") > -1
-      && REG["mmp-2"].textContent.indexOf("2080") > -1, true);
+// The numbers live in the readout only. With scripting off every panel is
+// visible while the readout shows one moment, so a panel that restated another
+// moment's value read as a contradiction.
+chk("the rounding panel states the rule, not the readout's numbers",
+    REG["mmp-2"].textContent.indexOf("next whole multiple") > -1, true);
+chk("and no panel quotes a value the readout is showing for another moment",
+    REG["mmp-0"].textContent.indexOf("0x") + REG["mmp-1"].textContent.indexOf("0x2")
+      + REG["mmp-2"].textContent.indexOf("0x"), -3);
 REG["mm-0"].fire("click");
 
 // ---- Figure 4: the five permission names ----
@@ -196,13 +211,14 @@ REG["nt-0"].fire("click");
 // goal text off the page rather than restating it here, so rewording a goal
 // without moving the figure breaks the assertion.
 chk("goal 1, what the unit checks and does not, is delivered by figure 1",
-    REG["goalbox"].textContent.indexOf("never checks") > -1
+    REG["goalbox"].textContent.indexOf("the one thing it never sees") > -1
       && REG["ckp-4"].textContent.length > 40, true);
 chk("goal 2, reading a real region, is delivered by figures 2 and 3",
     REG["goalbox"].textContent.indexOf("two registers that describe it") > -1
       && REG["mm-rbar"].textContent.indexOf("0x") === 0, true);
 chk("goal 3, how many regions and what runs out, is delivered by figure 5",
-    REG["goalbox"].textContent.indexOf("what runs out first") > -1
+    REG["goalbox"].textContent.indexOf("which two are spoken for") > -1
+      && REG["goalbox"].textContent.indexOf("what runs out first") > -1
       && REG["rnp-3"].textContent.length > 40, true);
 chk("goal 4, following one forbidden store, is delivered by figure 7",
     REG["goalbox"].textContent.indexOf("forbidden store") > -1
@@ -232,7 +248,7 @@ REG["qd-0"].fire("click");
     }
     out += mark;
   }
-  chk("the four right answers are the ones the prose argues for", out, "1121");
+  chk("the four right answers are the ones the prose argues for", out, "1201");
 }());
 
 // ---- The script does the hiding the markup does not ----
@@ -241,10 +257,10 @@ REG["qd-0"].fire("click");
 // on the figure with the most panels.
 (function () {
   var i, hidden = 0;
-  for (i = 0; i < 6; i++) {
+  for (i = 0; i < 7; i++) {
     if (REG["rfp-" + i].classList.contains("is-off")) { hidden++; }
   }
-  chk("the script closes the five panels the markup leaves open", hidden, 5);
+  chk("the script closes the six panels the markup leaves open", hidden, 6);
 }());
 
 // ---- Facts the prose must carry, not only the sources list ----
@@ -268,3 +284,31 @@ chk("and says why, in the sentence before it",
 chk("the closing names the two regions a process starts with",
     REG["closing"].textContent.indexOf("read-write and never executable") > -1
       && REG["closing"].textContent.indexOf("read-execute and never writable") > -1, true);
+
+// ---- what the first review pass found ----
+// Two source bullets backed claims the page never made: the skip-if-unchanged
+// optimisation, and the older unit writing the identical three control fields.
+// Both are prose now, so both are assertable.
+chk("the chapter says the hardware write is skipped when nothing changed",
+    REG["skipline"].textContent.indexOf("are not rewritten") > -1, true);
+chk("and what the comparison is against",
+    REG["skipline"].textContent.indexOf("dirty flag") > -1, true);
+chk("the older unit writing the same three fields is on the page",
+    REG["sameline"].textContent.indexOf("identical three") > -1, true);
+// 'region' is the word chapter 4 used for what a linker script cuts the chip
+// into. This chapter redefines it and now says so.
+chk("the collision with chapter 4's sense of the word is named",
+    REG["wordregion"].textContent.indexOf("linker script") > -1, true);
+// The one address in the chapter that was chosen rather than read.
+chk("the worked example admits its base is picked, not read off the board",
+    REG["workline"].textContent.indexOf("picked to make the arithmetic") > -1, true);
+// Three of the five permission names have no caller anywhere. The chapter said
+// so three different ways -- 'the loading path', 'this board', 'this tree'.
+chk("all three unused permissions are scoped to the tree, not the board",
+    REG["pmp-0"].textContent.indexOf("in this tree") > -1
+      && REG["pmp-3"].textContent.indexOf("in this tree") > -1
+      && REG["pmp-4"].textContent.indexOf("anywhere in the tree") > -1, true);
+// The closing counted the same registers two ways in adjacent sentences.
+chk("the closing says two pairs confine a process, out of eight",
+    REG["closing"].textContent.indexOf("two pairs of registers") > -1
+      && REG["closing"].textContent.indexOf("out of the eight") > -1, true);
