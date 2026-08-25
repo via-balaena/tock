@@ -95,6 +95,13 @@ pub struct RaspberryPiPico2 {
     >,
     gpio: &'static capsules_core::gpio::GPIO<'static, RPGpioPin<'static>>,
     led: &'static capsules_core::led::LedDriver<'static, LedHigh<'static, RPGpioPin<'static>>, 1>,
+    spi: &'static capsules_core::spi_controller::Spi<
+        'static,
+        capsules_core::virtualizers::virtual_spi::VirtualSpiMasterDevice<
+            'static,
+            rp2350::spi::Spi<'static>,
+        >,
+    >,
 }
 
 impl SyscallDriverLookup for RaspberryPiPico2 {
@@ -107,6 +114,7 @@ impl SyscallDriverLookup for RaspberryPiPico2 {
             capsules_core::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules_core::led::DRIVER_NUM => f(Some(self.led)),
+            capsules_core::spi_controller::DRIVER_NUM => f(Some(self.spi)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -348,10 +356,10 @@ pub unsafe fn main() {
             // 1 => peripherals.pins.get_pin(RPGpio::GPIO1),
             2 => peripherals.pins.get_pin(RPGpio::GPIO2),
             3 => peripherals.pins.get_pin(RPGpio::GPIO3),
-            4 => peripherals.pins.get_pin(RPGpio::GPIO4),
-            5 => peripherals.pins.get_pin(RPGpio::GPIO5),
-            6 => peripherals.pins.get_pin(RPGpio::GPIO6),
-            7 => peripherals.pins.get_pin(RPGpio::GPIO7),
+            // 4 => peripherals.pins.get_pin(RPGpio::GPIO4), // SPI0 (test build)
+            // 5 => peripherals.pins.get_pin(RPGpio::GPIO5), // SPI0 (test build)
+            // 6 => peripherals.pins.get_pin(RPGpio::GPIO6), // SPI0 (test build)
+            // 7 => peripherals.pins.get_pin(RPGpio::GPIO7), // SPI0 (test build)
             8 => peripherals.pins.get_pin(RPGpio::GPIO8),
             9 => peripherals.pins.get_pin(RPGpio::GPIO9),
             10 => peripherals.pins.get_pin(RPGpio::GPIO10),
@@ -384,6 +392,31 @@ pub unsafe fn main() {
         LedHigh<'static, RPGpioPin<'static>>,
         LedHigh::new(peripherals.pins.get_pin(RPGpio::GPIO25))
     ));
+
+    // ---- LOCAL TEST BUILD ONLY: SPI0 on GP4 RX / GP5 CSn / GP6 SCK / GP7 TX ----
+    let spi_miso = peripherals.pins.get_pin(RPGpio::GPIO4);
+    let spi_csn = peripherals.pins.get_pin(RPGpio::GPIO5);
+    let spi_clk = peripherals.pins.get_pin(RPGpio::GPIO6);
+    let spi_mosi = peripherals.pins.get_pin(RPGpio::GPIO7);
+    spi_miso.set_function(GpioFunction::SPI);
+    spi_csn.make_output(); // software CS: driver drives this via SIO, not PL022
+    spi_clk.set_function(GpioFunction::SPI);
+    spi_mosi.set_function(GpioFunction::SPI);
+
+    let mux_spi = components::spi::SpiMuxComponent::new(&peripherals.spi0)
+        .finalize(components::spi_mux_component_static!(rp2350::spi::Spi));
+
+    let spi_syscalls = components::spi::SpiSyscallComponent::new(
+        board_kernel,
+        mux_spi,
+        kernel::hil::spi::cs::IntoChipSelect::<_, kernel::hil::spi::cs::ActiveLow>::into_cs(
+            spi_csn,
+        ),
+        capsules_core::spi_controller::DRIVER_NUM,
+        create_capability!(capabilities::MemoryAllocationCapability),
+    )
+    .finalize(components::spi_syscall_component_static!(rp2350::spi::Spi));
+    // ---- end test-only block ----
 
     // Create the debugger object that handles calls to `debug!()`.
     components::debug_writer::DebugWriterComponent::new::<
@@ -432,6 +465,7 @@ pub unsafe fn main() {
         alarm,
         gpio,
         led,
+        spi: spi_syscalls,
         scheduler,
         systick: cortexm33::systick::SysTick::new_with_calibration(125_000_000),
     };
