@@ -663,6 +663,7 @@ dfn {
       <li>Explain why a bug in a driver cannot corrupt the kernel's memory, and point at the line that makes that true.</li>
       <li>Follow a call from the LED driver down to the store from chapter 1, and say which layer first knows what chip this is.</li>
       <li>Say what a driver can still do to you anyway, and why the compiler has nothing to say about it.</li>
+      <li>Say why a call that every layer honoured can still leave the pin exactly where it was.</li>
     </ul>
     <p class="cost">Plan on forty minutes. Chapters 1 and 2 are assumed: what an address is, what a store does, and how the kernel got started. So is enough Rust to read a <dfn>struct</dfn> with a lifetime and a type parameter on it, which the Rust Book reaches in its chapter 10.</p>
   </div>
@@ -991,6 +992,37 @@ dfn {
 </figure>
 
 <section class="col">
+  <h2>The last check is weaker than it reads</h2>
+  <p id="mxlead">Figure 4 ended on the store, and its fifth step said the chip layer checks the pin is configured as an output and does nothing if it is not. The trait one step further up says the same: an implementation may ignore the call. Both are true. Neither says how that layer decides.</p>
+  <p id="mxwhy">It decides from two registers, and the field that names what drives the pin is neither of them. Every pin on this chip has a function-select field, <b>FUNCSEL</b>, holding the block that owns it &mdash; SIO, or SPI, or one of a handful of others. The mode the chip layer reports is worked out without reading that field.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 9</span>
+    <span class="instrument-title">What step 5 actually checks</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each line. This is Figure 4's fifth step opened up, for a pin the board pointed at the SPI block.</p>
+    <div class="seq" role="group" aria-label="Three lines that decide whether the store happens">
+      <button type="button" id="mx-0" aria-pressed="true"><span class="seq-n">1</span><span><b>set_function(SPI)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1311</span></span></button>
+      <button type="button" id="mx-1" aria-pressed="false"><span class="seq-n">2</span><span><b>get_mode()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1292</span></span></button>
+      <button type="button" id="mx-2" aria-pressed="false"><span class="seq-n">3</span><span><b>_ =&gt; {}</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1487</span></span></button>
+    </div>
+    <div class="dbgsay">
+      <p class="dbgp is-on" id="mxp-0">The board points the pin at the SPI block. This writes <b>FUNCSEL</b>, clears the pin's isolation, and through <b>activate_pads</b> clears its output-disable bit. It never touches <b>gpio_oe</b>, the SIO register listing which pins SIO is driving, because SIO is not driving this one any more.</p>
+      <p class="dbgp" id="mxp-1">The line the guard turns on. It reads two things: the pin's output-disable bit, and that same <b>gpio_oe</b>. Disable cleared and <b>gpio_oe</b> unset is the pair it reports as <b>Configuration::Input</b>. Its first line is <b>//TODO - read alternate function</b>, and that comment is exact. <b>FUNCSEL</b> is never read here, so nothing it returns can tell a pin that is an input from a pin that belongs to SPI.</p>
+      <p class="dbgp" id="mxp-2"><b>Input</b> is neither <b>Output</b> nor <b>InputOutput</b>, so the store is skipped and <b>set</b> returns. Its return type is <b>()</b>. Nothing is reported, and there is no value for the caller to look at even if it wanted to.</p>
+    </div>
+  </div>
+  <div class="instrument-note" id="fig9note">Notice that every layer kept its promise. The trait allowed an ignored call, the chip layer ignored one, and the pin stayed where it was. What no layer promised is that "configured as an output" is a fact about the pin rather than a guess from two registers that do not encode it.</div>
+</figure>
+
+<section class="col">
+  <p id="mxcost">So a pin handed to SPI reports itself an input, and every <b>set</b> and <b>clear</b> aimed at it returns having stored nothing. A chip select driven that way never moves, and there is no error anywhere to notice, because no layer thinks anything went wrong.</p>
+</section>
+
+<section class="col">
   <h2>If the board on your desk is a Pico 2 W</h2>
   <p id="wboard">Every line quoted in this chapter is a fact about <code>boards/raspberry_pi_pico_2</code>, and that crate is the plain Pico&nbsp;2. This tree has no <code>raspberry_pi_pico_2_w</code> at all. The <code>_w</code> board it does have is <code>raspberry_pi_pico_w</code>, and its <code>Cargo.toml</code> depends on <code>chips/rp2040</code> &mdash; an earlier chip, not this one.</p>
   <p id="wpin">One line above cares about the difference. The panic handler builds its own <b>LedHigh</b> on GPIO&nbsp;25, under a comment reading <b>// LED is connected to GPIO 25</b>. On a plain Pico&nbsp;2 it is. On a W that pin is the radio's chip-select line and the light is pin&nbsp;0 <em>of the radio</em>, which chapter 1 laid out in full.</p>
@@ -1072,6 +1104,8 @@ dfn {
     <li><code>LedHigh</code> calling <code>set</code> and <code>LedLow</code> calling <code>clear</code> for the same <code>on()</code> &mdash; <code>kernel/src/hil/led.rs</code>:57&ndash;95</li>
     <li>The wording of the <code>Output::set</code> contract quoted in Figure 4 &mdash; <code>kernel/src/hil/gpio.rs</code>:152&ndash;154, in the <code>Output</code> trait declared at :151</li>
     <li>The chip layer checking the pin's mode before storing &mdash; <code>chips/rp2350/src/gpio.rs</code>:1480&ndash;1490</li>
+    <li><code>set_function</code> writing <b>FUNCSEL</b> and clearing the pin's isolation, and never touching <code>gpio_oe</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1311&ndash;1319, with <code>activate_pads</code> clearing output-disable at :1334</li>
+    <li><code>get_mode</code> inferring the mode from output-disable and <code>gpio_oe</code>, under a <code>//TODO - read alternate function</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1292&ndash;1303</li>
     <li>All twelve addresses in Figure 5, with their line numbers &mdash; <code>chips/rp2350/src/</code>, the <code>StaticRef::new</code> call in each of <code>clocks.rs</code>, <code>resets.rs</code>, <code>gpio.rs</code>, <code>xosc.rs</code>, <code>uart.rs</code>, <code>timer.rs</code> and <code>ticks.rs</code></li>
     <li>The two-line safety contract &mdash; the <code># Safety</code> section on <code>StaticRef::new</code>, <code>kernel/src/utilities/static_ref.rs</code>:29&ndash;35</li>
     <li>The board handing GPIO 25 to the LED driver, and the same pin commented out of the GPIO driver's list &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:385 and :373</li>
@@ -1165,6 +1199,9 @@ dfn {
 
   /* ---------------- Figure 8: what is left over ---------------- */
   group("st-", "stp-", 3, "", "is-on", "is-off");
+
+  /* ---------------- Figure 9: what the guard reads ---------------- */
+  group("mx-", "mxp-", 3, "", "is-on", "is-off");
 
   /* ---------------- Check yourself ----------------
      The answer text is in the markup; this only reveals it and marks which

@@ -393,3 +393,51 @@ chk("what goes missing on a W is the blink, not the message",
     REG["wblink"].textContent.indexOf("console on pins 0 and 1") > -1, true);
 chk("and the section says what does not change",
     REG["wscope"].textContent.indexOf("compile time") > -1, true);
+
+// ---- Figure 9: what the guard at the bottom can actually see ----
+// Figure 4 walks the reader to gpio.rs:1481 and :1485 and steps over the line
+// between them. That line is a match on get_mode(), and get_mode() cannot read
+// FUNCSEL -- so the guard's answer is an inference, and a pin handed to SPI
+// comes back Input. Every assertion below is about the chapter saying which
+// register is missing, because that is the whole of the finding.
+chk("figure 9 opens on its first step", REG["mx-0"].getAttribute("aria-pressed"), "true");
+walk("mx-", "mxp-", 3, "figure 9");
+
+// The first panel's job is the register that is never written, not the two
+// that are. Without gpio_oe named here the second panel has nothing to land on.
+chk("the first step says which register set_function leaves alone",
+    REG["mxp-0"].textContent.indexOf("gpio_oe") > -1, true);
+chk("and says the pin's function-select field is what it does write",
+    REG["mxp-0"].textContent.indexOf("FUNCSEL") > -1, true);
+
+// The payload. A paraphrase would have been enough to make the point and
+// would not have been checkable, so the comment is quoted exactly as it
+// stands in the tree.
+chk("the middle step quotes the TODO rather than describing it",
+    REG["mxp-1"].textContent.indexOf("//TODO - read alternate function") > -1, true);
+chk("and names the mode a pin handed to SPI reports",
+    REG["mxp-1"].textContent.indexOf("Configuration::Input") > -1, true);
+chk("and says outright that the function-select field is never read",
+    REG["mxp-1"].textContent.indexOf("never read") > -1, true);
+
+// Why nothing upstream can notice. The unit return is the reason there is no
+// error to check, and it is the half a reader is most likely to supply wrongly
+// from experience with APIs that return a Result.
+chk("the last step gives the reason nothing is reported",
+    REG["mxp-2"].textContent.indexOf("()") > -1, true);
+
+// The note has to keep the layers innocent. Read as an accusation this figure
+// teaches the wrong thing: no layer breaks its contract, and that is the point.
+chk("the note says every layer kept its promise",
+    REG["fig9note"].textContent.indexOf("kept its promise") > -1, true);
+
+// The lead has to connect to the figure it reopens, or Figure 9 reads as a
+// second unrelated walk down the same file.
+chk("the lead ties the section back to figure 4",
+    REG["mxlead"].textContent.indexOf("Figure 4") > -1, true);
+chk("and the section says what it costs in practice",
+    REG["mxcost"].textContent.indexOf("chip select") > -1, true);
+
+// A section nobody was promised is a section a reader meets by surprise.
+chk("the goals promise the section as well",
+    REG["goalbox"].textContent.indexOf("leave the pin exactly where it was") > -1, true);
