@@ -13,3 +13,9 @@ LICENSE
 # sources whose output a figure quotes, for instance -- is ordinary code
 # under Tock's licence, and is deliberately left to be checked.
 ch*/index.html
+
+# The cover carries the same CC BY-SA header as a chapter, and sits at the root
+# of this directory rather than inside a ch*/ one, so the pattern above cannot
+# reach it. The leading slash anchors this to learning/ so it stays about the
+# cover and does not start ignoring an index.html somewhere else.
+/index.html
