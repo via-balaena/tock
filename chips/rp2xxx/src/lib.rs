@@ -16,7 +16,9 @@
 #![no_std]
 
 pub mod dma;
+pub mod pads;
 pub mod pio;
+pub mod pio_gspi;
 pub mod spi;
 
 /// Access to the peripheral clock, `clk_peri`.

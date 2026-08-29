@@ -86,3 +86,53 @@ pub fn gpio_init(pio: &Pio, pin: &RPGpioPin) {
         GpioFunction::PIO0
     });
 }
+
+impl rp2xxx::pads::PioPad for RPGpioPin<'_> {
+    fn from_pin_number(pin: u32) -> Self {
+        use enum_primitive::cast::FromPrimitive;
+        RPGpioPin::new(crate::gpio::RPGpio::from_u32(pin).unwrap())
+    }
+
+    fn select_pio(&self, pio_index: usize) {
+        self.set_function(if pio_index == PIONumber::PIO1 as usize {
+            GpioFunction::PIO1
+        } else {
+            GpioFunction::PIO0
+        });
+    }
+
+    fn set_schmitt(&self, enable: bool) {
+        RPGpioPin::set_schmitt(self, enable)
+    }
+
+    fn set_slew_rate(&self, rate: rp2xxx::pads::SlewRate) {
+        RPGpioPin::set_slew_rate(
+            self,
+            match rate {
+                rp2xxx::pads::SlewRate::Slow => crate::gpio::SlewRate::Slow,
+                rp2xxx::pads::SlewRate::Fast => crate::gpio::SlewRate::Fast,
+            },
+        )
+    }
+
+    fn set_drive_strength(&self, strength: rp2xxx::pads::DriveStrength) {
+        RPGpioPin::set_drive_strength(
+            self,
+            match strength {
+                rp2xxx::pads::DriveStrength::Drive2mA => crate::gpio::DriveStrength::Drive2mA,
+                rp2xxx::pads::DriveStrength::Drive4mA => crate::gpio::DriveStrength::Drive4ma,
+                rp2xxx::pads::DriveStrength::Drive8mA => crate::gpio::DriveStrength::Drive8ma,
+                rp2xxx::pads::DriveStrength::Drive12mA => crate::gpio::DriveStrength::Drive12ma,
+            },
+        )
+    }
+
+    fn set_pull_none(&self) {
+        use kernel::hil::gpio::Configure;
+        self.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
+    }
+
+    fn activate_pads(&self) {
+        RPGpioPin::activate_pads(self)
+    }
+}
