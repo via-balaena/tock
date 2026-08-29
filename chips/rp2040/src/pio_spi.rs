@@ -588,9 +588,18 @@ fn spi_program_init(
 ) {
     let sm = pio.sm(sm_number);
     sm.config(config);
-    pio.gpio_init(&RPGpioPin::new(RPGpio::from_u32(clock_pin).unwrap()));
-    pio.gpio_init(&RPGpioPin::new(RPGpio::from_u32(in_pin).unwrap()));
-    pio.gpio_init(&RPGpioPin::new(RPGpio::from_u32(out_pin).unwrap()));
+    crate::pio::gpio_init(
+        pio.number(),
+        &RPGpioPin::new(RPGpio::from_u32(clock_pin).unwrap()),
+    );
+    crate::pio::gpio_init(
+        pio.number(),
+        &RPGpioPin::new(RPGpio::from_u32(in_pin).unwrap()),
+    );
+    crate::pio::gpio_init(
+        pio.number(),
+        &RPGpioPin::new(RPGpio::from_u32(out_pin).unwrap()),
+    );
     sm.set_enabled(false);
 
     // Important: make the sideset pin an output pin then make it a side set pin

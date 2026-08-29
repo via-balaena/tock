@@ -19,8 +19,6 @@ use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeabl
 use kernel::utilities::registers::{ReadOnly, ReadWrite, register_bitfields, register_structs};
 use kernel::{ErrorCode, debug};
 
-use crate::gpio::{GpioFunction, RPGpioPin};
-
 const NUMBER_STATE_MACHINES: usize = 4;
 const NUMBER_INSTR_MEMORY_LOCATIONS: usize = 32;
 
@@ -1334,14 +1332,6 @@ impl Default for StateMachineConfiguration {
 
 impl Pio {
     /// Setup the function select for a GPIO to use output from the given PIO instance.
-    pub fn gpio_init(&self, pin: &RPGpioPin) {
-        if self.pio_number == PIONumber::PIO1 {
-            pin.set_function(GpioFunction::PIO1)
-        } else {
-            pin.set_function(GpioFunction::PIO0)
-        }
-    }
-
     /// Create a new PIO0 struct.
     pub fn new_pio0() -> Self {
         Self {
@@ -1668,4 +1658,16 @@ impl Pio {
         }
         self.clear_instr_registers()
     }
+}
+
+/// Point a pin at one of this chip's PIO blocks.
+///
+/// This is chip level rather than driver level: which alternate function
+/// selects a PIO block, and how many blocks there are, are both facts about
+/// the RP2040 rather than about the state machines the driver above drives.
+pub fn gpio_init(pio: PIONumber, pin: &crate::gpio::RPGpioPin) {
+    pin.set_function(match pio {
+        PIONumber::PIO0 => crate::gpio::GpioFunction::PIO0,
+        PIONumber::PIO1 => crate::gpio::GpioFunction::PIO1,
+    });
 }
