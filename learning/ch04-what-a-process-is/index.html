@@ -885,7 +885,7 @@ dfn {
   <h2>How an application reaches the board</h2>
   <p id="installsrc">Nothing in this repository builds an application. They are built out of tree, in whatever language, and arrive as a <code>.tbf</code> file: a TBF header with a program behind it. Tock's own getting-started guide points at two places to get one, libtock-c for C and C++ and libtock-rs for Rust.</p>
   <p>Getting one onto the board is two lines of <code>objcopy</code> and a choice of target, and all three are about the region Figure 4 just showed.</p>
-  <p id="inboard">One thing to settle before you plug anything in: the Makefile those targets come from is this board's, and this board is the plain Pico&nbsp;2. The tree has no <code>raspberry_pi_pico_2_w</code>, and the <code>_w</code> board it does have is built on <code>chips/rp2040</code>, an earlier chip. Nothing in this chapter turns on which one you own &mdash; flash and RAM do not know what the pins reach &mdash; but chapter 3's panic blink does.</p>
+  <p id="inboard">One thing to settle before you plug anything in: the Makefile those targets come from is this board's, and this board is the plain Pico&nbsp;2. There is a <code>raspberry_pi_pico_2_w</code> too, on the same chip, and its Makefile is one line that includes this board's. Nothing in this chapter turns on which one you own &mdash; flash and RAM do not know what the pins reach &mdash; but chapter 3's panic blink does.</p>
 </section>
 
 <figure class="instrument">
@@ -1197,7 +1197,7 @@ argument3: app_break,</pre></button>
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>, the same commit chapter 3 was pinned to. Nothing here was written from memory.</p>
+  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapter 3 was pinned to. Nothing here was written from memory.</p>
   <ul>
     <li>Applications being separate images, untrusted, and possibly "written in C (or even assembly)" &mdash; <code>doc/reference/trd104-syscalls.md</code>:24&ndash;28</li>
     <li>The five required header fields, in the order Figure 2 shows them &mdash; <code>libraries/tock-tbf/src/types.rs</code>:114&ndash;120</li>
@@ -1207,7 +1207,7 @@ argument3: app_break,</pre></button>
     <li>The checksum being every four-byte word of the header <em>except the checksum field itself</em>, exclusive-or'd together &mdash; <code>libraries/tock-tbf/src/parse.rs</code>:81&ndash;95, where the loop body for <code>i == 3</code> is a comment and nothing else</li>
     <li>The walk: eight bytes, then <code>total_size</code> forward, then again &mdash; <code>kernel/src/process_loading.rs</code>:295&ndash;354</li>
     <li>A header "intentionally invalid to signal the end of apps" &mdash; <code>kernel/src/process_loading.rs</code>:329&ndash;333</li>
-    <li>The board declaring <code>_sapps</code>, <code>_eapps</code>, <code>_sappmem</code> and <code>_eappmem</code>, and handing all four to the loader &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:444&ndash;463</li>
+    <li>The board declaring <code>_sapps</code>, <code>_eapps</code>, <code>_sappmem</code> and <code>_eappmem</code>, and handing all four to the loader &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:108&ndash;127</li>
     <li>The four regions and their sizes in Figure 4 &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>:14&ndash;17</li>
     <li><code>_sapps</code> at the start of the <code>prog</code> region and <code>_eapps</code> one length later &mdash; <code>boards/build_scripts/tock_kernel_layout.ld</code>:304&ndash;324</li>
     <li>The <code>.apps</code> section marked <code>NOLOAD</code>, so applications are flashed separately from the kernel &mdash; the same file, :293&ndash;304</li>
@@ -1228,8 +1228,8 @@ argument3: app_break,</pre></button>
     <li>The six states and the wording of each &mdash; <code>kernel/src/process.rs</code>:963&ndash;997</li>
     <li>A faulted process having to be terminated before it can run again &mdash; <code>kernel/src/process.rs</code>:959&ndash;962 and :989&ndash;992</li>
     <li>Seven fault policies existing &mdash; <code>capsules/system/src/process_policies.rs</code>, at :16, :25, :36, :49, :58, :75 and :100</li>
-    <li>The Pico 2 choosing <code>PanicFaultPolicy</code> and imix choosing <code>StopFaultPolicy</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:71 and <code>boards/imix/src/main.rs</code>:95</li>
-    <li>Four process slots on this board &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:75</li>
+    <li>The Pico 2 choosing <code>PanicFaultPolicy</code> and imix choosing <code>StopFaultPolicy</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:32 and <code>boards/imix/src/main.rs</code>:95</li>
+    <li>Four process slots on this board &mdash; <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:63</li>
     <li>Each process taking its memory out of that one pool, in the order the applications were found in flash &mdash; the loop in <code>kernel/src/process_loading.rs</code>:203&ndash;250, which carries <code>remaining_memory</code> from one to the next</li>
     <li><code>ProcessStandard</code> being one implementation of a trait, and what the trait asks for &mdash; "a generic process that the Tock scheduler can schedule", <code>kernel/src/process.rs</code>:331&ndash;333</li>
     <li>libtock-c and libtock-rs being where applications come from &mdash; <code>doc/Getting_Started.md</code>:246&ndash;247</li>
@@ -1241,7 +1241,7 @@ argument3: app_break,</pre></button>
     <li><code>program-openocd</code> running the same two <code>objcopy</code> lines and pushing the result down a debug probe instead &mdash; <code>Makefile</code>:43&ndash;49, with <code>OPENOCD_INTERFACE=picoprobe</code> at :10 and the configuration it names at <code>openocd-picoprobe.cfg</code></li>
     <li>A capsule existing that lets an application write its own flash region, and this board not instantiating one &mdash; <code>capsules/extra/src/app_flash_driver.rs</code>:5&ndash;8 and :105, reaching it through <code>ProcessId::get_editable_flash_range</code> at <code>kernel/src/process.rs</code>:208</li>
     <li>The six operations wrapping every switch into a process &mdash; <code>kernel/src/kernel.rs</code>:536&ndash;562, where the fence is configured and enabled, the timer armed and disarmed either side of <code>switch_to</code>, and the fence disabled again</li>
-    <li>The timer behind the timeslice being the Cortex-M SysTick, calibrated at 125&nbsp;MHz &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:436</li>
+    <li>The timer behind the timeslice being the Cortex-M SysTick, calibrated at 125&nbsp;MHz &mdash; <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:404</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed CC&nbsp;BY-SA&nbsp;4.0 &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
 </section>

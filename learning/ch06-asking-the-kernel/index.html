@@ -1056,7 +1056,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>, the same commit chapters 3, 4 and 5 were pinned to. The instruction encodings in Figure 1 and in the listing were assembled rather than looked up, from <code>syscall-demo.s</code> beside this page.</p>
+  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapters 3, 4 and 5 were pinned to. The instruction encodings in Figure 1 and in the listing were assembled rather than looked up, from <code>syscall-demo.s</code> beside this page.</p>
   <ul>
     <li>The eight classes and their numbers &mdash; <code>SyscallClass</code>, <code>kernel/src/syscall.rs</code>:87&ndash;96, converted from a byte at :101&ndash;116</li>
     <li>The file's own opening line saying six, three lines before it describes a seventh &mdash; the same file, :9&ndash;22</li>
@@ -1074,7 +1074,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <li>Three classes a board's request filter is never shown &mdash; <code>kernel/src/kernel.rs</code>:761&ndash;771</li>
     <li>Five classes routed by driver number &mdash; the same file, :850&ndash;857</li>
     <li>The one line that reaches a driver's own code &mdash; <code>d.command(subdriver_number, arg0, arg1, process.processid())</code>, the same file, :1035</li>
-    <li>A driver number a board does not list &mdash; the same file, :1036, and the board's own lookup at <code>boards/raspberry_pi_pico_2/src/main.rs</code>:105&ndash;112, which names five</li>
+    <li>A driver number a board does not list &mdash; the same file, :1036, and the board's own lookup at <code>boards/raspberry_pi_pico_2/src/main.rs</code>:46&ndash;49, which names one and passes the rest to <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:97&ndash;103, which names four</li>
     <li>Subscribe checking the pointer against the process's flash or its RAM &mdash; <code>kernel/src/kernel.rs</code>:903&ndash;911, and <code>is_valid_upcall_function_pointer</code>, <code>kernel/src/process_standard.rs</code>:1416&ndash;1422</li>
     <li>Subscribe handing back whichever pointer was there before &mdash; <code>kernel/src/kernel.rs</code>:936, with the queued calls to the old one dropped at :1005&ndash;1011</li>
     <li>An unknown exit variant coming back as an error rather than a fault &mdash; the same file, :1411&ndash;1417</li>
@@ -1107,7 +1107,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <li>One capsule implementing <code>allow_userspace_readable</code> &mdash; <code>capsules/extra/src/read_only_state.rs</code>:98, the only implementation in the tree besides the trait's own default</li>
     <li>Twelve memop operations, and what each one is for &mdash; <code>kernel/src/memop.rs</code>:14&ndash;44, dispatched at :48&ndash;160</li>
     <li>The LED driver's number, and its command numbers &mdash; <code>capsules/core/src/led.rs</code>:67 and :102&ndash;153, with the driver numbers themselves at <code>capsules/core/src/driver.rs</code>:15&ndash;19</li>
-    <li>This board having one LED, on <code>GPIO 25</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:97 and :383&ndash;385</li>
+    <li>The plain Pico&nbsp;2 having one LED, on <code>GPIO 25</code> &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:38 and :93&ndash;95</li>
     <li>Command 0 being the convention for asking whether a driver is there &mdash; <code>kernel/src/syscall.rs</code>:34&ndash;41, and the LED driver answering with its count at <code>capsules/core/src/led.rs</code>:108</li>
     <li><code>svc</code> assembling to <code>0xDF00</code> plus its argument, in one halfword &mdash; observed, not looked up: <code>syscall-demo.s</code> beside this page, through <code>arm-none-eabi-as -mcpu=cortex-m33 -mthumb</code> and <code>arm-none-eabi-objdump -d</code></li>
   </ul>

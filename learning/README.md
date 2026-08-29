@@ -107,8 +107,10 @@ no entry, if an entry points somewhere that is not a chapter, if the visible
 chips and the `data-needs` attribute disagree, if a chapter claims to depend on
 a later one, if the cover renames a chapter, or if the cover pins a commit some
 chapter does not cite. That last one is not hypothetical: the first draft of
-the cover claimed all seven chapters sit on `08894c2e0`, and chapter 1 sits on
-`47287a64e`.
+the cover claimed all seven chapters sat on `08894c2e0` while chapter 1 sat on
+`47287a64e`. They agree now. Adding a Pico 2 W board crate meant re-pinning
+every chapter to one commit that contains it, which closed the split as a side
+effect.
 
 **Why those seven and not the five chapter 1 promises.** Chapter 1 commits to
 itself, to chapter 2 by name, and then to three more in a single clause:

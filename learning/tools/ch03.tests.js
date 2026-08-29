@@ -94,7 +94,7 @@ REG["cd-0"].fire("click");
     ["kernel",                "101", "259", "356"],
     ["chips/rp2350",          "10",  "18",  "18"],
     ["arch/cortex-m",         "11",  "67",  "68"],
-    ["the Pico 2 board",      "3",   "3",   "3"]
+    ["the Pico 2 board",      "4",   "4",   "4"]
   ];
   var i;
   for (i = 0; i < CASE.length; i++) {
@@ -383,8 +383,12 @@ chk("and says why the detour comes first",
 // dying kernel gives without a console is the one that board cannot show.
 chk("the chapter says which crate every line came from",
     REG["wboard"].textContent.indexOf("boards/raspberry_pi_pico_2") > -1, true);
-chk("and that the _w board in the tree is a different chip",
-    REG["wboard"].textContent.indexOf("rp2040") > -1, true);
+// This used to assert that the only _w board in the tree was on an earlier
+// chip, which was the reason a Pico 2 W owner had to build the plain crate.
+// There is a raspberry_pi_pico_2_w now, on this chip, so the paragraph makes
+// the opposite point and the assertion follows it.
+chk("and that there is a Pico 2 W crate on this same chip",
+    REG["wboard"].textContent.indexOf("raspberry_pi_pico_2_w") > -1, true);
 chk("the pin is named rather than left as 'the LED pin'",
     REG["wpin"].textContent.indexOf("GPIO 25") > -1, true);
 chk("and the reader is sent to chapter 1 rather than told twice",

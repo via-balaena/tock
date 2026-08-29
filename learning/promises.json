@@ -2,7 +2,7 @@
   {
     "id": "ch00-wboard-ch1",
     "in": "ch00",
-    "says": "Where it begins to cost you is chapter 1, which follows one write all the way down to that pin",
+    "says": "Where that shows is chapter 1, which follows one write all the way down to that pin",
     "about": "ch01",
     "kept_by": "GPIO 25"
   },
@@ -543,7 +543,7 @@
     "in": "ch04",
     "says": "the same commit chapter 3 was pinned to",
     "about": "ch03",
-    "kept_by": "08894c2e0"
+    "kept_by": "83bad9388"
   },
   {
     "id": "ch04-eapps-later",
@@ -690,7 +690,7 @@
     "in": "ch05",
     "says": "the same commit chapters 3 and 4 were pinned to",
     "about": "ch03",
-    "kept_by": "08894c2e0"
+    "kept_by": "83bad9388"
   },
   {
     "id": "ch05-later-run",
@@ -907,7 +907,7 @@
     "in": "ch06",
     "says": "the same commit chapters 3, 4 and 5 were pinned to",
     "about": "ch03",
-    "kept_by": "08894c2e0"
+    "kept_by": "83bad9388"
   },
   {
     "id": "ch06-callbacklen-ch04",
@@ -1117,7 +1117,7 @@
     "in": "ch07",
     "says": "the same commit chapters 3 to 6 were pinned to",
     "about": "ch03",
-    "kept_by": "08894c2e0"
+    "kept_by": "83bad9388"
   },
   {
     "id": "ch07-outside-ch06",

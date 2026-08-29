@@ -871,7 +871,7 @@ dfn {
       <p class="costp" id="arp-1">The scheduler, the syscall layer, and the code that starts and stops processes. Notice what is not in that list: there is no allocator. The kernel is <b>no_std</b> and never asks for memory it did not already have, which is the problem chapter 7 is about.</p>
       <p class="costp" id="arp-2">Ten files describing one chip. Twelve of the eighteen are the same line with a different number in it, and Figure 5 is those twelve.</p>
       <p class="costp" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 2, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
-      <p class="costp" id="arp-4">Three, and all three are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, and main. They are the entry points something outside Rust calls.</p>
+      <p class="costp" id="arp-4">Four, and all four are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, setup, and main. They are the entry points something outside Rust calls, plus the one this board offers to the Pico 2&nbsp;W crate that builds on it.</p>
     </div>
   </div>
   <div class="instrument-note">Notice which row is the odd one. There are more driver files than kernel and chip files put together, and they are the only ones whose middle number is zero.</div>
@@ -1087,9 +1087,9 @@ dfn {
 
 <section class="col">
   <h2>If the board on your desk is a Pico 2 W</h2>
-  <p id="wboard">Every line quoted in this chapter is a fact about <code>boards/raspberry_pi_pico_2</code>, and that crate is the plain Pico&nbsp;2. This tree has no <code>raspberry_pi_pico_2_w</code> at all. The <code>_w</code> board it does have is <code>raspberry_pi_pico_w</code>, and its <code>Cargo.toml</code> depends on <code>chips/rp2040</code> &mdash; an earlier chip, not this one.</p>
+  <p id="wboard">Every line quoted in this chapter is a fact about <code>boards/raspberry_pi_pico_2</code>, and that crate is the plain Pico&nbsp;2. This branch also has <code>raspberry_pi_pico_2_w</code>, on the same chip, and it is a short file: it takes the whole platform from the crate above and changes one thing. Reading the two side by side is the shortest answer to what a board crate is.</p>
   <p id="wpin">One line above cares about the difference. The panic handler builds its own <b>LedHigh</b> on GPIO&nbsp;25, under a comment reading <b>// LED is connected to GPIO 25</b>. On a plain Pico&nbsp;2 it is. On a W that pin is the radio's chip-select line and the light is pin&nbsp;0 <em>of the radio</em>, which chapter 1 laid out in full.</p>
-  <p id="wblink">So on a W a panicking kernel blinks nothing you can see. The message itself still comes out, over the console on pins 0 and 1. It is the blink that goes missing &mdash; the one signal a dying kernel gives that needs no console at all.</p>
+  <p id="wblink">So the W crate blinks nothing you can see, and does not try: it prints and stops, because the light is on the radio. The message still comes out over the console on pins 0 and 1, and what goes missing is the blink, the one signal a dying kernel gives that needs no console at all. Build the plain crate on a W and it is worse than missing, because the handler drives the radio's chip-select line instead, and holds it there.</p>
   <p id="wscope">Nothing else here changes. Every boundary this chapter describes is drawn at compile time, and a compiler has no idea what a pin is wired to.</p>
 </section>
 
@@ -1158,14 +1158,14 @@ dfn {
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page comes from the Tock tree at commit <code>08894c2e0</code>. Nothing here was written from memory. The counts in Figure 3 were taken by counting the word in the <code>.rs</code> files under each path at that commit, once with comments stripped and once whole.</p>
+  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>. Nothing here was written from memory. The counts in Figure 3 were taken by counting the word in the <code>.rs</code> files under each path at that commit, once with comments stripped and once whole.</p>
   <ul>
     <li>The declaration in Figure 1, and the bounds check one line above the call &mdash; <code>capsules/core/src/led.rs</code>:71 and :112</li>
     <li>The five methods of the <code>Led</code> trait &mdash; <code>kernel/src/hil/led.rs</code>:19&ndash;32</li>
     <li>The capsule being 158 lines &mdash; <code>wc -l capsules/core/src/led.rs</code> at that commit</li>
     <li>The middle capsule having four fields and the largest thirty-one &mdash; the 290 <code>pub struct</code> declarations under <code>capsules/</code> at that commit, excluding tests and virtualizers; the largest is <code>extra/src/rf233.rs</code></li>
     <li>The kernel having no allocator &mdash; <code>#![no_std]</code> at <code>kernel/src/lib.rs</code>:93, and no crate under <code>kernel/</code> or <code>chips/</code> declaring <code>extern crate alloc</code></li>
-    <li>Four capsules on one serial port and two on one timer &mdash; <code>uart_mux</code> and <code>mux_alarm</code> in <code>boards/raspberry_pi_pico_2/src/main.rs</code>:318&ndash;411</li>
+    <li>Four capsules on one serial port and two on one timer &mdash; <code>uart_mux</code> and <code>mux_alarm</code> in <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:292&ndash;380</li>
     <li>What a virtualizer is for &mdash; <code>capsules/core/src/virtualizers/virtual_uart.rs</code>:7, "this allows multiple Tock capsules to use the same UART bus"</li>
     <li><code>#![forbid(unsafe_code)]</code> opening all five capsule crates &mdash; <code>capsules/core/src/lib.rs</code>:5, and the same line 5 of <code>extra</code>, <code>system</code>, <code>aes_gcm</code> and <code>ecdsa_sw</code></li>
     <li><code>LedHigh</code> calling <code>set</code> and <code>LedLow</code> calling <code>clear</code> for the same <code>on()</code> &mdash; <code>kernel/src/hil/led.rs</code>:57&ndash;95</li>
@@ -1175,8 +1175,9 @@ dfn {
     <li><code>get_mode</code> inferring the mode from output-disable and <code>gpio_oe</code>, under a <code>//TODO - read alternate function</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1292&ndash;1303</li>
     <li>All twelve addresses in Figure 5, with their line numbers &mdash; <code>chips/rp2350/src/</code>, the <code>StaticRef::new</code> call in each of <code>clocks.rs</code>, <code>resets.rs</code>, <code>gpio.rs</code>, <code>xosc.rs</code>, <code>uart.rs</code>, <code>timer.rs</code> and <code>ticks.rs</code></li>
     <li>The two-line safety contract &mdash; the <code># Safety</code> section on <code>StaticRef::new</code>, <code>kernel/src/utilities/static_ref.rs</code>:29&ndash;35</li>
-    <li>The board handing GPIO 25 to the LED driver, and the same pin commented out of the GPIO driver's list &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:385 and :373</li>
-    <li>The Pico 2 board's three <code>unsafe</code> being <code>panic_fmt</code>, <code>get_peripherals</code> and <code>main</code> &mdash; <code>boards/raspberry_pi_pico_2/src/io.rs</code>:89 and <code>boards/raspberry_pi_pico_2/src/main.rs</code>:237 and :253</li>
+    <li>The plain Pico&nbsp;2 handing GPIO 25 to the LED driver, and the same pin commented out of the GPIO driver's list &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:95 and <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:347</li>
+    <li>The Pico 2&nbsp;W handing it to nothing, because the pin is its radio's chip select &mdash; <code>boards/raspberry_pi_pico_2_w/src/main.rs</code>, which has no LED driver at all</li>
+    <li>The Pico 2 board's four <code>unsafe</code> being <code>panic_fmt</code>, <code>get_peripherals</code>, <code>setup</code> and <code>main</code> &mdash; <code>boards/raspberry_pi_pico_2/src/io.rs</code>:89, <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:201 and :226, and <code>boards/raspberry_pi_pico_2/src/main.rs</code>:87</li>
     <li>The HiFive1's three active-low LEDs on a SiFive part &mdash; <code>boards/hifive1/src/main.rs</code>:242&ndash;246</li>
     <li><code>forbid</code> being the level that also refuses to be turned off later &mdash; the Rust reference on lint levels</li>
     <li>Capsules being <em>semi-trusted</em> rather than contained &mdash; <code>doc/ExternalDependencies.md</code>:161, "capsules are a mechanism to provide semi-trusted infrastructure to a Tock board"</li>
@@ -1241,7 +1242,7 @@ dfn {
       [101, 259, 356],
       [10, 18, 18],
       [11, 67, 68],
-      [3, 3, 3]
+      [4, 4, 4]
     ];
     group("ar-", "arp-", 5, "", "is-on", "is-off", function (k) {
       document.getElementById("ar-files").textContent = COUNTS[k][0];

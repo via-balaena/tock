@@ -873,12 +873,12 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
 
 <section class="col">
   <h2 id="wboard">If the board on your desk is a Pico 2 W</h2>
-  <p>This is worth reading before you buy anything, because the wireless version of this board is the easier one to find and it is not the board this series is written against.</p>
-  <p>The repository has crates for four Pico boards, and none of them is a Pico 2&nbsp;W. The crate with a <code>_w</code> in its name is built on the earlier chip, so it is not a substitute.</p>
-  <p id="wpin">The concrete cost is one pin. On a plain Pico 2 the user light is on pin&nbsp;25, and that is the pin this board's directory hands to the light driver. On a Pico 2&nbsp;W the same pin belongs to the radio, and the light is somewhere the kernel cannot reach at all.</p>
+  <p>The wireless version of this board is the easier one to find, and it is the one every command in this chapter was run against.</p>
+  <p>This branch has a <code>raspberry_pi_pico_2_w</code> crate. Use it: substitute its name for <code>raspberry_pi_pico_2</code> in the commands above and everything else here is unchanged. It is not in the Tock repository yet, so if you are reading against upstream rather than this branch, build the plain Pico&nbsp;2 crate and read on.</p>
+  <p id="wpin">Two crates for one chip, and the whole difference is one pin. On a plain Pico 2 the user light is on pin&nbsp;25, and that is the pin its crate hands to the light driver. On a Pico 2&nbsp;W that pin is the radio's chip select, and the light is on the radio rather than on the chip. So the Pico 2&nbsp;W crate hands nothing to the light driver, and its panic handler prints where the other blinks.</p>
   <p id="wscope">Everything this chapter asks of the board works on either one: it builds, it flashes, it boots, and it talks. Nothing above needs that pin, and nothing above lights anything, because an idle kernel with no application loaded drives no light at all.</p>
-  <p>Where it begins to cost you is chapter 1, which follows one write all the way down to that pin, and chapter 3, which watches the panic handler blink it.</p>
-  <p id="wtest">That is no longer a guess. This chapter was checked on a Pico 2&nbsp;W: the plain Pico&nbsp;2 kernel flashed over the probe, booted, printed its line and took typed commands on that board. The chips are the same family and the W's extra parts simply go unclaimed, which is how it read from the source and is now what a board did.</p>
+  <p>Where that shows is chapter 1, which follows one write all the way down to that pin, and chapter 3, which watches the panic handler blink it. Both say which of the two crates they mean.</p>
+  <p id="wtest">That is no longer a guess. This chapter was checked on a Pico 2&nbsp;W: the kernel flashed over the probe, booted, printed its line and took typed commands on that board. The chips are the same family and the W's extra parts simply go unclaimed, which is how it read from the source and is now what a board did.</p>
 </section>
 
 <section class="col">
@@ -941,7 +941,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page about what a file says comes from the Tock tree at commit <code>08894c2e0</code>. The build output in the second section is a real run on an Apple laptop, not a transcription.</p>
+  <p>Every claim on this page about what a file says comes from the Tock tree at commit <code>83bad9388</code>. The build output in the second section is a real run on an Apple laptop, not a transcription.</p>
   <ul>
     <li>The pinned toolchain and the target list installed with it &mdash; <code>rust-toolchain.toml</code>:6&ndash;15</li>
     <li>The target this board builds for &mdash; <code>boards/raspberry_pi_pico_2/.cargo/config.toml</code>:11</li>
@@ -953,12 +953,13 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>What <code>flash-openocd</code> actually runs: write, verify, reset, exit &mdash; the same file, :25. The form run on the bench was the split one below, which is that line with the config spelled out; the two are the same command because the config is only those two lines</li>
     <li>The whole of this board's OpenOCD configuration, which is two lines &mdash; <code>boards/raspberry_pi_pico_2/openocd-picoprobe.cfg</code>:5&ndash;6</li>
     <li>Tock's own hardware testing being built as small hosts beside real boards &mdash; <code>.github/workflows/treadmill-ci.yml</code>:5&ndash;8, "Treadmill is a distributed hardware testbed developed within the Tock OS project"</li>
-    <li>Pin&nbsp;0 transmitting and pin&nbsp;1 receiving, and both being handed to the serial hardware &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:284&ndash;287</li>
-    <li>The console running at 115200 &mdash; the same file, :329</li>
-    <li>The banner, and where in start-up it is printed &mdash; the same file, :439</li>
-    <li>The second banner sitting after the first rather than replacing it, with the search for applications between them &mdash; the same file, :439, then <code>load_processes</code> at :453, then :468</li>
-    <li>The tree having four Pico directories and no Pico 2&nbsp;W &mdash; <code>boards/</code> at that commit</li>
-    <li>Pin&nbsp;25 being the light this board hands to the light driver &mdash; the same file, :385</li>
+    <li>Pin&nbsp;0 transmitting and pin&nbsp;1 receiving, and both being handed to the serial hardware &mdash; <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:260&ndash;263</li>
+    <li>The console running at 115200 &mdash; the same file, :303</li>
+    <li>The banner, and where in start-up it is printed &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:100</li>
+    <li>The second banner sitting after the first rather than replacing it, with the search for applications between them &mdash; the same file, :100, then <code>load_processes</code> at :117, then :132</li>
+    <li>The tree having five Pico directories, one of them a Pico 2&nbsp;W &mdash; <code>boards/</code> at that commit</li>
+    <li>Pin&nbsp;25 being the light the plain Pico&nbsp;2 hands to the light driver &mdash; the same file, :95</li>
+    <li>The Pico 2&nbsp;W crate having no light driver, and printing rather than blinking on a panic &mdash; <code>boards/raspberry_pi_pico_2_w/src/main.rs</code> and <code>boards/raspberry_pi_pico_2_w/src/io.rs</code></li>
     <li>The build taking 7.2 seconds of wall time, of which 5.64 were the compiler &mdash; measured on this machine with <code>/usr/bin/time</code>. The block above is that run, abridged: five <code>Compiling</code> lines and a trailing checksum are left out, and the size line's filename column is shortened from an absolute path. No number in it is altered</li>
     <li>A Mac having <code>screen</code> already, and <code>picocom</code> needing installing on Debian &mdash; checked on the machine these pages were written on, which had <code>screen</code> and neither of the other two</li>
     <li>The whole route above, run on hardware on 2026-08-29: a Pico 2&nbsp;W, a Raspberry Pi Debug Probe, and a Raspberry Pi doing the flashing. OpenOCD reported <code>SWD DPIDR 0x4c013477</code> and both Cortex-M33 cores, programmed the kernel, and the banner arrived on the console as the board reset</li>

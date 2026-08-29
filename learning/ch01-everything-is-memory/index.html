@@ -3732,7 +3732,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 
 <div class="sources">
   <h3>Everything above, checked against source</h3>
-  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>47287a64e</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;6 reports the correction rather than the pin.</p>
+  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>83bad9388</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;6 reports the correction rather than the pin.</p>
   <ul>
     <li>Address decode on bits 31:28, the segment table, and unmapped ranges raising a bus error &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8</li>
     <li>A store to SIO costing no more than a store to a variable &mdash; RP2350 datasheet &sect;2.2.6: SIO &quot;contains registers which need single-cycle access from both cores concurrently, such as the GPIO registers. Access is always zero-wait-state&quot;, against &sect;1.1 on the memory a variable would live in: &quot;All SRAM supports single-cycle access&quot;</li>

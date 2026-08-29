@@ -477,7 +477,7 @@ pre {
     <p>Every chapter cites <code>boards/raspberry_pi_pico_2</code>, a real port in this tree, so a reader with a Pico&nbsp;2 and a debug probe can run what they have just read about.</p>
     <div class="warnbox">
       <h3>If your board is a Pico 2 W</h3>
-      <p>There is no <code>raspberry_pi_pico_2_w</code> in this tree, and the <code>_w</code> board it does have is built on an earlier chip. Use the plain Pico&nbsp;2 crate: it boots and runs on a W, checked on one. What that costs is a single pin, because GPIO&nbsp;25 is the radio's chip select there rather than the LED, so the panic blink lands somewhere you cannot see it. The chapters say so where it matters.</p>
+      <p>This branch has a <code>raspberry_pi_pico_2_w</code> crate, so use that one. It is the same chip and the same chapters; what differs is a single pin. GPIO&nbsp;25 is the radio's chip select on a W rather than the LED, so that crate hands nothing to the LED driver and prints on a panic where the plain one blinks. Two crates over one chip, one pin apart, is a sharper look at what a board crate is <em>for</em> than either would be alone, and the chapters use it that way.</p>
     </div>
   </section>
 

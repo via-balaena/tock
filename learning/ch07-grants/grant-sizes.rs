@@ -15,7 +15,7 @@
 //   arm-none-eabi-objdump -s -j .rodata.SIZES /tmp/g.o
 //
 // The struct definitions below are copies of the ones named in each comment,
-// field for field, at commit 08894c2e0.
+// field for field, at commit 83bad9388.
 
 #![no_std]
 #![allow(dead_code)]
