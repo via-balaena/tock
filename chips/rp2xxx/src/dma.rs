@@ -10,8 +10,10 @@
 //! four extra channels take up exactly the space the RP2040 leaves reserved.
 //!
 //! `CTRL_TRIG` is where they part. The RP2350 adds `INCR_READ_REV` at bit 5
-//! and `INCR_WRITE_REV` at bit 7, which pushes everything above bit 4 up by
-//! two places. Nothing about that is visible to the compiler: a field
+//! and `INCR_WRITE_REV` at bit 7. Because the two inserted bits are not
+//! adjacent, `INCR_WRITE` moves up by one place and everything from
+//! `RING_SIZE` upwards moves by two. Nothing about that is visible to the
+//! compiler: a field
 //! declared at the wrong bit builds cleanly and then selects the wrong
 //! transfer request at run time. So the fields that moved are not declared
 //! here at all. They are built from the shifts in [`DmaLayout`], which each
