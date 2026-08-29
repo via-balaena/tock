@@ -114,6 +114,42 @@ impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for Ras
     }
 }
 
+// ---------------------------------------------------------------------------
+// NOT FOR UPSTREAM. Radio bring-up harness.
+//
+// Nothing in the tree drives the CYW43439 at boot; the syscall driver does it
+// when an application asks for it. This calls init() itself and prints what
+// comes back, so the transport can be exercised with no application loaded.
+// ---------------------------------------------------------------------------
+struct RadioBringUp {
+    device: &'static CYW4343xHw,
+}
+
+impl capsules_extra::wifi::Client for RadioBringUp {
+    fn command_done(&self, rval: Result<(), kernel::ErrorCode>) {
+        use capsules_extra::wifi::Device;
+        match rval {
+            Ok(()) => {
+                debug!("cyw43 bringup: init reported success");
+                match self.device.mac() {
+                    Ok(m) => debug!(
+                        "cyw43 bringup: MAC {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                        m[0], m[1], m[2], m[3], m[4], m[5]
+                    ),
+                    Err(e) => debug!("cyw43 bringup: MAC unavailable, {:?}", e),
+                }
+            }
+            Err(e) => debug!("cyw43 bringup: init failed, {:?}", e),
+        }
+    }
+
+    fn scanned_network(&self, _ssid: capsules_extra::wifi::Ssid) {}
+
+    fn scan_done(&self) {
+        debug!("cyw43 bringup: scan done");
+    }
+}
+
 /// Main function called after RAM initialized.
 #[no_mangle]
 pub unsafe fn main() {
@@ -172,6 +208,23 @@ pub unsafe fn main() {
     .finalize(components::wifi_component_static!(CYW4343xHw));
 
     let raspberry_pi_pico_2_w = RaspberryPiPico2W { base, wifi };
+
+    // NOT FOR UPSTREAM: take the client back from the syscall driver and start
+    // the radio here, so the transport runs with no application loaded.
+    {
+        use capsules_extra::wifi::Device;
+        let bringup = kernel::static_init!(
+            RadioBringUp,
+            RadioBringUp {
+                device: cyw4343_device
+            }
+        );
+        cyw4343_device.set_client(bringup);
+        match cyw4343_device.init() {
+            Ok(()) => debug!("cyw43 bringup: init started"),
+            Err(e) => debug!("cyw43 bringup: init refused, {:?}", e),
+        }
+    }
 
     debug!("Initialization complete. Enter main loop");
 
