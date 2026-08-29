@@ -112,10 +112,7 @@ fn pwm_program_init(
     // "out isr, 32" command created by pioasm
     let out_isr_32_command = 0x60c0_u16;
     sm.config(config);
-    crate::pio::gpio_init(
-        pio.number(),
-        &RPGpioPin::new(RPGpio::from_u32(pin).unwrap()),
-    );
+    crate::pio::gpio_init(pio, &RPGpioPin::new(RPGpio::from_u32(pin).unwrap()));
     sm.set_enabled(false);
     sm.set_pins_dirs(pin, 1, true);
     sm.set_side_set_pins(pin, 1, false, true);

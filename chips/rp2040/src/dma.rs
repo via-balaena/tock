@@ -383,8 +383,12 @@ impl From<DataSize> for FieldValue<u32, CTRL_TRIG::Register> {
 }
 
 pub enum DmaPeripheral {
-    PioRxFifo(pio::PIONumber, pio::SMNumber),
-    PioTxFifo(pio::PIONumber, pio::SMNumber),
+    /// The RX FIFO of one state machine, named by PIO block index and state
+    /// machine. The block is an index rather than an enum because how many
+    /// blocks a chip has is a fact about the chip.
+    PioRxFifo(usize, pio::SMNumber),
+    /// The TX FIFO of one state machine. See `PioRxFifo`.
+    PioTxFifo(usize, pio::SMNumber),
 }
 
 impl From<DmaPeripheral> for FieldValue<u32, CTRL_TRIG::Register> {
@@ -569,7 +573,7 @@ impl DmaChannel<'_> {
 #[cfg(test)]
 mod tests {
     use super::{CTRL_TRIG, DmaPeripheral};
-    use crate::pio::{PIONumber, SMNumber};
+    use crate::pio::SMNumber;
     use kernel::utilities::registers::FieldValue;
 
     fn encoded(peripheral: DmaPeripheral) -> u32 {
@@ -586,67 +590,67 @@ mod tests {
         use CTRL_TRIG::TREQ_SEL::*;
         let cases: [(DmaPeripheral, FieldValue<u32, CTRL_TRIG::Register>); 16] = [
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO0, SMNumber::SM0),
+                DmaPeripheral::PioTxFifo(0, SMNumber::SM0),
                 SelectPIO0STXFIFO0AsTREQ,
             ),
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO0, SMNumber::SM1),
+                DmaPeripheral::PioTxFifo(0, SMNumber::SM1),
                 SelectPIO0STXFIFO1AsTREQ,
             ),
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO0, SMNumber::SM2),
+                DmaPeripheral::PioTxFifo(0, SMNumber::SM2),
                 SelectPIO0STXFIFO2AsTREQ,
             ),
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO0, SMNumber::SM3),
+                DmaPeripheral::PioTxFifo(0, SMNumber::SM3),
                 SelectPIO0STXFIFO3AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO0, SMNumber::SM0),
+                DmaPeripheral::PioRxFifo(0, SMNumber::SM0),
                 SelectPIO0SRXFIFO0AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO0, SMNumber::SM1),
+                DmaPeripheral::PioRxFifo(0, SMNumber::SM1),
                 SelectPIO0SRXFIFO1AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO0, SMNumber::SM2),
+                DmaPeripheral::PioRxFifo(0, SMNumber::SM2),
                 SelectPIO0SRXFIFO2AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO0, SMNumber::SM3),
+                DmaPeripheral::PioRxFifo(0, SMNumber::SM3),
                 SelectPIO0SRXFIFO3AsTREQ,
             ),
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO1, SMNumber::SM0),
+                DmaPeripheral::PioTxFifo(1, SMNumber::SM0),
                 SelectPIO1STXFIFO0AsTREQ,
             ),
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO1, SMNumber::SM1),
+                DmaPeripheral::PioTxFifo(1, SMNumber::SM1),
                 SelectPIO1STXFIFO1AsTREQ,
             ),
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO1, SMNumber::SM2),
+                DmaPeripheral::PioTxFifo(1, SMNumber::SM2),
                 SelectPIO1STXFIFO2AsTREQ,
             ),
             (
-                DmaPeripheral::PioTxFifo(PIONumber::PIO1, SMNumber::SM3),
+                DmaPeripheral::PioTxFifo(1, SMNumber::SM3),
                 SelectPIO1STXFIFO3AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO1, SMNumber::SM0),
+                DmaPeripheral::PioRxFifo(1, SMNumber::SM0),
                 SelectPIO1SRXFIFO0AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO1, SMNumber::SM1),
+                DmaPeripheral::PioRxFifo(1, SMNumber::SM1),
                 SelectPIO1SRXFIFO1AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO1, SMNumber::SM2),
+                DmaPeripheral::PioRxFifo(1, SMNumber::SM2),
                 SelectPIO1SRXFIFO2AsTREQ,
             ),
             (
-                DmaPeripheral::PioRxFifo(PIONumber::PIO1, SMNumber::SM3),
+                DmaPeripheral::PioRxFifo(1, SMNumber::SM3),
                 SelectPIO1SRXFIFO3AsTREQ,
             ),
         ];
@@ -659,12 +663,9 @@ mod tests {
     /// to land inside it. A shift that moved would show up here.
     #[test]
     fn treq_sel_occupies_bits_15_to_20() {
+        assert_eq!(encoded(DmaPeripheral::PioTxFifo(0, SMNumber::SM0)), 0);
         assert_eq!(
-            encoded(DmaPeripheral::PioTxFifo(PIONumber::PIO0, SMNumber::SM0)),
-            0
-        );
-        assert_eq!(
-            encoded(DmaPeripheral::PioRxFifo(PIONumber::PIO1, SMNumber::SM3)),
+            encoded(DmaPeripheral::PioRxFifo(1, SMNumber::SM3)),
             15 << 15
         );
     }
