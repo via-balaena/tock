@@ -30,6 +30,10 @@ power enable, GP24 its data line, GP25 its chip select, and GP29 its clock.
 GP23, GP24 and GP29 are currently exposed through the GPIO driver, so an
 application that drives them can power up or confuse the radio.
 
-**Wi-Fi is not supported yet.** Tock has a CYW43439 driver, used by
-`raspberry_pi_pico_w`, but its transport is built on the RP2040's PIO and DMA
-peripherals and `chips/rp2350` does not have those yet.
+**Wi-Fi works.** The CYW43439 is reached the same way `raspberry_pi_pico_w`
+reaches the same part: a half duplex SPI bit banged by a PIO state machine with
+DMA feeding the FIFOs. The driver, the transport and the firmware blobs are all
+shared with that board.
+
+Verified on hardware: the radio initialises, reports its MAC address from OTP,
+enters station mode and completes a scan.
