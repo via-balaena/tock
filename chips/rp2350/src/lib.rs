@@ -9,9 +9,13 @@
 
 pub mod chip;
 pub mod clocks;
+pub mod dma;
 pub mod gpio;
 pub mod interrupts;
+pub mod pio;
+pub mod pio_gspi;
 pub mod resets;
+pub mod spi;
 pub mod ticks;
 pub mod timer;
 pub mod uart;

@@ -9,8 +9,11 @@ use kernel::platform::chip::Chip;
 use kernel::platform::chip::InterruptService;
 
 use crate::clocks::Clocks;
+use crate::dma;
 use crate::gpio::{RPPins, SIO};
 use crate::interrupts;
+use crate::pio;
+use crate::spi;
 use crate::ticks::Ticks;
 use crate::timer::RPTimer;
 use crate::uart::Uart;
@@ -117,8 +120,13 @@ impl<I: InterruptService> Chip for Rp2350<'_, I> {
 }
 
 pub struct Rp2350DefaultPeripherals<'a> {
+    pub dma: dma::Dma<'a>,
     pub pins: RPPins<'a>,
+    pub pio0: pio::Pio,
+    pub pio1: pio::Pio,
+    pub pio2: pio::Pio,
     pub sio: SIO,
+    pub spi0: spi::Spi<'a>,
     pub ticks: Ticks,
     pub timer0: RPTimer<'a>,
     pub uart0: Uart<'a>,
@@ -129,8 +137,13 @@ pub struct Rp2350DefaultPeripherals<'a> {
 impl Rp2350DefaultPeripherals<'_> {
     pub fn new(clocks: &'static Clocks) -> Self {
         Self {
+            dma: dma::new(),
             pins: RPPins::new(),
+            pio0: pio::new_pio0(),
+            pio1: pio::new_pio1(),
+            pio2: pio::new_pio2(),
             sio: SIO::new(),
+            spi0: spi::new_spi0(clocks),
             ticks: Ticks::new(),
             timer0: RPTimer::new_timer0(),
             uart0: Uart::new_uart0(clocks),
@@ -156,6 +169,26 @@ impl InterruptService for Rp2350DefaultPeripherals<'_> {
             }
             interrupts::SIO_IRQ_FIFO => {
                 self.sio.handle_proc_interrupt(self.sio.get_processor());
+                true
+            }
+            interrupts::SPI0_IRQ => {
+                self.spi0.handle_interrupt();
+                true
+            }
+            // Only PIO0's first interrupt line and the first two DMA lines
+            // are serviced, matching what chips/rp2040 has always done. The
+            // remaining PIO and DMA interrupts are declared in interrupts.rs
+            // but nothing selects them yet.
+            interrupts::PIO0_IRQ_0 => {
+                self.pio0.handle_interrupt();
+                true
+            }
+            interrupts::DMA_IRQ_0 => {
+                self.dma.handle_interrupt0();
+                true
+            }
+            interrupts::DMA_IRQ_1 => {
+                self.dma.handle_interrupt1();
                 true
             }
             interrupts::UART0_IRQ => {

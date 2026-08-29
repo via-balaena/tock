@@ -16,7 +16,7 @@ pub use cortexm::nvic;
 pub use cortexm::syscall;
 pub use cortexm::thread_id;
 
-#[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 struct HardFaultStackedRegisters {
     r0: u32,
     r1: u32,
@@ -28,7 +28,7 @@ struct HardFaultStackedRegisters {
     xpsr: u32,
 }
 
-#[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 /// Handle a hard fault that occurred in the kernel. This function is invoked
 /// by the naked hard_fault_handler function.
 unsafe extern "C" fn hard_fault_handler_kernel(faulting_stack: *mut u32) -> ! {
@@ -72,7 +72,7 @@ unsafe extern "C" fn hard_fault_handler_kernel(faulting_stack: *mut u32) -> ! {
 }
 
 // Mock implementation for tests on Travis-CI.
-#[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+#[cfg(not(all(target_arch = "arm", target_os = "none")))]
 unsafe extern "C" fn generic_isr() {
     unimplemented!()
 }
@@ -97,7 +97,7 @@ unsafe extern "C" fn generic_isr() {
 ///   - This writes to `r7`, a callee-saved register, but it is pushed and
 ///     popped to/from the stack to return to its original value.
 /// - This does not fall-through, it branches at the end.
-#[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 #[unsafe(naked)]
 unsafe extern "C" fn generic_isr() {
     use core::arch::naked_asm;
@@ -109,6 +109,12 @@ unsafe extern "C" fn generic_isr() {
     bne 100f
 
     // We need to make sure the kernel continues the execution after this ISR
+    //
+    // On v6m:
+    //  - CONTROL[0] is nPriv, which we want to set to 0 here
+    //  - CONTROL[1] is SPSEL, but **ignores writes in handler mode**
+    //  - CONTROL[2:31] are RAZ/WI ; UNK/SBZP (ARM DDI 0419E §B1.4.5)
+    // so it is safe to simply write the register without reading it first.
     movs r0, #0
     msr CONTROL, r0
     // CONTROL writes must be followed by ISB
@@ -188,7 +194,7 @@ unsafe extern "C" fn generic_isr() {
 }
 
 // Mock implementation for tests on Travis-CI.
-#[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+#[cfg(not(all(target_arch = "arm", target_os = "none")))]
 unsafe extern "C" fn systick_handler() {
     unimplemented!()
 }
@@ -208,13 +214,19 @@ unsafe extern "C" fn systick_handler() {
 /// - OUTPUTS:
 ///   - This writes to `r0`, a caller-saved register.
 /// - This does not fall-through, it branches at the end.
-#[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 #[unsafe(naked)]
 unsafe extern "C" fn systick_handler() {
     use core::arch::naked_asm;
     naked_asm!(
         "
     // Set thread mode to privileged to switch back to kernel mode.
+    //
+    // On v6m:
+    //  - CONTROL[0] is nPriv, which we want to set to 0 here
+    //  - CONTROL[1] is SPSEL, but **ignores writes in handler mode**
+    //  - CONTROL[2:31] are RAZ/WI ; UNK/SBZP (ARM DDI 0419E §B1.4.5)
+    // so it is safe to simply write the register without reading it first.
     movs r0, #0
     msr CONTROL, r0
     // CONTROL writes must be followed by ISB
@@ -234,7 +246,7 @@ unsafe extern "C" fn systick_handler() {
 }
 
 // Mock implementation for tests on Travis-CI.
-#[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+#[cfg(not(all(target_arch = "arm", target_os = "none")))]
 unsafe extern "C" fn svc_handler() {
     unimplemented!()
 }
@@ -247,7 +259,7 @@ unsafe extern "C" fn svc_handler() {
 ///   - This writes to `r0`, a caller-saved register.
 ///   - This writes to `r1`, a caller-saved register.
 /// - This does not fall-through, it branches in both branches.
-#[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 #[unsafe(naked)]
 unsafe extern "C" fn svc_handler() {
     use core::arch::naked_asm;
@@ -256,6 +268,11 @@ unsafe extern "C" fn svc_handler() {
     ldr r0, 200f // EXC_RETURN_MSP
     cmp lr, r0
     bne 100f
+    // On v6m:
+    //  - CONTROL[0] is nPriv, which we want to set to 1 here
+    //  - CONTROL[1] is SPSEL, but **ignores writes in handler mode**
+    //  - CONTROL[2:31] are RAZ/WI ; UNK/SBZP (ARM DDI 0419E §B1.4.5)
+    // so it is safe to simply write the register without reading it first.
     movs r0, #1
     msr CONTROL, r0
     // CONTROL writes must be followed by ISB
@@ -265,6 +282,11 @@ unsafe extern "C" fn svc_handler() {
     bx r1
 
 100: // to_kernel
+    // On v6m:
+    //  - CONTROL[0] is nPriv, which we want to set to 0 here
+    //  - CONTROL[1] is SPSEL, but **ignores writes in handler mode**
+    //  - CONTROL[2:31] are RAZ/WI ; UNK/SBZP (ARM DDI 0419E §B1.4.5)
+    // so it is safe to simply write the register without reading it first.
     movs r0, #0
     msr CONTROL, r0
     // CONTROL writes must be followed by ISB
@@ -287,7 +309,7 @@ unsafe extern "C" fn svc_handler() {
 }
 
 // Mock implementation for tests on Travis-CI.
-#[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+#[cfg(not(all(target_arch = "arm", target_os = "none")))]
 unsafe extern "C" fn hard_fault_handler() {
     unimplemented!()
 }
@@ -302,7 +324,7 @@ unsafe extern "C" fn hard_fault_handler() {
 ///   - This writes to `r2`, a caller-saved register.
 ///   - This writes to `r3`, a caller-saved register.
 /// - This does not fall-through, it branches at the end.
-#[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 #[unsafe(naked)]
 unsafe extern "C" fn hard_fault_handler() {
     use core::arch::naked_asm;
@@ -371,6 +393,12 @@ unsafe extern "C" fn hard_fault_handler() {
     str r2, [r0, #16]
 
     // Set thread mode to privileged
+    //
+    // On v6m:
+    //  - CONTROL[0] is nPriv, which we want to set to 0 here
+    //  - CONTROL[1] is SPSEL, but **ignores writes in handler mode**
+    //  - CONTROL[2:31] are RAZ/WI ; UNK/SBZP (ARM DDI 0419E §B1.4.5)
+    // so it is safe to simply write the register without reading it first.
     movs r0, #0
     msr CONTROL, r0
     // No ISB required on M0
@@ -404,7 +432,7 @@ impl cortexm::CortexMVariant for CortexM0 {
     const HARD_FAULT_HANDLER: unsafe extern "C" fn() = hard_fault_handler;
 
     // Mock implementation for tests on Travis-CI.
-    #[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+    #[cfg(not(all(target_arch = "arm", target_os = "none")))]
     unsafe fn switch_to_user(
         _user_stack: *const usize,
         _process_regs: &mut [usize; 8],
@@ -412,7 +440,7 @@ impl cortexm::CortexMVariant for CortexM0 {
         unimplemented!()
     }
 
-    #[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+    #[cfg(all(target_arch = "arm", target_os = "none"))]
     unsafe fn switch_to_user(
         mut user_stack: *const usize,
         process_regs: &mut [usize; 8],

@@ -36,7 +36,7 @@ pub use cortexm::unhandled_interrupt;
 use cortexm0::CortexM0;
 
 // Mock implementation for tests on Travis-CI.
-#[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+#[cfg(not(all(target_arch = "arm", target_os = "none")))]
 pub unsafe extern "C" fn svc_handler() {
     unimplemented!()
 }
@@ -49,7 +49,7 @@ pub unsafe extern "C" fn svc_handler() {
 ///   - This writes to `r0`, a caller-saved register.
 ///   - This writes to `r1`, a caller-saved register.
 /// - This does not fall-through, it branches in both branches.
-#[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+#[cfg(all(target_arch = "arm", target_os = "none"))]
 #[unsafe(naked)]
 pub unsafe extern "C" fn svc_handler() {
     use core::arch::naked_asm;
@@ -61,6 +61,12 @@ pub unsafe extern "C" fn svc_handler() {
 
     // If we get here, then this is a context switch from the kernel to the
     // application. Set thread mode to unprivileged to run the application.
+    //
+    // On v6m:
+    //  - CONTROL[0] is nPriv, which we want to set to 1 here
+    //  - CONTROL[1] is SPSEL, but **ignores writes in handler mode**
+    //  - CONTROL[2:31] are RAZ/WI ; UNK/SBZP (ARM DDI 0419E §B1.4.5)
+    // so it is safe to simply write the register without reading it first.
     movs r0, #1
     msr CONTROL, r0
     ldr r1, 200f // EXC_RETURN_PSP
@@ -71,6 +77,12 @@ pub unsafe extern "C" fn svc_handler() {
     movs r1, #1
     str r1, [r0, #0]
     // Set thread mode to privileged as we switch back to the kernel.
+    //
+    // On v6m:
+    //  - CONTROL[0] is nPriv, which we want to set to 0 here
+    //  - CONTROL[1] is SPSEL, but **ignores writes in handler mode**
+    //  - CONTROL[2:31] are RAZ/WI ; UNK/SBZP (ARM DDI 0419E §B1.4.5)
+    // so it is safe to simply write the register without reading it first.
     movs r0, #0
     msr CONTROL, r0
     ldr r1, 100f // EXC_RETURN_MSP
@@ -97,7 +109,7 @@ impl cortexm::CortexMVariant for CortexM0P {
     const SVC_HANDLER: unsafe extern "C" fn() = svc_handler;
     const HARD_FAULT_HANDLER: unsafe extern "C" fn() = CortexM0::HARD_FAULT_HANDLER;
 
-    #[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+    #[cfg(all(target_arch = "arm", target_os = "none"))]
     unsafe fn switch_to_user(
         user_stack: *const usize,
         process_regs: &mut [usize; 8],
@@ -105,7 +117,7 @@ impl cortexm::CortexMVariant for CortexM0P {
         unsafe { CortexM0::switch_to_user(user_stack, process_regs) }
     }
 
-    #[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+    #[cfg(not(all(target_arch = "arm", target_os = "none")))]
     unsafe fn switch_to_user(
         _user_stack: *const usize,
         _process_regs: &mut [usize; 8],

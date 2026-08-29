@@ -1155,7 +1155,7 @@ impl Clocks {
         (((source_freq as u64) << 16) / freq as u64) as u32
     }
 
-    #[cfg(any(doc, all(target_arch = "arm", target_os = "none")))]
+    #[cfg(all(target_arch = "arm", target_os = "none"))]
     #[inline]
     fn loop_3_cycles(&self, clock: Clock) {
         if self.get_frequency(clock) > 0 {
@@ -1172,7 +1172,7 @@ impl Clocks {
         }
     }
 
-    #[cfg(not(any(doc, all(target_arch = "arm", target_os = "none"))))]
+    #[cfg(not(all(target_arch = "arm", target_os = "none")))]
     fn loop_3_cycles(&self, _clock: Clock) {
         unimplemented!()
     }
@@ -1518,5 +1518,13 @@ impl Clocks {
         self.set_divider(Clock::Adc, div);
 
         self.set_frequency(Clock::Adc, freq);
+    }
+}
+
+/// Lets the drivers shared with the other RP2 chip reach `clk_peri` without
+/// naming this chip's `Clock` enum, which the two chips do not share.
+impl rp2xxx::PeripheralClock for Clocks {
+    fn peripheral_frequency(&self) -> u32 {
+        self.get_frequency(Clock::Peripheral)
     }
 }
