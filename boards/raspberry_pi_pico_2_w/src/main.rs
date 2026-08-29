@@ -123,13 +123,19 @@ impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for Ras
 // ---------------------------------------------------------------------------
 struct RadioBringUp {
     device: &'static CYW4343xHw,
+    step: core::cell::Cell<u8>,
 }
 
 impl capsules_extra::wifi::Client for RadioBringUp {
     fn command_done(&self, rval: Result<(), kernel::ErrorCode>) {
         use capsules_extra::wifi::Device;
-        match rval {
-            Ok(()) => {
+        let step = self.step.get();
+        if let Err(e) = rval {
+            debug!("cyw43 bringup: step {} failed, {:?}", step, e);
+            return;
+        }
+        match step {
+            0 => {
                 debug!("cyw43 bringup: init reported success");
                 match self.device.mac() {
                     Ok(m) => debug!(
@@ -138,12 +144,29 @@ impl capsules_extra::wifi::Client for RadioBringUp {
                     ),
                     Err(e) => debug!("cyw43 bringup: MAC unavailable, {:?}", e),
                 }
+                self.step.set(1);
+                match self.device.station() {
+                    Ok(()) => debug!("cyw43 bringup: station mode requested"),
+                    Err(e) => debug!("cyw43 bringup: station refused, {:?}", e),
+                }
             }
-            Err(e) => debug!("cyw43 bringup: init failed, {:?}", e),
+            1 => {
+                debug!("cyw43 bringup: station mode up");
+                self.step.set(2);
+                match self.device.scan() {
+                    Ok(()) => debug!("cyw43 bringup: scanning"),
+                    Err(e) => debug!("cyw43 bringup: scan refused, {:?}", e),
+                }
+            }
+            _ => debug!("cyw43 bringup: step {} done", step),
         }
     }
 
-    fn scanned_network(&self, _ssid: capsules_extra::wifi::Ssid) {}
+    fn scanned_network(&self, ssid: capsules_extra::wifi::Ssid) {
+        let n = ssid.len.get() as usize;
+        let name = core::str::from_utf8(&ssid.buf[..n]).unwrap_or("<not utf8>");
+        debug!("cyw43 bringup: saw network {:?}", name);
+    }
 
     fn scan_done(&self) {
         debug!("cyw43 bringup: scan done");
@@ -216,7 +239,8 @@ pub unsafe fn main() {
         let bringup = kernel::static_init!(
             RadioBringUp,
             RadioBringUp {
-                device: cyw4343_device
+                device: cyw4343_device,
+                step: core::cell::Cell::new(0),
             }
         );
         cyw4343_device.set_client(bringup);
