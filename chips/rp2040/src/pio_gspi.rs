@@ -290,8 +290,8 @@ fn cyw43_spi_program_init(
     sm.config(config);
     let clock_pin_handle = RPGpioPin::new(RPGpio::from_u32(clock_pin).unwrap());
     let dio_pin_handle = RPGpioPin::new(RPGpio::from_u32(dio_pin).unwrap());
-    pio.gpio_init(&clock_pin_handle);
-    pio.gpio_init(&dio_pin_handle);
+    crate::pio::gpio_init(pio.number(), &clock_pin_handle);
+    crate::pio::gpio_init(pio.number(), &dio_pin_handle);
 
     dio_pin_handle.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
     dio_pin_handle.set_schmitt(true);
