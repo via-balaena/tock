@@ -256,6 +256,20 @@ def main(argv):
     router = (ROUTER.replace("__ORDER__", json.dumps(order))
                     .replace("__OWNER__", json.dumps(owner, sort_keys=True)))
 
+    # The pages agree on one font link; take theirs rather than keeping a
+    # second copy here, which went stale the first time they were restyled.
+    fonts = set()
+    for _, path in sources:
+        with open(path, encoding="utf-8") as fh:
+            head = fh.read(4096)
+        found = re.search(r'<link rel="stylesheet" href="https://fonts\.googleapis[^"]*">', head)
+        if found:
+            fonts.add(found.group(0))
+    if len(fonts) != 1:
+        print("the pages disagree about which fonts to load: %d variants" % len(fonts))
+        return 1
+    font_link = fonts.pop()
+
     page = """<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
 <!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 <!-- Copyright Jon Hillesheim 2026. -->
@@ -263,7 +277,7 @@ def main(argv):
 <title>Learning Tock from the Ground Up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+%s
 
 <style>
 %s
@@ -282,7 +296,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 %s
 %s
 </script>
-""" % (tokens, "\n\n".join(styles), "\n\n".join(bodies), "\n\n".join(scripts), router)
+""" % (font_link, tokens, "\n\n".join(styles), "\n\n".join(bodies), "\n\n".join(scripts), router)
 
     problems = verify(page, every_id)
     if not problems:
