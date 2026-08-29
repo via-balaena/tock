@@ -1883,23 +1883,65 @@ def static_checks(html, name):
     # to the contrast checks below, which compare tokens rather than resolved
     # rules -- it shipped once as amber-on-amber at 1.25:1. Any class-based
     # :hover that sets a color must therefore out-specify it.
+    #
+    # Only where the shared rule can reach, though. It selects `button`, so it
+    # cannot touch a rule that only ever matches something else -- and until
+    # the reading-order links there was nothing else, so the check demanded the
+    # guard unconditionally and never had to say what it was guarding against.
+    # Requiring `:not(:disabled)` on `.pager a:hover` would be warding off a
+    # collision that cannot happen, on an element that has no disabled state.
     if marker in html and "</style>" in html:
         component_css = html.split(marker, 1)[1].split("</style>", 1)[0]
         generic = re.search(r"button:hover:not\(:disabled\)", component_css)
         if generic:
+            markup = re.sub(r"<script.*?</script>", " ",
+                            html[html.index("</style>") + 8:], flags=re.S)
+            # Which tag each class is written on, so a rule can be asked
+            # whether the thing it styles is ever a button.
+            worn_by = collections.defaultdict(set)
+            for tag, attrs in re.findall(r"<([a-zA-Z][\w-]*)([^>]*)>", markup):
+                found = re.search(r'\bclass="([^"]*)"', attrs)
+                if found:
+                    for token in found.group(1).split():
+                        worn_by[token].add(tag.lower())
             for rule in re.finditer(r"(^|\n)(\.[^{\n]*:hover[^{\n]*)\{([^}]*)\}",
                                     component_css):
                 selector, body = rule.group(2).strip(), rule.group(3)
-                # The `color` property itself, not border-color, background-color
-                # or border-bottom-color.
-                if not re.search(r"(?:^|;|\s)color\s*:", body):
+                # The two properties the shared rule actually sets. It writes
+                # `border-color: var(--accent)` as well as the colour, so a
+                # component rule setting only the border loses that to it just
+                # as silently -- and this looked only at `color`, so removing
+                # the guard from `.reg:hover`, which sets a border and nothing
+                # else, changed the rendering and failed nothing. `background`
+                # is not in the shared rule, and `border-bottom-color` is not
+                # `border-color`, so neither is in question here.
+                if not re.search(r"(?:^|;|\s)(?:border-)?color\s*:", body):
                     continue
-                if ":not(" in selector:
-                    continue
-                problems.append("%r sets a color on hover but does not "
-                                "out-specify button:hover:not(:disabled), so "
-                                "the shared rule wins - add :not(:disabled)"
-                                % selector)
+                for one in (s.strip() for s in selector.split(",")):
+                    if not one or ":not(" in one:
+                        continue
+                    tail = one.split()[-1]
+                    # An element named in the tail settles it outright.
+                    named = re.match(r"([a-zA-Z][\w-]*)", tail)
+                    if named:
+                        if named.group(1).lower() != "button":
+                            continue
+                        problems.append(
+                            "%r sets a color on hover but does not "
+                            "out-specify button:hover:not(:disabled), so "
+                            "the shared rule wins - add :not(:disabled)" % one)
+                        continue
+                    # Otherwise ask the markup what wears these classes. A
+                    # class the page never writes may be one the script adds
+                    # to a button, so an unknown one still needs the guard.
+                    classes = re.findall(r"\.([A-Za-z][\w-]*)", tail)
+                    seen = [c for c in classes if c in worn_by]
+                    if seen and not any("button" in worn_by[c] for c in seen):
+                        continue
+                    problems.append(
+                        "%r sets a color on hover but does not out-specify "
+                        "button:hover:not(:disabled), so the shared rule "
+                        "wins - add :not(:disabled)" % one)
 
     if "<title>" not in html:
         problems.append("no <title> - the artifact would be named by filename")
@@ -2207,9 +2249,30 @@ TRACKED_TERMS = [
 MAX_GATED_PROSE = 0.20
 
 
+def _without_nav(text):
+    """The page with its reading-order controls taken out.
+
+    A pager link reads "Chapter 2" because that is where it goes, not because
+    the page is claiming anything about chapter 2. The promise ledger records
+    prose cross-references and the pedagogy limits measure prose; a navigation
+    label is neither, for the same reason `<title>` and `<h1>` are already cut
+    out of both.
+
+    This is not the reference going unchecked. nav_checks resolves every one of
+    these links against the chapter directories and against the reading order,
+    which is a stricter test than the ledger's -- that only asks whether a
+    quoted sentence is still somewhere on the page.
+    """
+    text = re.sub(r'<nav[^>]*class="[^"]*\bpager\b[^"]*".*?</nav>', " ",
+                  text, flags=re.S)
+    return re.sub(r'<a[^>]*class="[^"]*\brunback\b[^"]*".*?</a>', " ",
+                  text, flags=re.S)
+
+
 def _strip_for_prose(html):
     """The running prose a reader parses: no code, no script, no citations."""
-    text = re.sub(r"<style.*?</style>", " ", html, flags=re.S)
+    text = _without_nav(html)
+    text = re.sub(r"<style.*?</style>", " ", text, flags=re.S)
     text = re.sub(r"<script.*?</script>", " ", text, flags=re.S)
     text = re.sub(r"<pre.*?</pre>", " ", text, flags=re.S)
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
@@ -2610,7 +2673,8 @@ def _chapter_sentences(html):
     neither, which would have made this gate blind to both of the findings
     that caused it to be written.
     """
-    text = re.sub(r"<style.*?</style>", " ", html, flags=re.S)
+    text = _without_nav(html)
+    text = re.sub(r"<style.*?</style>", " ", text, flags=re.S)
     text = re.sub(r"<script.*?</script>", " ", text, flags=re.S)
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
     out = _sentences(text)
@@ -2874,6 +2938,107 @@ def index_checks(root, chapters):
     return problems
 
 
+def nav_checks(root, chapters):
+    """The reading order, as the chapters themselves now carry it.
+
+    The cover used to hold the order alone, and index_checks guarded that one
+    copy. Linking the chapters to each other writes the order down seven more
+    times, by hand, one directory deeper -- and a hand-written copy of a fact
+    is the thing this series has been bitten by most. So no link here is
+    trusted: each is resolved against the chapter directories that exist and
+    against the position of the page it is written on.
+
+    The labels are checked too. A link whose href moved and whose text did not
+    is worse than a broken one, because it goes somewhere and lies about where.
+    """
+    problems = []
+    order = list(chapters)
+    for position, chapter in enumerate(order):
+        page = os.path.join(root, chapter, "index.html")
+        if not os.path.exists(page):
+            continue
+        with open(page, encoding="utf-8") as fh:
+            page_html = fh.read()
+        markup = (page_html[page_html.index("</style>") + 8:]
+                  if "</style>" in page_html else page_html)
+        markup = markup.split("<script>")[0]
+        name = chapter.split("-", 1)[0]
+
+        # Nothing may point at a directory that is not there.
+        for target in re.findall(r'href="\.\./(ch[^"/]+)/"', markup):
+            if target not in chapters:
+                problems.append("%s links ../%s/, which is not a chapter "
+                                "directory" % (name, target))
+
+        # The way back to the cover, in the running head.
+        backs = re.findall(r'<a class="runback" href="([^"]*)"', markup)
+        if len(backs) != 1:
+            problems.append("%s has %d ways back to the cover in its running "
+                            "head, not 1" % (name, len(backs)))
+        elif backs[0] != "../":
+            problems.append("%s's running head points at %r, not the cover"
+                            % (name, backs[0]))
+
+        # The way on, on the card at the foot.
+        following = order[position + 1] if position + 1 < len(order) else None
+        forward = re.findall(
+            r'<h3[^>]*><a href="\.\./(ch[^"/]+)/">([^<]*)</a></h3>', markup)
+        if following is None:
+            if forward:
+                problems.append("%s is the last chapter and still offers %s as "
+                                "the next one" % (name, forward[0][0]))
+        elif len(forward) != 1:
+            problems.append("%s has %d next-chapter links, not 1"
+                            % (name, len(forward)))
+        else:
+            target, label = forward[0]
+            if target != following:
+                problems.append("%s offers %s as the next chapter; the order "
+                                "says %s" % (name, target, following))
+            wanted = "Chapter %d" % int(following[2:4])
+            if wanted not in html_module.unescape(label):
+                problems.append("%s's next card links %s under %r, which does "
+                                "not name %s" % (name, target, label, wanted))
+
+        # The pager under it: back one, and out to the cover.
+        pagers = [m for m in re.findall(
+            r'<nav class="([^"]*)"([^>]*)>(.*?)</nav>', markup, re.S)
+            if "pager" in m[0].split()]
+        if len(pagers) != 1:
+            problems.append("%s has %d pagers, not 1" % (name, len(pagers)))
+            continue
+        classes, attrs, body = pagers[0]
+        if "aria-label" not in attrs:
+            problems.append("%s's pager has no accessible name, so it is an "
+                            "unnamed landmark" % name)
+        links = re.findall(r'<a href="([^"]*)">(.*?)</a>', body, re.S)
+        if "../" not in [href for href, _ in links]:
+            problems.append("%s's pager does not link the cover" % name)
+
+        previous = order[position - 1] if position else None
+        back = [(href, text) for href, text in links if href != "../"]
+        if previous is None:
+            if back:
+                problems.append("%s is the first chapter and its pager goes "
+                                "back to %s" % (name, back[0][0]))
+            if "pager-only" not in classes.split():
+                problems.append("%s's pager carries one link and is not marked "
+                                "pager-only, so it will not sit right" % name)
+        elif len(back) != 1:
+            problems.append("%s's pager has %d ways back, not 1"
+                            % (name, len(back)))
+        else:
+            href, label = back[0]
+            if href != "../%s/" % previous:
+                problems.append("%s's pager goes back to %r; the order says %s"
+                                % (name, href, previous))
+            wanted = "Chapter %d" % int(previous[2:4])
+            if wanted not in html_module.unescape(label):
+                problems.append("%s's pager labels the way back %r, which does "
+                                "not name %s" % (name, label.strip(), wanted))
+    return problems
+
+
 def main():
     chapters = sorted(d for d in os.listdir(ROOT)
                       if d.startswith("ch")
@@ -2947,6 +3112,17 @@ def main():
         failures += 1
     else:
         print("  pass  the cover and the chapters agree")
+
+    # The order written down seven more times, once per chapter, in links.
+    print("\nreading order")
+    print("-" * len("reading order"))
+    problems = nav_checks(ROOT, chapters)
+    for problem in problems:
+        print("  FAIL  %s" % problem)
+    if problems:
+        failures += 1
+    else:
+        print("  pass  every chapter links the one before and the one after")
 
     # Across chapters, not within one, so it runs once after all of them.
     print("\npromises")

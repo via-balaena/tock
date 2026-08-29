@@ -100,6 +100,8 @@ body {
   gap: 1.15rem;
 }
 
+a { color: var(--accent); text-underline-offset: 3px; }
+
 p { margin: 0; }
 
 /* ---------- masthead ---------- */
@@ -261,7 +263,7 @@ button {
 }
 button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 button:disabled { opacity: .4; cursor: not-allowed; }
-button:focus-visible, [tabindex]:focus-visible {
+button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -279,6 +281,64 @@ button:focus-visible, [tabindex]:focus-visible {
   flex-direction: column;
   gap: .9rem;
 }
+
+/* ---------- the reading order ----------
+   Seven chapters that were seven islands. Until this, no page linked to any
+   other, and the cover was the only thing holding the order -- so a reader who
+   arrived at a chapter directly had no way on and no way back. The running
+   head carries the way back; the card at the foot carries the way on.
+
+   Every href here is relative, so a clone reads exactly as a static host does.
+   mkindex.py is what rewrites them for a host where neither path exists. */
+
+/* The eyebrow every chapter already had, and under it the way back to the
+   cover -- wrapped, so the two sit closer together than the masthead's own
+   1.1rem gap would put them. */
+.runhead {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.runback {
+  align-self: flex-start;
+  font-family: var(--display);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+.runback:hover, .runback:focus-visible {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* The next chapter's title, which was unlinked text for seven chapters. The
+   arrow is generated rather than typed, so it cannot be read out as a word. */
+.next h3 a { color: inherit; text-decoration: none; }
+/* A non-breaking space, not a plain one: at phone width the plain
+   space is a break opportunity, and the arrow wrapped onto a line of
+   its own under the title. */
+.next h3 a::after { content: "\00A0\2192"; color: var(--hot); }
+.next h3 a:hover, .next h3 a:focus-visible { color: var(--accent); }
+
+/* The two smaller moves, under the card: back one chapter, or out to the
+   cover. Exactly two items, placed by `space-between`, so the gap only
+   applies when they wrap. */
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: .3rem;
+  font-family: var(--display);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.pager a { color: var(--ink-soft); text-decoration: none; }
+.pager a:hover, .pager a:focus-visible { color: var(--accent); }
 
 .sources {
   margin-top: 2.5rem;
@@ -574,7 +634,10 @@ dfn {
 <div class="wrap">
 
 <header class="masthead">
-  <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 5</p>
+  <div class="runhead">
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 5</p>
+    <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
+  </div>
   <h1>The Memory Protection Unit</h1>
   <p class="standfirst">Chapter 4 ended on a sentence with a hole in it. Every edge it drew &mdash; where a process starts, where its memory ends, how far up it may reach &mdash; was a number the kernel was holding. Not one of them stops an instruction. This is the thing that stops the instruction.</p>
   <noscript>
@@ -941,8 +1004,12 @@ dfn {
 
 <div class="col next">
   <p class="eyebrow forward">Next</p>
-  <h3 style="margin-top:0">Chapter 6 &mdash; Asking the Kernel</h3>
+  <h3 style="margin-top:0"><a href="../ch06-asking-the-kernel/">Chapter 6 &mdash; Asking the Kernel</a></h3>
   <p>A process fenced this tightly cannot print, cannot read a button and cannot wait a second. Everything it does that reaches the world goes through one instruction and eight classes of request. On the way: how a buffer crosses a boundary that exists to stop exactly that.</p>
+  <nav class="pager" aria-label="Chapter navigation">
+    <a href="../ch04-what-a-process-is/">&larr;&nbsp;Chapter 4</a>
+    <a href="../">Contents</a>
+  </nav>
 </div>
 
 <section class="col sources">

@@ -39,11 +39,16 @@ A clone gets working links because it links by relative path.
 The published copy links to hosted chapters instead, and those URLs are
 addresses on an account rather than part of a CC BY-SA work, so they are not in
 this branch. `learning/tools/mkindex.py` substitutes them from an ignored
-`tools/artifact-urls.json` and refuses to write anything if a chapter has no
-URL -- a cover with one dead entry is worse than no cover, because it looks
+`tools/artifact-urls.json` and refuses to write anything if a single link would
+land dead -- a set with one dead entry is worse than none, because it looks
 complete.
 
-    python3 learning/tools/mkindex.py /tmp/cover.html
+    python3 learning/tools/mkindex.py /tmp/publish
+
+It emits the whole set, not just the cover: since the chapters link to each
+other and back to the cover, every page has hrefs to substitute and the cover
+needs a URL of its own. On a static host none of this applies -- the relative
+links are already right, and the build is `cp -r learning/ .`
 
 **What the cover is for, beyond navigation.** It is the only file that
 duplicates information: every chapter's number, title and place in the order
@@ -108,6 +113,41 @@ the LED, chapter 3 for the panic blink landing there, chapter 4 for which crate
 `make program` flashes. A new chapter that reaches for hardware owes the reader
 the same sentence.
 
+## The reading order, carried by the chapters
+
+The cover used to hold the order alone. Every chapter was a standalone page
+with no link to any other -- chapters 3 to 7 had no `<a>` on them at all -- so
+a reader who arrived at one directly had no way on and no way back, and the
+cover was the only thing that could be handed to somebody.
+
+Each chapter now carries three links:
+
+- **`.runback`**, in the running head under the eyebrow, back to the cover.
+- **The next chapter's title**, on the card that was already at the foot of
+  every chapter, which had been written and styled but never linked.
+- **`.pager`**, under that card: back one chapter, and out to the cover.
+  Chapter 1 has nothing behind it, so its row carries one link and is marked
+  `pager-only`; chapter 7 has no card to link, because there is no chapter 8.
+
+Every href is relative, so a clone reads exactly as a static host does, and
+`mkindex.py` is what rewrites them for a host where neither path exists.
+
+`nav_checks` in `check.py` guards this. That the order is written down at all
+is what makes it need guarding: it lives on the cover, and now seven more times
+in hand-written links one directory deeper, which is the shape of every drift
+this branch has had. So no link is trusted -- each is resolved against the
+chapter directories that exist and against the position of the page it is on,
+and the label is checked too, because a link whose href moved and whose text
+did not is worse than a broken one.
+
+**A navigation label is not a promise, and the ledger does not hold it.** A
+pager reading "Chapter 2" says where it goes, not what the page claims, so
+`_without_nav` cuts these controls out before the promise ledger and the
+pedagogy limits see the page -- the same reason `<title>` and `<h1>` are
+already cut out of both. This is not the reference going unchecked: resolving a
+link against the directories is stricter than the ledger's test, which only
+asks whether a quoted sentence is still somewhere on the page.
+
 ## Why this lives in the Tock repository
 
 The chapters cite kernel source by file, and by line where the line is the point. Keeping them in a branch of the
@@ -148,8 +188,9 @@ python3 learning/tools/check.py
 ```
 
 This runs three kinds of check against every chapter -- static, pedagogy and
-behavioral -- then one on the cover and two across the chapters together, and
-exits non-zero if any fails, so it can gate a commit.
+behavioral -- then one on the cover, one on the links between the chapters, and
+two across the chapters together, and exits non-zero if any fails, so it can
+gate a commit.
 
 **Static checks** on the page: duplicate ids, unbalanced tags, JavaScript
 reaching for ids that do not exist, CSS variables used but never defined, and
@@ -815,9 +856,13 @@ the cheapest come first:
 
 1. **Render every state you changed** -- both themes, and once at phone width.
    A figure's opening state shipped wrong twice and only a screenshot caught
-   it. Remember that QuickLook does not run scripts, so what it shows is the
-   no-JavaScript reader's view; strip the `<noscript>` block from the preview
-   copy to see the ordinary one.
+   it. The phone render is not a formality: the arrow after the next chapter's
+   title was set off with a plain space, which is a break opportunity, so at
+   narrow widths it wrapped onto a line of its own under the title -- the same
+   shape as the orphaned punctuation the `.dothis` flex row shipped for six
+   chapters. Remember that QuickLook does not run scripts, so what it shows is
+   the no-JavaScript reader's view; strip the `<noscript>` block from the
+   preview copy to see the ordinary one.
 2. **Read back the accessible name of every control you touched.** An
    `aria-label` replaces content rather than adding to it, and a figure once
    announced its own label forever instead of the digit it existed to show.
