@@ -124,6 +124,38 @@ impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for Ras
 struct RadioBringUp {
     device: &'static CYW4343xHw,
     step: core::cell::Cell<u8>,
+    deferred: kernel::deferred_call::DeferredCall,
+}
+
+impl RadioBringUp {
+    /// Issue the next command from a deferred call rather than from inside
+    /// `command_done`. The driver refuses a new task list while it is still
+    /// unwinding the previous one, which is why the syscall path works: each
+    /// command arrives in its own kernel loop iteration.
+    fn advance(&self) {
+        self.deferred.set();
+    }
+}
+
+impl kernel::deferred_call::DeferredCallClient for RadioBringUp {
+    fn register(&'static self) {
+        self.deferred.register(self);
+    }
+
+    fn handle_deferred_call(&self) {
+        use capsules_extra::wifi::Device;
+        match self.step.get() {
+            1 => match self.device.station() {
+                Ok(()) => debug!("cyw43 bringup: station mode requested"),
+                Err(e) => debug!("cyw43 bringup: station refused, {:?}", e),
+            },
+            2 => match self.device.scan() {
+                Ok(()) => debug!("cyw43 bringup: scanning"),
+                Err(e) => debug!("cyw43 bringup: scan refused, {:?}", e),
+            },
+            _ => {}
+        }
+    }
 }
 
 impl capsules_extra::wifi::Client for RadioBringUp {
@@ -145,18 +177,12 @@ impl capsules_extra::wifi::Client for RadioBringUp {
                     Err(e) => debug!("cyw43 bringup: MAC unavailable, {:?}", e),
                 }
                 self.step.set(1);
-                match self.device.station() {
-                    Ok(()) => debug!("cyw43 bringup: station mode requested"),
-                    Err(e) => debug!("cyw43 bringup: station refused, {:?}", e),
-                }
+                self.advance();
             }
             1 => {
                 debug!("cyw43 bringup: station mode up");
                 self.step.set(2);
-                match self.device.scan() {
-                    Ok(()) => debug!("cyw43 bringup: scanning"),
-                    Err(e) => debug!("cyw43 bringup: scan refused, {:?}", e),
-                }
+                self.advance();
             }
             _ => debug!("cyw43 bringup: step {} done", step),
         }
@@ -241,8 +267,10 @@ pub unsafe fn main() {
             RadioBringUp {
                 device: cyw4343_device,
                 step: core::cell::Cell::new(0),
+                deferred: kernel::deferred_call::DeferredCall::new(),
             }
         );
+        kernel::deferred_call::DeferredCallClient::register(bringup);
         cyw4343_device.set_client(bringup);
         match cyw4343_device.init() {
             Ok(()) => debug!("cyw43 bringup: init started"),
