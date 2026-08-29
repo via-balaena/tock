@@ -278,3 +278,12 @@ chk("the Pico 2 W difference is scoped out of this chapter",
     REG["wscope"].textContent.indexOf("works on either one") > -1, true);
 chk("and the reason no light is expected here is given",
     REG["wscope"].textContent.indexOf("no application loaded drives no light") > -1, true);
+
+// ---- The fifth pass ----
+// Three physical claims here have never met a board. The sources said so; the
+// prose, where a reader meets them, did not.
+chk("the unchecked hardware details are flagged where they are claimed",
+    REG["unchecked"].textContent.indexOf("rather than from a board on a desk") > -1, true);
+chk("and both of them are named rather than gestured at",
+    REG["unchecked"].textContent.indexOf("which edge the debug pads sit on") > -1
+      && REG["unchecked"].textContent.indexOf("how the probe presents itself") > -1, true);

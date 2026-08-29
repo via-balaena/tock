@@ -721,6 +721,7 @@ $ make
   <p>The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
   <p>Which pins is not a convention to look up, it is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
   <p id="term">Anything that speaks to a serial port will read it. A Mac has <code>screen</code> already; Debian and its relatives usually want <code>picocom</code> installed first. The probe presents itself as a serial device when plugged in, and the surest way to learn its name is to look before and after doing so.</p>
+  <p id="unchecked">Two things in this section come from the hardware's documentation rather than from a board on a desk. They are which edge the debug pads sit on, and how the probe presents itself to your machine. The sources at the foot name them as unchecked.</p>
   <pre># list before and after plugging in
 $ ls /dev/tty.*
 
@@ -774,7 +775,7 @@ tock$</pre>
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 5</span>
-    <span class="instrument-title">What that prompt is, and what it will tell you</span>
+    <span class="instrument-title">What comes back, and what each piece of it proves</span>
   </div>
   <div class="instrument-body">
     <p class="dothis">Click each. The first is the one you are waiting for; the last is what to type once you have it.</p>
@@ -960,7 +961,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>Pin&nbsp;25 being the light this board hands to the light driver &mdash; the same file, :385</li>
     <li>The build taking 7.2 seconds of wall time, of which 5.64 were the compiler &mdash; measured on this machine with <code>/usr/bin/time</code>. The block above is that run, abridged: five <code>Compiling</code> lines and a trailing checksum are left out, and the size line's filename column is shortened from an absolute path. No number in it is altered</li>
     <li>A Mac having <code>screen</code> already, and <code>picocom</code> needing installing on Debian &mdash; checked on the machine these pages were written on, which had <code>screen</code> and neither of the other two</li>
-    <li>Four things about the hardware that have <em>not</em> been checked against a board, and are named here so nobody mistakes them for verified: the probe's serial device appearing under <code>/dev/tty.</code> on a Mac and <code>/dev/ttyACM</code> on Linux, the debug pads sitting on the short edge opposite the USB socket, and a probe presenting more than one interface</li>
+    <li>Three things about the hardware that have <em>not</em> been checked against a board, and are named here so nobody mistakes them for verified: the probe's serial device appearing under <code>/dev/tty.</code> on a Mac and <code>/dev/ttyACM</code> on Linux, the debug pads sitting on the short edge opposite the USB socket, and a probe presenting more than one interface</li>
     <li>The copying routes printing that message and then exiting with status&nbsp;0 &mdash; <code>make flash</code> run on this machine with no board attached. The conversion succeeded, so the copy was the only step that did not happen, and nothing reported it</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
