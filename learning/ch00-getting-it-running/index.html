@@ -660,7 +660,7 @@ $ make
    text    data     bss     dec     hex filename
   69164       0   19020   88184   15878 raspberry_pi_pico_2</pre>
   <p>That is the whole build, and the numbers are real: 7.2 seconds of wall time on an Apple laptop, of which 5.64 were the compiler. A kernel is a small program, and this is one of the quiet pleasures of the work.</p>
-  <p>The three numbers are worth a glance even now. Around 69&nbsp;kB of code, no initialised data, and 19&nbsp;kB of space the kernel wants at runtime for variables that start out empty.</p>
+  <p>The three numbers are worth a glance even now. Around 68&nbsp;kB of code, no initialised data, and about 19&nbsp;kB of space the kernel wants at runtime for variables that start out empty.</p>
 </section>
 
 <figure class="instrument">
@@ -716,18 +716,19 @@ $ make
 </figure>
 
 <section class="col">
-  <h2>Getting it onto the chip</h2>
-  <p>With the probe wired to the three pads, one command does it:</p>
-  <pre>$ make flash-openocd</pre>
-  <p>OpenOCD is the one piece of software you install for this, and on the Mac these pages were written on it was the only thing missing. Everything else was already there for Rust.</p>
-  <p>What that runs is OpenOCD, an ordinary program on your machine that speaks to the probe over USB, and through it to the chip. The board's own configuration for it is two lines long: use a standard debug adapter, and the chip is an RP2350.</p>
-  <p>The command writes the kernel, reads it back to confirm it landed, resets the board and exits. If it cannot find the probe it says so and stops, which is the failure you want &mdash; loud, immediate, and about the thing that is actually wrong.</p>
-</section>
-
-<section class="col">
   <h2>Making it talk</h2>
-  <p>The board is now running Tock and telling you nothing, because nothing is listening. The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
+  <p>Wire the console before you flash, not after. The command in the next section resets the board as it finishes, and the line you are waiting for goes out at that moment. If nothing is listening yet you miss it, and a missed line looks exactly like a board that never started.</p>
+  <p>The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
   <p>Which pins is not a convention to look up, it is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
+  <p id="term">Anything that speaks to a serial port will read it. A Mac has <code>screen</code> already; Debian and its relatives usually want <code>picocom</code> installed first. The probe presents itself as a serial device when plugged in, and the surest way to learn its name is to look before and after doing so.</p>
+  <pre># list before and after plugging in
+$ ls /dev/tty.*
+
+# a Mac
+$ screen /dev/tty.usbmodemNNNN 115200
+
+# Debian
+$ picocom -b 115200 /dev/ttyACM0</pre>
 </section>
 
 <figure class="instrument">
@@ -754,11 +755,20 @@ $ make
 </figure>
 
 <section class="col">
+  <h2>Getting it onto the chip</h2>
+  <p>With the probe wired to the board and a terminal open on it, one command does the rest:</p>
+  <pre>$ make flash-openocd</pre>
+  <p>OpenOCD is the one piece of software you install for this, and on the Mac these pages were written on it was the only thing missing. Everything else was already there for Rust.</p>
+  <p>What that runs is OpenOCD, an ordinary program on your machine that speaks to the probe over USB, and through it to the chip. The board's own configuration for it is two lines long: use a standard debug adapter, and the chip is an RP2350.</p>
+  <p>The command writes the kernel, reads it back to confirm it landed, resets the board and exits. If it cannot find the probe it says so and stops, which is the failure you want &mdash; loud, immediate, and about the thing that is actually wrong.</p>
+</section>
+
+<section class="col">
   <h2>The line that means it worked</h2>
-  <p>Open the probe's serial port at 115200 and reset the board. What you are waiting for is one line, and the kernel prints it at the end of its own setup, immediately before it starts running anything else:</p>
+  <p>That command ends by resetting the board, and with the console already open you watch the result arrive. What you are waiting for is one line, printed at the end of the kernel's own setup, before it looks for applications and before its main loop starts:</p>
   <pre>Initialization complete. Enter main loop
 tock$</pre>
-  <p>That is the whole success signal. The first line comes from a single call near the bottom of this board's start-up code, and its only job is to be the thing you are reading now. The second is a prompt, and it means a great deal more than it looks like.</p>
+  <p>That is the whole success signal. The first line comes from a single call near the bottom of this board's start-up code, and its only job is to be the thing you are reading now. The second is a prompt, and it is worth a moment of its own.</p>
 </section>
 
 <figure class="instrument">
@@ -777,7 +787,7 @@ tock$</pre>
     <div class="blksay">
       <p class="blkp is-on" id="bop-0">Printed once, at the end of setting up. Seeing it proves three separate things at once: the kernel built, it landed on the chip, and the wire out of the board is carrying. That is a lot of evidence from one line, and it is still silent about the wire going the other way.</p>
       <p class="blkp" id="bop-1">A prompt from a piece of the kernel that exists to be talked to. Its arrival proves nothing the banner did not, because it is printed outbound on the very same wire. What tests the other direction is typing something and getting an answer.</p>
-      <p class="blkp" id="bop-2">There is a second line the kernel can print here instead, saying it could not load processes. It is not a failure of anything in this chapter: it means the kernel is fine and there is no application on the chip yet, which at this point is expected.</p>
+      <p class="blkp" id="bop-2">A second line can follow the banner, saying it could not load processes. It comes after, not instead: the kernel looks for applications between printing the banner and starting its main loop. An empty chip is not what produces it, because finding no applications is quiet, so this line means something actually went wrong.</p>
       <p class="blkp" id="bop-3">Type it and the console lists what is loaded and running. Early on it is how you find out whether the thing you flashed is the thing that is actually running, and the answer is surprisingly often no.</p>
     </div>
   </div>
@@ -841,23 +851,23 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <span class="instrument-title">Five silences, and what tells them apart</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each symptom. The first is the one that wastes whole evenings, and the cause is almost never the board.</p>
+    <p class="dothis">Click each symptom. The third is the loud one, and the only one that tells you what is wrong without your help.</p>
     <div class="blk" role="group" aria-label="Symptoms and what separates them">
       <button type="button" id="sy-0" aria-pressed="true">nothing at all</button>
       <button type="button" id="sy-1" aria-pressed="false">nonsense characters</button>
       <button type="button" id="sy-2" aria-pressed="false">no probe found</button>
       <button type="button" id="sy-3" aria-pressed="false">banner, then dead</button>
-      <button type="button" id="sy-4" aria-pressed="false">it boots, no light</button>
+      <button type="button" id="sy-4" aria-pressed="false">wrong device</button>
     </div>
     <div class="blksay">
-      <p class="blkp is-on" id="syp-0">No output, no error, nothing. Before suspecting anything clever, suspect the cable: a great many USB cables carry power and no data, and one of those on the probe leaves it powered and carrying nothing at all. Swap it first, every time.</p>
+      <p class="blkp is-on" id="syp-0">No output at all, from a flash that reported success. That is worth something: the kernel is on the chip, so what is left is the three console wires. Check the board's transmit, the probe's receive, and the ground between them. If all three are right, the last entry here is the other candidate.</p>
       <p class="blkp" id="syp-1">Characters arrive but are wrong. That is the two ends disagreeing about speed, or a missing ground. Both are cheap to check and neither looks like what it is &mdash; corrupted text reads as a broken board rather than a wrong number.</p>
-      <p class="blkp" id="syp-2">OpenOCD cannot see the adapter. This is the good failure: it is loud, it happens immediately, and it is about the probe rather than about anything you wrote. Usually the debug three are on the wrong pads or the probe is in the wrong socket.</p>
+      <p class="blkp" id="syp-2">OpenOCD cannot see the adapter. This is the good failure: it is loud, it happens immediately, and it is about the probe rather than about anything you wrote. Swap the probe's USB cable before rewiring anything, because a great many carry power and no data, and one of those leaves the probe powered and invisible. After that, check the debug three are on the right pads.</p>
       <p class="blkp" id="syp-3">The banner appears and then typing does nothing. One wire. The line from probe to board is not carrying, and Figure 4's middle two are where to look.</p>
-      <p class="blkp" id="syp-4">Everything above works and no light comes on. On this board that is a wrong-board problem rather than a wiring one, and the next section is about it.</p>
+      <p class="blkp" id="syp-4">The flash worked, the console three are right, and the terminal still shows nothing. A probe presents more than one interface, and most machines have other serial devices besides. Open the one that appeared when you plugged the probe in, rather than the first name that looked plausible.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice the shape of the advice. Every entry here is a way to make one failure look different from another. The expensive mistake is not being wrong about the cause; it is having four candidates and no way to rule any out.</div>
+  <div class="instrument-note">Notice the shape of the advice. Every entry here is a way to make one failure look different from another. The expensive mistake is not being wrong about the cause; it is having five candidates and no way to rule any out.</div>
 </figure>
 
 <section class="col">
@@ -865,7 +875,8 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
   <p>This is worth reading before you buy anything, because the wireless version of this board is the easier one to find and it is not the board this series is written against.</p>
   <p>The repository has crates for four Pico boards, and none of them is a Pico 2&nbsp;W. The crate with a <code>_w</code> in its name is built on the earlier chip, so it is not a substitute.</p>
   <p id="wpin">The concrete cost is one pin. On a plain Pico 2 the user light is on pin&nbsp;25, and that is the pin this board's directory hands to the light driver. On a Pico 2&nbsp;W the same pin belongs to the radio, and the light is somewhere the kernel cannot reach at all.</p>
-  <p>So everything in this chapter up to the light still applies: it builds, it flashes, it boots, and it talks. What you do not get is the blink, which is the one signal that needs no console.</p>
+  <p id="wscope">Everything this chapter asks of the board works on either one: it builds, it flashes, it boots, and it talks. Nothing above needs that pin, and nothing above lights anything, because an idle kernel with no application loaded drives no light at all.</p>
+  <p>Where it begins to cost you is chapter 1, which follows one write all the way down to that pin, and chapter 3, which watches the panic handler blink it.</p>
   <p id="wtest">Whether that kernel runs correctly on a Pico 2&nbsp;W beyond that has not been tested here, and this page will not pretend otherwise. The chips are the same family and the extra parts simply go unclaimed, so it is plausible. Plausible is not the standard the rest of these pages hold themselves to.</p>
 </section>
 
@@ -902,13 +913,13 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <p class="q-answer" id="qcn">It names the target: the chip's instruction set, no operating system beneath it, and a standard calling convention. Two different laptops building this produce the same path, because the path is about the destination rather than the origin.</p>
   </div>
   <div class="q">
-    <p class="q-ask">You see nothing on the console and no error from anything. What is the first thing to change?</p>
+    <p class="q-ask">OpenOCD says it cannot find the probe. What is the cheapest thing to rule out first?</p>
     <div class="q-opts" role="group" aria-label="Answers to the fourth question">
       <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The USB cable</button>
-      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The baud</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The three debug wires</button>
       <button type="button" class="q-opt" id="qd-2" aria-pressed="false">The board</button>
     </div>
-    <p class="q-answer" id="qdn">The cable. Charge-only USB cables are common, and one on the probe leaves it powered and carrying nothing, which looks exactly like a fault worth debugging for an hour. It costs ten seconds to rule out, so it goes first.</p>
+    <p class="q-answer" id="qdn">The cable, because it costs ten seconds and the others do not. Charge-only USB cables are common, and one on the probe leaves it powered and invisible, which reads as a wiring fault worth an hour. Rewiring is the next cheapest thing to try; replacing the board is the last.</p>
   </div>
 </div>
 

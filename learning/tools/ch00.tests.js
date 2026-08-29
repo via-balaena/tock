@@ -150,8 +150,13 @@ chk("the prompt is not claimed to prove the inbound wire",
 chk("and the chapter says what does test that direction",
     REG["bop-1"].textContent.indexOf("typing something and getting an answer") > -1, true);
 REG["bo-2"].fire("click");
-chk("the other banner is named as expected rather than as a failure",
-    REG["bop-2"].textContent.indexOf("expected") > -1, true);
+// The second pass found this said "instead", and blamed an empty chip. The
+// kernel looks for applications between the banner and the main loop, so the
+// line comes after -- and finding none is quiet.
+chk("the second line is placed after the banner, not instead of it",
+    REG["bop-2"].textContent.indexOf("comes after, not instead") > -1, true);
+chk("and an empty chip is not blamed for it",
+    REG["bop-2"].textContent.indexOf("An empty chip is not what produces it") > -1, true);
 REG["bo-0"].fire("click");
 
 // ---- Figure 6: one machine, or two ----
@@ -182,13 +187,16 @@ chk("and the chapter says Tock's own testing is built the same way",
 // ---- Figure 7: five silences ----
 walk("sy-", "syp-", 5, "figure 7");
 REG["sy-0"].fire("click");
-// Cheapest first. A charge-only cable produces a board that powers up, blinks
-// and cannot be reached, which reads as a fault worth a whole evening.
-chk("the first silence sends the reader at the cable before anything clever",
-    REG["syp-0"].textContent.indexOf("Swap it first") > -1, true);
+// A flash that reported success proves the probe's USB carries data, so the
+// cable cannot be the cause of this one. It belongs two entries down.
+chk("the first silence is scoped to what a successful flash leaves open",
+    REG["syp-0"].textContent.indexOf("three console wires") > -1, true);
 REG["sy-2"].fire("click");
 chk("the probe failure is named as the good one, because it is loud",
     REG["syp-2"].textContent.indexOf("good failure") > -1, true);
+// Cheapest first, and this is the symptom a charge-only cable actually makes.
+chk("and the cable is ruled out here, before any rewiring",
+    REG["syp-2"].textContent.indexOf("Swap the probe's USB cable before rewiring") > -1, true);
 REG["sy-3"].fire("click");
 chk("banner-then-nothing is one wire, and points at the figure with it in",
     REG["syp-3"].textContent.indexOf("One wire") > -1
@@ -230,3 +238,40 @@ REG["qd-1"].fire("click");
 chk("a wrong option is marked wrong and the right one still marked right",
     REG["qd-1"].classList.contains("is-wrong")
       && REG["qd-0"].classList.contains("is-right"), true);
+
+// ---- The goals, and the figure each one is delivered by ----
+// Every other suite in this series pins these; this one did not until the
+// second pass noticed the goals and the glossary were the only unread anchors
+// on the page.
+chk("goal 1, where the built file lands, is delivered by figure 2",
+    REG["goalbox"].textContent.indexOf("where the file it produces ends up") > -1
+      && REG["pap-1"].textContent.length > 40, true);
+chk("goal 3 asks for six connections, which is what figure 4 wires",
+    REG["goalbox"].textContent.indexOf("six connections") > -1, true);
+chk("goal 4, the routes that do nothing quietly, is delivered by figure 3",
+    REG["goalbox"].textContent.indexOf("do nothing on a Mac") > -1
+      && REG["tgp-1"].textContent.indexOf("success status") > -1, true);
+chk("goal 5, telling a dead board from a mis-wired console, is figure 7's job",
+    REG["goalbox"].textContent.indexOf("wrongly wired") > -1
+      && REG["syp-0"].textContent.length > 40, true);
+
+// ---- The glossary ----
+chk("the glossary says a target is never the machine doing the building",
+    REG["words"].textContent.indexOf("never the machine doing the building") > -1, true);
+chk("and defines the compiler, which this chapter leans on five times",
+    REG["words"].textContent.indexOf("turns the source you can read") > -1, true);
+
+// ---- Two anchors the second pass added, and the claims they carry ----
+// The chapter named no serial terminal at all until the second pass; a reader
+// reached "open the probe's serial port" with nothing to open it with.
+chk("a terminal is named, and where the device shows up",
+    REG["term"].textContent.indexOf("screen") > -1
+      && REG["term"].textContent.indexOf("picocom") > -1, true);
+chk("and how to find its name rather than guessing at one",
+    REG["term"].textContent.indexOf("look before and after") > -1, true);
+// The wrong-board difference costs nothing in this chapter, which is what the
+// second pass found the page had never said.
+chk("the Pico 2 W difference is scoped out of this chapter",
+    REG["wscope"].textContent.indexOf("works on either one") > -1, true);
+chk("and the reason no light is expected here is given",
+    REG["wscope"].textContent.indexOf("no application loaded drives no light") > -1, true);

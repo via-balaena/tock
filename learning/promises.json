@@ -1,5 +1,19 @@
 [
   {
+    "id": "ch00-wboard-ch1",
+    "in": "ch00",
+    "says": "Where it begins to cost you is chapter 1, which follows one write all the way down to that pin",
+    "about": "ch01",
+    "kept_by": "GPIO 25"
+  },
+  {
+    "id": "ch00-wboard-ch3",
+    "in": "ch00",
+    "says": "and chapter 3, which watches the panic handler blink it",
+    "about": "ch03",
+    "kept_by": "panic"
+  },
+  {
     "id": "ch00-series-scope",
     "in": "ch00",
     "says": "The rest of this series reads Tock's source and checks every claim against the tree it lives in",
