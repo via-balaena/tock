@@ -1,0 +1,981 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>Getting It Running</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --ground:      #F2F5F3;
+  --surface:     #FFFFFF;
+  --surface-sunk:#E9EEEB;
+  --ink:         #131A1D;
+  --ink-soft:    #5C6A70;
+  --ink-faint:   #616D72;
+  --rule:        #D3DBD8;
+  --rule-strong: #7D918A;
+  --accent:      #0E6B70;
+  --accent-soft: #E0EDEC;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0D1215;
+    --surface:     #141C1F;
+    --surface-sunk:#0A0F11;
+    --ink:         #E3EAE7;
+    --ink-soft:    #93A0A6;
+    --ink-faint:   #77858C;
+    --rule:        #252F34;
+    --rule-strong: #556A73;
+    --accent:      #43B6BA;
+    --accent-soft: #113034;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0D1215;
+  --surface:     #141C1F;
+  --surface-sunk:#0A0F11;
+  --ink:         #E3EAE7;
+  --ink-soft:    #93A0A6;
+  --ink-faint:   #77858C;
+  --rule:        #252F34;
+  --rule-strong: #556A73;
+  --accent:      #43B6BA;
+  --accent-soft: #113034;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+a { color: var(--accent); text-underline-offset: 3px; }
+
+p { margin: 0; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+/* ---------- the reading order ----------
+   Seven chapters that were seven islands. Until this, no page linked to any
+   other, and the cover was the only thing holding the order -- so a reader who
+   arrived at a chapter directly had no way on and no way back. The running
+   head carries the way back; the card at the foot carries the way on.
+
+   Every href here is relative, so a clone reads exactly as a static host does.
+   mkindex.py is what rewrites them for a host where neither path exists. */
+
+/* The eyebrow every chapter already had, and under it the way back to the
+   cover -- wrapped, so the two sit closer together than the masthead's own
+   1.1rem gap would put them. */
+.runhead {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.runback {
+  align-self: flex-start;
+  font-family: var(--display);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+.runback:hover, .runback:focus-visible {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* The next chapter's title, which was unlinked text for seven chapters. The
+   arrow is generated rather than typed, so it cannot be read out as a word. */
+.next h3 a { color: inherit; text-decoration: none; }
+/* A non-breaking space, not a plain one: at phone width the plain
+   space is a break opportunity, and the arrow wrapped onto a line of
+   its own under the title. */
+.next h3 a::after { content: "\00A0\2192"; color: var(--hot); }
+.next h3 a:hover, .next h3 a:focus-visible { color: var(--accent); }
+
+/* The two smaller moves, under the card: back one chapter, or out to the
+   cover. Exactly two items, placed by `space-between`, so the gap only
+   applies when they wrap. */
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: .3rem;
+  font-family: var(--display);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.pager a { color: var(--ink-soft); text-decoration: none; }
+.pager a:hover, .pager a:focus-visible { color: var(--accent); }
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Beginner scaffolding. Everything below exists to lower reading cost:
+   a word defined where it is first used, a stated goal, an instruction above
+   each figure, a guess before each reveal, and a way to check yourself after.
+   --------------------------------------------------------------------------- */
+
+/* A word being defined, right where the reader meets it. */
+dfn {
+  font-style: normal;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+/* What the reader will be able to do. Stated before the work, not after. */
+.goals {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.goals h2 {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.goals ul { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals .cost {
+  font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem;
+}
+
+/* An imperative naming the control, immediately above the figure it drives. */
+.dothis {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--accent);
+}
+/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+   flex item of every inline child, so an emphasis or a code span inside one
+   of these lines came out with a half-rem gap on each side and the
+   punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
+   orphaned full stop since it was published. Tag names are spelled out here
+   rather than written as markup, because the tag-balance check counts what a
+   stylesheet comment says too. The arrow carries its own spacing instead. */
+.dothis::before {
+  content: "\2192";
+  font-weight: 700;
+  margin-right: .5rem;
+}
+
+/* Check yourself. Question visible, answer one click away. */
+.selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way every panel on this
+   page is, so a reader with no scripting gets all four answers rather than
+   none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+/* The words, collected. */
+.glossary {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: .55rem 1.1rem;
+  margin: 0;
+  font-size: .97rem;
+  line-height: 1.55;
+}
+.glossary dt {
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: .12rem;
+}
+.glossary dd { margin: 0; color: var(--ink-soft); }
+
+
+/* The nine-word list at the top. Terms are short here, so the two columns
+   line up at the top of each row rather than centring. */
+.glossary.cast { align-items: start; }
+
+/* ---------- A row of buttons over stacked panels: Figures 1, 5 and 6 ---------- */
+.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
+/* Names of parts and of symptoms, not prose, so they keep their own casing. */
+.blk button {
+  font-family: var(--mono); font-size: .82rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.blk button[aria-pressed="true"] {
+  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
+}
+.blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
+.blkp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.blkp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+/* Six explanations at once is a wall. The script shows one; with no scripting
+   none of that runs and all six stay readable. */
+.blkp.is-off { display: none; }
+.blkp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- A label beside a name: Figures 2, 3 and 4 ---------- */
+.vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
+.vt button {
+  display: grid; grid-template-columns: 4.6rem 1fr; gap: .8rem;
+  text-align: left; width: 100%;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .4rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.vt button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.vt-at { color: var(--hot); }
+.vtsay { display: flex; flex-direction: column; gap: .45rem; }
+.vtp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
+.vtp.is-off { display: none; }
+.vtp b { font-family: var(--mono); font-weight: 500; }
+
+@media (max-width: 30rem) {
+  .vt button { grid-template-columns: 1fr; gap: .1rem; }
+}
+
+/* A verdict on a route, carried next to the route rather than in prose about
+   it, because the whole point of Figure 3 is that two of the four are dead
+   ends on a Mac and the Makefile does not say so. */
+.verdict {
+  font-family: var(--display);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .12rem .4rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.verdict.yes { color: var(--hot-ink); background: var(--hot-fill); }
+.verdict.no { color: var(--surface); background: var(--danger); }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="runhead">
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 0</p>
+    <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
+  </div>
+  <h1>Getting It Running</h1>
+  <p class="standfirst">The rest of this series reads Tock's source and checks every claim against the tree it lives in. This chapter is the twenty minutes before that: putting Tock on a chip you can hold, and getting it to say one sentence back to you.</p>
+  <noscript>
+    <style>.dothis, .ifjs { display: none; }</style>
+    <p class="noscript-note">JavaScript appears to be off. Every explanation
+    this chapter relies on is in the prose and the panels below each figure,
+    and the lines telling you to click things are hidden rather than left
+    pointing at nothing.</p>
+  </noscript>
+</header>
+
+<section class="col">
+  <div class="goals" id="goalbox">
+    <h2>What you'll be able to do at the end</h2>
+    <ul>
+      <li>Build Tock for this <dfn>board</dfn>, and say where the file it produces ends up.</li>
+      <li>Put that file on the chip with one command, and say what the command is talking to.</li>
+      <li>Wire three signals, and read the one line that means the <dfn>kernel</dfn> is up.</li>
+      <li>Name which of the four flashing routes in this board's Makefile will do nothing on a Mac, and why it does nothing quietly.</li>
+      <li>Tell a dead board apart from a wrongly wired <dfn>console</dfn>, which produce the same silence.</li>
+    </ul>
+      <p class="cost">Plan on forty minutes, and most of it is wiring. Nothing in this chapter is assumed from the rest of the series, because there is no chapter before it. You need the hardware in the first figure and a machine you can install Rust on.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>Thirteen words, before we start</h2>
+  <p>Each is one sentence now and used in context below. None is hard, and several are ordinary words being used narrowly.</p>
+</section>
+
+<div class="col">
+  <dl class="glossary cast" id="words">
+    <dt><dfn>board</dfn></dt><dd>The small circuit board with the chip on it. Also, in this repository, the code that says which chip and which parts one product has.</dd>
+    <dt><dfn>kernel</dfn></dt><dd>The program that starts first and stays in charge of the machine. Tock is one.</dd>
+    <dt><dfn>flash</dfn></dt><dd>Memory that keeps what it holds when the power is off. Also the verb for writing it.</dd>
+    <dt><dfn>pin</dfn></dt><dd>One of the numbered contacts along the edge of the board. Each is a wire the chip can drive or read.</dd>
+    <dt><dfn>compiler</dfn></dt><dd>The program that turns the source you can read into the code a chip can run.</dd>
+    <dt><dfn>crate</dfn></dt><dd>A Rust package: one unit the compiler builds at a time.</dd>
+    <dt><dfn>toolchain</dfn></dt><dd>The compiler and the pieces around it, pinned here to one exact version so that everyone builds the same thing.</dd>
+    <dt><dfn>target</dfn></dt><dd>The machine being built <em>for</em>, written as a triple. It is never the machine doing the building.</dd>
+    <dt><dfn>ELF</dfn></dt><dd>The file a compiler emits: the program, plus a description of where each part of it belongs.</dd>
+    <dt><dfn>UF2</dfn></dt><dd>A different file shape, designed to survive being copied onto a drive. The chip's built-in loader accepts it.</dd>
+    <dt><dfn>probe</dfn></dt><dd>A small adapter that turns a USB port into wires which can halt another chip and write its flash.</dd>
+    <dt><dfn>console</dfn></dt><dd>The serial line the kernel prints to, and the prompt it offers you at the other end of it.</dd>
+    <dt><dfn>baud</dfn></dt><dd>Bits per second on a serial line. Both ends have to agree, or what arrives is unreadable.</dd>
+  </dl>
+</div>
+
+<section class="col">
+  <h2>Why this chapter exists</h2>
+  <p>Everything after this reads source. That works from an armchair, and for five of the seven chapters that follow you never have to touch anything.</p>
+  <p>But the last chapter closes by telling you to stop reading and run a command, and until now the series never said how to get to the point where that command works. This chapter is that gap, filled in.</p>
+  <p>It is also worth doing for its own sake. A claim about a kernel you have watched boot is a different kind of claim from one you have only read about, and the difference shows up the first time something does not work.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">What sits between your editor and the chip</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each part. The second is the one that turns a forty-minute job into a one-command job.</p>
+    <div class="blk" role="group" aria-label="The parts this chapter uses">
+      <button type="button" id="pt-0" aria-pressed="true">the board</button>
+      <button type="button" id="pt-1" aria-pressed="false">the probe</button>
+      <button type="button" id="pt-2" aria-pressed="false">three SWD wires</button>
+      <button type="button" id="pt-3" aria-pressed="false">three console wires</button>
+      <button type="button" id="pt-4" aria-pressed="false">your machine</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="ptp-0">A Raspberry Pi Pico 2. The chip on it is an RP2350, and this repository has a directory named for exactly that board, which is what everything below builds. A Pico 2&nbsp;W is a different board and there is a section about it near the end.</p>
+      <p class="blkp" id="ptp-1">A Raspberry Pi Debug Probe. It is the part you could skip, and skipping it costs more than it saves. Without one you hold a button, replug the board, and copy a file by hand for every change.</p>
+      <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the three pads on the far edge of the board. These carry the flashing. They are marked and they go straight across, so there is nothing to get backwards.</p>
+      <p class="blkp" id="ptp-3">Three wires from the probe's serial connector to two pins on the board, plus a ground. These carry the talking, and unlike the debug three, two of them cross over. Figure 4 is that crossing.</p>
+      <p class="blkp" id="ptp-4">Anything that runs Rust. There is no board-specific software to install for the route this chapter takes: no converter, no vendor tool. That is not true of the other three, and Figure 3 is about why.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice how short the list is. The reason to name it at all is that the obvious shopping list is wrong in one direction. People buy the board and skip the probe, then meet every problem in this chapter at once, with no way to tell them apart.</div>
+</figure>
+
+<section class="col">
+  <h2>One command builds it</h2>
+  <p>Tock pins its toolchain in a file at the top of the tree, so there is no version to choose and nothing to decide. At the commit this chapter is written against, <code>rust-toolchain.toml</code> asks for the nightly of 21&nbsp;July&nbsp;2026, and lists the targets it wants installed alongside it.</p>
+  <p>Rust reads that file on its own. The first build in a fresh clone spends a while fetching that toolchain, and after that:</p>
+  <pre>$ cd boards/raspberry_pi_pico_2
+$ make
+    Finished `release` profile [optimized + debuginfo] target(s) in 5.64s
+   text    data     bss     dec     hex filename
+  69164       0   19020   88184   15878 raspberry_pi_pico_2</pre>
+  <p>That is the whole build, and the number is real: seven seconds of wall time on an Apple laptop, of which five and a half are the compiler. A kernel is a small program, and this is one of the quiet pleasures of the work.</p>
+  <p>The three numbers are worth a glance even now. Around 69&nbsp;kB of code, no initialised data, and 19&nbsp;kB of space the kernel wants at runtime for variables that start out empty.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">Where the file lands, one piece at a time</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each part of the path. The second is the only part that is about the chip rather than about your machine.</p>
+    <div class="vt" role="group" aria-label="The parts of the output path">
+      <button type="button" id="pa-0" aria-pressed="true"><span class="vt-at">target/</span><span>everything built</span></button>
+      <button type="button" id="pa-1" aria-pressed="false"><span class="vt-at">thumbv8m&hellip;</span><span>the target triple</span></button>
+      <button type="button" id="pa-2" aria-pressed="false"><span class="vt-at">release/</span><span>optimised</span></button>
+      <button type="button" id="pa-3" aria-pressed="false"><span class="vt-at">&hellip;.elf</span><span>the kernel itself</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="pap-0">One directory at the top of the tree holds everything every build produces, for every board. Deleting it costs you nothing but the time to build again.</p>
+      <p class="vtp" id="pap-1">The full name is <b>thumbv8m.main-none-eabi</b>, and it is set for this board in its own <code>.cargo/config.toml</code>. Read it as: the Arm instruction set this chip speaks, no operating system underneath, and a standard calling convention. Your laptop is none of those things, which is the point.</p>
+      <p class="vtp" id="pap-2">The optimised build rather than the debugging one. Tock is built this way by default because an unoptimised kernel does not fit comfortably and runs slowly enough to change behaviour.</p>
+      <p class="vtp" id="pap-3">The kernel, as an ELF: the code, and a description of which addresses each part of it is meant to occupy. Everything in the next figure is a different answer to the question of how those bytes get onto the chip.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that nothing here is named after your computer. The same command on a different machine writes the same path, because the path is named for the chip being built for rather than the one doing the building.</div>
+</figure>
+
+<section class="col">
+  <h2>Four ways to flash, and two of them are quiet about failing</h2>
+  <p>This board's Makefile offers four routes onto the chip. They are not four flavours of one thing: two drive the probe, two produce a UF2 and copy it to a drive that the board pretends to be when you hold its button down.</p>
+  <p>The split that matters is not which is more modern. It is that the two copying routes check for a folder, and when that folder is not there they print a suggestion and exit successfully. On a Mac that folder is never there.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">The four targets, and what each does on a Mac</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each target. The first is the one this chapter uses; the two marked in red are the ones that will appear to work.</p>
+    <div class="vt" role="group" aria-label="The four flashing targets in this board's Makefile">
+      <button type="button" id="tg-0" aria-pressed="true"><span class="vt-at">:23</span><span>flash-openocd <span class="verdict yes">works</span></span></button>
+      <button type="button" id="tg-1" aria-pressed="false"><span class="vt-at">:27</span><span>flash <span class="verdict no">silent</span></span></button>
+      <button type="button" id="tg-2" aria-pressed="false"><span class="vt-at">:32</span><span>program <span class="verdict no">silent</span></span></button>
+      <button type="button" id="tg-3" aria-pressed="false"><span class="vt-at">:42</span><span>program-openocd <span class="verdict yes">works</span></span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="tgp-0">Kernel only, down the probe. It hands the ELF straight to OpenOCD, which writes it, reads it back to check, resets the board and exits. No button, no drive, no converter, and nothing to install for the board itself.</p>
+      <p class="vtp" id="tgp-1">Kernel only, as a UF2 copied to the drive. It needs a separate tool to make the UF2 first. Then it tests whether a folder exists and, if it does not, prints <b>Please edit the BOOTSEL_FOLDER variable</b> and stops &mdash; with a success status, so nothing downstream notices.</p>
+      <p class="vtp" id="tgp-2">The same copy, with an application built into the image beside the kernel. It fails loudly if you give it no application, which is good, and then fails quietly in exactly the way above if you do.</p>
+      <p class="vtp" id="tgp-3">Kernel plus an application, down the probe. This is the one the last chapter of this series sends you to, and it is the right one. It needs a compiled application to hand it, which is a later problem than this.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice what the quiet failure costs. The folder it looks for is under <code>/run/media</code>, which is a Linux path; a Mac mounts under <code>/Volumes</code>. So on a Mac the copy never happens, the command reports success, and the board keeps running whatever it held before. That reads exactly like a kernel that built fine and does nothing.</div>
+</figure>
+
+<section class="col">
+  <h2>Getting it onto the chip</h2>
+  <p>With the probe wired to the three pads, one command does it:</p>
+  <pre>$ make flash-openocd</pre>
+  <p>What that runs is OpenOCD, an ordinary program on your machine that speaks to the probe over USB, and through it to the chip. The board's own configuration for it is two lines long: use a standard debug adapter, and the chip is an RP2350.</p>
+  <p>The command writes the kernel, reads it back to confirm it landed, resets the board and exits. If it cannot find the probe it says so and stops, which is the failure you want &mdash; loud, immediate, and about the thing that is actually wrong.</p>
+  <p>One aside worth having early: the machine that builds and the machine holding the probe do not have to be the same one. Splitting them is a real setup, and then what crosses between the two is one file.</p>
+</section>
+
+<section class="col">
+  <h2>Making it talk</h2>
+  <p>The board is now running Tock and telling you nothing, because nothing is listening. The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
+  <p>Which pins is not a convention to look up, it is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">Six wires, and the two that cross</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each connection. The middle two are the ones people get backwards, and getting them backwards produces silence rather than an error.</p>
+    <div class="vt" role="group" aria-label="The wiring between probe and board">
+      <button type="button" id="wr-0" aria-pressed="true"><span class="vt-at">debug</span><span>three wires, straight across</span></button>
+      <button type="button" id="wr-1" aria-pressed="false"><span class="vt-at">TX &rarr; 1</span><span>probe transmit to board pin 1</span></button>
+      <button type="button" id="wr-2" aria-pressed="false"><span class="vt-at">RX &rarr; 0</span><span>probe receive to board pin 0</span></button>
+      <button type="button" id="wr-3" aria-pressed="false"><span class="vt-at">ground</span><span>the one people leave out</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the three pads on the far edge of the board. Both ends are labelled with the same three names and they join like to like. This set carries flashing only, and says nothing to you.</p>
+      <p class="vtp" id="wrp-1">The probe's transmit joins the board's <em>receive</em>, which is pin&nbsp;1. This is the wire that carries what you type into the running kernel.</p>
+      <p class="vtp" id="wrp-2">The probe's receive joins the board's <em>transmit</em>, which is pin&nbsp;0. This is the wire that carries everything the kernel prints, including the one line you are about to look for.</p>
+      <p class="vtp" id="wrp-3">A shared ground between the two. Without it the two sides have no agreement about what a one and a zero are, and the symptom is not silence but nonsense &mdash; occasional characters, mostly wrong.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice why the crossing is not arbitrary. Every serial connector is labelled from the point of view of the thing it is attached to. Two devices that both transmit on the wire they call transmit would be shouting at each other and listening to nobody.</div>
+</figure>
+
+<section class="col">
+  <h2>The line that means it worked</h2>
+  <p>Open the probe's serial port at 115200 and reset the board. What you are waiting for is one line, and the kernel prints it at the end of its own setup, immediately before it starts running anything else:</p>
+  <pre>Initialization complete. Enter main loop
+tock$</pre>
+  <p>That is the whole success signal. The first line comes from a single call near the bottom of this board's start-up code, and its only job is to be the thing you are reading now. The second is a prompt, and it means a great deal more than it looks like.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">What that prompt is, and what it will tell you</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each. The last is the one to try first, and it answers a question you will have repeatedly.</p>
+    <div class="blk" role="group" aria-label="What the console prompt offers">
+      <button type="button" id="bo-0" aria-pressed="true">the banner</button>
+      <button type="button" id="bo-1" aria-pressed="false">the prompt</button>
+      <button type="button" id="bo-2" aria-pressed="false">the other banner</button>
+      <button type="button" id="bo-3" aria-pressed="false">list</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="bop-0">Printed once, at the end of setting up. Seeing it proves three separate things at once: the kernel built, it landed on the chip, and your two console wires are the right way round. That is a lot of evidence from one line.</p>
+      <p class="blkp" id="bop-1">A prompt from a piece of the kernel that exists to be talked to. It takes typed commands, and its presence proves the wire from probe to board carries as well &mdash; something the banner alone cannot tell you.</p>
+      <p class="blkp" id="bop-2">There is a second line the kernel can print here instead, saying it could not load processes. It is not a failure of anything in this chapter: it means the kernel is fine and there is no application on the chip yet, which at this point is expected.</p>
+      <p class="blkp" id="bop-3">Type it and the console lists what is loaded and running. Early on it is how you find out whether the thing you flashed is the thing that is actually running, and the answer is surprisingly often no.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice which of these you get for free. The banner needs one wire; the prompt needs the other. If you see the banner and typing does nothing, you have not got a broken board &mdash; you have three wires right and one wrong.</div>
+</figure>
+
+<section class="col">
+  <h2>When nothing happens</h2>
+  <p>The hard part of this chapter is not any single step. It is that several different failures produce the same nothing, and without a way to separate them you end up changing two things at once and learning nothing from either.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Five silences, and what tells them apart</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each symptom. The first is the one that wastes whole evenings, and the cause is almost never the board.</p>
+    <div class="blk" role="group" aria-label="Symptoms and what separates them">
+      <button type="button" id="sy-0" aria-pressed="true">nothing at all</button>
+      <button type="button" id="sy-1" aria-pressed="false">nonsense characters</button>
+      <button type="button" id="sy-2" aria-pressed="false">no probe found</button>
+      <button type="button" id="sy-3" aria-pressed="false">banner, then dead</button>
+      <button type="button" id="sy-4" aria-pressed="false">it boots, no light</button>
+    </div>
+    <div class="blksay">
+      <p class="blkp is-on" id="syp-0">No output, no error, nothing. Before suspecting anything clever, suspect the cable: a great many USB cables carry power and no data, and a board on one of them powers up perfectly and cannot be talked to at all. Swap it first, every time.</p>
+      <p class="blkp" id="syp-1">Characters arrive but are wrong. That is the two ends disagreeing about speed, or a missing ground. Both are cheap to check and neither looks like what it is &mdash; corrupted text reads as a broken board rather than a wrong number.</p>
+      <p class="blkp" id="syp-2">OpenOCD cannot see the adapter. This is the good failure: it is loud, it happens immediately, and it is about the probe rather than about anything you wrote. Usually the debug three are on the wrong pads or the probe is in the wrong socket.</p>
+      <p class="blkp" id="syp-3">The banner appears and then typing does nothing. One wire. The line from probe to board is not carrying, and Figure 4's middle two are where to look.</p>
+      <p class="blkp" id="syp-4">Everything above works and no light comes on. On this board that is a wrong-board problem rather than a wiring one, and the next section is about it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice the shape of the advice. Every entry here is a way to make one failure look different from another. The expensive mistake is not being wrong about the cause; it is having four candidates and no way to rule any out.</div>
+</figure>
+
+<section class="col">
+  <h2 id="wboard">If the board on your desk is a Pico 2 W</h2>
+  <p>This is worth reading before you buy anything, because the wireless version of this board is the easier one to find and it is not the board this series is written against.</p>
+  <p>The repository has crates for four Pico boards, and none of them is a Pico 2&nbsp;W. The crate with a <code>_w</code> in its name is built on the earlier chip, so it is not a substitute.</p>
+  <p id="wpin">The concrete cost is one pin. On a plain Pico 2 the user light is on pin&nbsp;25, and that is the pin this board's directory hands to the light driver. On a Pico 2&nbsp;W the same pin belongs to the radio, and the light is somewhere the kernel cannot reach at all.</p>
+  <p>So everything in this chapter up to the light still applies: it builds, it flashes, it boots, and it talks. What you do not get is the blink, which is the one signal that needs no console.</p>
+  <p id="wtest">Whether that kernel runs correctly on a Pico 2&nbsp;W beyond that has not been tested here, and this page will not pretend otherwise. The chips are the same family and the extra parts simply go unclaimed, so it is plausible. Plausible is not the standard the rest of these pages hold themselves to.</p>
+</section>
+
+<section class="col">
+  <h2>Check yourself</h2>
+</section>
+
+<div class="col selfcheck">
+  <div class="q">
+    <p class="q-ask"><code>make flash</code> prints a message about a variable and exits without an error. What happened?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the first question">
+      <button type="button" class="q-opt" id="qa-0" aria-pressed="false">The build failed, and the message is the reason</button>
+      <button type="button" class="q-opt" id="qa-1" aria-pressed="false">It built and converted the file, then found no folder to copy it to</button>
+      <button type="button" class="q-opt" id="qa-2" aria-pressed="false">The board was not in the right mode</button>
+    </div>
+    <p class="q-answer" id="qan">It built. The copy is the only step that did not happen, and it did not happen because the folder it checks for is a Linux path that a Mac never has. The exit status is success, so nothing after it notices, and the board goes on running whatever it held before.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">The banner appears on the console, but typing <code>list</code> does nothing at all. What is wrong?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the second question">
+      <button type="button" class="q-opt" id="qb-0" aria-pressed="false">The kernel crashed just after printing it</button>
+      <button type="button" class="q-opt" id="qb-1" aria-pressed="false">The baud is wrong</button>
+      <button type="button" class="q-opt" id="qb-2" aria-pressed="false">One console wire, the one carrying toward the board</button>
+    </div>
+    <p class="q-answer" id="qbn">One wire. The banner arriving proves the board's transmit and the shared ground are both good, and proves the kernel is up. The only thing left untested is the other direction, which is the probe's transmit to the board's receive.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">Why does the output path contain <code>thumbv8m.main-none-eabi</code> rather than something naming your computer?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the third question">
+      <button type="button" class="q-opt" id="qc-0" aria-pressed="false">It names the machine the code will run on, which is the chip</button>
+      <button type="button" class="q-opt" id="qc-1" aria-pressed="false">It is the version of the compiler</button>
+      <button type="button" class="q-opt" id="qc-2" aria-pressed="false">It names the board directory</button>
+    </div>
+    <p class="q-answer" id="qcn">It names the target: the chip's instruction set, no operating system beneath it, and a standard calling convention. Two different laptops building this produce the same path, because the path is about the destination rather than the origin.</p>
+  </div>
+  <div class="q">
+    <p class="q-ask">You see nothing on the console and no error from anything. What is the first thing to change?</p>
+    <div class="q-opts" role="group" aria-label="Answers to the fourth question">
+      <button type="button" class="q-opt" id="qd-0" aria-pressed="false">The USB cable</button>
+      <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The baud</button>
+      <button type="button" class="q-opt" id="qd-2" aria-pressed="false">The board</button>
+    </div>
+    <p class="q-answer" id="qdn">The cable. Charge-only USB cables are common, and a board powered through one comes up and blinks and cannot be reached, which looks exactly like a fault worth debugging for an hour. It costs ten seconds to rule out, so it goes first.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>What you can say now</h2>
+  <p>You have a board running a kernel you built, and a line of text proving it. That is the ground everything after this stands on: when a later chapter says the kernel does something, you have somewhere to go and watch it happen.</p>
+  <p>You also have the beginnings of a habit this series cares about more than any particular fact. Two of the four ways to flash this board fail without saying so, and the way you find that out is by checking what a command did rather than what it reported.</p>
+</section>
+
+<div class="col next">
+  <p class="eyebrow forward">Next</p>
+  <h3 style="margin-top:0"><a href="../ch01-everything-is-memory/">Chapter 1 &mdash; Everything Is Memory</a></h3>
+  <p>The board in front of you is now running something. Chapter 1 asks what the smallest thing it can do actually is. The answer is one instruction putting a number at a numbered location, followed down to a wire changing voltage, and to the reason Tock has to exist.</p>
+  <nav class="pager" aria-label="Chapter navigation">
+    <a href="../">&larr;&nbsp;Contents</a>
+  </nav>
+</div>
+
+<section class="col sources">
+  <h3>Everything above, checked against source</h3>
+  <p>Every claim on this page about what a file says comes from the Tock tree at commit <code>0caaac0f0</code>. The build output in the second section is a real run on an Apple laptop, not a transcription.</p>
+  <ul>
+    <li>The pinned toolchain and the target list installed with it &mdash; <code>rust-toolchain.toml</code>:6&ndash;15</li>
+    <li>The target this board builds for &mdash; <code>boards/raspberry_pi_pico_2/.cargo/config.toml</code>:11</li>
+    <li>The four flashing targets, in order &mdash; <code>boards/raspberry_pi_pico_2/Makefile</code>:23, :27, :32 and :42</li>
+    <li>The folder the two copying routes test for, and its Linux path &mdash; the same file, :13, tested at :30 and :40</li>
+    <li>The message those routes print instead of copying, and that they exit successfully after it &mdash; the same file, :30 and :40</li>
+    <li>The two routes that need a separate converter to make a UF2 &mdash; the same file, :29 and :39</li>
+    <li><code>program</code> refusing to run at all with no application given &mdash; the same file, :34&ndash;36</li>
+    <li>What <code>flash-openocd</code> actually runs: write, verify, reset, exit &mdash; the same file, :25</li>
+    <li>The whole of this board's OpenOCD configuration, which is two lines &mdash; <code>boards/raspberry_pi_pico_2/openocd-picoprobe.cfg</code>:5&ndash;6</li>
+    <li>Pin&nbsp;0 transmitting and pin&nbsp;1 receiving, and both being handed to the serial hardware &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:284&ndash;287</li>
+    <li>The console running at 115200 &mdash; the same file, :329</li>
+    <li>The banner, and where in start-up it is printed &mdash; the same file, :439</li>
+    <li>The other banner, printed when no application loads &mdash; the same file, :468</li>
+    <li>The tree having four Pico directories and no Pico 2&nbsp;W &mdash; <code>boards/</code> at that commit</li>
+    <li>Pin&nbsp;25 being the light this board hands to the light driver &mdash; the same file, :385</li>
+    <li>The build being about seven seconds of wall time, of which 5.64 are the compiler &mdash; measured on this machine, and the size line quoted with it is that run's own output</li>
+  </ul>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
+</section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* One group of buttons, one group of panels, same index. Every figure on
+     this page is that shape, so it is written once. */
+  function group(btn, panel, n, cls, onCls, offCls, extra) {
+    function pick(k) {
+      var i, b, p;
+      for (i = 0; i < n; i++) {
+        b = document.getElementById(btn + i);
+        p = document.getElementById(panel + i);
+        b.setAttribute("aria-pressed", i === k ? "true" : "false");
+        if (cls) { b.classList.toggle(cls, i === k); }
+        p.classList.toggle(onCls, i === k);
+        if (offCls) { p.classList.toggle(offCls, i !== k); }
+      }
+      if (extra) { extra(k); }
+    }
+    var i, opening = 0;
+    for (i = 0; i < n; i++) {
+      (function (k) {
+        document.getElementById(btn + k)
+          .addEventListener("click", function () { pick(k); });
+      }(i));
+      if (document.getElementById(btn + i)
+            .getAttribute("aria-pressed") === "true") { opening = i; }
+    }
+    // The markup ships every panel showing, so a reader with no JavaScript
+    // meets all of them rather than one. Putting the rest away is this
+    // function's first job, not the markup's.
+    pick(opening);
+  }
+
+  /* ---------------- Figure 1: the parts ---------------- */
+  group("pt-", "ptp-", 5, "", "is-on", "is-off");
+
+  /* ---------------- Figure 2: the output path ---------------- */
+  group("pa-", "pap-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 3: the four targets ---------------- */
+  group("tg-", "tgp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 4: the wiring ---------------- */
+  group("wr-", "wrp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 5: the console ---------------- */
+  group("bo-", "bop-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 6: five silences ---------------- */
+  group("sy-", "syp-", 5, "", "is-on", "is-off");
+
+  /* ---------------- Check yourself ----------------
+     The answer text is in the markup; this only reveals it and marks which
+     option was right, so nothing a reader needs is stored in here. */
+  (function () {
+    function quiz(prefix, n, right, answer) {
+      var i;
+      // Same rule: the answer is in the markup, visible, and script is what
+      // hides it until the reader has committed to a guess.
+      document.getElementById(answer).classList.add("is-off");
+      for (i = 0; i < n; i++) {
+        (function (k) {
+          document.getElementById(prefix + k)
+            .addEventListener("click", function () {
+              var j, b;
+              for (j = 0; j < n; j++) {
+                b = document.getElementById(prefix + j);
+                b.setAttribute("aria-pressed", j === k ? "true" : "false");
+                b.classList.toggle("is-right", j === right);
+                b.classList.toggle("is-wrong", j === k && k !== right);
+              }
+              document.getElementById(answer).classList.remove("is-off");
+            });
+        }(i));
+      }
+    }
+    quiz("qa-", 3, 1, "qan");
+    quiz("qb-", 3, 2, "qbn");
+    quiz("qc-", 3, 0, "qcn");
+    quiz("qd-", 3, 0, "qdn");
+  }());
+
+}());
+</script>

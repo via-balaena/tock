@@ -738,8 +738,16 @@ def citation_chain_checks(html):
 
     problems, lengths, current, seen = [], {}, None, {}
     for item in re.findall(r"<li>(.*?)</li>", block.group(1), re.S):
+        # The extensions this series actually cites, plus `Makefile`, which has
+        # none. A path shape missing from here is not merely unchecked: it is
+        # never recognised as a path at all, so `current` stays on whatever was
+        # named before it and every line number under it is resolved against
+        # the wrong file. Chapter 0 cites a Makefile and an OpenOCD config, and
+        # both silently measured themselves against a 13-line `config.toml`.
         for token in re.finditer(
-                r"<code>([A-Za-z0-9_./-]+\.(?:rs|md|s|toml))</code>|:(\d+)", item):
+                r"<code>([A-Za-z0-9_./-]+\.(?:rs|md|s|toml|cfg|ld|json)"
+                r"|(?:[A-Za-z0-9_./-]*/)?Makefile(?:\.common)?)</code>|:(\d+)",
+                item):
             if token.group(1):
                 named = token.group(1)
                 # An abbreviation of a path this list has already given in full.
@@ -2177,6 +2185,12 @@ def behavior_checks(html, tests_path):
 # chapter directory prefix, because chapter 2 inherits chapter 1's vocabulary
 # and should not have to redefine it.
 MUST_DEFINE = {
+    # Chapter 0 stands before the chapter that defines the vocabulary from
+    # nothing, so it can lean on none of it and carries its own list.
+    "ch00": [
+        "board", "compiler", "console", "crate", "ELF", "flash", "kernel",
+        "pin", "probe", "target", "toolchain", "UF2",
+    ],
     "ch01": [
         "address", "atomic", "bank", "base address", "bit", "byte", "core",
         "crate", "disassembler", "flash", "GPIO", "hexadecimal", "instruction",
@@ -2648,9 +2662,11 @@ def vocabulary_checks(root, chapters):
 
 LEDGER = os.path.join(ROOT, "promises.json")
 
-PLANNED_CHAPTERS = ["ch%02d" % n for n in range(1, 8)]
+# Chapter 0 was added after the other seven, as the hands-on chapter the
+# series had been assuming rather than teaching.
+PLANNED_CHAPTERS = ["ch%02d" % n for n in range(0, 8)]
 
-WORD_NUMBERS = {"one": 1, "two": 2, "three": 3, "four": 4,
+WORD_NUMBERS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
                 "five": 5, "six": 6, "seven": 7}
 
 # Deliberately loose. A regex clever enough to tell "chapter 5 covers this"
@@ -2659,7 +2675,7 @@ WORD_NUMBERS = {"one": 1, "two": 2, "three": 3, "four": 4,
 # Over-matching costs one ledger line and a written reason; under-matching
 # costs a broken promise nobody sees.
 PROMISE_PAT = re.compile(
-    r"\b(chapters?\s+(?:\d+|one|two|three|four|five|six|seven)"
+    r"\b(chapters?\s+(?:\d+|zero|one|two|three|four|five|six|seven)"
     r"|later\b|you will (?:see|meet)\b|for now\b|not yet\b"
     r"|next chapter\b|rest of this series\b)", re.I)
 

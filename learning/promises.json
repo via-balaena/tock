@@ -1,5 +1,40 @@
 [
   {
+    "id": "ch00-series-scope",
+    "in": "ch00",
+    "says": "The rest of this series reads Tock's source and checks every claim against the tree it lives in",
+    "about": null,
+    "why": "Describing what the other chapters do, which is true of all seven already written. It promises nothing this chapter owes anybody."
+  },
+  {
+    "id": "ch00-app-later",
+    "in": "ch00",
+    "says": "which is a later problem than this",
+    "about": null,
+    "why": "Later than this chapter, not later in the series: flashing an application needs one compiled, and nothing in chapter 0 depends on ever doing it."
+  },
+  {
+    "id": "ch00-ground-later",
+    "in": "ch00",
+    "says": "when a later chapter says the kernel does something",
+    "about": null,
+    "why": "A reason to have hardware at all, said about the chapters generally rather than about any one of them."
+  },
+  {
+    "id": "ch00-next-card-ch1",
+    "in": "ch00",
+    "says": "Chapter 1 - Everything Is Memory",
+    "about": "ch01",
+    "kept_by": "address"
+  },
+  {
+    "id": "ch00-next-hook-ch1",
+    "in": "ch00",
+    "says": "Chapter 1 asks what the smallest thing it can do actually is",
+    "about": "ch01",
+    "kept_by": "instruction"
+  },
+  {
     "id": "ch01-registers-everywhere",
     "in": "ch01",
     "says": "on nearly every chip you will meet",

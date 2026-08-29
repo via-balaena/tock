@@ -20,8 +20,15 @@ can write any address -- and each chapter after it answers part of that. The
 last one lands on grants, which is the last mechanism chapter 1 names, so the
 arc closes where the first chapter said it would.
 
+Chapter 0 sits outside that arc and answers nothing in it. It is the hands-on
+chapter the other seven had been assuming rather than teaching: chapter 7 ends
+by telling the reader to run `make flash-openocd`, and until chapter 0 the
+series never said how to reach the point where that command works. It is
+optional, and it says so on the cover.
+
 | # | Title | Covers | Status |
 |---|-------|--------|--------|
+| 0 | [Getting It Running](ch00-getting-it-running/) | Tock on a chip you can hold: build it, put it there with one command, three wires to make it talk -- and which two of this board's four flashing routes fail without saying so | written, unverified on hardware |
 | 1 | [Everything Is Memory](ch01-everything-is-memory/) | One `str` instruction to 3.3 V on a pin, and why, before anything later introduces a protection, nothing stops it landing anywhere | published |
 | 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
 | 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
@@ -32,8 +39,9 @@ arc closes where the first chapter said it would.
 
 ## The cover
 
-`learning/index.html` is the front door: the seven chapters in dependency
-order, what the series is for, and how to check a claim rather than believe it.
+`learning/index.html` is the front door: chapter 0 and then the seven in
+dependency order, what the series is for, and how to check a claim rather than
+believe it.
 A clone gets working links because it links by relative path.
 
 The published copy links to hosted chapters instead, and those URLs are
@@ -102,7 +110,9 @@ target to notice blowing past, not a gate.
 
 All seven are groundable on the hardware in front of the reader -- a Pico 2 and
 a debug probe -- because `boards/raspberry_pi_pico_2` is a real port in this
-tree and every chapter can cite it.
+tree and every chapter can cite it. Chapter 0 is the one that actually puts it
+there, and it is the only chapter whose claims are about commands rather than
+about source, which is why it is the only one that needs a bench to verify.
 
 **Which board that is.** `boards/raspberry_pi_pico_2` is the plain Pico 2. This
 tree has no `raspberry_pi_pico_2_w`; the `_w` board it does have is built on

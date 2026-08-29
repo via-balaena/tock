@@ -1,0 +1,187 @@
+// Licensed under the Apache License, Version 2.0 or the MIT License.
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright Jon Hillesheim 2026.
+//
+// Behavioural assertions for chapter 0, run by check.py under JavaScriptCore.
+
+// Same helpers as chapters 3 to 7: every figure here is one row of buttons and
+// one row of panels sharing an index, built by one function. That is a single
+// point of failure, so each figure is walked separately rather than once.
+function onlyOne(prefix, n, cls) {
+  var i, lit = 0;
+  for (i = 0; i < n; i++) {
+    if (REG[prefix + i].classList.contains(cls)) { lit++; }
+  }
+  return lit;
+}
+
+function walk(btn, panel, n, name) {
+  var i;
+  for (i = 0; i < n; i++) {
+    REG[btn + i].fire("click");
+    if (!REG[panel + i].classList.contains("is-on")) {
+      throw new Error(name + ": entry " + i + " did not open its own panel");
+    }
+    if (REG[btn + i].getAttribute("aria-pressed") !== "true") {
+      throw new Error(name + ": entry " + i + " was not pressed by its click");
+    }
+    if (onlyOne(panel, n, "is-on") !== 1) {
+      throw new Error(name + ": " + onlyOne(panel, n, "is-on") +
+                      " panels open after clicking " + i);
+    }
+  }
+}
+
+// ---- No figure may boot empty ----
+// Most readers never click, so a figure that opens on "choose something"
+// teaches nothing. Checked first, because everything below moves these.
+chk("figure 1 opens on the board", REG["pt-0"].getAttribute("aria-pressed"), "true");
+chk("figure 2 opens on the target directory", REG["pa-0"].getAttribute("aria-pressed"), "true");
+chk("figure 3 opens on the route this chapter uses", REG["tg-0"].getAttribute("aria-pressed"), "true");
+chk("figure 4 opens on the debug wires", REG["wr-0"].getAttribute("aria-pressed"), "true");
+chk("figure 5 opens on the banner", REG["bo-0"].getAttribute("aria-pressed"), "true");
+chk("figure 6 opens on the silence that wastes evenings", REG["sy-0"].getAttribute("aria-pressed"), "true");
+chk("and every one of those has its panel open",
+    REG["ptp-0"].classList.contains("is-on")
+      && REG["pap-0"].classList.contains("is-on")
+      && REG["tgp-0"].classList.contains("is-on")
+      && REG["wrp-0"].classList.contains("is-on")
+      && REG["bop-0"].classList.contains("is-on")
+      && REG["syp-0"].classList.contains("is-on"), true);
+
+// ---- Figure 1: the parts ----
+walk("pt-", "ptp-", 5, "figure 1");
+REG["pt-1"].fire("click");
+chk("the probe panel says what skipping it costs, rather than that it is optional",
+    REG["ptp-1"].textContent.indexOf("by hand for every change") > -1, true);
+REG["pt-2"].fire("click");
+chk("the debug wires are the ones that cannot be got backwards",
+    REG["ptp-2"].textContent.indexOf("straight across") > -1, true);
+REG["pt-3"].fire("click");
+chk("and the console wires are the ones that can",
+    REG["ptp-3"].textContent.indexOf("cross over") > -1, true);
+REG["pt-0"].fire("click");
+
+// ---- Figure 2: where the file lands ----
+walk("pa-", "pap-", 4, "figure 2");
+REG["pa-1"].fire("click");
+// The whole point of this figure. A reader who thinks the path names their
+// laptop will go looking for a different one on a different machine.
+chk("the triple panel gives the full target",
+    REG["pap-1"].textContent.indexOf("thumbv8m.main-none-eabi") > -1, true);
+chk("and says it is not the machine doing the building",
+    REG["pap-1"].textContent.indexOf("Your laptop is none of those things") > -1, true);
+chk("and names the file that sets it",
+    REG["pap-1"].textContent.indexOf(".cargo/config.toml") > -1, true);
+REG["pa-0"].fire("click");
+
+// ---- Figure 3: the four flashing targets ----
+// This is the figure the chapter exists for. Two of these four report success
+// and do nothing on a Mac, and the Makefile says so nowhere.
+walk("tg-", "tgp-", 4, "figure 3");
+chk("the four targets are labelled with the lines they are on",
+    REG["tg-0"].textContent.indexOf(":23") > -1
+      && REG["tg-1"].textContent.indexOf(":27") > -1
+      && REG["tg-2"].textContent.indexOf(":32") > -1
+      && REG["tg-3"].textContent.indexOf(":42") > -1, true);
+chk("the two that work are the two that drive the probe",
+    REG["tg-0"].textContent.indexOf("flash-openocd") > -1
+      && REG["tg-3"].textContent.indexOf("program-openocd") > -1, true);
+chk("and both carry the verdict that they work",
+    REG["tg-0"].textContent.indexOf("works") > -1
+      && REG["tg-3"].textContent.indexOf("works") > -1, true);
+chk("the two copying routes are marked silent rather than broken",
+    REG["tg-1"].textContent.indexOf("silent") > -1
+      && REG["tg-2"].textContent.indexOf("silent") > -1, true);
+REG["tg-1"].fire("click");
+chk("the copy panel quotes the message it prints instead of flashing",
+    REG["tgp-1"].textContent.indexOf("Please edit the BOOTSEL_FOLDER variable") > -1, true);
+chk("and says the status is success, which is why nothing notices",
+    REG["tgp-1"].textContent.indexOf("success status") > -1, true);
+REG["tg-2"].fire("click");
+chk("program fails loudly on a missing application and quietly on the copy",
+    REG["tgp-2"].textContent.indexOf("fails loudly") > -1
+      && REG["tgp-2"].textContent.indexOf("fails quietly") > -1, true);
+REG["tg-0"].fire("click");
+chk("the route this chapter takes needs nothing installed for the board",
+    REG["tgp-0"].textContent.indexOf("nothing to install") > -1, true);
+
+// ---- Figure 4: the wiring ----
+walk("wr-", "wrp-", 4, "figure 4");
+// Transmit joins receive, both ways. Getting this backwards is silent, which
+// is why it is a figure rather than a sentence.
+REG["wr-1"].fire("click");
+chk("the probe's transmit joins the board's receive, which is pin 1",
+    REG["wrp-1"].textContent.indexOf("receive") > -1
+      && REG["wrp-1"].textContent.indexOf("pin") > -1, true);
+REG["wr-2"].fire("click");
+chk("and the probe's receive joins the board's transmit, which is pin 0",
+    REG["wrp-2"].textContent.indexOf("transmit") > -1, true);
+REG["wr-3"].fire("click");
+chk("the ground panel says the symptom is nonsense rather than silence",
+    REG["wrp-3"].textContent.indexOf("not silence but nonsense") > -1, true);
+REG["wr-0"].fire("click");
+
+// ---- Figure 5: what the console offers ----
+walk("bo-", "bop-", 4, "figure 5");
+REG["bo-0"].fire("click");
+// The banner is the chapter's success signal, and it is worth more than it
+// looks: it proves three separate things at once.
+chk("the banner panel says it proves three things",
+    REG["bop-0"].textContent.indexOf("three separate things") > -1, true);
+REG["bo-2"].fire("click");
+chk("the other banner is named as expected rather than as a failure",
+    REG["bop-2"].textContent.indexOf("expected") > -1, true);
+REG["bo-0"].fire("click");
+
+// ---- Figure 6: five silences ----
+walk("sy-", "syp-", 5, "figure 6");
+REG["sy-0"].fire("click");
+// Cheapest first. A charge-only cable produces a board that powers up, blinks
+// and cannot be reached, which reads as a fault worth a whole evening.
+chk("the first silence sends the reader at the cable before anything clever",
+    REG["syp-0"].textContent.indexOf("Swap it first") > -1, true);
+REG["sy-2"].fire("click");
+chk("the probe failure is named as the good one, because it is loud",
+    REG["syp-2"].textContent.indexOf("good failure") > -1, true);
+REG["sy-3"].fire("click");
+chk("banner-then-nothing is one wire, and points at the figure with it in",
+    REG["syp-3"].textContent.indexOf("One wire") > -1
+      && REG["syp-3"].textContent.indexOf("Figure 4") > -1, true);
+REG["sy-0"].fire("click");
+
+// ---- The board that is not this board ----
+// Chapter 3 and chapter 4 both carry a version of this. Chapter 0 is where a
+// reader is most likely to be holding the wrong one, having just bought it.
+chk("the chapter says which pin the difference costs",
+    REG["wpin"].textContent.indexOf("25") > -1, true);
+chk("and that on a Pico 2 W it belongs to the radio",
+    REG["wpin"].textContent.indexOf("radio") > -1, true);
+chk("and refuses to claim the untested part is fine",
+    REG["wtest"].textContent.indexOf("has not been tested") > -1, true);
+chk("naming plausible as the thing it will not pass off as verified",
+    REG["wtest"].textContent.indexOf("Plausible is not the standard") > -1, true);
+
+// ---- Check yourself ----
+// The answers are in the markup and the script only reveals them, so what is
+// worth asserting is that the right option is the one marked right.
+chk("the answers are hidden until an option is taken",
+    REG["qan"].classList.contains("is-off"), true);
+REG["qa-1"].fire("click");
+chk("the quiet failure is the answer to the first question",
+    REG["qa-1"].classList.contains("is-right"), true);
+chk("and taking it reveals the answer",
+    REG["qan"].classList.contains("is-off"), false);
+REG["qb-2"].fire("click");
+chk("one console wire is the answer to the second",
+    REG["qb-2"].classList.contains("is-right"), true);
+REG["qc-0"].fire("click");
+chk("the target naming the destination is the answer to the third",
+    REG["qc-0"].classList.contains("is-right"), true);
+REG["qd-0"].fire("click");
+chk("and the cable is the answer to the fourth",
+    REG["qd-0"].classList.contains("is-right"), true);
+REG["qd-1"].fire("click");
+chk("a wrong option is marked wrong and the right one still marked right",
+    REG["qd-1"].classList.contains("is-wrong")
+      && REG["qd-0"].classList.contains("is-right"), true);
