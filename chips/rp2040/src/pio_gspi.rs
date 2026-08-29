@@ -157,8 +157,7 @@ impl PioGSpi<'_> {
     fn dma_pull(&self, addr: u32, len: u32) {
         assert!(addr.is_multiple_of(4));
         let current_sm = self.pio.sm(self.sm_number);
-        self.dma
-            .set_read_addr(current_sm.rx_fifo_addr(self.pio.number()));
+        self.dma.set_read_addr(current_sm.rx_fifo_addr());
         self.dma.set_write_addr(addr);
 
         self.dma.set_len(len);
@@ -174,8 +173,7 @@ impl PioGSpi<'_> {
         assert!(addr.is_multiple_of(4));
         let current_sm = self.pio.sm(self.sm_number);
         self.dma.set_read_addr(addr);
-        self.dma
-            .set_write_addr(current_sm.tx_fifo_addr(self.pio.number()));
+        self.dma.set_write_addr(current_sm.tx_fifo_addr());
 
         self.dma.set_len(len);
 
@@ -297,7 +295,7 @@ fn cyw43_spi_program_init(
 
     dio_pin_handle.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
     dio_pin_handle.set_schmitt(true);
-    pio.set_input_sync_bypass(&dio_pin_handle, true);
+    pio.set_input_sync_bypass(dio_pin, true);
     dio_pin_handle.set_drive_strength(crate::gpio::DriveStrength::Drive12ma);
     dio_pin_handle.set_slew_rate(crate::gpio::SlewRate::Fast);
     dio_pin_handle.activate_pads();
@@ -312,7 +310,7 @@ fn cyw43_spi_program_init(
     sm.set_pins_dirs(dio_pin, 1, true);
     sm.set_pins_dirs(clock_pin, 1, true);
 
-    sm.set_pins(&[&clock_pin_handle, &dio_pin_handle], false);
+    sm.set_pins(&[clock_pin, dio_pin], false);
 
     sm.init();
     sm.clear_fifos();
