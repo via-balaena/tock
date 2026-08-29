@@ -389,56 +389,17 @@ pub enum DmaPeripheral {
 
 impl From<DmaPeripheral> for FieldValue<u32, CTRL_TRIG::Register> {
     fn from(value: DmaPeripheral) -> Self {
-        match value {
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM0) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0SRXFIFO0AsTREQ
-            }
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM1) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0SRXFIFO1AsTREQ
-            }
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM2) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0SRXFIFO2AsTREQ
-            }
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM3) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0SRXFIFO3AsTREQ
-            }
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM0) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1SRXFIFO0AsTREQ
-            }
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM1) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1SRXFIFO1AsTREQ
-            }
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM2) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1SRXFIFO2AsTREQ
-            }
-            DmaPeripheral::PioRxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM3) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1SRXFIFO3AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM0) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0STXFIFO0AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM1) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0STXFIFO1AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM2) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0STXFIFO2AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO0, pio::SMNumber::SM3) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO0STXFIFO3AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM0) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1STXFIFO0AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM1) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1STXFIFO1AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM2) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1STXFIFO2AsTREQ
-            }
-            DmaPeripheral::PioTxFifo(pio::PIONumber::PIO1, pio::SMNumber::SM3) => {
-                CTRL_TRIG::TREQ_SEL::SelectPIO1STXFIFO3AsTREQ
-            }
-        }
+        // The PIO transfer request numbers are laid out so that the block,
+        // the direction and the state machine index give the number
+        // directly: PIO0 TX is 0 to 3, PIO0 RX is 4 to 7, PIO1 TX is 8 to
+        // 11 and PIO1 RX is 12 to 15. The named TREQ_SEL values above are
+        // the same table, and the tests at the end of this file check this
+        // arithmetic against every one of them.
+        let (pio, rx, sm) = match value {
+            DmaPeripheral::PioRxFifo(pio, sm) => (pio as u32, 1, sm as u32),
+            DmaPeripheral::PioTxFifo(pio, sm) => (pio as u32, 0, sm as u32),
+        };
+        CTRL_TRIG::TREQ_SEL.val(pio * 8 + rx * 4 + sm)
     }
 }
 
@@ -602,5 +563,73 @@ impl DmaChannel<'_> {
 
         let fv = treq + data_size + bswap + incr_rd + incr_wr + chain_to + CTRL_TRIG::EN::SET;
         regs.ctrl_trig.write(fv);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CTRL_TRIG, DmaPeripheral};
+    use crate::pio::{PIONumber, SMNumber};
+    use kernel::utilities::registers::FieldValue;
+
+    fn encoded(peripheral: DmaPeripheral) -> u32 {
+        u32::from(FieldValue::<u32, CTRL_TRIG::Register>::from(peripheral))
+    }
+
+    /// The datasheet's transfer request table, in the order the datasheet
+    /// lists it: each block's four TX FIFOs, then its four RX FIFOs.
+    ///
+    /// These named values are a hand transcription of that table, so checking
+    /// the computed number against them checks the arithmetic rather than
+    /// checking it against itself.
+    #[rustfmt::skip]
+    const NAMED: [FieldValue<u32, CTRL_TRIG::Register>; 16] = {
+        use CTRL_TRIG::TREQ_SEL::*;
+        [
+            SelectPIO0STXFIFO0AsTREQ, SelectPIO0STXFIFO1AsTREQ,
+            SelectPIO0STXFIFO2AsTREQ, SelectPIO0STXFIFO3AsTREQ,
+            SelectPIO0SRXFIFO0AsTREQ, SelectPIO0SRXFIFO1AsTREQ,
+            SelectPIO0SRXFIFO2AsTREQ, SelectPIO0SRXFIFO3AsTREQ,
+            SelectPIO1STXFIFO0AsTREQ, SelectPIO1STXFIFO1AsTREQ,
+            SelectPIO1STXFIFO2AsTREQ, SelectPIO1STXFIFO3AsTREQ,
+            SelectPIO1SRXFIFO0AsTREQ, SelectPIO1SRXFIFO1AsTREQ,
+            SelectPIO1SRXFIFO2AsTREQ, SelectPIO1SRXFIFO3AsTREQ,
+        ]
+    };
+
+    const SMS: [SMNumber; 4] = [SMNumber::SM0, SMNumber::SM1, SMNumber::SM2, SMNumber::SM3];
+
+    /// Every combination this driver can ask for, against the table above.
+    #[test]
+    fn treq_sel_matches_the_named_values() {
+        let mut i = 0;
+        for pio in [PIONumber::PIO0, PIONumber::PIO1] {
+            for rx in [false, true] {
+                for sm in SMS {
+                    let peripheral = if rx {
+                        DmaPeripheral::PioRxFifo(pio, sm)
+                    } else {
+                        DmaPeripheral::PioTxFifo(pio, sm)
+                    };
+                    assert_eq!(encoded(peripheral), u32::from(NAMED[i]));
+                    i += 1;
+                }
+            }
+        }
+        assert_eq!(i, 16);
+    }
+
+    /// The field is six bits at bit 15, so the whole table has to land inside
+    /// it. A shift that moved would show up here.
+    #[test]
+    fn treq_sel_occupies_bits_15_to_20() {
+        assert_eq!(
+            encoded(DmaPeripheral::PioTxFifo(PIONumber::PIO0, SMNumber::SM0)),
+            0
+        );
+        assert_eq!(
+            encoded(DmaPeripheral::PioRxFifo(PIONumber::PIO1, SMNumber::SM3)),
+            15 << 15
+        );
     }
 }
