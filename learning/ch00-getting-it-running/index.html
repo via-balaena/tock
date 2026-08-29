@@ -589,7 +589,7 @@ dfn {
       <li>Put that file on the chip with one command, and say what the command is talking to.</li>
       <li>Wire the six connections, and read the one line that means the <dfn>kernel</dfn> is up.</li>
       <li>Name which of the four flashing routes in this board's Makefile do nothing on a Mac, and why they do it quietly.</li>
-      <li>Tell a dead board apart from a wrongly wired <dfn>console</dfn>, which produce the same silence.</li>
+      <li>Tell the several ways this goes silent apart from each other, when from outside they are one silence, and name what to check first for each &mdash; starting with the <dfn>console</dfn>.</li>
     </ul>
       <p class="cost">Plan on forty minutes, and most of it is wiring. Nothing in this chapter is assumed from the rest of the series, because there is no chapter before it. You need the hardware in the first figure and a machine you can install Rust on.</p>
   </div>
@@ -631,7 +631,7 @@ dfn {
     <span class="instrument-title">What sits between your editor and the chip</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each part. The second is the one that turns a forty-minute job into a one-command job.</p>
+    <p class="dothis">Click each part. The second is the one you could skip, and the one that pays for itself on the second flash.</p>
     <div class="blk" role="group" aria-label="The parts this chapter uses">
       <button type="button" id="pt-0" aria-pressed="true">the board</button>
       <button type="button" id="pt-1" aria-pressed="false">the probe</button>
@@ -642,7 +642,7 @@ dfn {
     <div class="blksay">
       <p class="blkp is-on" id="ptp-0">A Raspberry Pi Pico 2. The chip on it is an RP2350, and this repository has a directory named for exactly that board, which is what everything below builds. A Pico 2&nbsp;W is a different board and there is a section about it near the end.</p>
       <p class="blkp" id="ptp-1">A Raspberry Pi Debug Probe. It is the part you could skip, and skipping it costs more than it saves. Without one you hold a button, replug the board, and copy a file by hand for every change.</p>
-      <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the three pads on the far edge of the board. These carry the flashing. They are marked and they go straight across, so there is nothing to get backwards.</p>
+      <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the three pads on the short edge opposite the USB socket. These carry the flashing. They are marked and they go straight across, so there is nothing to get backwards.</p>
       <p class="blkp" id="ptp-3">Three wires from the probe's serial connector to two pins on the board, plus a ground. These carry the talking, and unlike the debug three, two of them cross over. Figure 4 is that crossing.</p>
       <p class="blkp" id="ptp-4">Rust, and OpenOCD. Those two are the whole list for the route this chapter takes, and there is no converter and no vendor tool among them. That is not true of the other three routes, and Figure 3 is about why. It can also be two machines rather than one, which is the section after Figure 5.</p>
     </div>
@@ -716,7 +716,7 @@ $ make
 </figure>
 
 <section class="col">
-  <h2>Making it talk</h2>
+  <h2>Wiring it, before you flash it</h2>
   <p>Wire the console before you flash, not after. The command in the next section resets the board as it finishes, and the line you are waiting for goes out at that moment. If nothing is listening yet you miss it, and a missed line looks exactly like a board that never started.</p>
   <p>The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
   <p>Which pins is not a convention to look up, it is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
@@ -745,7 +745,7 @@ $ picocom -b 115200 /dev/ttyACM0</pre>
       <button type="button" id="wr-3" aria-pressed="false"><span class="vt-at">ground</span><span>the one people leave out</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the three pads on the far edge of the board. Both ends are labelled with the same three names and they join like to like. This set carries flashing only, and says nothing to you.</p>
+      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the three pads on the short edge opposite the USB socket. Both ends are labelled with the same three names and they join like to like. This set carries flashing only, and says nothing to you.</p>
       <p class="vtp" id="wrp-1">The probe's transmit joins the board's <em>receive</em>, which is pin&nbsp;1. This is the wire that carries what you type into the running kernel.</p>
       <p class="vtp" id="wrp-2">The probe's receive joins the board's <em>transmit</em>, which is pin&nbsp;0. This is the wire that carries everything the kernel prints, including the one line you are about to look for.</p>
       <p class="vtp" id="wrp-3">A shared ground between the two. Without it the two sides have no agreement about what a one and a zero are, and the symptom is not silence but nonsense &mdash; occasional characters, mostly wrong.</p>
@@ -777,7 +777,7 @@ tock$</pre>
     <span class="instrument-title">What that prompt is, and what it will tell you</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each. The last is the one to try first, and it answers a question you will have repeatedly.</p>
+    <p class="dothis">Click each. The first is the one you are waiting for; the last is what to type once you have it.</p>
     <div class="blk" role="group" aria-label="What the console prompt offers">
       <button type="button" id="bo-0" aria-pressed="true">the banner</button>
       <button type="button" id="bo-1" aria-pressed="false">the prompt</button>
@@ -788,7 +788,7 @@ tock$</pre>
       <p class="blkp is-on" id="bop-0">Printed once, at the end of setting up. Seeing it proves three separate things at once: the kernel built, it landed on the chip, and the wire out of the board is carrying. That is a lot of evidence from one line, and it is still silent about the wire going the other way.</p>
       <p class="blkp" id="bop-1">A prompt from a piece of the kernel that exists to be talked to. Its arrival proves nothing the banner did not, because it is printed outbound on the very same wire. What tests the other direction is typing something and getting an answer.</p>
       <p class="blkp" id="bop-2">A second line can follow the banner, saying it could not load processes. It comes after, not instead: the kernel looks for applications between printing the banner and starting its main loop. An empty chip is not what produces it, because finding no applications is quiet, so this line means something actually went wrong.</p>
-      <p class="blkp" id="bop-3">Type it and the console lists what is loaded and running. Early on it is how you find out whether the thing you flashed is the thing that is actually running, and the answer is surprisingly often no.</p>
+      <p class="blkp" id="bop-3">Type it and the console lists what is loaded and running. After this chapter that list is empty, because you flashed a kernel and no application. Empty is the right answer, and getting any answer at all is the point: a reply is what proves the wire into the board. The list itself becomes useful once there is an application to be wrong about.</p>
     </div>
   </div>
   <div class="instrument-note">Notice which of these you get for free. The banner and the prompt both arrive on one wire, the one carrying out of the board, so neither of them says anything about the wire going the other way. Only typing does, which is why the last entry is the one to try.</div>
@@ -799,7 +799,7 @@ tock$</pre>
   <h2>One machine, or two</h2>
   <p>Everything above assumed one machine doing both jobs, so that the computer which compiled the kernel is the one with the probe in it. That is the simplest arrangement and nothing is wrong with it.</p>
   <p>It is not the only one. The two jobs have almost nothing to do with each other, and you may not want unfamiliar hardware plugged into the machine your work lives on.</p>
-  <p>What makes splitting them cheap is how little has to cross. The far machine needs no copy of this repository and no Rust at all. It needs OpenOCD, and a way to receive one file.</p>
+  <p>What makes splitting them cheap is how little has to cross. The far machine needs no copy of this repository and no Rust at all. It needs OpenOCD, something that reads a serial port, and a way to receive one file.</p>
   <p id="splitci">Tock's own hardware testing is built this way, which is worth knowing as confirmation rather than as coincidence. Its workflow describes a testbed of small hosts sitting next to real boards, while the building happens on ordinary machines elsewhere.</p>
 </section>
 
@@ -817,7 +817,7 @@ tock$</pre>
       <button type="button" id="sp-3" aria-pressed="false"><span class="vt-at">console</span><span>wherever the probe is</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="spp-0">Always the machine with Rust on it, and it never needs the probe or the board attached to it. This is the step you repeat most often, and the one that takes seven seconds.</p>
+      <p class="vtp is-on" id="spp-0">Always the machine with Rust on it, and it never needs the probe or the board attached to it. This is the step you repeat most often, and the one timed earlier at 7.2 seconds.</p>
       <p class="vtp" id="spp-1">One ELF: the file Figure 2 ended on. Copy it across however you like, and <b>scp</b> is plenty. Nothing else has to cross &mdash; no copy of this repository, no toolchain, and nothing you would mind leaving on a spare machine.</p>
       <p class="vtp" id="spp-2">OpenOCD, on whichever machine the probe is plugged into. Where that is the machine you built on, <b>make flash-openocd</b> is this step and you are done. Where it is not, you run OpenOCD there yourself.</p>
       <p class="vtp" id="spp-3">The same machine as the probe, because the serial line arrives over the same USB connection that carries the flashing. On a split setup the banner appears on the far machine, which is not the one you are building on.</p>
@@ -925,7 +925,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
 
 <section class="col">
   <h2>What you can say now</h2>
-  <p>You have a board running a kernel you built, and a line of text proving it. That is the ground everything after this stands on: when a later chapter says the kernel does something, you have somewhere to go and watch it happen.</p>
+  <p>You have a board running a kernel you built, and a line of text proving it. None of that makes this chapter a prerequisite, and five of the seven after it never ask you to touch the board again. What it gives you is somewhere to go and look, when a later chapter says the kernel does something.</p>
   <p>You also have the beginnings of a habit this series cares about more than any particular fact. Two of the four ways to flash this board fail without saying so, and the way you find that out is by checking what a command did rather than what it reported.</p>
 </section>
 
@@ -955,10 +955,12 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>Pin&nbsp;0 transmitting and pin&nbsp;1 receiving, and both being handed to the serial hardware &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:284&ndash;287</li>
     <li>The console running at 115200 &mdash; the same file, :329</li>
     <li>The banner, and where in start-up it is printed &mdash; the same file, :439</li>
-    <li>The other banner, printed when no application loads &mdash; the same file, :468</li>
+    <li>The second banner sitting after the first rather than replacing it, with the search for applications between them &mdash; the same file, :439, then <code>load_processes</code> at :453, then :468</li>
     <li>The tree having four Pico directories and no Pico 2&nbsp;W &mdash; <code>boards/</code> at that commit</li>
     <li>Pin&nbsp;25 being the light this board hands to the light driver &mdash; the same file, :385</li>
     <li>The build taking 7.2 seconds of wall time, of which 5.64 were the compiler &mdash; measured on this machine with <code>/usr/bin/time</code>. The block above is that run, abridged: five <code>Compiling</code> lines and a trailing checksum are left out, and the size line's filename column is shortened from an absolute path. No number in it is altered</li>
+    <li>A Mac having <code>screen</code> already, and <code>picocom</code> needing installing on Debian &mdash; checked on the machine these pages were written on, which had <code>screen</code> and neither of the other two</li>
+    <li>Four things about the hardware that have <em>not</em> been checked against a board, and are named here so nobody mistakes them for verified: the probe's serial device appearing under <code>/dev/tty.</code> on a Mac and <code>/dev/ttyACM</code> on Linux, the debug pads sitting on the short edge opposite the USB socket, and a probe presenting more than one interface</li>
     <li>The copying routes printing that message and then exiting with status&nbsp;0 &mdash; <code>make flash</code> run on this machine with no board attached. The conversion succeeded, so the copy was the only step that did not happen, and nothing reported it</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>

@@ -251,8 +251,11 @@ chk("goal 3 asks for six connections, which is what figure 4 wires",
 chk("goal 4, the routes that do nothing quietly, is delivered by figure 3",
     REG["goalbox"].textContent.indexOf("do nothing on a Mac") > -1
       && REG["tgp-1"].textContent.indexOf("success status") > -1, true);
-chk("goal 5, telling a dead board from a mis-wired console, is figure 7's job",
-    REG["goalbox"].textContent.indexOf("wrongly wired") > -1
+// The third pass found this goal stale: the reorder means a verified flash has
+// already ruled the board out, so "dead board or bad wiring" is no longer the
+// pair a reader has to separate. Figure 7's five silences are.
+chk("goal 5, separating the silences, is figure 7's job",
+    REG["goalbox"].textContent.indexOf("one silence") > -1
       && REG["syp-0"].textContent.length > 40, true);
 
 // ---- The glossary ----
