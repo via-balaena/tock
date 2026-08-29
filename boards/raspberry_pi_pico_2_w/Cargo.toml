@@ -14,7 +14,13 @@ cortexm33 = { path = "../../arch/cortex-m33" }
 kernel = { path = "../../kernel" }
 rp2350 = { path = "../../chips/rp2350" }
 
+capsules-core = { path = "../../capsules/core" }
+capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
+components = { path = "../components" }
+
+# Exports the firmware blobs
+tock-firmware-cyw43 = { git = "https://github.com/tock/firmware.git" }
 
 raspberry_pi_pico_2 = { path = "../raspberry_pi_pico_2" }
 

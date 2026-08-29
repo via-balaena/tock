@@ -9,13 +9,13 @@
 #![deny(missing_docs)]
 
 use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
+use components::pio_gspi::PioGspiComponent;
 use kernel::component::Component;
 use kernel::debug;
 use kernel::hil::gpio::Configure;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
 use kernel::syscall::SyscallDriver;
 use kernel::{capabilities, create_capability};
-use pio_gspi_component::{PioGspiComponent, pio_gpsi_component_static};
 use rp2040::chip::{Rp2040, Rp2040DefaultPeripherals};
 use rp2040::gpio::{RPGpio, RPGpioPin};
 use rp2040::pio_gspi::PioGSpi;
@@ -23,7 +23,6 @@ use rp2040::timer::RPTimer;
 use rp2040::{dma, pio};
 
 mod io;
-mod pio_gspi_component;
 
 kernel::stack_size! {0x1500}
 
@@ -131,11 +130,13 @@ pub unsafe fn start() -> (
         pio::SMNumber::SM0,
         peripherals.dma.channel(dma::Channel::Channel0 as usize),
         dma::Irq::Irq0,
-        RPGpio::GPIO29,
-        RPGpio::GPIO24,
+        RPGpio::GPIO29 as u32,
+        RPGpio::GPIO24 as u32,
         cs,
     )
-    .finalize(pio_gpsi_component_static!());
+    .finalize(components::pio_gspi_component_static!(
+        rp2040::pio_gspi::PioGSpi<'static>
+    ));
 
     let (fw, nvram, clm) = (
         tock_firmware_cyw43::cyw43439::FW,

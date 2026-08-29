@@ -117,6 +117,7 @@ dependencies = [
  "capsules-extra",
  "capsules-system",
  "kernel",
+ "rp2xxx",
  "segger",
  "tock-tbf",
 ]
@@ -1433,11 +1434,15 @@ dependencies = [
 name = "raspberry_pi_pico_2_w"
 version = "0.2.3-dev"
 dependencies = [
+ "capsules-core",
+ "capsules-extra",
  "capsules-system",
+ "components",
  "cortexm33",
  "kernel",
  "raspberry_pi_pico_2",
  "rp2350",
+ "tock-firmware-cyw43",
  "tock_build_scripts",
 ]
 
