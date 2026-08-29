@@ -129,7 +129,7 @@ pub unsafe fn start() -> (
     let pio_gspi = PioGspiComponent::new(
         &peripherals.pio0,
         pio::SMNumber::SM0,
-        peripherals.dma.channel(dma::Channel::Channel0),
+        peripherals.dma.channel(dma::Channel::Channel0 as usize),
         dma::Irq::Irq0,
         RPGpio::GPIO29,
         RPGpio::GPIO24,

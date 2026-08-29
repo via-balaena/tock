@@ -15,6 +15,7 @@
 
 #![no_std]
 
+pub mod dma;
 pub mod pio;
 pub mod spi;
 
