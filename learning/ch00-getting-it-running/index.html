@@ -571,7 +571,7 @@ dfn {
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>Getting It Running</h1>
-  <p class="standfirst">The rest of this series reads Tock's source and checks every claim against the tree it lives in. This chapter is the twenty minutes before that: putting Tock on a chip you can hold, and getting it to say one sentence back to you.</p>
+  <p class="standfirst">The rest of this series reads Tock's source and checks every claim against the tree it lives in. This chapter is the forty minutes before that: putting Tock on a chip you can hold, and getting it to say one sentence back to you.</p>
   <noscript>
     <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
@@ -587,8 +587,8 @@ dfn {
     <ul>
       <li>Build Tock for this <dfn>board</dfn>, and say where the file it produces ends up.</li>
       <li>Put that file on the chip with one command, and say what the command is talking to.</li>
-      <li>Wire three signals, and read the one line that means the <dfn>kernel</dfn> is up.</li>
-      <li>Name which of the four flashing routes in this board's Makefile will do nothing on a Mac, and why it does nothing quietly.</li>
+      <li>Wire the six connections, and read the one line that means the <dfn>kernel</dfn> is up.</li>
+      <li>Name which of the four flashing routes in this board's Makefile do nothing on a Mac, and why they do it quietly.</li>
       <li>Tell a dead board apart from a wrongly wired <dfn>console</dfn>, which produce the same silence.</li>
     </ul>
       <p class="cost">Plan on forty minutes, and most of it is wiring. Nothing in this chapter is assumed from the rest of the series, because there is no chapter before it. You need the hardware in the first figure and a machine you can install Rust on.</p>
@@ -644,7 +644,7 @@ dfn {
       <p class="blkp" id="ptp-1">A Raspberry Pi Debug Probe. It is the part you could skip, and skipping it costs more than it saves. Without one you hold a button, replug the board, and copy a file by hand for every change.</p>
       <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the three pads on the far edge of the board. These carry the flashing. They are marked and they go straight across, so there is nothing to get backwards.</p>
       <p class="blkp" id="ptp-3">Three wires from the probe's serial connector to two pins on the board, plus a ground. These carry the talking, and unlike the debug three, two of them cross over. Figure 4 is that crossing.</p>
-      <p class="blkp" id="ptp-4">Rust, and OpenOCD. That is the whole list, and the second is the only piece you install for the board's sake. It can also be two machines rather than one, which is the section after Figure 5. There is no converter and no vendor tool on this route, which is not true of the other three, and Figure 3 is about why.</p>
+      <p class="blkp" id="ptp-4">Rust, and OpenOCD. Those two are the whole list for the route this chapter takes, and there is no converter and no vendor tool among them. That is not true of the other three routes, and Figure 3 is about why. It can also be two machines rather than one, which is the section after Figure 5.</p>
     </div>
   </div>
   <div class="instrument-note">Notice how short the list is. The reason to name it at all is that the obvious shopping list is wrong in one direction. People buy the board and skip the probe, then meet every problem in this chapter at once, with no way to tell them apart.</div>
@@ -659,7 +659,7 @@ $ make
     Finished `release` profile [optimized + debuginfo] target(s) in 5.64s
    text    data     bss     dec     hex filename
   69164       0   19020   88184   15878 raspberry_pi_pico_2</pre>
-  <p>That is the whole build, and the number is real: seven seconds of wall time on an Apple laptop, of which five and a half are the compiler. A kernel is a small program, and this is one of the quiet pleasures of the work.</p>
+  <p>That is the whole build, and the numbers are real: 7.2 seconds of wall time on an Apple laptop, of which 5.64 were the compiler. A kernel is a small program, and this is one of the quiet pleasures of the work.</p>
   <p>The three numbers are worth a glance even now. Around 69&nbsp;kB of code, no initialised data, and 19&nbsp;kB of space the kernel wants at runtime for variables that start out empty.</p>
 </section>
 
@@ -706,10 +706,10 @@ $ make
       <button type="button" id="tg-3" aria-pressed="false"><span class="vt-at">:42</span><span>program-openocd <span class="verdict yes">works</span></span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="tgp-0">Kernel only, down the probe. It hands the ELF straight to OpenOCD, which writes it, reads it back to check, resets the board and exits. No button, no drive, no converter, and nothing to install for the board itself.</p>
+      <p class="vtp is-on" id="tgp-0">Kernel only, down the probe. It hands the ELF straight to OpenOCD, which writes it, reads it back to check, resets the board and exits. No button, no drive, no converter. OpenOCD is the one thing you fetch, and nothing you install after that is specific to this board.</p>
       <p class="vtp" id="tgp-1">Kernel only, as a UF2 copied to the drive. It needs a separate tool to make the UF2 first. Then it tests whether a folder exists and, if it does not, prints <b>Please edit the BOOTSEL_FOLDER variable</b> and stops &mdash; with a success status, so nothing downstream notices.</p>
       <p class="vtp" id="tgp-2">The same copy, with an application built into the image beside the kernel. It fails loudly if you give it no application, which is good, and then fails quietly in exactly the way above if you do.</p>
-      <p class="vtp" id="tgp-3">Kernel plus an application, down the probe. This is the one the last chapter of this series sends you to, and it is the right one. It needs a compiled application to hand it, which is a later problem than this.</p>
+      <p class="vtp" id="tgp-3">Kernel plus an application, down the probe. This is the one the last chapter of this series sends you to, and it is the right one. It needs a compiled application to hand it, and the toolchain's <b>arm-none-eabi-objcopy</b> to put the two together, which is a later problem than this.</p>
     </div>
   </div>
   <div class="instrument-note">Notice what the quiet failure costs. The folder it looks for is under <code>/run/media</code>, which is a Linux path; a Mac mounts under <code>/Volumes</code>. So on a Mac the copy never happens, the command reports success, and the board keeps running whatever it held before. That reads exactly like a kernel that built fine and does nothing.</div>
@@ -775,13 +775,13 @@ tock$</pre>
       <button type="button" id="bo-3" aria-pressed="false">list</button>
     </div>
     <div class="blksay">
-      <p class="blkp is-on" id="bop-0">Printed once, at the end of setting up. Seeing it proves three separate things at once: the kernel built, it landed on the chip, and your two console wires are the right way round. That is a lot of evidence from one line.</p>
-      <p class="blkp" id="bop-1">A prompt from a piece of the kernel that exists to be talked to. It takes typed commands, and its presence proves the wire from probe to board carries as well &mdash; something the banner alone cannot tell you.</p>
+      <p class="blkp is-on" id="bop-0">Printed once, at the end of setting up. Seeing it proves three separate things at once: the kernel built, it landed on the chip, and the wire out of the board is carrying. That is a lot of evidence from one line, and it is still silent about the wire going the other way.</p>
+      <p class="blkp" id="bop-1">A prompt from a piece of the kernel that exists to be talked to. Its arrival proves nothing the banner did not, because it is printed outbound on the very same wire. What tests the other direction is typing something and getting an answer.</p>
       <p class="blkp" id="bop-2">There is a second line the kernel can print here instead, saying it could not load processes. It is not a failure of anything in this chapter: it means the kernel is fine and there is no application on the chip yet, which at this point is expected.</p>
       <p class="blkp" id="bop-3">Type it and the console lists what is loaded and running. Early on it is how you find out whether the thing you flashed is the thing that is actually running, and the answer is surprisingly often no.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice which of these you get for free. The banner needs one wire; the prompt needs the other. If you see the banner and typing does nothing, you have not got a broken board &mdash; you have three wires right and one wrong.</div>
+  <div class="instrument-note">Notice which of these you get for free. The banner and the prompt both arrive on one wire, the one carrying out of the board, so neither of them says anything about the wire going the other way. Only typing does, which is why the last entry is the one to try.</div>
 </figure>
 
 
@@ -850,7 +850,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
       <button type="button" id="sy-4" aria-pressed="false">it boots, no light</button>
     </div>
     <div class="blksay">
-      <p class="blkp is-on" id="syp-0">No output, no error, nothing. Before suspecting anything clever, suspect the cable: a great many USB cables carry power and no data, and a board on one of them powers up perfectly and cannot be talked to at all. Swap it first, every time.</p>
+      <p class="blkp is-on" id="syp-0">No output, no error, nothing. Before suspecting anything clever, suspect the cable: a great many USB cables carry power and no data, and one of those on the probe leaves it powered and carrying nothing at all. Swap it first, every time.</p>
       <p class="blkp" id="syp-1">Characters arrive but are wrong. That is the two ends disagreeing about speed, or a missing ground. Both are cheap to check and neither looks like what it is &mdash; corrupted text reads as a broken board rather than a wrong number.</p>
       <p class="blkp" id="syp-2">OpenOCD cannot see the adapter. This is the good failure: it is loud, it happens immediately, and it is about the probe rather than about anything you wrote. Usually the debug three are on the wrong pads or the probe is in the wrong socket.</p>
       <p class="blkp" id="syp-3">The banner appears and then typing does nothing. One wire. The line from probe to board is not carrying, and Figure 4's middle two are where to look.</p>
@@ -908,7 +908,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
       <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The baud</button>
       <button type="button" class="q-opt" id="qd-2" aria-pressed="false">The board</button>
     </div>
-    <p class="q-answer" id="qdn">The cable. Charge-only USB cables are common, and a board powered through one comes up and blinks and cannot be reached, which looks exactly like a fault worth debugging for an hour. It costs ten seconds to rule out, so it goes first.</p>
+    <p class="q-answer" id="qdn">The cable. Charge-only USB cables are common, and one on the probe leaves it powered and carrying nothing, which looks exactly like a fault worth debugging for an hour. It costs ten seconds to rule out, so it goes first.</p>
   </div>
 </div>
 
@@ -947,7 +947,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>The other banner, printed when no application loads &mdash; the same file, :468</li>
     <li>The tree having four Pico directories and no Pico 2&nbsp;W &mdash; <code>boards/</code> at that commit</li>
     <li>Pin&nbsp;25 being the light this board hands to the light driver &mdash; the same file, :385</li>
-    <li>The build being about seven seconds of wall time, of which 5.64 are the compiler &mdash; measured on this machine, and the size line quoted with it is that run's own output</li>
+    <li>The build taking 7.2 seconds of wall time, of which 5.64 were the compiler &mdash; measured on this machine with <code>/usr/bin/time</code>. The block above is that run, abridged: five <code>Compiling</code> lines and a trailing checksum are left out, and the size line's filename column is shortened from an absolute path. No number in it is altered</li>
     <li>The copying routes printing that message and then exiting with status&nbsp;0 &mdash; <code>make flash</code> run on this machine with no board attached. The conversion succeeded, so the copy was the only step that did not happen, and nothing reported it</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>

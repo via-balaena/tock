@@ -105,8 +105,11 @@ chk("program fails loudly on a missing application and quietly on the copy",
     REG["tgp-2"].textContent.indexOf("fails loudly") > -1
       && REG["tgp-2"].textContent.indexOf("fails quietly") > -1, true);
 REG["tg-0"].fire("click");
-chk("the route this chapter takes needs nothing installed for the board",
-    REG["tgp-0"].textContent.indexOf("nothing to install") > -1, true);
+chk("the route this chapter takes installs nothing board-specific",
+    REG["tgp-0"].textContent.indexOf("nothing you install after that is specific to this board") > -1, true);
+// It does need OpenOCD, which the first draft of Figure 1 denied.
+chk("and names OpenOCD as the one thing you do fetch",
+    REG["tgp-0"].textContent.indexOf("one thing you fetch") > -1, true);
 
 // ---- Figure 4: the wiring ----
 walk("wr-", "wrp-", 4, "figure 4");
@@ -131,6 +134,21 @@ REG["bo-0"].fire("click");
 // looks: it proves three separate things at once.
 chk("the banner panel says it proves three things",
     REG["bop-0"].textContent.indexOf("three separate things") > -1, true);
+// The same false claim lived here too, and a grep for "prompt" did not reach
+// it. The banner rides the wire out of the board and proves nothing about the
+// wire in; three panels on this page now agree about that.
+chk("and scopes them to the wire the banner actually rides",
+    REG["bop-0"].textContent.indexOf("the wire out of the board is carrying") > -1, true);
+chk("and says outright that the other direction is still untested",
+    REG["bop-0"].textContent.indexOf("silent about the wire going the other way") > -1, true);
+REG["bo-1"].fire("click");
+// The first review pass found this the wrong way round. The prompt is printed
+// *outbound*, so its arrival proves exactly what the banner proved and nothing
+// more -- which is what syp-3 and the second quiz answer had said all along.
+chk("the prompt is not claimed to prove the inbound wire",
+    REG["bop-1"].textContent.indexOf("proves nothing the banner did not") > -1, true);
+chk("and the chapter says what does test that direction",
+    REG["bop-1"].textContent.indexOf("typing something and getting an answer") > -1, true);
 REG["bo-2"].fire("click");
 chk("the other banner is named as expected rather than as a failure",
     REG["bop-2"].textContent.indexOf("expected") > -1, true);
