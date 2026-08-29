@@ -40,13 +40,15 @@ chk("figure 2 opens on the target directory", REG["pa-0"].getAttribute("aria-pre
 chk("figure 3 opens on the route this chapter uses", REG["tg-0"].getAttribute("aria-pressed"), "true");
 chk("figure 4 opens on the debug wires", REG["wr-0"].getAttribute("aria-pressed"), "true");
 chk("figure 5 opens on the banner", REG["bo-0"].getAttribute("aria-pressed"), "true");
-chk("figure 6 opens on the silence that wastes evenings", REG["sy-0"].getAttribute("aria-pressed"), "true");
+chk("figure 6 opens on the step that is always the same machine", REG["sp-0"].getAttribute("aria-pressed"), "true");
+chk("figure 7 opens on the silence that wastes evenings", REG["sy-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
     REG["ptp-0"].classList.contains("is-on")
       && REG["pap-0"].classList.contains("is-on")
       && REG["tgp-0"].classList.contains("is-on")
       && REG["wrp-0"].classList.contains("is-on")
       && REG["bop-0"].classList.contains("is-on")
+      && REG["spp-0"].classList.contains("is-on")
       && REG["syp-0"].classList.contains("is-on"), true);
 
 // ---- Figure 1: the parts ----
@@ -134,8 +136,33 @@ chk("the other banner is named as expected rather than as a failure",
     REG["bop-2"].textContent.indexOf("expected") > -1, true);
 REG["bo-0"].fire("click");
 
-// ---- Figure 6: five silences ----
-walk("sy-", "syp-", 5, "figure 6");
+// ---- Figure 6: one machine, or two ----
+// A real arrangement rather than a hypothetical one, and the chapter has to be
+// true for it without turning into two chapters.
+walk("sp-", "spp-", 4, "figure 6");
+REG["sp-1"].fire("click");
+chk("exactly one thing crosses between the two machines",
+    REG["spp-1"].textContent.indexOf("One ELF") > -1, true);
+chk("and the far machine needs no copy of the repository",
+    REG["spp-1"].textContent.indexOf("no copy of this repository") > -1, true);
+REG["sp-2"].fire("click");
+chk("flashing is the step whose command depends on where the probe is",
+    REG["spp-2"].textContent.indexOf("make flash-openocd") > -1, true);
+REG["sp-3"].fire("click");
+chk("the console lands on the probe's machine, not the builder's",
+    REG["spp-3"].textContent.indexOf("same USB connection") > -1, true);
+chk("the note says the split changes one command and no wiring",
+    REG["sp-0"].textContent.length > 0, true);
+REG["sp-0"].fire("click");
+// The two -f arguments are the board's own config spelled out, which is the
+// reason the far machine can do without the repository at all.
+chk("the split command is the board's config spelled out rather than invented",
+    REG["splitcfg"].textContent.indexOf("two lines of this board's own OpenOCD config") > -1, true);
+chk("and the chapter says Tock's own testing is built the same way",
+    REG["splitci"].textContent.indexOf("testbed") > -1, true);
+
+// ---- Figure 7: five silences ----
+walk("sy-", "syp-", 5, "figure 7");
 REG["sy-0"].fire("click");
 // Cheapest first. A charge-only cable produces a board that powers up, blinks
 // and cannot be reached, which reads as a fault worth a whole evening.

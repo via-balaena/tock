@@ -194,6 +194,19 @@ code {
 
 
 
+pre {
+  font-family: var(--mono);
+  font-size: .84rem;
+  line-height: 1.6;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  padding: .9rem 1rem;
+  overflow-x: auto;
+  margin: 0;
+  border-radius: 2px;
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
+
 /* ---------- instrument (figure) ---------- */
 
 .instrument {
@@ -631,7 +644,7 @@ dfn {
       <p class="blkp" id="ptp-1">A Raspberry Pi Debug Probe. It is the part you could skip, and skipping it costs more than it saves. Without one you hold a button, replug the board, and copy a file by hand for every change.</p>
       <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the three pads on the far edge of the board. These carry the flashing. They are marked and they go straight across, so there is nothing to get backwards.</p>
       <p class="blkp" id="ptp-3">Three wires from the probe's serial connector to two pins on the board, plus a ground. These carry the talking, and unlike the debug three, two of them cross over. Figure 4 is that crossing.</p>
-      <p class="blkp" id="ptp-4">Rust, and OpenOCD. That is the whole list, and the second is the only piece you install for the board's sake. There is no converter and no vendor tool on this route, which is not true of the other three, and Figure 3 is about why.</p>
+      <p class="blkp" id="ptp-4">Rust, and OpenOCD. That is the whole list, and the second is the only piece you install for the board's sake. It can also be two machines rather than one, which is the section after Figure 5. There is no converter and no vendor tool on this route, which is not true of the other three, and Figure 3 is about why.</p>
     </div>
   </div>
   <div class="instrument-note">Notice how short the list is. The reason to name it at all is that the obvious shopping list is wrong in one direction. People buy the board and skip the probe, then meet every problem in this chapter at once, with no way to tell them apart.</div>
@@ -709,7 +722,6 @@ $ make
   <p>OpenOCD is the one piece of software you install for this, and on the Mac these pages were written on it was the only thing missing. Everything else was already there for Rust.</p>
   <p>What that runs is OpenOCD, an ordinary program on your machine that speaks to the probe over USB, and through it to the chip. The board's own configuration for it is two lines long: use a standard debug adapter, and the chip is an RP2350.</p>
   <p>The command writes the kernel, reads it back to confirm it landed, resets the board and exits. If it cannot find the probe it says so and stops, which is the failure you want &mdash; loud, immediate, and about the thing that is actually wrong.</p>
-  <p>One aside worth having early: the machine that builds and the machine holding the probe do not have to be the same one. Splitting them is a real setup, and then what crosses between the two is one file.</p>
 </section>
 
 <section class="col">
@@ -772,6 +784,52 @@ tock$</pre>
   <div class="instrument-note">Notice which of these you get for free. The banner needs one wire; the prompt needs the other. If you see the banner and typing does nothing, you have not got a broken board &mdash; you have three wires right and one wrong.</div>
 </figure>
 
+
+<section class="col">
+  <h2>One machine, or two</h2>
+  <p>Everything above assumed one machine doing both jobs, so that the computer which compiled the kernel is the one with the probe in it. That is the simplest arrangement and nothing is wrong with it.</p>
+  <p>It is not the only one. The two jobs have almost nothing to do with each other, and you may not want unfamiliar hardware plugged into the machine your work lives on.</p>
+  <p>What makes splitting them cheap is how little has to cross. The far machine needs no copy of this repository and no Rust at all. It needs OpenOCD, and a way to receive one file.</p>
+  <p id="splitci">Tock's own hardware testing is built this way, which is worth knowing as confirmation rather than as coincidence. Its workflow describes a testbed of small hosts sitting next to real boards, while the building happens on ordinary machines elsewhere.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Four steps, and which machine each one belongs to</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each step. The third is the only one whose command changes when the two machines are not the same.</p>
+    <div class="vt" role="group" aria-label="Which machine each step runs on">
+      <button type="button" id="sp-0" aria-pressed="true"><span class="vt-at">build</span><span>the machine with Rust</span></button>
+      <button type="button" id="sp-1" aria-pressed="false"><span class="vt-at">the file</span><span>what crosses between them</span></button>
+      <button type="button" id="sp-2" aria-pressed="false"><span class="vt-at">flash</span><span>wherever the probe is</span></button>
+      <button type="button" id="sp-3" aria-pressed="false"><span class="vt-at">console</span><span>wherever the probe is</span></button>
+    </div>
+    <div class="vtsay">
+      <p class="vtp is-on" id="spp-0">Always the machine with Rust on it, and it never needs the probe or the board attached to it. This is the step you repeat most often, and the one that takes seven seconds.</p>
+      <p class="vtp" id="spp-1">One ELF: the file Figure 2 ended on. Copy it across however you like, and <b>scp</b> is plenty. Nothing else has to cross &mdash; no copy of this repository, no toolchain, and nothing you would mind leaving on a spare machine.</p>
+      <p class="vtp" id="spp-2">OpenOCD, on whichever machine the probe is plugged into. Where that is the machine you built on, <b>make flash-openocd</b> is this step and you are done. Where it is not, you run OpenOCD there yourself.</p>
+      <p class="vtp" id="spp-3">The same machine as the probe, because the serial line arrives over the same USB connection that carries the flashing. On a split setup the banner appears on the far machine, which is not the one you are building on.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that the split changes one command and leaves the rest alone. The wiring is the same six wires, the line to wait for is the same line, and every silence in the next figure still means what it meant before.</div>
+</figure>
+
+<section class="col">
+  <p>Written out, the split is two commands rather than one:</p>
+  <pre># on the machine that builds
+$ scp target/thumbv8m.main-none-eabi/release/raspberry_pi_pico_2.elf \
+      appliance:
+
+# on the machine with the probe
+$ K=raspberry_pi_pico_2.elf
+$ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
+      -c "adapter speed 5000" \
+      -c "program $K; verify_image $K; reset; shutdown;"</pre>
+  <p id="splitcfg">Those two <code>-f</code> arguments are not invented here. They are the two lines of this board's own OpenOCD config, spelled out, which is exactly why the far machine can get by without a copy of the repository. The rest of the line is what the Makefile target runs.</p>
+</section>
+
 <section class="col">
   <h2>When nothing happens</h2>
   <p>The hard part of this chapter is not any single step. It is that several different failures produce the same nothing, and without a way to separate them you end up changing two things at once and learning nothing from either.</p>
@@ -779,7 +837,7 @@ tock$</pre>
 
 <figure class="instrument">
   <div class="instrument-head">
-    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-label">Figure 7</span>
     <span class="instrument-title">Five silences, and what tells them apart</span>
   </div>
   <div class="instrument-body">
@@ -882,6 +940,7 @@ tock$</pre>
     <li><code>program</code> refusing to run at all with no application given &mdash; the same file, :34&ndash;36</li>
     <li>What <code>flash-openocd</code> actually runs: write, verify, reset, exit &mdash; the same file, :25</li>
     <li>The whole of this board's OpenOCD configuration, which is two lines &mdash; <code>boards/raspberry_pi_pico_2/openocd-picoprobe.cfg</code>:5&ndash;6</li>
+    <li>Tock's own hardware testing being built as small hosts beside real boards &mdash; <code>.github/workflows/treadmill-ci.yml</code>:5&ndash;8, "Treadmill is a distributed hardware testbed developed within the Tock OS project"</li>
     <li>Pin&nbsp;0 transmitting and pin&nbsp;1 receiving, and both being handed to the serial hardware &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:284&ndash;287</li>
     <li>The console running at 115200 &mdash; the same file, :329</li>
     <li>The banner, and where in start-up it is printed &mdash; the same file, :439</li>
@@ -945,7 +1004,10 @@ tock$</pre>
   /* ---------------- Figure 5: the console ---------------- */
   group("bo-", "bop-", 4, "", "is-on", "is-off");
 
-  /* ---------------- Figure 6: five silences ---------------- */
+  /* ---------------- Figure 6: which machine each step is on ---------------- */
+  group("sp-", "spp-", 4, "", "is-on", "is-off");
+
+  /* ---------------- Figure 7: five silences ---------------- */
   group("sy-", "syp-", 5, "", "is-on", "is-off");
 
   /* ---------------- Check yourself ----------------

@@ -1735,6 +1735,42 @@ CSS_NOT_TAGS = {"from", "to", "and", "not", "only", "screen", "print", "all",
                 "html", "body", "head"}
 
 
+def unstyled_block_checks(html):
+    """The mirror of dead_css_checks: markup with no rule behind it.
+
+    dead_css_checks finds a rule nothing on the page uses. It cannot see the
+    opposite, and the opposite is what happens when a sheet is copied from a
+    chapter that did not need a rule this one does. Chapter 0's stylesheet came
+    from chapter 5, which has no `<pre>` anywhere, so it arrived with no rule
+    for one -- and chapter 0 has four. They rendered in the browser's default
+    monospace with no background, no border, and crucially no `overflow-x`, so
+    a long command line widened the whole page instead of scrolling inside its
+    own box.
+
+    Narrow on purpose. Only a `<pre>` carrying no class of its own is in
+    question: chapters 6 and 7 write `<pre class="asm">` and style that
+    instead, which is correct and must not be refused. And only `pre` is
+    checked, because it is the one block element in this series whose default
+    rendering is actively wrong rather than merely plain.
+    """
+    marker = "* { box-sizing: border-box; }"
+    if marker not in html or "</style>" not in html:
+        return []
+    body = html[html.index("</style>") + 8:]
+    bare = [t for t in re.findall(r"<pre\b[^>]*>", body) if "class=" not in t]
+    if not bare:
+        return []
+    component = html.split(marker, 1)[1].split("</style>", 1)[0]
+    component = re.sub(r"/\*.*?\*/", " ", component, flags=re.S)
+    for selector, _ in re.findall(r"([^{}]+)\{([^{}]*)\}", component):
+        for one in selector.split(","):
+            if re.match(r"^\s*pre\s*(\{|$)", one) or one.strip() == "pre":
+                return []
+    return ["%d bare <pre> on the page and no rule styles `pre`, so they take "
+            "the browser's default -- including no overflow-x, which makes a "
+            "long line widen the page rather than scroll" % len(bare)]
+
+
 def dead_css_checks(html):
     """A rule whose class or id appears nowhere else on the page.
 
@@ -1997,6 +2033,7 @@ def static_checks(html, name):
     problems.extend(compiled_size_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
+    problems.extend(unstyled_block_checks(html))
     problems.extend(glossary_use_checks(html))
     problems.extend(figure_order_checks(html))
     problems.extend(figure_label_checks(
