@@ -14,6 +14,7 @@ kernel = { path = "../../kernel" }
 capsules-core = { path = "../../capsules/core" }
 capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
+rp2xxx = { path = "../../chips/rp2xxx" }
 segger = { path = "../../chips/segger" }
 
 tock-tbf = { path = "../../libraries/tock-tbf" }
