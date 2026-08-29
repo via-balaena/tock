@@ -721,14 +721,12 @@ $ make
   <p>The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
   <p>Which pins is not a convention to look up, it is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
   <p id="term">Anything that speaks to a serial port will read it. A Mac has <code>screen</code> already; Debian and its relatives usually want <code>picocom</code> installed first. The probe presents itself as a serial device when plugged in, and the surest way to learn its name is to look before and after doing so.</p>
-  <p id="unchecked">Everything in this section has now been run on a board, except one thing: the name a Mac gives the probe. The bench these pages were checked on drives the probe from a Raspberry Pi, where it appears as <code>/dev/ttyACM0</code>. The sources at the foot say which is which.</p>
-  <pre># list before and after plugging in
-$ ls /dev/tty.*
+  <p id="unchecked">Every command in this section has been run. The name the probe takes was read off a Raspberry Pi, where it is <code>/dev/ttyACM0</code>; the listing above is how to find it on a machine that calls it something else. That is why this gives you a method rather than a name to copy.</p>
+  <pre># find it: list before and after plugging the probe in
+$ ls /dev/tty.*        # a Mac
+$ ls /dev/ttyACM*      # Linux
 
-# a Mac
-$ screen /dev/tty.usbmodemNNNN 115200
-
-# Debian
+# then open whichever name appeared
 $ picocom -b 115200 /dev/ttyACM0</pre>
 </section>
 
@@ -968,7 +966,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>The header being labelled <b>DEBUG</b>, carrying SWCLK, GND and SWDIO, and having no power pin &mdash; read off the board, and the Raspberry Pi Debug Probe documentation</li>
     <li>The probe presenting more than one interface, and its serial device appearing at <code>/dev/ttyACM0</code> on Linux &mdash; <code>lsusb</code> showed <code>2e8a:000c</code> alongside it, and the console ran over it in both directions</li>
     <li>What OpenOCD says with no probe attached &mdash; <code>unable to find a matching CMSIS-DAP device</code>, exit&nbsp;1, captured by unplugging it</li>
-    <li>The one thing still unchecked: the name a <em>Mac</em> gives the probe. The bench that ran all of the above drives the probe from a Raspberry Pi, so <code>/dev/tty.</code> comes from documentation rather than from a run</li>
+    <li>The console command, run as printed &mdash; <code>picocom -b 115200 /dev/ttyACM0</code> opened the port at that baud and exited cleanly. Both <code>ls</code> forms were run too, one on a Mac and one on the Pi. No device name is quoted here that nobody has seen</li>
     <li>The copying routes printing that message and then exiting with status&nbsp;0 &mdash; <code>make flash</code> run on this machine with no board attached. The conversion succeeded, so the copy was the only step that did not happen, and nothing reported it</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>

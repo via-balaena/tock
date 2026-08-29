@@ -284,10 +284,12 @@ chk("and the reason no light is expected here is given",
 // and a Raspberry Pi were pointed at them. Two survive as verified; the third
 // -- what a Mac calls the probe -- could not be run, because the bench drives
 // the probe from the Pi. The page has to keep saying which is which.
-chk("the section still names what has not been run",
-    REG["unchecked"].textContent.indexOf("except one thing") > -1, true);
-chk("and it is the Mac device name, with the Linux one given from the run",
-    REG["unchecked"].textContent.indexOf("the name a Mac gives the probe") > -1
+chk("the section claims every command in it has been run",
+    REG["unchecked"].textContent.indexOf("Every command in this section has been run") > -1, true);
+// The device name is given as a method rather than a string to copy, because
+// the only one anybody here has seen is the Pi's.
+chk("and it hands over a method rather than a name to copy",
+    REG["unchecked"].textContent.indexOf("method rather than a name to copy") > -1
       && REG["unchecked"].textContent.indexOf("/dev/ttyACM0") > -1, true);
 
 // The debug header is labelled on the board; anchoring to the silkscreen beats
