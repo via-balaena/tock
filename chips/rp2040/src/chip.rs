@@ -154,7 +154,7 @@ impl Rp2040DefaultPeripherals<'_> {
     pub fn new(clocks: &'static Clocks, resets: &'static Resets) -> Self {
         Self {
             adc: adc::Adc::new(),
-            dma: dma::Dma::new(),
+            dma: dma::new(),
             i2c0: i2c::I2c::new_i2c0(clocks, resets),
             pins: RPPins::new(),
             pio0: crate::pio::new_pio0(),
