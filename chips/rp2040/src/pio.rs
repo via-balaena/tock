@@ -915,14 +915,14 @@ impl StateMachine {
     /// Sets pin output values. Pauses the state machine to run `SET` commands
     /// and temporarily unsets the `OUT_STICKY` bit to avoid side effects.
     ///
-    /// pins => pins to set the value for
+    /// pins => numbers of the pins to set the value for
     /// high => true to set the pin high
-    pub fn set_pins(&self, pins: &[&RPGpioPin<'_>], high: bool) {
+    pub fn set_pins(&self, pins: &[u32], high: bool) {
         self.with_paused(|| {
-            for pin in pins {
+            for &pin in pins {
                 self.registers.sm[self.sm_number as usize]
                     .pinctrl
-                    .modify(SMx_PINCTRL::SET_BASE.val(pin.pin() as u32));
+                    .modify(SMx_PINCTRL::SET_BASE.val(pin));
                 self.registers.sm[self.sm_number as usize]
                     .pinctrl
                     .modify(SMx_PINCTRL::SET_COUNT.val(1));
@@ -956,21 +956,18 @@ impl StateMachine {
     }
 
     /// Address of the RX FIFO
-    pub fn rx_fifo_addr(&self, pio: PIONumber) -> u32 {
-        let base_addr = match pio {
-            PIONumber::PIO0 => PIO_0_BASE_ADDRESS,
-            PIONumber::PIO1 => PIO_1_BASE_ADDRESS,
-        };
-        (base_addr as u32) + 0x20 + 4 * (self.sm_number as u32)
+    pub fn rx_fifo_addr(&self) -> u32 {
+        // Taken from the register block rather than recomputed from a base
+        // address and an offset. `register_structs!` asserts at compile time
+        // that `rxf` sits where the datasheet puts it, so this cannot drift
+        // from the layout the rest of the driver uses.
+        core::ptr::addr_of!(self.registers.rxf[self.sm_number as usize]) as u32
     }
 
     /// Address of the TX FIFO
-    pub fn tx_fifo_addr(&self, pio: PIONumber) -> u32 {
-        let base_addr = match pio {
-            PIONumber::PIO0 => PIO_0_BASE_ADDRESS,
-            PIONumber::PIO1 => PIO_1_BASE_ADDRESS,
-        };
-        (base_addr as u32) + 0x10 + 4 * (self.sm_number as u32)
+    pub fn tx_fifo_addr(&self) -> u32 {
+        // See `rx_fifo_addr`.
+        core::ptr::addr_of!(self.registers.txf[self.sm_number as usize]) as u32
     }
 
     /// Restart a state machine.
@@ -1559,8 +1556,14 @@ impl Pio {
         }
     }
 
-    pub fn set_input_sync_bypass(&self, pin: &RPGpioPin, enabled: bool) {
-        let pin = pin.pin();
+    /// Bypass the two flip-flop synchroniser on one pin's input.
+    ///
+    /// The synchroniser protects the state machines from metastability at the
+    /// cost of input delay, which fast synchronous buses cannot afford.
+    ///
+    /// pin => number of the pin to bypass
+    /// enabled => true to bypass the synchroniser
+    pub fn set_input_sync_bypass(&self, pin: u32, enabled: bool) {
         let reg_val = self.registers.input_sync_bypass.get();
         if enabled {
             self.registers.input_sync_bypass.set(reg_val | (1 << pin));
