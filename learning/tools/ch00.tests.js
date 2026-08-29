@@ -298,8 +298,10 @@ chk("the debug connections are named by the label the board prints",
     REG["wrp-0"].textContent.indexOf("labelled DEBUG") > -1, true);
 // Nothing in the chapter said the board needs its own power. Wire only the
 // probe and you get a dead board and no reason for it.
-chk("and the connector is said to carry no power",
-    REG["wrp-0"].textContent.indexOf("carries no power") > -1, true);
+// Scoping this to the debug set implied the UART one might supply power. It
+// does not: TX, GND, RX. Neither connector powers the target.
+chk("and neither connector is claimed to carry power",
+    REG["wrp-0"].textContent.indexOf("Neither of the probe's connectors carries power") > -1, true);
 
 // Captured by unplugging the probe: the literal message, not a paraphrase.
 chk("the probe-not-found panel quotes what OpenOCD actually prints",

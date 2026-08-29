@@ -744,7 +744,7 @@ $ picocom -b 115200 /dev/ttyACM0</pre>
       <button type="button" id="wr-3" aria-pressed="false"><span class="vt-at">ground</span><span>the one people leave out</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the header labelled <b>DEBUG</b>: SWCLK, GND, SWDIO. Both ends name the same three signals, and they join like to like. This set carries flashing only and says nothing to you. It carries no power either, so the board still needs powering some other way.</p>
+      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the header labelled <b>DEBUG</b>: SWCLK, GND, SWDIO. Both ends name the same three signals, and they join like to like. This set carries flashing only and says nothing to you. Neither of the probe's connectors carries power &mdash; both are three signal wires and a ground &mdash; so the board needs powering some other way before any of this does anything.</p>
       <p class="vtp" id="wrp-1">The probe's transmit joins the board's <em>receive</em>, which is pin&nbsp;1. This is the wire that carries what you type into the running kernel.</p>
       <p class="vtp" id="wrp-2">The probe's receive joins the board's <em>transmit</em>, which is pin&nbsp;0. This is the wire that carries everything the kernel prints, including the one line you are about to look for.</p>
       <p class="vtp" id="wrp-3">A shared ground between the two. Without it the two sides have no agreement about what a one and a zero are, and the symptom is not silence but nonsense &mdash; occasional characters, mostly wrong.</p>
