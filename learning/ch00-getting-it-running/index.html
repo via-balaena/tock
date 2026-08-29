@@ -631,7 +631,7 @@ dfn {
       <p class="blkp" id="ptp-1">A Raspberry Pi Debug Probe. It is the part you could skip, and skipping it costs more than it saves. Without one you hold a button, replug the board, and copy a file by hand for every change.</p>
       <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the three pads on the far edge of the board. These carry the flashing. They are marked and they go straight across, so there is nothing to get backwards.</p>
       <p class="blkp" id="ptp-3">Three wires from the probe's serial connector to two pins on the board, plus a ground. These carry the talking, and unlike the debug three, two of them cross over. Figure 4 is that crossing.</p>
-      <p class="blkp" id="ptp-4">Anything that runs Rust. There is no board-specific software to install for the route this chapter takes: no converter, no vendor tool. That is not true of the other three, and Figure 3 is about why.</p>
+      <p class="blkp" id="ptp-4">Rust, and OpenOCD. That is the whole list, and the second is the only piece you install for the board's sake. There is no converter and no vendor tool on this route, which is not true of the other three, and Figure 3 is about why.</p>
     </div>
   </div>
   <div class="instrument-note">Notice how short the list is. The reason to name it at all is that the obvious shopping list is wrong in one direction. People buy the board and skip the probe, then meet every problem in this chapter at once, with no way to tell them apart.</div>
@@ -706,6 +706,7 @@ $ make
   <h2>Getting it onto the chip</h2>
   <p>With the probe wired to the three pads, one command does it:</p>
   <pre>$ make flash-openocd</pre>
+  <p>OpenOCD is the one piece of software you install for this, and on the Mac these pages were written on it was the only thing missing. Everything else was already there for Rust.</p>
   <p>What that runs is OpenOCD, an ordinary program on your machine that speaks to the probe over USB, and through it to the chip. The board's own configuration for it is two lines long: use a standard debug adapter, and the chip is an RP2350.</p>
   <p>The command writes the kernel, reads it back to confirm it landed, resets the board and exits. If it cannot find the probe it says so and stops, which is the failure you want &mdash; loud, immediate, and about the thing that is actually wrong.</p>
   <p>One aside worth having early: the machine that builds and the machine holding the probe do not have to be the same one. Splitting them is a real setup, and then what crosses between the two is one file.</p>
@@ -888,6 +889,7 @@ tock$</pre>
     <li>The tree having four Pico directories and no Pico 2&nbsp;W &mdash; <code>boards/</code> at that commit</li>
     <li>Pin&nbsp;25 being the light this board hands to the light driver &mdash; the same file, :385</li>
     <li>The build being about seven seconds of wall time, of which 5.64 are the compiler &mdash; measured on this machine, and the size line quoted with it is that run's own output</li>
+    <li>The copying routes printing that message and then exiting with status&nbsp;0 &mdash; <code>make flash</code> run on this machine with no board attached. The conversion succeeded, so the copy was the only step that did not happen, and nothing reported it</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>
 </section>
