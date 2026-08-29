@@ -2856,7 +2856,14 @@ def index_checks(root, chapters):
                             % (tag, opened, closed))
 
     # One entry per chapter directory, and no entry pointing anywhere else.
-    linked = re.findall(r'href="(ch[^"/]+)/"', html)
+    #
+    # Read from the contents list alone. The "Begin" card at the foot links
+    # chapter 1 a second time on purpose -- it is the page turn, not an eighth
+    # entry -- and this counted it as the same chapter listed twice, which is
+    # a real defect in the list and not what that link is.
+    shelf = re.sub(r'<section class="panel begin">.*?</section>', " ", html,
+                   flags=re.S)
+    linked = re.findall(r'href="(ch[^"/]+)/"', shelf)
     if len(linked) != len(set(linked)):
         problems.append("index: a chapter is linked more than once")
     for missing in sorted(set(chapters) - set(linked)):
@@ -3007,7 +3014,7 @@ def nav_checks(root, chapters):
         if len(pagers) != 1:
             problems.append("%s has %d pagers, not 1" % (name, len(pagers)))
             continue
-        classes, attrs, body = pagers[0]
+        _, attrs, body = pagers[0]
         if "aria-label" not in attrs:
             problems.append("%s's pager has no accessible name, so it is an "
                             "unnamed landmark" % name)
@@ -3015,15 +3022,25 @@ def nav_checks(root, chapters):
         if "../" not in [href for href, _ in links]:
             problems.append("%s's pager does not link the cover" % name)
 
+        # What is behind chapter 1 is the cover: it is the page before the
+        # first chapter, so chapter 1's way back is the cover itself rather
+        # than an empty slot, and its pager carries that one link and no
+        # separate Contents beside it, which would be the same link twice.
         previous = order[position - 1] if position else None
         back = [(href, text) for href, text in links if href != "../"]
         if previous is None:
             if back:
                 problems.append("%s is the first chapter and its pager goes "
-                                "back to %s" % (name, back[0][0]))
-            if "pager-only" not in classes.split():
-                problems.append("%s's pager carries one link and is not marked "
-                                "pager-only, so it will not sit right" % name)
+                                "back to %s; what is behind it is the cover"
+                                % (name, back[0][0]))
+            if len(links) != 1:
+                problems.append("%s's pager carries %d links; the first "
+                                "chapter's way back is the cover, and that is "
+                                "the whole row" % (name, len(links)))
+            elif "&larr;" not in links[0][1]:
+                problems.append("%s's pager links the cover without marking it "
+                                "as the way back: %r"
+                                % (name, links[0][1].strip()))
         elif len(back) != 1:
             problems.append("%s's pager has %d ways back, not 1"
                             % (name, len(back)))
@@ -3036,6 +3053,31 @@ def nav_checks(root, chapters):
             if wanted not in html_module.unescape(label):
                 problems.append("%s's pager labels the way back %r, which does "
                                 "not name %s" % (name, label.strip(), wanted))
+
+    # The cover is the page before chapter 1, so it is in the order too and
+    # owes it a way forward. It linked down into all seven chapters and had
+    # nothing linking it on, which left the one page holding the reading order
+    # outside it -- and chapter 1's pager pointing back here only reads as a
+    # page turn if the turn goes both ways.
+    cover = os.path.join(root, "index.html")
+    if order and os.path.exists(cover):
+        with open(cover, encoding="utf-8") as fh:
+            html = fh.read()
+        begin = re.findall(
+            r'<section class="panel begin">.*?<h2><a href="(ch[^"/]+)/">'
+            r'([^<]*)</a></h2>', html, re.S)
+        if len(begin) != 1:
+            problems.append("the cover has %d ways in to the first chapter, "
+                            "not 1" % len(begin))
+        else:
+            target, label = begin[0]
+            if target != order[0]:
+                problems.append("the cover begins at %s; the order starts at %s"
+                                % (target, order[0]))
+            wanted = "Chapter %d" % int(order[0][2:4])
+            if wanted not in html_module.unescape(label):
+                problems.append("the cover's way in is labelled %r, which does "
+                                "not name %s" % (label, wanted))
     return problems
 
 

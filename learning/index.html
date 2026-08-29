@@ -282,6 +282,18 @@ code {
 /* ---------- closing blocks ---------- */
 
 .tail { margin-bottom: 3rem; }
+
+/* The page turn, at the foot, where a chapter's next-card sits. Until this the
+   cover linked down into the seven chapters and nothing linked it forward, so
+   the one page that holds the reading order was not itself in it. */
+.begin { margin-bottom: 3rem; }
+.begin h2 { margin-bottom: .55rem; }
+.begin h2 a { color: var(--ink); text-decoration: none; }
+/* A non-breaking space, so the arrow cannot take a line of its own under the
+   title when the column narrows. */
+.begin h2 a::after { content: "\00A0\2192"; color: var(--hot); }
+.begin h2 a:hover { color: var(--accent); }
+.begin .kicker { color: var(--hot); }
 .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
   gap: 1.6rem 2rem; align-items: start; margin: 0 0 3rem; }
 .panel {
@@ -466,6 +478,12 @@ pre {
   <h2>The series lives inside the tree it describes</h2>
   <p>Keeping the chapters in a branch of the Tock repository means every citation can be checked against the exact commit the branch sits on &mdash; and when a rebase moves a line a chapter quoted, that is information rather than an inconvenience. The pages are interactive, so "it looks right" is not evidence. From the repository root:</p>
   <pre>python3 learning/tools/check.py</pre>
+</section>
+
+<section class="panel begin">
+  <p class="kicker">Begin</p>
+  <h2><a href="ch01-everything-is-memory/">Chapter 1 &mdash; Everything Is Memory</a></h2>
+  <p>Any code on this chip can write any address, and nothing in the machine refuses. Every chapter after the first answers part of that; this is where it gets asked.</p>
 </section>
 
 <p class="colophon">

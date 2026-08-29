@@ -126,11 +126,24 @@ Each chapter now carries three links:
 - **The next chapter's title**, on the card that was already at the foot of
   every chapter, which had been written and styled but never linked.
 - **`.pager`**, under that card: back one chapter, and out to the cover.
-  Chapter 1 has nothing behind it, so its row carries one link and is marked
-  `pager-only`; chapter 7 has no card to link, because there is no chapter 8.
+  Chapter 7 has no card to link, because there is no chapter 8.
+
+**The cover is a page in the order, not a table of it.** It links down into all
+seven chapters, and for a while nothing linked it *forward* -- so the one page
+holding the reading order was the only page not in it, and chapter 1's row was
+the odd one out, with an empty left slot. What is behind chapter 1 is the
+cover. So the cover carries a `.begin` card at its foot, where a chapter's
+next-card sits, and chapter 1's pager goes back to it: `&larr;&nbsp;Contents`,
+one link and no separate Contents beside it, which would be the same link
+twice. The chain runs cover to chapter 7 with no special case in it.
 
 Every href is relative, so a clone reads exactly as a static host does, and
 `mkindex.py` is what rewrites them for a host where neither path exists.
+
+The `.begin` card links chapter 1 a second time, on purpose -- it is the page
+turn, not an eighth contents entry. `index_checks` counts entries from the
+contents list with that card cut out, because a chapter appearing twice *in the
+list* is a real defect and this is not that.
 
 `nav_checks` in `check.py` guards this. That the order is written down at all
 is what makes it need guarding: it lives on the cover, and now seven more times

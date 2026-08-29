@@ -775,8 +775,6 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 }
 .pager a { color: var(--ink-soft); text-decoration: none; }
 .pager a:hover, .pager a:focus-visible { color: var(--accent); }
-/* Chapter 1 has nothing behind it, so its row carries the one link. */
-.pager-only { justify-content: flex-end; }
 .next ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .35rem; }
 .next li::marker { font-family: var(--mono); color: var(--hot); }
 
@@ -3692,8 +3690,8 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <li><code>volatile</code> stops the optimizer from helpfully destroying your driver.</li>
     <li id="carry-tock">Nothing yet asks whether code is allowed to touch an address. That is what Tock is for.</li>
   </ol>
-  <nav class="pager pager-only" aria-label="Chapter navigation">
-    <a href="../">Contents</a>
+  <nav class="pager" aria-label="Chapter navigation">
+    <a href="../">&larr;&nbsp;Contents</a>
   </nav>
 </div>
 
