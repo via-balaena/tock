@@ -1,350 +1,55 @@
 // Licensed under the Apache License, Version 2.0 or the MIT License.
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// Copyright OxidOS Automotive 2025.
+// Copyright Tock Contributors 2026.
 
-use crate::pio;
+//! Direct Memory Access (DMA) hardware.
+//!
+//! The driver itself is shared with the RP2350 and lives in `rp2xxx::dma`.
+//! This module supplies what is specific to this chip: where the block is,
+//! how many channels it has, and where the `CTRL_TRIG` fields that moved
+//! between the two chips sit on this one.
+//!
+//! Refer to the RP2040 Datasheet, Section 2.5.
+//! RP2040 Datasheet [1].
+//!
+//! [1]: https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
+
 use kernel::utilities::StaticRef;
-use kernel::utilities::cells::OptionalCell;
-use kernel::utilities::registers::interfaces::{Readable, Writeable};
-use kernel::utilities::registers::{FieldValue, ReadWrite, register_bitfields, register_structs};
+use rp2xxx::dma::{ChannelRegisters, DmaIrqRegisters, DmaLayout};
 
-register_structs! {
-        pub ChannelRegisters {
-                (0x000 => read_addr: ReadWrite<u32, READ_ADDR::Register>),
-                (0x004 => write_addr: ReadWrite<u32, WRITE_ADDR::Register>),
-                (0x008 => trans_count: ReadWrite<u32, TRANS_COUNT::Register>),
-                (0x00C => ctrl_trig: ReadWrite<u32, CTRL_TRIG::Register>),
-                (0x010 => _reserved0),
-                (0x040 => @END),
-        },
-        pub DmaRegisters {
-                (0x000 => channels: [ChannelRegisters; 12]),
-                (0x300 => _reserved),
+pub use rp2xxx::dma::{
+    DataSize, DmaChannelClient, DmaPeripheral, Irq, Transfer, bswap, chain_to, incr_write, treq_sel,
+};
 
-                (0x400 => intr: ReadWrite<u32, INTR::Register>),
-                (0x404 => inte0: ReadWrite<u32, INTE::Register>),
-                (0x408 => intf0: ReadWrite<u32, INTF::Register>),
-                (0x40C => ints0: ReadWrite<u32, INTS::Register>),
-                (0x410 => _reserved1),
-                (0x414 => inte1: ReadWrite<u32, INTE::Register>),
-                (0x418 => intf1: ReadWrite<u32, INTF::Register>),
-                (0x41C => ints1: ReadWrite<u32, INTS::Register>),
-                (0x420 => timer0: ReadWrite<u32, TIMER0::Register>),
-                (0x424 => timer1: ReadWrite<u32, TIMER1::Register>),
-                (0x428 => timer2: ReadWrite<u32, TIMER2::Register>),
-                (0x42C => timer3: ReadWrite<u32, TIMER3::Register>),
-                (0x430 => multi_chan_trigger: ReadWrite<u32>),
-                (0x434 => sniff_ctrl: ReadWrite<u32, SNIFF_CTRL::Register>),
-                (0x438 => sniff_data: ReadWrite<u32>),
-                (0x43C => _reserved13),
+/// The RP2040 has 12 DMA channels.
+pub const NUM_CHANNELS: usize = 12;
 
-                (0x440 => fifo_levels: ReadWrite<u32, FIFO_LEVELS::Register>),
-                (0x444 => chan_abort: ReadWrite<u32>),
-                (0x448 => n_channels: ReadWrite<u32>),
-                (0x44C => _reserved14),
+/// Where the `CTRL_TRIG` fields that differ between the RP2 chips sit on the
+/// RP2040. Taken from the RP2040 Datasheet, Section 2.5.7.
+pub struct Rp2040DmaLayout;
 
-                (0x800 => ch0_dbg_ctdreq: ReadWrite<u32>),
-                (0x804 => ch0_dbg_tcr: ReadWrite<u32>),
-                (0x808 => _reserved15),
-
-                (0x840 => ch1_dbg_ctdreq: ReadWrite<u32>),
-                (0x844 => ch1_dbg_tcr: ReadWrite<u32>),
-                (0x848 => _reserved16),
-
-                (0x880 => ch2_dbg_ctdreq: ReadWrite<u32>),
-                (0x884 => ch2_dbg_tcr: ReadWrite<u32>),
-                (0x888 => _reserved17),
-
-                (0x8C0 => ch3_dbg_ctdreq: ReadWrite<u32>),
-                (0x8C4 => ch3_dbg_tcr: ReadWrite<u32>),
-                (0x8C8 => _reserved18),
-
-                (0x900 => ch4_dbg_ctdreq: ReadWrite<u32>),
-                (0x904 => ch4_dbg_tcr: ReadWrite<u32>),
-                (0x908 => _reserved19),
-
-                (0x940 => ch5_dbg_ctdreq: ReadWrite<u32>),
-                (0x944 => ch5_dbg_tcr: ReadWrite<u32>),
-                (0x948 => _reserved20),
-
-                (0x980 => ch6_dbg_ctdreq: ReadWrite<u32>),
-                (0x984 => ch6_dbg_tcr: ReadWrite<u32>),
-                (0x988 => _reserved21),
-
-                (0x9C0 => ch7_dbg_ctdreq: ReadWrite<u32>),
-                (0x9C4 => ch7_dbg_tcr: ReadWrite<u32>),
-                (0x9C8 => _reserved22),
-
-                (0xA00 => ch8_dbg_ctdreq: ReadWrite<u32>),
-                (0xA04 => ch8_dbg_tcr: ReadWrite<u32>),
-                (0xA08 => _reserved23),
-
-                (0xA40 => ch9_dbg_ctdreq: ReadWrite<u32>),
-                (0xA44 => ch9_dbg_tcr: ReadWrite<u32>),
-                (0xA48 => _reserved24),
-
-                (0xA80 => ch10_dbg_ctdreq: ReadWrite<u32>),
-                (0xA84 => ch10_dbg_tcr: ReadWrite<u32>),
-                (0xA88 => _reserved25),
-
-                (0xAC0 => ch11_dbg_ctdreq: ReadWrite<u32>),
-                (0xAC4 => ch11_dbg_tcr: ReadWrite<u32>),
-                (0xAC8 => @END),
-    }
+impl DmaLayout for Rp2040DmaLayout {
+    const INCR_WRITE_SHIFT: usize = 5;
+    const CHAIN_TO_SHIFT: usize = 11;
+    const TREQ_SEL_SHIFT: usize = 15;
+    const BSWAP_SHIFT: usize = 22;
+    const BUSY_SHIFT: usize = 24;
 }
-register_bitfields![u32,
-    READ_ADDR [
-        READ_ADDR OFFSET(0) NUMBITS(32) []
-    ],
-    WRITE_ADDR [
-        WRITE_ADDR OFFSET(0) NUMBITS(32) []
-    ],
-    TRANS_COUNT [
-        TRANS_COUNT OFFSET(0) NUMBITS(32) []
-    ],
-    CTRL_TRIG [
-        AHB_ERROR OFFSET(31) NUMBITS(1) [],
-        READ_ERROR OFFSET(30) NUMBITS(1) [],
-        WRITE_ERROR OFFSET(29) NUMBITS(1) [],
-        BUSY OFFSET(24) NUMBITS(1) [],
-        SNIFF_EN OFFSET(23) NUMBITS(1) [],
-        BSWAP OFFSET(22) NUMBITS(1) [],
-        IRQ_QUIET OFFSET(21) NUMBITS(1) [],
-        TREQ_SEL OFFSET(15) NUMBITS(6) [
-            /// Select PIO0's TX FIFO 0 as TREQ
-            SelectPIO0STXFIFO0AsTREQ = 0,
-            /// Select PIO0's TX FIFO 1 as TREQ
-            SelectPIO0STXFIFO1AsTREQ = 1,
-            /// Select PIO0's TX FIFO 2 as TREQ
-            SelectPIO0STXFIFO2AsTREQ = 2,
-            /// Select PIO0's TX FIFO 3 as TREQ
-            SelectPIO0STXFIFO3AsTREQ = 3,
-            /// Select PIO0's RX FIFO 0 as TREQ
-            SelectPIO0SRXFIFO0AsTREQ = 4,
-            /// Select PIO0's RX FIFO 1 as TREQ
-            SelectPIO0SRXFIFO1AsTREQ = 5,
-            /// Select PIO0's RX FIFO 2 as TREQ
-            SelectPIO0SRXFIFO2AsTREQ = 6,
-            /// Select PIO0's RX FIFO 3 as TREQ
-            SelectPIO0SRXFIFO3AsTREQ = 7,
-            /// Select PIO1's TX FIFO 0 as TREQ
-            SelectPIO1STXFIFO0AsTREQ = 8,
-            /// Select PIO1's TX FIFO 1 as TREQ
-            SelectPIO1STXFIFO1AsTREQ = 9,
-            /// Select PIO1's TX FIFO 2 as TREQ
-            SelectPIO1STXFIFO2AsTREQ = 10,
-            /// Select PIO1's TX FIFO 3 as TREQ
-            SelectPIO1STXFIFO3AsTREQ = 11,
-            /// Select PIO1's RX FIFO 0 as TREQ
-            SelectPIO1SRXFIFO0AsTREQ = 12,
-            /// Select PIO1's RX FIFO 1 as TREQ
-            SelectPIO1SRXFIFO1AsTREQ = 13,
-            /// Select PIO1's RX FIFO 2 as TREQ
-            SelectPIO1SRXFIFO2AsTREQ = 14,
-            /// Select PIO1's RX FIFO 3 as TREQ
-            SelectPIO1SRXFIFO3AsTREQ = 15,
-            /// Select SPI0's TX FIFO as TREQ
-            SelectSPI0STXFIFOAsTREQ = 16,
-            /// Select SPI0's RX FIFO as TREQ
-            SelectSPI0SRXFIFOAsTREQ = 17,
-            /// Select SPI1's TX FIFO as TREQ
-            SelectSPI1STXFIFOAsTREQ = 18,
-            /// Select SPI1's RX FIFO as TREQ
-            SelectSPI1SRXFIFOAsTREQ = 19,
-            /// Select UART0's TX FIFO as TREQ
-            SelectUART0STXFIFOAsTREQ = 20,
-            /// Select UART0's RX FIFO as TREQ
-            SelectUART0SRXFIFOAsTREQ = 21,
-            /// Select UART1's TX FIFO as TREQ
-            SelectUART1STXFIFOAsTREQ = 22,
-            /// Select UART1's RX FIFO as TREQ
-            SelectUART1SRXFIFOAsTREQ = 23,
-            /// Select PWM Counter 0's Wrap Value as TREQ
-            SelectPWMCounter0SWrapValueAsTREQ = 24,
-            /// Select PWM Counter 1's Wrap Value as TREQ
-            SelectPWMCounter1SWrapValueAsTREQ = 25,
-            /// Select PWM Counter 2's Wrap Value as TREQ
-            SelectPWMCounter2SWrapValueAsTREQ = 26,
-            /// Select PWM Counter 3's Wrap Value as TREQ
-            SelectPWMCounter3SWrapValueAsTREQ = 27,
-            /// Select PWM Counter 4's Wrap Value as TREQ
-            SelectPWMCounter4SWrapValueAsTREQ = 28,
-            /// Select PWM Counter 5's Wrap Value as TREQ
-            SelectPWMCounter5SWrapValueAsTREQ = 29,
-            /// Select PWM Counter 6's Wrap Value as TREQ
-            SelectPWMCounter6SWrapValueAsTREQ = 30,
-            /// Select PWM Counter 7's Wrap Value as TREQ
-            SelectPWMCounter7SWrapValueAsTREQ = 31,
-            /// Select I2C0's TX FIFO as TREQ
-            SelectI2C0STXFIFOAsTREQ = 32,
-            /// Select I2C0's RX FIFO as TREQ
-            SelectI2C0SRXFIFOAsTREQ = 33,
-            /// Select I2C1's TX FIFO as TREQ
-            SelectI2C1STXFIFOAsTREQ = 34,
-            /// Select I2C1's RX FIFO as TREQ
-            SelectI2C1SRXFIFOAsTREQ = 35,
-            /// Select the ADC as TREQ
-            SelectTheADCAsTREQ = 36,
-            /// Select the XIP Streaming FIFO as TREQ
-            SelectTheXIPStreamingFIFOAsTREQ = 37,
-            /// Select the XIP SSI TX FIFO as TREQ
-            SelectTheXIPSSITXFIFOAsTREQ = 38,
-            /// Select the XIP SSI RX FIFO as TREQ
-            SelectTheXIPSSIRXFIFOAsTREQ = 39,
-            /// Select Timer 0 as TREQ
-            SelectTimer0AsTREQ = 59,
-            /// Select Timer 1 as TREQ
-            SelectTimer1AsTREQ = 60,
-            /// Select Timer 2 as TREQ (Optional)
-            SelectTimer2AsTREQOptional = 61,
-            /// Select Timer 3 as TREQ (Optional)
-            SelectTimer3AsTREQOptional = 62,
-            /// Permanent request, for unpaced transfers.
-            PermanentRequestForUnpacedTransfers = 63
-        ],
-        /// When this channel completes, it will trigger the channel indicated by CHAIN_TO.
-        CHAIN_TO OFFSET(11) NUMBITS(4) [],
-        /// Select whether RING_SIZE applies to read or write addresses.
-        /// If 0, read addresses are wrapped on a (1 << RING_SIZ
-        RING_SEL OFFSET(10) NUMBITS(1) [],
-        /// Size of address wrap region. If 0, don't wrap. For values n > 0, only the lower
-        ///
-        /// Ring sizes between 2 and 32768 bytes are possible. T
-        RING_SIZE OFFSET(6) NUMBITS(4) [
-            RING_NONE = 0
-        ],
-        INCR_WRITE OFFSET(5) NUMBITS(1) [],
-        INCR_READ OFFSET(4) NUMBITS(1) [],
-        DATA_SIZE OFFSET(2) NUMBITS(2) [
-            SIZE_BYTE = 0b00,
-            SIZE_HALFWORD = 0b01,
-            SIZE_WORD = 0b10
-        ],
-        HIGH_PRIORITY OFFSET(1) NUMBITS(1) [],
-        EN OFFSET(0) NUMBITS(1) []
-    ],
-    INTR [
-        INTR OFFSET(0) NUMBITS(16) []
-    ],
-    INTE [
-        CH11 OFFSET(11) NUMBITS(1) [],
-        CH10 OFFSET(10) NUMBITS(1) [],
-        CH9 OFFSET(9) NUMBITS(1) [],
-        CH8 OFFSET(8) NUMBITS(1) [],
-        CH7 OFFSET(7) NUMBITS(1) [],
-        CH6 OFFSET(6) NUMBITS(1) [],
-        CH5 OFFSET(5) NUMBITS(1) [],
-        CH4 OFFSET(4) NUMBITS(1) [],
-        CH3 OFFSET(3) NUMBITS(1) [],
-        CH2 OFFSET(2) NUMBITS(1) [],
-        CH1 OFFSET(1) NUMBITS(1) [],
-        CH0 OFFSET(0) NUMBITS(1) [],
-    ],
-    INTF [
-        CH11 OFFSET(11) NUMBITS(1) [],
-        CH10 OFFSET(10) NUMBITS(1) [],
-        CH9 OFFSET(9) NUMBITS(1) [],
-        CH8 OFFSET(8) NUMBITS(1) [],
-        CH7 OFFSET(7) NUMBITS(1) [],
-        CH6 OFFSET(6) NUMBITS(1) [],
-        CH5 OFFSET(5) NUMBITS(1) [],
-        CH4 OFFSET(4) NUMBITS(1) [],
-        CH3 OFFSET(3) NUMBITS(1) [],
-        CH2 OFFSET(2) NUMBITS(1) [],
-        CH1 OFFSET(1) NUMBITS(1) [],
-        CH0 OFFSET(0) NUMBITS(1) [],
-    ],
-    INTS [
-        /// Indicates active channel interrupt requests which are currently causing IRQ 0 to
-        /// Channel interrupts can be cleared by writing a bit m
-        CH11 OFFSET(11) NUMBITS(1) [],
-        CH10 OFFSET(10) NUMBITS(1) [],
-        CH9 OFFSET(9) NUMBITS(1) [],
-        CH8 OFFSET(8) NUMBITS(1) [],
-        CH7 OFFSET(7) NUMBITS(1) [],
-        CH6 OFFSET(6) NUMBITS(1) [],
-        CH5 OFFSET(5) NUMBITS(1) [],
-        CH4 OFFSET(4) NUMBITS(1) [],
-        CH3 OFFSET(3) NUMBITS(1) [],
-        CH2 OFFSET(2) NUMBITS(1) [],
-        CH1 OFFSET(1) NUMBITS(1) [],
-        CH0 OFFSET(0) NUMBITS(1) [],
-    ],
-    TIMER0 [
-        /// Pacing Timer Dividend. Specifies the X value for the (X/Y) fractional timer.
-        X OFFSET(16) NUMBITS(16) [],
-        /// Pacing Timer Divisor. Specifies the Y value for the (X/Y) fractional timer.
-        Y OFFSET(0) NUMBITS(16) []
-    ],
-    TIMER1 [
-        /// Pacing Timer Dividend. Specifies the X value for the (X/Y) fractional timer.
-        X OFFSET(16) NUMBITS(16) [],
-        /// Pacing Timer Divisor. Specifies the Y value for the (X/Y) fractional timer.
-        Y OFFSET(0) NUMBITS(16) []
-    ],
-    TIMER2 [
-        X OFFSET(16) NUMBITS(16) [],
-        Y OFFSET(0) NUMBITS(16) []
-    ],
-    TIMER3 [
-        X OFFSET(16) NUMBITS(16) [],
-        Y OFFSET(0) NUMBITS(16) []
-    ],
-    MULTI_CHAN_TRIGGER [
-        MULTI_CHAN_TRIGGER OFFSET(0) NUMBITS(16) []
-    ],
-    SNIFF_CTRL [
-        OUT_INV OFFSET(11) NUMBITS(1) [],
-        OUT_REV OFFSET(10) NUMBITS(1) [],
-        BSWAP OFFSET(9) NUMBITS(1) [],
 
-        CALC OFFSET(5) NUMBITS(4) [
-            /// Calculate a CRC-32 (IEEE802.3 polynomial)
-            CalculateACRC32IEEE8023Polynomial = 0,
-            /// Calculate a CRC-32 (IEEE802.3 polynomial) with bit reversed data
-            CalculateACRC32IEEE8023PolynomialWithBitReversedData = 1,
-            /// Calculate a CRC-16-CCITT
-            CalculateACRC16CCITT = 2,
-            /// Calculate a CRC-16-CCITT with bit reversed data
-            CalculateACRC16CCITTWithBitReversedData = 3,
-            /// XOR reduction over all data. == 1 if the total 1 population count is odd.
-            XORReductionOverAllData1IfTheTotal1PopulationCountIsOdd = 14,
-            /// Calculate a simple 32-bit checksum (addition with a 32 bit accumulator)
-            CalculateASimple32BitChecksumAdditionWithA32BitAccumulator = 15
-        ],
-        /// DMA channel for Sniffer to observe
-        DMACH OFFSET(1) NUMBITS(4) [],
-        /// Enable sniffer
-        EN OFFSET(0) NUMBITS(1) []
-    ],
-    SNIFF_DATA [
-        SNIFF_DATA OFFSET(0) NUMBITS(32) []
-    ],
-    FIFO_LEVELS [
-        /// Current Read-Address-FIFO fill level
-        RAF_LVL OFFSET(16) NUMBITS(8) [],
-        /// Current Write-Address-FIFO fill level
-        WAF_LVL OFFSET(8) NUMBITS(8) [],
-        /// Current Transfer-Data-FIFO fill level
-        TDF_LVL OFFSET(0) NUMBITS(8) []
-    ],
-    CHAN_ABORT [
-        CHAN_ABORT OFFSET(0) NUMBITS(16) []
-    ],
-    N_CHANNELS [
-        N_CHANNELS OFFSET(0) NUMBITS(5) []
-    ],
-    DBG_CTDREQ [
-        DBG_CTDREQ OFFSET(0) NUMBITS(6) []
-    ],
-    DBG_TCR [
-        DBG_TCR OFFSET(0) NUMBITS(32) []
-    ]
-];
+/// The shared DMA driver, with this chip's layout and channel count.
+pub type Dma<'a> = rp2xxx::dma::Dma<'a, Rp2040DmaLayout, NUM_CHANNELS>;
+/// One channel of this chip's DMA block.
+pub type DmaChannel<'a> = rp2xxx::dma::DmaChannel<'a, Rp2040DmaLayout, NUM_CHANNELS>;
 
-const DMA_BASE: StaticRef<DmaRegisters> =
-    unsafe { StaticRef::new(0x50000000 as *const DmaRegisters) };
+const DMA_BASE: usize = 0x5000_0000;
+const IRQ_OFFSET: usize = 0x400;
 
+const CHANNELS: StaticRef<[ChannelRegisters; NUM_CHANNELS]> =
+    unsafe { StaticRef::new(DMA_BASE as *const [ChannelRegisters; NUM_CHANNELS]) };
+const IRQ: StaticRef<DmaIrqRegisters> =
+    unsafe { StaticRef::new((DMA_BASE + IRQ_OFFSET) as *const DmaIrqRegisters) };
+
+/// Which DMA channel. The RP2040 has twelve.
 #[derive(Clone, Copy)]
 pub enum Channel {
     Channel0 = 0,
@@ -361,276 +66,75 @@ pub enum Channel {
     Channel11 = 11,
 }
 
-pub enum Transfer {
-    PeripheralToMemory,
-    MemoryToPeripheral,
-}
-
-pub enum DataSize {
-    Byte = 0x0,
-    HalfWord = 0x1,
-    Word = 0x2,
-}
-
-impl From<DataSize> for FieldValue<u32, CTRL_TRIG::Register> {
-    fn from(value: DataSize) -> Self {
-        match value {
-            DataSize::Byte => CTRL_TRIG::DATA_SIZE::SIZE_BYTE,
-            DataSize::HalfWord => CTRL_TRIG::DATA_SIZE::SIZE_HALFWORD,
-            DataSize::Word => CTRL_TRIG::DATA_SIZE::SIZE_WORD,
-        }
-    }
-}
-
-pub enum DmaPeripheral {
-    /// The RX FIFO of one state machine, named by PIO block index and state
-    /// machine. The block is an index rather than an enum because how many
-    /// blocks a chip has is a fact about the chip.
-    PioRxFifo(usize, pio::SMNumber),
-    /// The TX FIFO of one state machine. See `PioRxFifo`.
-    PioTxFifo(usize, pio::SMNumber),
-}
-
-impl From<DmaPeripheral> for FieldValue<u32, CTRL_TRIG::Register> {
-    fn from(value: DmaPeripheral) -> Self {
-        // The PIO transfer request numbers are laid out so that the block,
-        // the direction and the state machine index give the number
-        // directly: PIO0 TX is 0 to 3, PIO0 RX is 4 to 7, PIO1 TX is 8 to
-        // 11 and PIO1 RX is 12 to 15. The named TREQ_SEL values above are
-        // the same table, and the tests at the end of this file check this
-        // arithmetic against every one of them.
-        let (pio, rx, sm) = match value {
-            DmaPeripheral::PioRxFifo(pio, sm) => (pio as u32, 1, sm as u32),
-            DmaPeripheral::PioTxFifo(pio, sm) => (pio as u32, 0, sm as u32),
-        };
-        CTRL_TRIG::TREQ_SEL.val(pio * 8 + rx * 4 + sm)
-    }
-}
-
-pub enum Irq {
-    Irq0,
-    Irq1,
-}
-
-pub trait DmaChannelClient {
-    fn transfer_done(&self);
-}
-
-#[derive(Clone, Copy)]
-pub struct DmaChannel<'a> {
-    dma: &'a Dma<'a>,
-    ch: Channel,
-}
-
-impl<'a> DmaChannel<'a> {
-    pub const fn new(dma: &'a Dma<'a>, ch: Channel) -> Self {
-        Self { dma, ch }
-    }
-    pub fn set_client(&self, client: &'a dyn DmaChannelClient) {
-        self.dma.set_channel_client(self.ch, client);
-    }
-}
-
-pub struct Dma<'a> {
-    registers: StaticRef<DmaRegisters>,
-    clients: [OptionalCell<&'a dyn DmaChannelClient>; 12],
-}
-
-impl<'a> Dma<'a> {
-    pub const fn new() -> Self {
-        Self {
-            registers: DMA_BASE,
-            clients: [const { OptionalCell::empty() }; 12],
-        }
-    }
-
-    pub fn channel(&'a self, ch: Channel) -> DmaChannel<'a> {
-        DmaChannel::new(self, ch)
-    }
-}
-
-impl<'a> Dma<'a> {
-    pub fn handle_interrupt0(&self) {
-        let value = self.registers.ints0.get();
-        self.registers.ints0.set(value);
-
-        self.handle_channels(value);
-    }
-
-    pub fn handle_interrupt1(&self) {
-        let value = self.registers.ints1.get();
-        self.registers.ints1.set(value);
-
-        self.handle_channels(value);
-    }
-
-    #[inline]
-    fn handle_channels(&self, mut ints: u32) {
-        ints &= 0xfff;
-        while ints != 0 {
-            let channel = ints.trailing_zeros();
-            self.clients[channel as usize].map(|client| client.transfer_done());
-            ints ^= 1 << channel;
-        }
-    }
-
-    fn enable_interrupt(&self, channel: Channel, irq: Irq) {
-        let irq = match irq {
-            Irq::Irq0 => &self.registers.inte0,
-            Irq::Irq1 => &self.registers.inte1,
-        };
-        let mut value = irq.get();
-        value |= 1 << (channel as usize);
-        irq.set(value);
-    }
-
-    fn disable_interrupt(&self, channel: Channel, irq: Irq) {
-        let irq = match irq {
-            Irq::Irq0 => &self.registers.inte0,
-            Irq::Irq1 => &self.registers.inte1,
-        };
-        let mut value = irq.get();
-        value &= !(1 << (channel as usize));
-        irq.set(value);
-    }
-
-    fn channel_registers(&self, channel: Channel) -> &ChannelRegisters {
-        &self.registers.channels[channel as usize]
-    }
-
-    fn set_channel_client(&self, channel: Channel, client: &'a dyn DmaChannelClient) {
-        self.clients[channel as usize].set(client)
-    }
-}
-
-impl DmaChannel<'_> {
-    pub fn trans_count(&self) -> u32 {
-        let regs = &self.dma.channel_registers(self.ch);
-        regs.trans_count.get()
-    }
-
-    pub fn busy(&self) -> bool {
-        let regs = &self.dma.channel_registers(self.ch);
-        match regs.ctrl_trig.read(CTRL_TRIG::BUSY) {
-            0 => false,
-            _ => true,
-        }
-    }
-
-    pub fn set_read_addr(&self, addr: u32) {
-        let regs = &self.dma.channel_registers(self.ch);
-        regs.read_addr.write(READ_ADDR::READ_ADDR.val(addr));
-    }
-
-    pub fn set_write_addr(&self, addr: u32) {
-        let regs = &self.dma.channel_registers(self.ch);
-        regs.write_addr.write(WRITE_ADDR::WRITE_ADDR.val(addr));
-    }
-
-    pub fn set_len(&self, len: u32) {
-        let regs = &self.dma.channel_registers(self.ch);
-        regs.trans_count.write(TRANS_COUNT::TRANS_COUNT.val(len));
-    }
-
-    pub fn enable_interrupt(&self, irq: Irq) {
-        self.dma.enable_interrupt(self.ch, irq);
-    }
-
-    pub fn disable_interrupt(&self, irq: Irq) {
-        self.dma.disable_interrupt(self.ch, irq);
-    }
-
-    pub fn enable(
-        &self,
-        treq: DmaPeripheral,
-        data_size: DataSize,
-        transfer: Transfer,
-        bswap: bool,
-    ) {
-        let regs = &self.dma.channel_registers(self.ch);
-
-        let bswap = match bswap {
-            true => CTRL_TRIG::BSWAP::SET,
-            false => CTRL_TRIG::BSWAP::CLEAR,
-        };
-        let (incr_rd, incr_wr) = match transfer {
-            Transfer::MemoryToPeripheral => {
-                (CTRL_TRIG::INCR_READ::SET, CTRL_TRIG::INCR_WRITE::CLEAR)
-            }
-            Transfer::PeripheralToMemory => {
-                (CTRL_TRIG::INCR_READ::CLEAR, CTRL_TRIG::INCR_WRITE::SET)
-            }
-        };
-        let treq = FieldValue::from(treq);
-        let data_size = FieldValue::from(data_size);
-        let chain_to = CTRL_TRIG::CHAIN_TO.val(self.ch as u32);
-
-        let fv = treq + data_size + bswap + incr_rd + incr_wr + chain_to + CTRL_TRIG::EN::SET;
-        regs.ctrl_trig.write(fv);
-    }
+/// Create a driver for the DMA block.
+pub const fn new<'a>() -> Dma<'a> {
+    Dma::new(CHANNELS, IRQ)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{CTRL_TRIG, DmaPeripheral};
-    use crate::pio::SMNumber;
+    use super::*;
     use kernel::utilities::registers::FieldValue;
+    use rp2xxx::dma::CTRL_TRIG;
+    use rp2xxx::pio::SMNumber;
 
-    fn encoded(peripheral: DmaPeripheral) -> u32 {
-        u32::from(FieldValue::<u32, CTRL_TRIG::Register>::from(peripheral))
+    /// Every field this driver writes, at the bit the RP2040 datasheet gives
+    /// it. These are the positions that move on the RP2350, so a shared
+    /// driver that got them from the wrong chip would still build and would
+    /// still pass every other test.
+    #[test]
+    fn ctrl_trig_fields_sit_where_the_datasheet_puts_them() {
+        assert_eq!(u32::from(treq_sel::<Rp2040DmaLayout>(0x3f)), 0x3f << 15);
+        assert_eq!(u32::from(chain_to::<Rp2040DmaLayout>(0xf)), 0xf << 11);
+        assert_eq!(u32::from(incr_write::<Rp2040DmaLayout>(true)), 1 << 5);
+        assert_eq!(u32::from(bswap::<Rp2040DmaLayout>(true)), 1 << 22);
+        assert_eq!(Rp2040DmaLayout::BUSY_SHIFT, 24);
     }
 
-    /// The datasheet's transfer request table, in the order the datasheet
-    /// lists it: each block's four TX FIFOs, then its four RX FIFOs.
+    /// The whole word, composed the way `DmaChannel::enable` composes it.
     ///
-    /// These named values are a hand transcription of that table, so checking
-    /// the computed number against them checks the arithmetic rather than
-    /// checking it against itself.
-    #[rustfmt::skip]
-    const NAMED: [FieldValue<u32, CTRL_TRIG::Register>; 16] = {
-        use CTRL_TRIG::TREQ_SEL::*;
-        [
-            SelectPIO0STXFIFO0AsTREQ, SelectPIO0STXFIFO1AsTREQ,
-            SelectPIO0STXFIFO2AsTREQ, SelectPIO0STXFIFO3AsTREQ,
-            SelectPIO0SRXFIFO0AsTREQ, SelectPIO0SRXFIFO1AsTREQ,
-            SelectPIO0SRXFIFO2AsTREQ, SelectPIO0SRXFIFO3AsTREQ,
-            SelectPIO1STXFIFO0AsTREQ, SelectPIO1STXFIFO1AsTREQ,
-            SelectPIO1STXFIFO2AsTREQ, SelectPIO1STXFIFO3AsTREQ,
-            SelectPIO1SRXFIFO0AsTREQ, SelectPIO1SRXFIFO1AsTREQ,
-            SelectPIO1SRXFIFO2AsTREQ, SelectPIO1SRXFIFO3AsTREQ,
-        ]
-    };
-
-    const SMS: [SMNumber; 4] = [SMNumber::SM0, SMNumber::SM1, SMNumber::SM2, SMNumber::SM3];
-
-    /// Every combination this driver can ask for, against the table above.
+    /// These two are what the CYW43439 driver asks for on every transfer, so
+    /// if either is wrong the radio does not come up.
     #[test]
-    fn treq_sel_matches_the_named_values() {
-        let mut i = 0;
-        for pio in [0usize, 1usize] {
-            for rx in [false, true] {
-                for sm in SMS {
-                    let peripheral = if rx {
-                        DmaPeripheral::PioRxFifo(pio, sm)
-                    } else {
-                        DmaPeripheral::PioTxFifo(pio, sm)
-                    };
-                    assert_eq!(encoded(peripheral), u32::from(NAMED[i]));
-                    i += 1;
-                }
-            }
-        }
-        assert_eq!(i, 16);
+    fn the_gspi_control_words_are_what_they_were() {
+        let data_size = FieldValue::<u32, CTRL_TRIG::Register>::from(DataSize::Word);
+
+        // Memory to peripheral, PIO0 TX FIFO 0, channel 0: read address
+        // increments, write address does not.
+        let push =
+            treq_sel::<Rp2040DmaLayout>(DmaPeripheral::PioTxFifo(0, SMNumber::SM0).treq_number())
+                + FieldValue::<u32, CTRL_TRIG::Register>::from(DataSize::Word)
+                + bswap::<Rp2040DmaLayout>(false)
+                + CTRL_TRIG::INCR_READ::SET
+                + incr_write::<Rp2040DmaLayout>(false)
+                + chain_to::<Rp2040DmaLayout>(0)
+                + CTRL_TRIG::EN::SET;
+        //  TREQ 0 << 15 | DATA_SIZE 2 << 2 | INCR_READ 1 << 4 | EN 1
+        assert_eq!(u32::from(push), (2 << 2) | (1 << 4) | 1);
+
+        // Peripheral to memory, PIO0 RX FIFO 0, channel 0.
+        let pull =
+            treq_sel::<Rp2040DmaLayout>(DmaPeripheral::PioRxFifo(0, SMNumber::SM0).treq_number())
+                + data_size
+                + bswap::<Rp2040DmaLayout>(false)
+                + CTRL_TRIG::INCR_READ::CLEAR
+                + incr_write::<Rp2040DmaLayout>(true)
+                + chain_to::<Rp2040DmaLayout>(0)
+                + CTRL_TRIG::EN::SET;
+        //  TREQ 4 << 15 | DATA_SIZE 2 << 2 | INCR_WRITE 1 << 5 | EN 1
+        assert_eq!(u32::from(pull), (4 << 15) | (2 << 2) | (1 << 5) | 1);
     }
 
-    /// The field is six bits at bit 15, so the whole table has to land inside
-    /// it. A shift that moved would show up here.
+    /// The transfer request numbers, against the table in the datasheet.
     #[test]
-    fn treq_sel_occupies_bits_15_to_20() {
-        assert_eq!(encoded(DmaPeripheral::PioTxFifo(0, SMNumber::SM0)), 0);
-        assert_eq!(
-            encoded(DmaPeripheral::PioRxFifo(1, SMNumber::SM3)),
-            15 << 15
-        );
+    fn treq_numbers_match_the_datasheet_table() {
+        assert_eq!(DmaPeripheral::PioTxFifo(0, SMNumber::SM0).treq_number(), 0);
+        assert_eq!(DmaPeripheral::PioTxFifo(0, SMNumber::SM3).treq_number(), 3);
+        assert_eq!(DmaPeripheral::PioRxFifo(0, SMNumber::SM0).treq_number(), 4);
+        assert_eq!(DmaPeripheral::PioRxFifo(0, SMNumber::SM3).treq_number(), 7);
+        assert_eq!(DmaPeripheral::PioTxFifo(1, SMNumber::SM0).treq_number(), 8);
+        assert_eq!(DmaPeripheral::PioTxFifo(1, SMNumber::SM3).treq_number(), 11);
+        assert_eq!(DmaPeripheral::PioRxFifo(1, SMNumber::SM0).treq_number(), 12);
+        assert_eq!(DmaPeripheral::PioRxFifo(1, SMNumber::SM3).treq_number(), 15);
     }
 }
