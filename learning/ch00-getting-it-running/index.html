@@ -642,7 +642,7 @@ dfn {
     <div class="blksay">
       <p class="blkp is-on" id="ptp-0">A Raspberry Pi Pico 2. The chip on it is an RP2350, and this repository has a directory named for exactly that board, which is what everything below builds. A Pico 2&nbsp;W is a different board and there is a section about it near the end.</p>
       <p class="blkp" id="ptp-1">A Raspberry Pi Debug Probe. It is the part you could skip, and skipping it costs more than it saves. Without one you hold a button, replug the board, and copy a file by hand for every change.</p>
-      <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the three pads on the short edge opposite the USB socket. These carry the flashing. They are marked and they go straight across, so there is nothing to get backwards.</p>
+      <p class="blkp" id="ptp-2">Three wires from the probe's debug connector to the header labelled <b>DEBUG</b>. These carry the flashing. Both ends name the same three signals and they go straight across, so there is nothing to get backwards.</p>
       <p class="blkp" id="ptp-3">Three wires from the probe's serial connector to two pins on the board, plus a ground. These carry the talking, and unlike the debug three, two of them cross over. Figure 4 is that crossing.</p>
       <p class="blkp" id="ptp-4">Rust, and OpenOCD. Those two are the whole list for the route this chapter takes, and there is no converter and no vendor tool among them. That is not true of the other three routes, and Figure 3 is about why. It can also be two machines rather than one, which is the section after Figure 5.</p>
     </div>
@@ -721,7 +721,7 @@ $ make
   <p>The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
   <p>Which pins is not a convention to look up, it is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
   <p id="term">Anything that speaks to a serial port will read it. A Mac has <code>screen</code> already; Debian and its relatives usually want <code>picocom</code> installed first. The probe presents itself as a serial device when plugged in, and the surest way to learn its name is to look before and after doing so.</p>
-  <p id="unchecked">Two things in this section come from the hardware's documentation rather than from a board on a desk. They are which edge the debug pads sit on, and how the probe presents itself to your machine. The sources at the foot name them as unchecked.</p>
+  <p id="unchecked">Everything in this section has now been run on a board, except one thing: the name a Mac gives the probe. The bench these pages were checked on drives the probe from a Raspberry Pi, where it appears as <code>/dev/ttyACM0</code>. The sources at the foot say which is which.</p>
   <pre># list before and after plugging in
 $ ls /dev/tty.*
 
@@ -746,7 +746,7 @@ $ picocom -b 115200 /dev/ttyACM0</pre>
       <button type="button" id="wr-3" aria-pressed="false"><span class="vt-at">ground</span><span>the one people leave out</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the three pads on the short edge opposite the USB socket. Both ends are labelled with the same three names and they join like to like. This set carries flashing only, and says nothing to you.</p>
+      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the header labelled <b>DEBUG</b>: SWCLK, GND, SWDIO. Both ends name the same three signals, and they join like to like. This set carries flashing only and says nothing to you. It carries no power either, so the board still needs powering some other way.</p>
       <p class="vtp" id="wrp-1">The probe's transmit joins the board's <em>receive</em>, which is pin&nbsp;1. This is the wire that carries what you type into the running kernel.</p>
       <p class="vtp" id="wrp-2">The probe's receive joins the board's <em>transmit</em>, which is pin&nbsp;0. This is the wire that carries everything the kernel prints, including the one line you are about to look for.</p>
       <p class="vtp" id="wrp-3">A shared ground between the two. Without it the two sides have no agreement about what a one and a zero are, and the symptom is not silence but nonsense &mdash; occasional characters, mostly wrong.</p>
@@ -762,6 +762,8 @@ $ picocom -b 115200 /dev/ttyACM0</pre>
   <p>OpenOCD is the one piece of software you install for this, and on the Mac these pages were written on it was the only thing missing. Everything else was already there for Rust.</p>
   <p>What that runs is OpenOCD, an ordinary program on your machine that speaks to the probe over USB, and through it to the chip. The board's own configuration for it is two lines long: use a standard debug adapter, and the chip is an RP2350.</p>
   <p>The command writes the kernel, reads it back to confirm it landed, resets the board and exits. If it cannot find the probe it says so and stops, which is the failure you want &mdash; loud, immediate, and about the thing that is actually wrong.</p>
+  <p>The reading back is silent when it works. It names the differing addresses when it fails and says nothing at all when it does not, so no news is the good news here.</p>
+  <p>You may also meet a five-line warning about old probe firmware and a low-performance workaround. It looks alarming and is not: the flash completes correctly either way.</p>
 </section>
 
 <section class="col">
@@ -789,7 +791,7 @@ tock$</pre>
       <p class="blkp is-on" id="bop-0">Printed once, at the end of setting up. Seeing it proves three separate things at once: the kernel built, it landed on the chip, and the wire out of the board is carrying. That is a lot of evidence from one line, and it is still silent about the wire going the other way.</p>
       <p class="blkp" id="bop-1">A prompt from a piece of the kernel that exists to be talked to. Its arrival proves nothing the banner did not, because it is printed outbound on the very same wire. What tests the other direction is typing something and getting an answer.</p>
       <p class="blkp" id="bop-2">A second line can follow the banner, saying it could not load processes. It comes after, not instead: the kernel looks for applications between printing the banner and starting its main loop. An empty chip is not what produces it, because finding no applications is quiet, so this line means something actually went wrong.</p>
-      <p class="blkp" id="bop-3">Type it and the console lists what is loaded and running. After this chapter that list is empty, because you flashed a kernel and no application. Empty is the right answer, and getting any answer at all is the point: a reply is what proves the wire into the board. The list itself becomes useful once there is an application to be wrong about.</p>
+      <p class="blkp" id="bop-3">Type it and the console prints a header &mdash; name, state and a few counters &mdash; and then one row for each application. After this chapter there are no rows, because you flashed a kernel and nothing else. That is the right answer, and getting any answer at all is the point: a reply is what proves the wire into the board.</p>
     </div>
   </div>
   <div class="instrument-note">Notice which of these you get for free. The banner and the prompt both arrive on one wire, the one carrying out of the board, so neither of them says anything about the wire going the other way. Only typing does, which is why the last entry is the one to try.</div>
@@ -863,7 +865,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <div class="blksay">
       <p class="blkp is-on" id="syp-0">No output at all, from a flash that reported success. That is worth something: the kernel is on the chip, so what is left is the three console wires. Check the board's transmit, the probe's receive, and the ground between them. If all three are right, the last entry here is the other candidate.</p>
       <p class="blkp" id="syp-1">Characters arrive but are wrong. That is the two ends disagreeing about speed, or a missing ground. Both are cheap to check and neither looks like what it is &mdash; corrupted text reads as a broken board rather than a wrong number.</p>
-      <p class="blkp" id="syp-2">OpenOCD cannot see the adapter. This is the good failure: it is loud, it happens immediately, and it is about the probe rather than about anything you wrote. Swap the probe's USB cable before rewiring anything, because a great many carry power and no data, and one of those leaves the probe powered and invisible. After that, check the debug three are on the right pads.</p>
+      <p class="blkp" id="syp-2">OpenOCD prints <b>unable to find a matching CMSIS-DAP device</b> and exits non-zero. This is the good failure: it is loud, it happens immediately, and it is about the probe rather than about anything you wrote. Swap the probe's USB cable before rewiring anything, because a great many carry power and no data, and one of those leaves the probe powered and invisible. After that, check the debug three are on the right pads.</p>
       <p class="blkp" id="syp-3">The banner appears and then typing does nothing. One wire. The line from probe to board is not carrying, and Figure 4's middle two are where to look.</p>
       <p class="blkp" id="syp-4">The flash worked, the console three are right, and the terminal still shows nothing. A probe presents more than one interface, and most machines have other serial devices besides. Open the one that appeared when you plugged the probe in, rather than the first name that looked plausible.</p>
     </div>
@@ -950,7 +952,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>The message those routes print instead of copying, and that they exit successfully after it &mdash; the same file, :30 and :40</li>
     <li>The two routes that need a separate converter to make a UF2 &mdash; the same file, :29 and :39</li>
     <li><code>program</code> refusing to run at all with no application given &mdash; the same file, :34&ndash;36</li>
-    <li>What <code>flash-openocd</code> actually runs: write, verify, reset, exit &mdash; the same file, :25</li>
+    <li>What <code>flash-openocd</code> actually runs: write, verify, reset, exit &mdash; the same file, :25. The form run on the bench was the split one below, which is that line with the config spelled out; the two are the same command because the config is only those two lines</li>
     <li>The whole of this board's OpenOCD configuration, which is two lines &mdash; <code>boards/raspberry_pi_pico_2/openocd-picoprobe.cfg</code>:5&ndash;6</li>
     <li>Tock's own hardware testing being built as small hosts beside real boards &mdash; <code>.github/workflows/treadmill-ci.yml</code>:5&ndash;8, "Treadmill is a distributed hardware testbed developed within the Tock OS project"</li>
     <li>Pin&nbsp;0 transmitting and pin&nbsp;1 receiving, and both being handed to the serial hardware &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:284&ndash;287</li>
@@ -961,7 +963,12 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>Pin&nbsp;25 being the light this board hands to the light driver &mdash; the same file, :385</li>
     <li>The build taking 7.2 seconds of wall time, of which 5.64 were the compiler &mdash; measured on this machine with <code>/usr/bin/time</code>. The block above is that run, abridged: five <code>Compiling</code> lines and a trailing checksum are left out, and the size line's filename column is shortened from an absolute path. No number in it is altered</li>
     <li>A Mac having <code>screen</code> already, and <code>picocom</code> needing installing on Debian &mdash; checked on the machine these pages were written on, which had <code>screen</code> and neither of the other two</li>
-    <li>Three things about the hardware that have <em>not</em> been checked against a board, and are named here so nobody mistakes them for verified: the probe's serial device appearing under <code>/dev/tty.</code> on a Mac and <code>/dev/ttyACM</code> on Linux, the debug pads sitting on the short edge opposite the USB socket, and a probe presenting more than one interface</li>
+    <li>The whole route above, run on hardware on 2026-08-29: a Pico 2&nbsp;W, a Raspberry Pi Debug Probe, and a Raspberry Pi doing the flashing. OpenOCD reported <code>SWD DPIDR 0x4c013477</code> and both Cortex-M33 cores, programmed the kernel, and the banner arrived on the console as the board reset</li>
+    <li>The read-back being real rather than decorative &mdash; the flashed image was verified against a copy with four bytes of <code>.text</code> flipped, and OpenOCD named all four by address; against the true image it says nothing at all</li>
+    <li>The header being labelled <b>DEBUG</b>, carrying SWCLK, GND and SWDIO, and having no power pin &mdash; read off the board, and the Raspberry Pi Debug Probe documentation</li>
+    <li>The probe presenting more than one interface, and its serial device appearing at <code>/dev/ttyACM0</code> on Linux &mdash; <code>lsusb</code> showed <code>2e8a:000c</code> alongside it, and the console ran over it in both directions</li>
+    <li>What OpenOCD says with no probe attached &mdash; <code>unable to find a matching CMSIS-DAP device</code>, exit&nbsp;1, captured by unplugging it</li>
+    <li>The one thing still unchecked: the name a <em>Mac</em> gives the probe. The bench that ran all of the above drives the probe from a Raspberry Pi, so <code>/dev/tty.</code> comes from documentation rather than from a run</li>
     <li>The copying routes printing that message and then exiting with status&nbsp;0 &mdash; <code>make flash</code> run on this machine with no board attached. The conversion succeeded, so the copy was the only step that did not happen, and nothing reported it</li>
   </ul>
   <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here.</p>

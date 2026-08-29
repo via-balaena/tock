@@ -28,7 +28,7 @@ optional, and it says so on the cover.
 
 | # | Title | Covers | Status |
 |---|-------|--------|--------|
-| 0 | [Getting It Running](ch00-getting-it-running/) | Tock on a chip you can hold: build it, put it there with one command, three wires to make it talk -- and which two of this board's four flashing routes fail without saying so | written, unverified on hardware |
+| 0 | [Getting It Running](ch00-getting-it-running/) | Tock on a chip you can hold: build it, put it there with one command, three wires to make it talk -- and which two of this board's four flashing routes fail without saying so | published, verified on hardware |
 | 1 | [Everything Is Memory](ch01-everything-is-memory/) | One `str` instruction to 3.3 V on a pin, and why, before anything later introduces a protection, nothing stops it landing anywhere | published |
 | 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
 | 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
@@ -153,7 +153,18 @@ All seven are groundable on the hardware in front of the reader -- a Pico 2 and
 a debug probe -- because `boards/raspberry_pi_pico_2` is a real port in this
 tree and every chapter can cite it. Chapter 0 is the one that actually puts it
 there, and it is the only chapter whose claims are about commands rather than
-about source, which is why it is the only one that needs a bench to verify.
+about source, which is why it is the only one that needed a bench to verify.
+
+**That bench ran on 2026-08-29**, on a Pico 2&nbsp;W with a Raspberry Pi Debug
+Probe, flashed from a Raspberry Pi over SWD. The route works: OpenOCD reported
+`SWD DPIDR 0x4c013477` and both Cortex-M33 cores, programmed the kernel, and
+the banner arrived on the console as the board reset. Five things were wrong
+and are fixed -- the debug connections are a header labelled `DEBUG` rather
+than pads on an edge, `list` prints a header rather than nothing, `verify_image`
+is silent on success, the debug connector carries no power and the chapter
+never said the board needs its own, and the not-found message is now quoted
+rather than paraphrased. One claim could not be run: what a *Mac* calls the
+probe, since the bench drives it from the Pi. The chapter says so.
 
 **Which board that is.** `boards/raspberry_pi_pico_2` is the plain Pico 2. This
 tree has no `raspberry_pi_pico_2_w`; the `_w` board it does have is built on

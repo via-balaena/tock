@@ -279,11 +279,31 @@ chk("the Pico 2 W difference is scoped out of this chapter",
 chk("and the reason no light is expected here is given",
     REG["wscope"].textContent.indexOf("no application loaded drives no light") > -1, true);
 
-// ---- The fifth pass ----
-// Three physical claims here have never met a board. The sources said so; the
-// prose, where a reader meets them, did not.
-chk("the unchecked hardware details are flagged where they are claimed",
-    REG["unchecked"].textContent.indexOf("rather than from a board on a desk") > -1, true);
-chk("and both of them are named rather than gestured at",
-    REG["unchecked"].textContent.indexOf("which edge the debug pads sit on") > -1
-      && REG["unchecked"].textContent.indexOf("how the probe presents itself") > -1, true);
+// ---- What the bench session settled, 2026-08-29 ----
+// These were three unchecked physical claims until a Pico 2 W, a Debug Probe
+// and a Raspberry Pi were pointed at them. Two survive as verified; the third
+// -- what a Mac calls the probe -- could not be run, because the bench drives
+// the probe from the Pi. The page has to keep saying which is which.
+chk("the section still names what has not been run",
+    REG["unchecked"].textContent.indexOf("except one thing") > -1, true);
+chk("and it is the Mac device name, with the Linux one given from the run",
+    REG["unchecked"].textContent.indexOf("the name a Mac gives the probe") > -1
+      && REG["unchecked"].textContent.indexOf("/dev/ttyACM0") > -1, true);
+
+// The debug header is labelled on the board; anchoring to the silkscreen beats
+// reasoning about which edge the USB is on, which is what this used to do.
+chk("the debug connections are named by the label the board prints",
+    REG["wrp-0"].textContent.indexOf("labelled DEBUG") > -1, true);
+// Nothing in the chapter said the board needs its own power. Wire only the
+// probe and you get a dead board and no reason for it.
+chk("and the connector is said to carry no power",
+    REG["wrp-0"].textContent.indexOf("carries no power") > -1, true);
+
+// Captured by unplugging the probe: the literal message, not a paraphrase.
+chk("the probe-not-found panel quotes what OpenOCD actually prints",
+    REG["syp-2"].textContent.indexOf("unable to find a matching CMSIS-DAP device") > -1, true);
+
+// `list` prints a header even with nothing loaded, so "empty" was the wrong
+// word for what a reader sees.
+chk("the list panel describes a header with no rows, not an empty list",
+    REG["bop-3"].textContent.indexOf("no rows") > -1, true);
