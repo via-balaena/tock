@@ -383,8 +383,12 @@ impl From<DataSize> for FieldValue<u32, CTRL_TRIG::Register> {
 }
 
 pub enum DmaPeripheral {
-    PioRxFifo(pio::PIONumber, pio::SMNumber),
-    PioTxFifo(pio::PIONumber, pio::SMNumber),
+    /// The RX FIFO of one state machine, named by PIO block index and state
+    /// machine. The block is an index rather than an enum because how many
+    /// blocks a chip has is a fact about the chip.
+    PioRxFifo(usize, pio::SMNumber),
+    /// The TX FIFO of one state machine. See `PioRxFifo`.
+    PioTxFifo(usize, pio::SMNumber),
 }
 
 impl From<DmaPeripheral> for FieldValue<u32, CTRL_TRIG::Register> {
@@ -569,7 +573,7 @@ impl DmaChannel<'_> {
 #[cfg(test)]
 mod tests {
     use super::{CTRL_TRIG, DmaPeripheral};
-    use crate::pio::{PIONumber, SMNumber};
+    use crate::pio::SMNumber;
     use kernel::utilities::registers::FieldValue;
 
     fn encoded(peripheral: DmaPeripheral) -> u32 {
@@ -603,7 +607,7 @@ mod tests {
     #[test]
     fn treq_sel_matches_the_named_values() {
         let mut i = 0;
-        for pio in [PIONumber::PIO0, PIONumber::PIO1] {
+        for pio in [0usize, 1usize] {
             for rx in [false, true] {
                 for sm in SMS {
                     let peripheral = if rx {
@@ -623,12 +627,9 @@ mod tests {
     /// it. A shift that moved would show up here.
     #[test]
     fn treq_sel_occupies_bits_15_to_20() {
+        assert_eq!(encoded(DmaPeripheral::PioTxFifo(0, SMNumber::SM0)), 0);
         assert_eq!(
-            encoded(DmaPeripheral::PioTxFifo(PIONumber::PIO0, SMNumber::SM0)),
-            0
-        );
-        assert_eq!(
-            encoded(DmaPeripheral::PioRxFifo(PIONumber::PIO1, SMNumber::SM3)),
+            encoded(DmaPeripheral::PioRxFifo(1, SMNumber::SM3)),
             15 << 15
         );
     }

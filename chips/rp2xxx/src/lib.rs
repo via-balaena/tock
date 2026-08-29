@@ -15,6 +15,7 @@
 
 #![no_std]
 
+pub mod pio;
 pub mod spi;
 
 /// Access to the peripheral clock, `clk_peri`.

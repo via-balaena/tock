@@ -162,7 +162,7 @@ impl PioGSpi<'_> {
 
         self.dma.set_len(len);
         self.dma.enable(
-            dma::DmaPeripheral::PioRxFifo(self.pio.number(), self.sm_number),
+            dma::DmaPeripheral::PioRxFifo(self.pio.index(), self.sm_number),
             dma::DataSize::Word,
             dma::Transfer::PeripheralToMemory,
             false,
@@ -178,7 +178,7 @@ impl PioGSpi<'_> {
         self.dma.set_len(len);
 
         self.dma.enable(
-            dma::DmaPeripheral::PioTxFifo(self.pio.number(), self.sm_number),
+            dma::DmaPeripheral::PioTxFifo(self.pio.index(), self.sm_number),
             dma::DataSize::Word,
             dma::Transfer::MemoryToPeripheral,
             false,
@@ -290,8 +290,8 @@ fn cyw43_spi_program_init(
     sm.config(config);
     let clock_pin_handle = RPGpioPin::new(RPGpio::from_u32(clock_pin).unwrap());
     let dio_pin_handle = RPGpioPin::new(RPGpio::from_u32(dio_pin).unwrap());
-    crate::pio::gpio_init(pio.number(), &clock_pin_handle);
-    crate::pio::gpio_init(pio.number(), &dio_pin_handle);
+    crate::pio::gpio_init(pio, &clock_pin_handle);
+    crate::pio::gpio_init(pio, &dio_pin_handle);
 
     dio_pin_handle.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
     dio_pin_handle.set_schmitt(true);
