@@ -477,7 +477,7 @@ pre {
     <p>Every chapter cites <code>boards/raspberry_pi_pico_2</code>, a real port in this tree, so a reader with a Pico&nbsp;2 and a debug probe can run what they have just read about.</p>
     <div class="warnbox">
       <h3>If your board is a Pico 2 W</h3>
-      <p>This branch has a <code>raspberry_pi_pico_2_w</code> crate, so use that one. It is the same chip and the same chapters; what differs is a single pin. GPIO&nbsp;25 is the radio's chip select on a W rather than the LED, so that crate hands nothing to the LED driver and prints on a panic where the plain one blinks. Two crates over one chip, one pin apart, is a sharper look at what a board crate is <em>for</em> than either would be alone, and the chapters use it that way.</p>
+      <p>This branch has a <code>raspberry_pi_pico_2_w</code> crate, so use that one. It is the same chip and the same chapters; what differs is a single pin. GPIO&nbsp;25 is the radio's chip select on a W rather than the LED, so that crate hands nothing to the LED driver and prints on a panic where the plain one blinks. Two crates over one chip, one pin apart, is a sharper look at what a board crate is <em>for</em> than either would be alone, and the chapters use it that way. The radio works too, over a state machine in the chip's PIO block, though nothing in these chapters needs it.</p>
     </div>
   </section>
 
