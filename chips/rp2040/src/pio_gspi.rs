@@ -294,8 +294,8 @@ fn cyw43_spi_program_init(
         RPGpioPin::new(RPGpio::from_u32(clock_pin).expect("GPIO pin must be 0 to 29"));
     let dio_pin_handle =
         RPGpioPin::new(RPGpio::from_u32(dio_pin).expect("GPIO pin must be 0 to 29"));
-    pio.gpio_init(&clock_pin_handle);
-    pio.gpio_init(&dio_pin_handle);
+    crate::pio::gpio_init(pio.number(), &clock_pin_handle);
+    crate::pio::gpio_init(pio.number(), &dio_pin_handle);
 
     dio_pin_handle.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
     dio_pin_handle.set_schmitt(true);
