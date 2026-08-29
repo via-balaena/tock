@@ -93,6 +93,14 @@ else
     bad "rustfmt --check"
 fi
 
+step "The book, which is nine pages sharing one DOM"
+if BOOK_OUT="$(python3 learning/tools/mkbook.py "$(mktemp -t book).html" 2>&1)"; then
+    ok "$(printf '%s' "$BOOK_OUT" | head -n 1 | sed 's/^ *//')"
+else
+    printf '%s\n' "$BOOK_OUT" | head -n 6 | sed 's/^/          /'
+    bad "mkbook.py"
+fi
+
 printf "\n"
 if [ "$FAIL" -eq 0 ]; then
     printf "\033[1mpreflight passed\033[0m -- now do the part that cannot be run:\n"

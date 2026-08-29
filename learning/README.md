@@ -58,6 +58,47 @@ other and back to the cover, every page has hrefs to substitute and the cover
 needs a URL of its own. On a static host none of this applies -- the relative
 links are already right, and the build is `cp -r learning/ .`
 
+## The book
+
+Nine artifacts is nine URLs, nine share pins and nine republishes for one
+change. `learning/tools/mkbook.py` binds the whole series into a single page
+instead, where each page is a `[data-page]` section and a small router shows
+one at a time:
+
+    python3 learning/tools/mkbook.py /tmp/book.html
+
+**The source is not touched and does not become a build product.** `check.py`
+still runs against the nine files and every review pass still describes them.
+
+Three things have to be reconciled to put nine standalone pages in one DOM,
+and each of them is a way the book could be quietly wrong:
+
+- **Ids collide** -- 104 of the series' 983 are declared on more than one page,
+  and `qo-` means one thing in chapter 1 and another in chapter 2. Every id in
+  the markup is prefixed with its page's key.
+- **The scripts are left alone.** They get a `document` that adds the prefix for
+  them. Rewriting them was tried twice and is a trap both ways: by value it
+  moves a literal that is a *suffix* rather than an id, so chapter 1's
+  `getElementById("btn-" + k)` over a list of words that are also ids asks for
+  `ch01--btn-ch01--pin`; by call site it misses every figure, because the
+  chapters pass their prefixes into one `group()` helper whose lookup names a
+  variable. Nothing in the series creates an id at runtime, so wrapping the
+  four `document` members they use is exact.
+- **An ARIA attribute holding an id is the exception**, because it is written
+  onto an element rather than looked up. Chapter 1 sets `aria-labelledby` from
+  bare ids; in the book those name nothing, and the panel loses its accessible
+  name. Those values are prefixed at the call site, and the build refuses if
+  any `aria-*` target does not resolve.
+
+**The build proves itself.** It runs all eight chapters' own assertion suites
+against the assembled book -- 995 of them -- with a `REG` and a `document`
+scoped to each chapter, and writes nothing if any fails. Two compare an ARIA
+target whose value must now carry the prefix, and are counted rather than
+failed. `preflight.sh` runs the whole thing.
+
+The cover is outside that: it has no suite, and its script uses a
+`document.querySelector` the shim does not implement. It is checked by eye.
+
 **What the cover is for, beyond navigation.** It is the only file that
 duplicates information: every chapter's number, title and place in the order
 appear both in the chapter and on the cover. `index_checks` in `check.py`
