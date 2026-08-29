@@ -210,10 +210,13 @@ chk("the chapter says which pin the difference costs",
     REG["wpin"].textContent.indexOf("25") > -1, true);
 chk("and that on a Pico 2 W it belongs to the radio",
     REG["wpin"].textContent.indexOf("radio") > -1, true);
-chk("and refuses to claim the untested part is fine",
-    REG["wtest"].textContent.indexOf("has not been tested") > -1, true);
-chk("naming plausible as the thing it will not pass off as verified",
-    REG["wtest"].textContent.indexOf("Plausible is not the standard") > -1, true);
+// This used to refuse to claim the untested part was fine. It was tested on
+// 2026-08-29, on a Pico 2 W, so the caveat itself had gone stale: a paragraph
+// about not passing off plausible as verified, stating something untrue.
+chk("the W claim is now reported as checked rather than plausible",
+    REG["wtest"].textContent.indexOf("no longer a guess") > -1, true);
+chk("and says what was actually done on the board",
+    REG["wtest"].textContent.indexOf("booted, printed its line and took typed commands") > -1, true);
 
 // ---- Check yourself ----
 // The answers are in the markup and the script only reveals them, so what is

@@ -878,7 +878,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
   <p id="wpin">The concrete cost is one pin. On a plain Pico 2 the user light is on pin&nbsp;25, and that is the pin this board's directory hands to the light driver. On a Pico 2&nbsp;W the same pin belongs to the radio, and the light is somewhere the kernel cannot reach at all.</p>
   <p id="wscope">Everything this chapter asks of the board works on either one: it builds, it flashes, it boots, and it talks. Nothing above needs that pin, and nothing above lights anything, because an idle kernel with no application loaded drives no light at all.</p>
   <p>Where it begins to cost you is chapter 1, which follows one write all the way down to that pin, and chapter 3, which watches the panic handler blink it.</p>
-  <p id="wtest">Whether that kernel runs correctly on a Pico 2&nbsp;W beyond that has not been tested here, and this page will not pretend otherwise. The chips are the same family and the extra parts simply go unclaimed, so it is plausible. Plausible is not the standard the rest of these pages hold themselves to.</p>
+  <p id="wtest">That is no longer a guess. This chapter was checked on a Pico 2&nbsp;W: the plain Pico&nbsp;2 kernel flashed over the probe, booted, printed its line and took typed commands on that board. The chips are the same family and the W's extra parts simply go unclaimed, which is how it read from the source and is now what a board did.</p>
 </section>
 
 <section class="col">
