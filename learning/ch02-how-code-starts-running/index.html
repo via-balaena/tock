@@ -558,16 +558,7 @@ dfn {
 .mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 
 /* ---------- Figure 2: the block, word by word ---------- */
-.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
 /* Words of a program image, so they are addresses and must not be uppercased. */
-.blk button {
-  font-family: var(--mono); font-size: .82rem; font-weight: 500;
-  text-transform: none; letter-spacing: 0;
-  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
-}
-.blk button[aria-pressed="true"] {
-  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
-}
 .blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
 .blkp {
   font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
@@ -578,6 +569,26 @@ dfn {
    scripting none of that runs and all seven stay readable. */
 .blkp.is-off { display: none; }
 .blkp b { font-family: var(--mono); font-weight: 500; }
+
+
+/* ---------- the block, as memory ----------
+   Seven buttons in a row is a list of numbers. These are seven words at
+   consecutive addresses in flash, which is what lets the ROM find them by
+   scanning, so they are laid out at their addresses. The marker the scan is
+   looking for is the first of them, and it is worth being able to see that it
+   is at the very front rather than being told. */
+.dump { display: flex; flex-direction: column; gap: 2px; margin: .3rem 0 1rem; }
+.dump-row { display: grid; grid-template-columns: 7.5rem 1fr; gap: .8rem;
+  align-items: baseline; width: 100%; text-align: left;
+  font-family: var(--mono); font-size: .84rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .32rem .6rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule); border-radius: 2px; }
+.dump-row[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
+.dump-a { color: var(--ink-faint); }
+.dump-row[aria-pressed="true"] .dump-a { color: var(--hot); }
+.dump-w { color: var(--ink); }
+.dump-row[aria-pressed="true"] .dump-w { color: var(--hot); }
 
 /* ---------- Figure 3: the vector table ---------- */
 .vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
@@ -629,6 +640,47 @@ dfn {
   .vt button { grid-template-columns: 1fr; gap: .1rem; }
 }
 
+
+/* ---------- running the two loops ----------
+   "Initialize RAM" is the chapter's hardest sentence, and it means two loops
+   doing chapter 1's store over a range. Reading the assembly says what they
+   are; running them says what they do -- and the thing worth seeing is that
+   RAM at power-on is not zero, it is whatever it was, which is a fact you
+   cannot show with a static listing.
+
+   Six words, because six is enough to see a loop terminate and few enough to
+   fit on a phone. */
+.mem { margin: .3rem 0 .6rem; }
+.mem-k { font-family: var(--display); font-size: .62rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-bottom: .25rem; }
+.mem-row { display: flex; gap: 3px; overflow-x: auto; padding-bottom: .2rem; }
+.cell { flex: 1 1 0; min-width: 5.2rem;
+  font-family: var(--mono); font-size: .78rem; text-align: center;
+  padding: .35rem .1rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule); border-radius: 2px;
+  color: var(--ink); }
+/* The word the loop is about to touch. */
+.cell.is-at { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+/* A word the loop has already written. */
+.cell.is-done { border-color: var(--accent); color: var(--accent); }
+.cell.is-spent { color: var(--ink-faint); }
+
+.regs4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: .1rem; margin: .6rem 0 .7rem;
+  border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--rule); overflow: hidden; }
+.reg4 { background: var(--surface); padding: .45rem .6rem; }
+.reg4-k { display: block; font-family: var(--mono); font-size: .68rem;
+  color: var(--ink-faint); }
+.reg4-v { font-family: var(--mono); font-size: .85rem; font-weight: 600; color: var(--ink); }
+.loop-ctl { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center;
+  margin-bottom: .8rem; }
+.loop-ctl .walk-at { margin-left: .2rem; }
+.flashrow.is-off { display: none; }
+.lo { display: none; }
+.lo.is-on { display: block; }
+
 /* ---------- Figure 5: what a variable costs ---------- */
 .costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
 /* These are lines of Rust, so their case is the content. */
@@ -662,6 +714,32 @@ dfn {
 .costp.is-off { display: none; }
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
+
+/* ---------- the two costs, as they scale ----------
+   Three fixed declarations made the point at three points. The point is that
+   one cost grows with the array and the other does not, which is a shape, and
+   a shape wants an axis. The declaration is written out as you drag, because
+   what changes is a number inside it.
+
+   The bars are percentages of one width, so CSS does the drawing and there is
+   no SVG to keep in step. */
+.decl { font-family: var(--mono); font-size: .92rem; color: var(--ink);
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .55rem .7rem; margin: .3rem 0 .9rem;
+  overflow-x: auto; white-space: pre; }
+.decl b { color: var(--hot); font-weight: 600; }
+.bars { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .9rem; }
+.bar-row { display: flex; align-items: center; gap: .7rem; }
+.bar-k { font-family: var(--display); font-size: .68rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 5.4rem; }
+.bar-track { flex: 1 1 auto; height: 1.1rem; background: var(--surface-sunk);
+  border: 1px solid var(--rule); border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; width: 0; background: var(--rule-strong); }
+.bar-fill.is-flash { background: var(--hot-fill); }
+.bar-v { font-family: var(--mono); font-size: .84rem; font-weight: 600;
+  color: var(--ink); flex: 0 0 5.2rem; text-align: right; }
+
 /* ---------- Figure 6: the whole sequence ---------- */
 .seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
 .seq button {
@@ -679,6 +757,46 @@ dfn {
 .seq-n { font-family: var(--mono); font-size: .8rem; color: var(--ink-faint); }
 .seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
 .seq b { font-family: var(--mono); font-weight: 500; }
+
+
+/* ---------- the boot walker ----------
+   The eight steps were a list you could put a marker on. Booting is a sequence
+   of handovers, and the thing worth watching is not which step is highlighted
+   but what is true of the machine at each one: who holds the processor, whether
+   the second core is still awake, where the fetch is pointing, and whether RAM
+   means anything yet. Those four move, so those four are shown moving.
+
+   Nothing here is built at load: the shim has no createElementNS and no
+   innerHTML worth the name, so a figure that builds itself cannot be asserted
+   about. */
+.bootstate {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: .1rem;
+  margin: .3rem 0 .8rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.bs { background: var(--surface); padding: .55rem .7rem; }
+.bs-k {
+  display: block;
+  font-family: var(--display); font-size: .62rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  margin-bottom: .2rem;
+}
+.bs-v { font-family: var(--mono); font-size: .88rem; font-weight: 600; color: var(--ink); }
+/* The two readings that mean the handover has happened. */
+.bs-v.is-ours { color: var(--hot); }
+.walk { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.walk-at {
+  font-family: var(--display); font-size: .72rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint);
+}
+.walk-at span { font-family: var(--mono); color: var(--ink); }
+/* Steps already walked, so the shape of the journey is visible at a glance. */
+.seq button.is-past { color: var(--ink-soft); border-left-color: var(--rule-strong); }
 
 /* ---------- Figure 7: the debugger's entry ---------- */
 .dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
@@ -734,7 +852,7 @@ dfn {
 </section>
 
 <section class="col">
-  <h2>Seven words, before we start</h2>
+  <h2>Seven words this chapter needs</h2>
   <p>Each is one sentence now and repeated in context later. None is hard.</p>
 </section>
 
@@ -795,15 +913,15 @@ dfn {
     <span class="instrument-title">The twenty-eight bytes at the front of a Tock image</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a word. The panel says what the boot ROM does with it.</p>
-    <div class="blk" role="group" aria-label="The seven words of Tock's metadata block">
-      <button type="button" id="bw-0" aria-pressed="true">0xffffded3</button>
-      <button type="button" id="bw-1" aria-pressed="false">0x10210142</button>
-      <button type="button" id="bw-2" aria-pressed="false">0x00000203</button>
-      <button type="button" id="bw-3" aria-pressed="false">0x10000400</button>
-      <button type="button" id="bw-4" aria-pressed="false">0x000003ff</button>
-      <button type="button" id="bw-5" aria-pressed="false">0x00000000</button>
-      <button type="button" id="bw-6" aria-pressed="false">0xab123579</button>
+    <p class="dothis">Click a word. These are seven words at consecutive addresses at the very front of flash, which is the only reason a scan can find them; the panel says what the ROM does with each.</p>
+    <div class="dump" role="group" aria-label="The seven words of Tock's metadata block, at their addresses in flash">
+      <button type="button" class="dump-row" id="bw-0" aria-pressed="true"><span class="dump-a">0x10000000</span><span class="dump-w">0xffffded3</span></button>
+      <button type="button" class="dump-row" id="bw-1" aria-pressed="false"><span class="dump-a">0x10000004</span><span class="dump-w">0x10210142</span></button>
+      <button type="button" class="dump-row" id="bw-2" aria-pressed="false"><span class="dump-a">0x10000008</span><span class="dump-w">0x00000203</span></button>
+      <button type="button" class="dump-row" id="bw-3" aria-pressed="false"><span class="dump-a">0x1000000C</span><span class="dump-w">0x10000400</span></button>
+      <button type="button" class="dump-row" id="bw-4" aria-pressed="false"><span class="dump-a">0x10000010</span><span class="dump-w">0x000003ff</span></button>
+      <button type="button" class="dump-row" id="bw-5" aria-pressed="false"><span class="dump-a">0x10000014</span><span class="dump-w">0x00000000</span></button>
+      <button type="button" class="dump-row" id="bw-6" aria-pressed="false"><span class="dump-a">0x10000018</span><span class="dump-w">0xab123579</span></button>
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="bwp-0">The marker that says a block starts here. The ROM scans for exactly this number, which was chosen to be unlikely to appear in real Arm or RISC-V instructions.</p>
@@ -866,7 +984,7 @@ dfn {
 <section class="col">
   <h2>What "set up memory" means</h2>
   <p>The reset handler has a name that says exactly what it does: <code>initialize_ram_jump_to_main</code>. It is two loops and a call.</p>
-  <p>It has to be, because RAM at power-on holds whatever it happened to hold. Not zero &mdash; whatever was there. Every <em>static</em> &mdash; every variable that lives for the whole run, rather than one inside a function &mdash; has to be put there by somebody, and that somebody is these two loops. Variables inside a function are a different story, set up by that function as it runs.</p>
+  <p>It has to be, because RAM at power-on holds whatever it happened to hold. Not zero. Whatever was there, from the last time the board ran or from nothing at all. Every <em>static</em> &mdash; every variable that lives for the whole run, rather than one inside a function &mdash; has to be put there by somebody, and that somebody is these two loops. Variables inside a function are a different story, set up by that function as it runs.</p>
 </section>
 
 <figure class="instrument">
@@ -875,7 +993,7 @@ dfn {
     <span class="instrument-title">Two loops, and then <code>main()</code></span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a loop. Both walk a range of memory one word at a time, using the store from chapter 1.</p>
+    <p class="dothis">Pick a loop and step it. Both walk a range of memory one word at a time, using the store from chapter 1 &mdash; and the first thing to notice is what RAM holds before either of them has run.</p>
     <div class="loops" role="group" aria-label="The two loops of the reset handler">
       <button type="button" class="loop" id="lp-0" aria-pressed="true">
         <span class="loop-k">first loop</span>
@@ -902,6 +1020,50 @@ b    200b
 201:
 bl   main</pre></button>
     </div>
+    <div class="mem flashrow is-off" id="fl-row">
+      <span class="mem-k">flash, from <code>_etext</code> &mdash; the values the linker put there</span>
+      <div class="mem-row">
+        <span class="cell" id="fc-0">0x00000005</span>
+        <span class="cell" id="fc-1">0x0000000C</span>
+        <span class="cell" id="fc-2">0x00000007</span>
+        <span class="cell" id="fc-3">0x00000063</span>
+        <span class="cell" id="fc-4">0x00000001</span>
+        <span class="cell" id="fc-5">0x000003E8</span>
+      </div>
+    </div>
+    <div class="mem">
+      <span class="mem-k">RAM, from <code>_szero</code> &mdash; six words of it</span>
+      <div class="mem-row">
+        <span class="cell" id="mc-0">0x8F2A01C4</span>
+        <span class="cell" id="mc-1">0x00000000</span>
+        <span class="cell" id="mc-2">0xD41B77E0</span>
+        <span class="cell" id="mc-3">0x0000002A</span>
+        <span class="cell" id="mc-4">0xB0C3FF19</span>
+        <span class="cell" id="mc-5">0x5E00A184</span>
+      </div>
+    </div>
+    <div class="regs4">
+      <div class="reg4"><span class="reg4-k">r0 &mdash; where it writes</span>
+        <span class="reg4-v" id="rg4-0">0x20000100</span></div>
+      <div class="reg4"><span class="reg4-k">r1 &mdash; where it stops</span>
+        <span class="reg4-v" id="rg4-1">0x20000118</span></div>
+      <div class="reg4"><span class="reg4-k">r2</span>
+        <span class="reg4-v" id="rg4-2">0</span></div>
+      <div class="reg4"><span class="reg4-k">words still to go</span>
+        <span class="reg4-v" id="rg4-3">6</span></div>
+    </div>
+    <div class="loop-ctl">
+      <button type="button" id="lo-step">Step</button>
+      <button type="button" id="lo-run">Run it</button>
+      <button type="button" id="lo-reset">Power on again</button>
+    </div>
+    <p class="note" id="lo-say">
+      <span class="lo is-on" id="lo-start">RAM at power-on holds whatever it held. Not zero &mdash; whatever was there. Step the loop and watch it become something a program can rely on.</span>
+      <span class="lo" id="lo-zero">Zeroing. Each step is one store of <b>r2</b>, which is 0, and the <b>!</b> on <b>stm r0!</b> is what moves the address on. Notice the second word: it was already zero, and the loop writes it anyway, because nothing told it not to.</span>
+      <span class="lo" id="lo-copy">Copying. Each step is a load from flash and a store into RAM, with both pointers stepping. These are the values a <code>static mut N: u32 = 5</code> needs, which is why they had to be kept in flash until now.</span>
+      <span class="lo" id="lo-done">Done, and the loop stopped because <b>r0</b> reached <b>r1</b>. Nothing counted anything: the comparison is against an address the linker wrote, and that is the whole termination condition.</span>
+    </p>
+
     <div class="loopsay">
       <p class="loopp is-on" id="lpp-0">Writes zero, one word at a time, from <b>_szero</b> to <b>_ezero</b>. That range is every static your program expects to start at zero. The <b>!</b> on <b>stm r0!</b> is what steps the address forward, so the loop needs no separate add.</p>
       <p class="loopp" id="lpp-1">Copies, one word at a time, from <b>_etext</b> in flash into the range starting at <b>_srelocate</b> in RAM. That range is every static expecting to start at something other than zero, and the values it copies were stored in flash by the linker. Then <b>bl main</b>, and Tock is running.</p>
@@ -916,7 +1078,7 @@ bl   main</pre></button>
 
 
 <section class="col">
-  <p>Which loop a variable belongs to is decided by one thing: what it starts as. That has a consequence worth seeing, because it is not the one people expect.</p>
+  <p>Which loop a variable belongs to is decided by one thing: what it starts as. The consequence is not the one people expect, and it is easier to drag than to read.</p>
 </section>
 
 <figure class="instrument">
@@ -925,7 +1087,25 @@ bl   main</pre></button>
     <span class="instrument-title">What a variable costs before it runs</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Pick a declaration. Watch the flash column.</p>
+    <p class="dothis">Pick what it starts as, then drag how big it is. One of the two bars grows and the other does not, and which is which is the whole of this figure.</p>
+    <div class="slider-row">
+      <label for="cs-n">Length</label>
+      <span class="pinbadge" id="cs-badge">1024 bytes</span>
+      <span class="grow"><input type="range" id="cs-n" min="1" max="2048" value="1024" aria-label="How many bytes the array holds"></span>
+    </div>
+    <p class="decl" id="cs-decl">static mut BUF: [u8; <b>1024</b>] = [<b>0</b>; <b>1024</b>];</p>
+    <div class="bars">
+      <div class="bar-row">
+        <span class="bar-k">in RAM</span>
+        <span class="bar-track"><span class="bar-fill" id="bar-ram"></span></span>
+        <span class="bar-v" id="cs-ram">1024 B</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-k">in flash</span>
+        <span class="bar-track"><span class="bar-fill is-flash" id="bar-flash"></span></span>
+        <span class="bar-v" id="cs-flash">0 B</span>
+      </div>
+    </div>
     <div class="costs" role="group" aria-label="Three declarations">
       <button type="button" id="cs-0" aria-pressed="true" data-sec=".bss" data-flash="0 bytes" data-by="the first loop">static mut N: u32 = 0;</button>
       <button type="button" id="cs-1" aria-pressed="false" data-sec=".data" data-flash="4 bytes" data-by="the second loop">static mut N: u32 = 5;</button>
@@ -955,7 +1135,7 @@ bl   main</pre></button>
 
 <section class="col">
   <h2>The whole thing, in order</h2>
-  <p>Every step above, as one list. Nothing here is new.</p>
+  <p>Every step above, as one list. Nothing here is new, but walking it end to end is where the shape shows: how much of starting a program is the chip looking for it.</p>
 </section>
 
 <figure class="instrument">
@@ -964,7 +1144,23 @@ bl   main</pre></button>
     <span class="instrument-title">Power to <code>main()</code>, in eight steps</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a step to mark where you are. All eight stay on screen.</p>
+    <p class="dothis">Walk it from power to <code>main()</code>. Four things about the machine are shown above the steps, and the moment worth watching for is the one where three of the four change at once.</p>
+    <div class="bootstate">
+      <div class="bs"><span class="bs-k">holding the processor</span>
+        <span class="bs-v" id="bw-run">the chip</span></div>
+      <div class="bs"><span class="bs-k">core 1</span>
+        <span class="bs-v" id="bw-core">awake</span></div>
+      <div class="bs"><span class="bs-k">fetching from</span>
+        <span class="bs-v" id="bw-pc">0x00000000</span></div>
+      <div class="bs"><span class="bs-k">RAM holds</span>
+        <span class="bs-v" id="bw-ram">whatever it held</span></div>
+    </div>
+    <div class="walk">
+      <button type="button" id="bw-prev">Back</button>
+      <button type="button" id="bw-next">Step forward</button>
+      <button type="button" id="bw-reset">Power off</button>
+      <span class="walk-at">step <span id="bw-at">1</span> of 8</span>
+    </div>
     <div class="seq" role="group" aria-label="Eight steps from power to main">
         <button type="button" id="sq-0" aria-pressed="true"><span class="seq-n">1</span><span>Power arrives. Both processors come out of reset together, and core&nbsp;1 reads <b>CPUID</b>, sees a 1, and sleeps.</span></button>
         <button type="button" id="sq-1" aria-pressed="false"><span class="seq-n">2</span><span>Both begin fetching at <b>0x00000000</b>. That is inside the boot ROM, so the first instruction to run is one nobody can change.</span></button>
@@ -1184,8 +1380,57 @@ bl   main</pre></button>
     pick(0);
   }());
 
-  /* ---------------- Figure 4: the two loops ---------------- */
+  /* ---------------- Figure 4: the two loops, run ----------------
+     Both loops are chapter 1's store over a range, and the only difference is
+     where the value comes from: a register holding zero, or a load from flash.
+     So one machine runs both, and picking a listing picks which.
+
+     The junk RAM starts with is the point of the whole figure. One of the six
+     words happens to be zero already, which is worth leaving in: the zeroing
+     loop writes it anyway, because nothing is checking. */
   (function () {
+    var BASE = 0x20000100, WORDS = 6;
+    var JUNK = ["0x8F2A01C4", "0x00000000", "0xD41B77E0",
+                "0x0000002A", "0xB0C3FF19", "0x5E00A184"];
+    var FLASH = ["0x00000005", "0x0000000C", "0x00000007",
+                 "0x00000063", "0x00000001", "0x000003E8"];
+    var which = 0, done = 0;
+
+    function hex32(v) {
+      var t = (v >>> 0).toString(16).toUpperCase();
+      while (t.length < 8) { t = "0" + t; }
+      return "0x" + t;
+    }
+    function draw() {
+      var i, cell, said;
+      for (i = 0; i < WORDS; i++) {
+        cell = document.getElementById("mc-" + i);
+        cell.textContent = i < done
+          ? (which === 0 ? "0x00000000" : FLASH[i])
+          : JUNK[i];
+        cell.classList.toggle("is-done", i < done);
+        cell.classList.toggle("is-at", i === done);
+        document.getElementById("fc-" + i).classList.toggle("is-spent", i < done);
+        document.getElementById("fc-" + i).classList.toggle("is-at",
+          which === 1 && i === done);
+      }
+      document.getElementById("fl-row").classList.toggle("is-off", which === 0);
+      document.getElementById("rg4-0").textContent = hex32(BASE + done * 4);
+      document.getElementById("rg4-1").textContent = hex32(BASE + WORDS * 4);
+      document.getElementById("rg4-2").textContent =
+        which === 0 ? "0" : hex32(0x10008000 + done * 4);
+      document.getElementById("rg4-3").textContent = String(WORDS - done);
+
+      said = done >= WORDS ? "done" : (done === 0 ? "start"
+                                       : (which === 0 ? "zero" : "copy"));
+      var SAY = ["start", "zero", "copy", "done"], k;
+      for (k = 0; k < SAY.length; k++) {
+        document.getElementById("lo-" + SAY[k]).classList.toggle("is-on",
+          SAY[k] === said);
+      }
+      document.getElementById("lo-step").disabled = done >= WORDS;
+      document.getElementById("lo-run").disabled = done >= WORDS;
+    }
     function pick(n) {
       var i, panel;
       for (i = 0; i < 2; i++) {
@@ -1195,52 +1440,144 @@ bl   main</pre></button>
         panel.classList.toggle("is-on", i === n);
         panel.classList.toggle("is-off", i !== n);
       }
+      which = n;
+      done = 0;
+      draw();
     }
     document.getElementById("lp-0").addEventListener("click", function () { pick(0); });
     document.getElementById("lp-1").addEventListener("click", function () { pick(1); });
-    pick(0);
-  }());
-
-  /* ---------------- Figure 5: what a variable costs ---------------- */
-  (function () {
-    /* Every word this figure says is in the markup; the readouts are copied
-       from the pressed button's own data attributes. */
-    function pick(n) {
-      var i, panel, btn = document.getElementById("cs-" + n);
-      for (i = 0; i < 3; i++) {
-        document.getElementById("cs-" + i)
-          .setAttribute("aria-pressed", i === n ? "true" : "false");
-        panel = document.getElementById("csp-" + i);
-        panel.classList.toggle("is-on", i === n);
-        panel.classList.toggle("is-off", i !== n);
-      }
-      document.getElementById("cost-sec").textContent = btn.getAttribute("data-sec");
-      document.getElementById("cost-flash").textContent = btn.getAttribute("data-flash");
-      document.getElementById("cost-by").textContent = btn.getAttribute("data-by");
-    }
-    [0, 1, 2].forEach(function (n) {
-      document.getElementById("cs-" + n)
-        .addEventListener("click", function () { pick(n); });
+    document.getElementById("lo-step").addEventListener("click", function () {
+      if (done < WORDS) { done++; draw(); }
+    });
+    document.getElementById("lo-run").addEventListener("click", function () {
+      done = WORDS;
+      draw();
+    });
+    document.getElementById("lo-reset").addEventListener("click", function () {
+      done = 0;
+      draw();
     });
     pick(0);
   }());
 
-  /* ---------------- Figure 6: the whole sequence ---------------- */
+  /* ---------------- Figure 5: what a variable costs ----------------
+     The three declarations stay, because they are the three cases the prose
+     names. What is added is the axis: an array whose length you can drag, and
+     two bars for the two costs.
+
+     The rule is one line. A static that starts as zeros lands in .bss and the
+     linker records a range; anything else has to keep its initial bytes
+     somewhere until the chip runs, and that somewhere is flash. So RAM grows
+     with the array either way and flash grows only for the second, which is
+     the shape a reader should leave with. Both bars are drawn against the
+     slider's own maximum, so their heights are comparable. */
   (function () {
-    function pick(n) {
+    var MAX = 2048;
+    var zero = true, n = 1024;
+    var input = document.getElementById("cs-n");
+
+    function draw() {
+      var flash = zero ? 0 : n;
+      document.getElementById("cs-badge").textContent = n + " bytes";
+      document.getElementById("cs-ram").textContent = n + " B";
+      document.getElementById("cs-flash").textContent = flash + " B";
+      document.getElementById("bar-ram")
+        .setAttribute("style", "width:" + (100 * n / MAX).toFixed(2) + "%");
+      document.getElementById("bar-flash")
+        .setAttribute("style", "width:" + (100 * flash / MAX).toFixed(2) + "%");
+      /* The declaration is the one place a number and a word change together,
+         so it is rebuilt rather than described. */
+      document.getElementById("cs-decl").innerHTML =
+        "static mut BUF: [u8; <b>" + n + "</b>] = [<b>" + (zero ? "0" : "7")
+        + "</b>; <b>" + n + "</b>];";
+    }
+
+    function pick(k) {
+      var i, panel, btn = document.getElementById("cs-" + k);
+      for (i = 0; i < 3; i++) {
+        document.getElementById("cs-" + i)
+          .setAttribute("aria-pressed", i === k ? "true" : "false");
+        panel = document.getElementById("csp-" + i);
+        panel.classList.toggle("is-on", i === k);
+        panel.classList.toggle("is-off", i !== k);
+      }
+      document.getElementById("cost-sec").textContent = btn.getAttribute("data-sec");
+      document.getElementById("cost-flash").textContent = btn.getAttribute("data-flash");
+      document.getElementById("cost-by").textContent = btn.getAttribute("data-by");
+      /* The middle case is the one that starts as something other than zero. */
+      zero = k !== 1;
+      draw();
+    }
+    [0, 1, 2].forEach(function (k) {
+      document.getElementById("cs-" + k)
+        .addEventListener("click", function () { pick(k); });
+    });
+    input.addEventListener("input", function () {
+      n = parseInt(input.value, 10);
+      draw();
+    });
+    pick(0);
+  }());
+
+  /* ---------------- Figure 6: the whole sequence, walked ----------------
+     Four readings per step, and they are readings rather than explanations:
+     the sentences stay in the buttons. The handover is at index 5, where the
+     processor stops running code nobody can change and starts running Tock --
+     which is why three of the four move there and only there.
+
+     RAM is the other one worth watching: it says nothing until index 6,
+     because "initialize RAM" is two loops and they have not run before that. */
+  (function () {
+    var RUN  = ["the chip", "the boot ROM", "the boot ROM", "the boot ROM",
+                "the boot ROM", "the boot ROM", "Tock", "Tock"];
+    var CORE = ["awake", "asleep", "asleep", "asleep",
+                "asleep", "asleep", "asleep", "asleep"];
+    var PC   = ["0x00000000", "0x00000000", "0x10000000", "0x10000000",
+                "0x10000400", "0x10000400", "initialize_ram", "main"];
+    var RAM  = ["whatever it held", "whatever it held", "whatever it held",
+                "whatever it held", "whatever it held", "whatever it held",
+                ".bss zeroed, .data copied", ".bss zeroed, .data copied"];
+    var at = 0;
+
+    function show(n) {
       var i;
+      at = n;
       for (i = 0; i < 8; i++) {
         document.getElementById("sq-" + i)
           .setAttribute("aria-pressed", i === n ? "true" : "false");
+        document.getElementById("sq-" + i).classList.toggle("is-past", i < n);
       }
+      document.getElementById("bw-run").textContent = RUN[n];
+      document.getElementById("bw-core").textContent = CORE[n];
+      document.getElementById("bw-pc").textContent = PC[n];
+      document.getElementById("bw-ram").textContent = RAM[n];
+      /* Marked from the handover on, so "everything after this is Tock" is
+         something the readouts say rather than something the note claims. */
+      document.getElementById("bw-run").classList.toggle("is-ours", n >= 6);
+      document.getElementById("bw-pc").classList.toggle("is-ours", n >= 6);
+      document.getElementById("bw-ram").classList.toggle("is-ours", n >= 6);
+      document.getElementById("bw-at").textContent = String(n + 1);
+      document.getElementById("bw-prev").disabled = n === 0;
+      document.getElementById("bw-next").disabled = n === 7;
     }
-    for (var n = 0; n < 8; n++) {
+
+    var n;
+    for (n = 0; n < 8; n++) {
       (function (k) {
         document.getElementById("sq-" + k)
-          .addEventListener("click", function () { pick(k); });
+          .addEventListener("click", function () { show(k); });
       }(n));
     }
-    pick(0);
+    document.getElementById("bw-prev").addEventListener("click", function () {
+      if (at > 0) { show(at - 1); }
+    });
+    document.getElementById("bw-next").addEventListener("click", function () {
+      if (at < 7) { show(at + 1); }
+    });
+    document.getElementById("bw-reset").addEventListener("click", function () {
+      show(0);
+    });
+    show(0);
   }());
 
   /* ---------------- Figure 7: the debugger's entry ---------------- */
