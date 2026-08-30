@@ -76,6 +76,75 @@ chk("clicking back to the first releases the others",
 // The chapter's claim is that exactly one of the three is legal, so exactly one
 // verdict may be the permissive one. If a later edit softens the second or
 // third panel, this is what notices.
+// ---- Figure 2: the same line, in two crates ----
+// The claim is that nothing about the line changes and the answer does. Two of
+// the three flip when the crate does; the one without `unsafe` in it cannot.
+(function () {
+  function verdict() {
+    return REG["cv-no"].classList.contains("is-off") ? "builds" : "refused";
+  }
+  function why() {
+    var W = ["clean", "forbid", "allowed"], i, on = [];
+    for (i = 0; i < W.length; i++) {
+      if (REG["lp-" + W[i]].classList.contains("is-on")) { on.push(W[i]); }
+    }
+    return on.join(",");
+  }
+
+  REG["cr-cap"].fire("click");
+  REG["cd-0"].fire("click");
+  chk("the line with no unsafe in it builds in a capsule", verdict(), "builds");
+  REG["cr-chip"].fire("click");
+  chk("and in the chip crate, because the rule has nothing to say about it",
+      verdict(), "builds");
+  chk("which is the reason given", why(), "clean");
+
+  REG["cd-1"].fire("click");
+  chk("the raw store is ordinary code in the chip crate", verdict(), "builds");
+  chk("and the reason is that this crate does not forbid the word",
+      why(), "allowed");
+  REG["cr-cap"].fire("click");
+  chk("and the same line does not build in a capsule", verdict(), "refused");
+  chk("named as the lint rather than as a reviewer", why(), "forbid");
+
+  // The third is the interesting one: it is gpio.rs:1168 verbatim.
+  REG["cd-2"].fire("click");
+  chk("the line that really makes the LED work is refused in a capsule",
+      verdict(), "refused");
+  REG["cr-chip"].fire("click");
+  chk("and legal where it actually lives", verdict(), "builds");
+
+  // The whole table, and the shape of it: exactly the two lines carrying the
+  // word are the two that move.
+  (function () {
+    var l, moved = [], first, second;
+    for (l = 0; l < 3; l++) {
+      REG["cd-" + l].fire("click");
+      REG["cr-cap"].fire("click");
+      first = verdict();
+      REG["cr-chip"].fire("click");
+      second = verdict();
+      if (first !== second) { moved.push(l); }
+    }
+    chk("only the two lines containing unsafe change with the crate",
+        moved.join(","), "1,2");
+  }());
+
+  (function () {
+    var l, c, bad = 0, CR = ["cr-cap", "cr-chip"];
+    for (l = 0; l < 3; l++) {
+      for (c = 0; c < 2; c++) {
+        REG["cd-" + l].fire("click");
+        REG[CR[c]].fire("click");
+        if (why().indexOf(",") > -1 || why() === "") { bad++; }
+      }
+    }
+    chk("one reason, and only one, in all six cells", bad, 0);
+  }());
+  REG["cr-cap"].fire("click");
+  REG["cd-0"].fire("click");
+}());
+
 walk("cd-", "cdp-", 3, "figure 2");
 chk("the legal line is the first", REG["cdp-0"].textContent.indexOf("Legal") === 0, true);
 chk("the second is refused", REG["cdp-1"].textContent.indexOf("Refused") === 0, true);
@@ -119,6 +188,39 @@ chk("the count with comments is not also zero, or the gap is not the point",
     REG["ar-all"].textContent !== "0", true);
 
 // ---- Figure 4: six steps ----
+// ---- Figure 4: what each layer knows ----
+// The chapter's third goal is naming the layer that first knows the chip. All
+// three answers turn over at the same step, and five of the six could be
+// running on anything -- which is the note's claim, checked rather than said.
+(function () {
+  function row() {
+    return [REG["kn-chip"].textContent, REG["kn-pin"].textContent,
+            REG["kn-addr"].textContent, REG["kn-where"].textContent].join("|");
+  }
+  REG["hp-0"].fire("click");
+  chk("the capsule knows none of the three", row(), "no|no|no|capsules/core");
+  REG["hp-3"].fire("click");
+  chk("nor does the HIL, two layers further down",
+      row(), "no|no|no|kernel/src/hil");
+  REG["hp-4"].fire("click");
+  chk("step 5 is the first that knows the chip",
+      row(), "yes|yes|the base|chips/rp2350");
+  REG["hp-5"].fire("click");
+  chk("and the store is where the offset is added",
+      row(), "yes|yes|base + offset|chips/rp2350");
+
+  (function () {
+    var i, knowing = 0;
+    for (i = 0; i < 6; i++) {
+      REG["hp-" + i].fire("click");
+      if (REG["kn-chip"].textContent === "yes") { knowing++; }
+    }
+    chk("two of the six know the chip, so four could run on anything",
+        knowing, 2);
+  }());
+  REG["hp-0"].fire("click");
+}());
+
 walk("hp-", "hpp-", 6, "figure 4");
 chk("the chip is not named before step 5",
     REG["hpp-0"].textContent.indexOf("RP2350")
@@ -405,6 +507,62 @@ chk("and the section says what does not change",
 // comes back Input. Every assertion below is about the chapter saying which
 // register is missing, because that is the whole of the finding.
 chk("figure 9 opens on its first step", REG["mx-0"].getAttribute("aria-pressed"), "true");
+// ---- Figure 9: what the guard actually reads ----
+// Two bits decide the mode and FUNCSEL is not one of them, which is why a pin
+// handed to another block reports itself an input and every store evaporates.
+// The mapping is gpio.rs:1310-1322; make_output is :1380. Recomputed here
+// rather than read back, so a wrong cell fails instead of agreeing.
+(function () {
+  function row() {
+    return [REG["gm-fn"].textContent, REG["gm-od"].textContent,
+            REG["gm-oe"].textContent, REG["gm-mode"].textContent,
+            REG["gm-set"].textContent].join("|");
+  }
+  REG["fn-none"].fire("click");
+  chk("a pin nobody touched is LowPower, not Input",
+      row(), "none|set|clear|LowPower|stores nothing");
+
+  REG["fn-spi"].fire("click");
+  chk("handed to SPI it reports itself an input",
+      row(), "SPI|cleared|clear|Input|stores nothing");
+
+  // The part the SPI story hides: naming SIO is not enough either.
+  REG["fn-sio"].fire("click");
+  chk("and pointing it at SIO reports exactly the same thing",
+      row(), "SIO|cleared|clear|Input|stores nothing");
+  chk("which the panel says is the part the SPI case hides",
+      REG["gs-sio"].textContent.indexOf("not the same as being an output") > -1, true);
+
+  REG["fn-out"].fire("click");
+  chk("only make_output leaves a pin a store can move",
+      row(), "SIO|cleared|set|Output|stores");
+
+  // Exactly one of the four ever stores, and it is the one that sets gpio_oe.
+  (function () {
+    var A = ["none", "spi", "sio", "out"], i, stores = 0, bad = 0;
+    for (i = 0; i < A.length; i++) {
+      REG["fn-" + A[i]].fire("click");
+      if (REG["gm-set"].textContent === "stores") { stores++; }
+      if (REG["gm-set"].textContent === "stores" &&
+          REG["gm-oe"].textContent !== "set") { bad++; }
+      if (REG["gm-mode"].textContent === "Output" &&
+          !REG["gm-mode"].classList.contains("is-good")) { bad++; }
+      if (REG["gm-mode"].textContent !== "Output" &&
+          !REG["gm-mode"].classList.contains("is-bad")) { bad++; }
+    }
+    chk("one of the four stores, and it is the one that set gpio_oe", stores, 1);
+    chk("and the readings are marked to match", bad, 0);
+  }());
+
+  // FUNCSEL moves and the verdict does not, which is the whole defect.
+  REG["fn-spi"].fire("click");
+  var spi = REG["gm-mode"].textContent;
+  REG["fn-sio"].fire("click");
+  chk("changing FUNCSEL alone changes nothing the guard reads",
+      REG["gm-mode"].textContent, spi);
+  REG["fn-spi"].fire("click");
+}());
+
 walk("mx-", "mxp-", 3, "figure 9");
 
 // The first panel's job is the register that is never written, not the two

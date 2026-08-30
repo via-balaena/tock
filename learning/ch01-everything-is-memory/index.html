@@ -3755,7 +3755,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <li>SIO base <code class="addr">0xD0000000</code>, IO_BANK0 <code class="addr">0x40028000</code>, PADS <code class="addr">0x40038000</code> &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/gpio.rs">chips/rp2350/src/gpio.rs</a>:1164&ndash;1169</li>
     <li>The eight output registers at offsets <code>0x010</code>&ndash;<code>0x02C</code>, including the <code>gpio_hi_</code> siblings &mdash; <code>chips/rp2350/src/gpio.rs</code>:88&ndash;108</li>
     <li>Pins defined as <code>GPIO0</code>&ndash;<code>GPIO29</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1245&ndash;1250</li>
-    <li><code>gpio_out_set.set(1 &lt;&lt; self.pin)</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1485</li>
+    <li><code>gpio_out_set.set(1 &lt;&lt; self.pin)</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1519</li>
     <li>30 GPIOs on QFN-60 (RP2350A) versus 48 on QFN-80 (RP2350B), their four and eight analogue inputs, the 7&nbsp;&times;&nbsp;7&nbsp;mm and 10&nbsp;&times;&nbsp;10&nbsp;mm packages, and GPIOs 30&ndash;47 being QFN-80 only &mdash; RP2350 datasheet Table&nbsp;1, the sentence introducing it, and the note under the pin-function table</li>
     <li><code>GPIO_OUT</code> read-back wording, the <code>|=</code> / <code>&amp;= ~</code> / <code>^=</code> semantics, the <code>WO</code> type of <code>GPIO_OUT_SET</code>, and how simultaneous writes from both cores resolve &mdash; RP2350 datasheet &sect;3.1 and its register tables at offsets <code>0x010</code>&ndash;<code>0x028</code></li>
     <li><code>GPIO_IN</code> typed <code>RO</code> &mdash; RP2350 datasheet, Table&nbsp;19</li>
@@ -4405,7 +4405,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     { who: "Tock's interface", code: "pin.set();",
       where: "kernel/src/hil/gpio.rs:154 \u2014 the same call on every chip Tock supports" },
     { who: "Chip driver", code: "self.sio_registers.gpio_out_set.set(1 << self.pin);",
-      where: "chips/rp2350/src/gpio.rs:1485 \u2014 the first layer that knows this is an RP2350" },
+      where: "chips/rp2350/src/gpio.rs:1519 \u2014 the first layer that knows this is an RP2350" },
     { who: "Register types", code: "write_volatile(self.value.get(), value)",
       where: "tock-registers 0.10.0, src/registers.rs:63 \u2014 where volatile is enforced for everyone" },
     { who: "The machine", code: "and   r1, r1, #0x1f\nlsl.w r1, r2, r1\nstr   r1, [r0, #0x18]",

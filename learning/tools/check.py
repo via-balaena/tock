@@ -701,6 +701,94 @@ def compiled_size_checks(html, chapter_dir):
     return problems
 
 
+def figure_citation_checks(html):
+    """A figure step whose cited line is not the thing the step names.
+
+    `citation_chain_checks` asks whether a cited line exists. It says so
+    itself: "This does not check that the line *says* anything in particular;
+    that stays a review lens." That lens missed five citations in chapter 3 and
+    one in chapter 1, all pointing thirty-four or eighteen lines away from the
+    function they named, because the file gained lines after the citations were
+    written and every one of the wrong lines still existed. A reader following
+    `get_mode()  chips/rp2350/src/gpio.rs:1292` landed on a struct field.
+
+    A figure step is the one place where the check is cheap and exact, because
+    the step names its symbol in markup right beside the line:
+
+        <b>get_mode()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1310</span>
+
+    So take the longest identifier out of the `<b>`, and require it within a
+    few lines of the citation in the tree at the chapter's own pinned commit.
+    The window is not zero because a citation may reasonably point at the
+    `impl` line above a method, or at the opening of a block whose name is on
+    the line before.
+
+    Deliberately narrow. A step with no identifier in it -- `_ => {}` -- is
+    skipped rather than guessed at, and the sources list stays a review lens,
+    because a bullet is prose and the symbol in it is not reliably the thing
+    the line should contain.
+    """
+    problems = []
+    block = re.search(r'<section class="col sources">(.*?)</section>', html, re.S)
+    if not block:
+        return []
+    pin = re.search(r"commit <code>([0-9a-f]{7,40})</code>", block.group(1))
+    if not pin:
+        return []
+    pin = pin.group(1)
+    if subprocess.run(["git", "cat-file", "-e", pin + "^{commit}"],
+                      capture_output=True).returncode != 0:
+        return []
+
+    WINDOW = 4
+    cache = {}
+    pattern = (r'<b>([^<]{1,80})</b>\s*<span class="seq-src">'
+               r'([A-Za-z0-9_./-]+\.rs):(\d+)</span>')
+    for symbol_text, path, line_no in re.findall(pattern, html):
+        # Entities first: `_ =&gt; {}` yields the identifier "gt" otherwise,
+        # and a fall-through arm has no symbol to look for at all.
+        symbol_text = html_module.unescape(symbol_text)
+        # Any of the identifiers, not the longest one. `LedDriver::command`
+        # cites the line `fn command(`, where the type name is nowhere near --
+        # it is on the `impl` header thirty lines up -- so taking the longest
+        # word reported two correct citations as wrong on the first run.
+        words = re.findall(r"[A-Za-z_][A-Za-z0-9_]+", symbol_text)
+        if not words:
+            continue
+        if path not in cache:
+            done = subprocess.run(["git", "show", "%s:%s" % (pin, path)],
+                                  capture_output=True, text=True)
+            cache[path] = (done.stdout.splitlines()
+                           if done.returncode == 0 else None)
+        lines = cache[path]
+        if lines is None:
+            continue
+        n = int(line_no)
+        lo = max(0, n - 1 - WINDOW)
+        hi = min(len(lines), n + WINDOW)
+        # Word boundaries, not substrings: `set_floating_state` contains "set",
+        # and matching loosely is exactly how a citation thirty-four lines into
+        # the wrong function passes for one that names `set`.
+        found = [w for w in words
+                 if any(re.search(r"\b%s\b" % re.escape(w), ln)
+                        for ln in lines[lo:hi])]
+        if not found:
+            near = ""
+            for w in words:
+                for i, ln in enumerate(lines, 1):
+                    if re.search(r"\b%s\b" % re.escape(w), ln):
+                        near = " (%s is at :%d)" % (w, i)
+                        break
+                if near:
+                    break
+            problems.append("%s:%d is cited for %r, and none of %s is within "
+                            "%d lines of it at %s%s"
+                            % (path, n, symbol_text.strip(),
+                               ", ".join(sorted(set(words))), WINDOW,
+                               pin[:9], near))
+    return problems
+
+
 def citation_chain_checks(html):
     """A citation whose line number is not in the file it resolves to.
 
@@ -2030,6 +2118,7 @@ def static_checks(html, name):
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(assembled_listing_checks(html, os.path.join(ROOT, name)))
     problems.extend(citation_chain_checks(html))
+    problems.extend(figure_citation_checks(html))
     problems.extend(compiled_size_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))

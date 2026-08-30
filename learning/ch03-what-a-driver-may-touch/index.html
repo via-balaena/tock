@@ -589,6 +589,38 @@ dfn {
 .vtp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 .vtp.is-off { display: none; }
 
+
+/* ---------- the same line, in two crates ----------
+   The chapter's claim is that what makes a line legal or illegal is only which
+   crate it sits in. That is two axes and it was one: three lines, and the
+   crate held fixed at "a capsule" in the prose. Moving the crate is what turns
+   the claim into something a reader watches happen.
+
+   What is modelled here is the lint and not the whole compiler:
+   #![forbid(unsafe_code)] either has something to say about a line or it does
+   not, which is exactly the rule the chapter is about. */
+.crate-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  margin: .2rem 0 1rem; }
+.crate-row-k { font-family: var(--display); font-size: .7rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 4.4rem; }
+.crate-row button { font-family: var(--mono); font-size: .8rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; padding: .32rem .6rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule); }
+.crate-row button[aria-pressed="true"] { border-color: var(--accent);
+  background: var(--accent-soft); color: var(--accent); }
+.lint { border: 1px solid var(--rule-strong); border-radius: 2px;
+  overflow: hidden; margin: .3rem 0 1rem; }
+.lint-head { padding: .5rem .8rem;
+  font-family: var(--display); font-size: .88rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  background: var(--danger-soft); color: var(--danger); }
+.lint.is-ok .lint-head { background: var(--accent-soft); color: var(--accent); }
+.lint-why { padding: .65rem .8rem; font-size: .92rem; line-height: 1.55; }
+.lint-why p { margin: 0; }
+.lp { display: none; }
+.lp.is-on { display: block; }
+
 /* ---------- Code cards: Figure 2 ---------- */
 .loops { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; margin: .2rem 0 1rem; }
 .loops.three { grid-template-columns: repeat(3, 1fr); }
@@ -668,6 +700,29 @@ dfn {
 .seq button[aria-pressed="true"] .seq-n { color: var(--hot); }
 .seq b { font-family: var(--mono); font-weight: 500; }
 .seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
+
+
+/* ---------- what the guard actually reads ----------
+   The trap is that `get_mode` never reads FUNCSEL -- there is a literal
+   //TODO on the line -- and infers the pin's configuration from two other
+   bits instead. Told as three steps it is a story about SPI. Driven, it is a
+   rule you can run against any of the four things a board might have done to
+   the pin, and it turns out SPI is not the only one that loses the store.
+
+   The two bits and the mapping are gpio.rs:1310-1322; make_output is :1380. */
+.pinstate { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: .1rem; margin: .5rem 0 .8rem;
+  border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--rule); overflow: hidden; }
+.ps { background: var(--surface); padding: .5rem .7rem; }
+.ps-k { display: block; font-family: var(--mono); font-size: .66rem;
+  color: var(--ink-faint); margin-bottom: .15rem; }
+.ps-v { font-family: var(--mono); font-size: .85rem; font-weight: 600; color: var(--ink); }
+/* The reading that means a store will evaporate. */
+.ps-v.is-bad { color: var(--danger); }
+.ps-v.is-good { color: var(--accent); }
+.gs { display: none; }
+.gs.is-on { display: block; }
 
 /* ---------- Three columns to a row: Figure 5 ---------- */
 .dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
@@ -813,7 +868,12 @@ dfn {
     <span class="instrument-title">Three lines, one of them legal here</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Guess which one compiles inside a capsule, then click it.</p>
+    <p class="dothis">Pick a line, then move it between the two crates. Two of the three change their answer and one does not &mdash; and nothing about the lines themselves changes when you move them.</p>
+    <div class="crate-row" role="group" aria-label="Which crate the line is sitting in">
+      <span class="crate-row-k">in</span>
+      <button type="button" id="cr-cap" aria-pressed="true">a capsule crate</button>
+      <button type="button" id="cr-chip" aria-pressed="false">chips/rp2350</button>
+    </div>
     <div class="loops three" role="group" aria-label="Three candidate lines">
       <button type="button" class="loop" id="cd-0" aria-pressed="true">
         <span class="loop-k">first</span>
@@ -833,6 +893,17 @@ dfn {
       0xD0000000
         as *const SIORegisters) };</pre></button>
     </div>
+    <div class="lint is-ok" id="cd-lint" aria-live="polite">
+      <div class="lint-head">
+        <span id="cv-yes">It builds</span><span id="cv-no" class="is-off">It does not build</span>
+      </div>
+      <div class="lint-why">
+        <p class="lp is-on" id="lp-clean">No <b>unsafe</b> anywhere in it, so the crate's rule has nothing to say about this line. It builds in either crate, and it is the only one of the three that does.</p>
+        <p class="lp" id="lp-forbid">The crate opens with <code>#![forbid(unsafe_code)]</code>, and this line contains the word. That is not a reviewer catching it and not a warning: the build stops. <b>forbid</b> is also the level that refuses to be switched off further down, so no code inside the crate can take it back.</p>
+        <p class="lp" id="lp-allowed">The chip crate does not forbid the word, so the same line is ordinary code here. Nothing about it changed &mdash; not a character &mdash; and this is where it really lives.</p>
+      </div>
+    </div>
+
     <div class="loopsay">
       <p class="loopp is-on" id="cdp-0">Legal, and this is what the driver really does. Nothing here is an address: <b>leds</b> is the field from Figure 1, and <b>on</b> is one of the five methods the trait promised.</p>
       <p class="loopp" id="cdp-1">Refused &mdash; and not by a person. This is chapter 1's store written out by hand, and turning a number into something you can store through means dereferencing a raw pointer, which requires <b>unsafe</b>. The crate forbids the word, so the build stops here.</p>
@@ -889,14 +960,24 @@ dfn {
     <span class="instrument-title">Six steps from a request to a wire</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a step. The last one is the instruction chapter 1 spent its whole length on.</p>
+    <p class="dothis">Walk it down. Three questions are asked of every layer, and all three change their answer at the same step. The last step is the instruction chapter 1 spent its whole length on.</p>
+    <div class="pinstate">
+      <div class="ps"><span class="ps-k">knows the chip?</span>
+        <span class="ps-v" id="kn-chip">no</span></div>
+      <div class="ps"><span class="ps-k">knows a pin number?</span>
+        <span class="ps-v" id="kn-pin">no</span></div>
+      <div class="ps"><span class="ps-k">knows an address?</span>
+        <span class="ps-v" id="kn-addr">no</span></div>
+      <div class="ps"><span class="ps-k">lives in</span>
+        <span class="ps-v" id="kn-where">capsules/core</span></div>
+    </div>
     <div class="seq" role="group" aria-label="Six steps from the capsule to the pin">
       <button type="button" id="hp-0" aria-pressed="true"><span class="seq-n">1</span><span><b>LedDriver::command(1, 0)</b> <span class="seq-src">capsules/core/src/led.rs:102</span></span></button>
       <button type="button" id="hp-1" aria-pressed="false"><span class="seq-n">2</span><span><b>self.leds[data].on()</b> <span class="seq-src">led.rs:115</span></span></button>
       <button type="button" id="hp-2" aria-pressed="false"><span class="seq-n">3</span><span><b>LedHigh::on()</b> <span class="seq-src">kernel/src/hil/led.rs:62</span></span></button>
       <button type="button" id="hp-3" aria-pressed="false"><span class="seq-n">4</span><span><b>self.pin.set()</b> <span class="seq-src">kernel/src/hil/gpio.rs:154</span></span></button>
-      <button type="button" id="hp-4" aria-pressed="false"><span class="seq-n">5</span><span><b>RPGpioPin::set()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1481</span></span></button>
-      <button type="button" id="hp-5" aria-pressed="false"><span class="seq-n">6</span><span><b>gpio_out_set.set(1 &lt;&lt; 25)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1485</span></span></button>
+      <button type="button" id="hp-4" aria-pressed="false"><span class="seq-n">5</span><span><b>RPGpioPin::set()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1515</span></span></button>
+      <button type="button" id="hp-5" aria-pressed="false"><span class="seq-n">6</span><span><b>gpio_out_set.set(1 &lt;&lt; 25)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1519</span></span></button>
     </div>
     <div class="dbgsay">
       <p class="dbgp is-on" id="hpp-0">Command number 1 means on; the 0 is which LED. The capsule matches on the number and does nothing else with it.</p>
@@ -1066,11 +1147,36 @@ dfn {
     <span class="instrument-title">What step 5 actually checks</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each line. This is Figure 4's fifth step opened up, for a pin the board pointed at the SPI block.</p>
+    <p class="dothis">Choose what the board did to the pin, and read the guard's two inputs. Only one of the four leaves a pin that a store can move &mdash; and pointing it at SIO is not enough.</p>
+    <div class="crate-row" role="group" aria-label="What the board did to this pin">
+      <span class="crate-row-k">board</span>
+      <button type="button" id="fn-none" aria-pressed="false">left it alone</button>
+      <button type="button" id="fn-spi" aria-pressed="true">set_function(SPI)</button>
+      <button type="button" id="fn-sio" aria-pressed="false">set_function(SIO)</button>
+      <button type="button" id="fn-out" aria-pressed="false">make_output()</button>
+    </div>
+    <div class="pinstate">
+      <div class="ps"><span class="ps-k">FUNCSEL</span>
+        <span class="ps-v" id="gm-fn">SPI</span></div>
+      <div class="ps"><span class="ps-k">pad OD &mdash; read</span>
+        <span class="ps-v" id="gm-od">cleared</span></div>
+      <div class="ps"><span class="ps-k">gpio_oe bit &mdash; read</span>
+        <span class="ps-v" id="gm-oe">clear</span></div>
+      <div class="ps"><span class="ps-k">get_mode() says</span>
+        <span class="ps-v" id="gm-mode">Input</span></div>
+      <div class="ps"><span class="ps-k">so Output::set()</span>
+        <span class="ps-v" id="gm-set">stores nothing</span></div>
+    </div>
+    <p class="note" id="gm-say">
+      <span class="gs is-on" id="gs-mux">The pin belongs to another block, and <b>get_mode</b> cannot tell. It never reads <b>FUNCSEL</b>, and there is a literal <b>//TODO - read alternate function</b> on the line saying so. What it sees is a cleared output-disable and an unset <b>gpio_oe</b>, which is the pair it reports as <b>Input</b>. Every <b>set</b> and <b>clear</b> aimed at this pin returns having stored nothing, and returns <b>()</b>, so there is no error anywhere to notice.</span>
+      <span class="gs" id="gs-sio">Pointed at SIO and still not writable, which is the part the SPI story hides. <b>set_function</b> clears the pad's output-disable and never touches <b>gpio_oe</b>, so the pair reads exactly as it did for SPI. Naming the right block is not the same as being an output.</span>
+      <span class="gs" id="gs-low">Untouched since reset. The pad's output-disable is still set, which is the one input that produces <b>LowPower</b> rather than <b>Input</b> &mdash; and it is still not a pin a store can move.</span>
+      <span class="gs" id="gs-out">The only one of the four that works. <b>make_output</b> is <b>set_function(SIO)</b>, then <b>activate_pads</b>, then <b>gpio_oe_set</b> &mdash; and it is that third line, the one <b>set_function</b> does not do, that makes the pair read as an output.</span>
+    </p>
     <div class="seq" role="group" aria-label="Three lines that decide whether the store happens">
-      <button type="button" id="mx-0" aria-pressed="true"><span class="seq-n">1</span><span><b>set_function(SPI)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1311</span></span></button>
-      <button type="button" id="mx-1" aria-pressed="false"><span class="seq-n">2</span><span><b>get_mode()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1292</span></span></button>
-      <button type="button" id="mx-2" aria-pressed="false"><span class="seq-n">3</span><span><b>_ =&gt; {}</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1487</span></span></button>
+      <button type="button" id="mx-0" aria-pressed="true"><span class="seq-n">1</span><span><b>set_function(SPI)</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1329</span></span></button>
+      <button type="button" id="mx-1" aria-pressed="false"><span class="seq-n">2</span><span><b>get_mode()</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1310</span></span></button>
+      <button type="button" id="mx-2" aria-pressed="false"><span class="seq-n">3</span><span><b>_ =&gt; {}</b> <span class="seq-src">chips/rp2350/src/gpio.rs:1521</span></span></button>
     </div>
     <div class="dbgsay">
       <p class="dbgp is-on" id="mxp-0">The board points the pin at the SPI block. This writes <b>FUNCSEL</b>, clears the pin's isolation, and through <b>activate_pads</b> clears its output-disable bit. It never touches <b>gpio_oe</b>, the SIO register listing which pins SIO is driving, because SIO is not driving this one any more.</p>
@@ -1170,9 +1276,9 @@ dfn {
     <li><code>#![forbid(unsafe_code)]</code> opening all five capsule crates &mdash; <code>capsules/core/src/lib.rs</code>:5, and the same line 5 of <code>extra</code>, <code>system</code>, <code>aes_gcm</code> and <code>ecdsa_sw</code></li>
     <li><code>LedHigh</code> calling <code>set</code> and <code>LedLow</code> calling <code>clear</code> for the same <code>on()</code> &mdash; <code>kernel/src/hil/led.rs</code>:57&ndash;95</li>
     <li>The wording of the <code>Output::set</code> contract quoted in Figure 4 &mdash; <code>kernel/src/hil/gpio.rs</code>:152&ndash;154, in the <code>Output</code> trait declared at :151</li>
-    <li>The chip layer checking the pin's mode before storing &mdash; <code>chips/rp2350/src/gpio.rs</code>:1480&ndash;1490</li>
-    <li><code>set_function</code> writing <b>FUNCSEL</b> and clearing the pin's isolation, and never touching <code>gpio_oe</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1311&ndash;1319, with <code>activate_pads</code> clearing output-disable at :1334</li>
-    <li><code>get_mode</code> inferring the mode from output-disable and <code>gpio_oe</code>, under a <code>//TODO - read alternate function</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1292&ndash;1303</li>
+    <li>The chip layer checking the pin's mode before storing &mdash; <code>chips/rp2350/src/gpio.rs</code>:1514&ndash;1523</li>
+    <li><code>set_function</code> writing <b>FUNCSEL</b> and clearing the pin's isolation, and never touching <code>gpio_oe</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1329&ndash;1337, with <code>activate_pads</code> clearing output-disable at :1353</li>
+    <li><code>get_mode</code> inferring the mode from output-disable and <code>gpio_oe</code>, under a <code>//TODO - read alternate function</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1310&ndash;1321</li>
     <li>All twelve addresses in Figure 5, with their line numbers &mdash; <code>chips/rp2350/src/</code>, the <code>StaticRef::new</code> call in each of <code>clocks.rs</code>, <code>resets.rs</code>, <code>gpio.rs</code>, <code>xosc.rs</code>, <code>uart.rs</code>, <code>timer.rs</code> and <code>ticks.rs</code></li>
     <li>The two-line safety contract &mdash; the <code># Safety</code> section on <code>StaticRef::new</code>, <code>kernel/src/utilities/static_ref.rs</code>:29&ndash;35</li>
     <li>The plain Pico&nbsp;2 handing GPIO 25 to the LED driver, and the same pin commented out of the GPIO driver's list &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:95 and <code>boards/raspberry_pi_pico_2/src/lib.rs</code>:347</li>
@@ -1229,8 +1335,42 @@ dfn {
   /* ---------------- Figure 1: the declaration ---------------- */
   group("sg-", "sgp-", 5, "", "is-on", "is-off");
 
-  /* ---------------- Figure 2: which one compiles ---------------- */
-  group("cd-", "cdp-", 3, "", "is-on", "is-off");
+  /* ---------------- Figure 2: the same line, in two crates ----------------
+     Only the first line is free of `unsafe`, so only the first is unaffected
+     by which crate it sits in. The other two flip, and flipping them is the
+     chapter's whole claim: nothing about the line changes, and the answer
+     does. */
+  (function () {
+    var UNSAFE = [false, true, true];
+    var line = 0, incapsule = true;
+
+    function draw() {
+      var refused = UNSAFE[line] && incapsule;
+      var which = !UNSAFE[line] ? "clean" : (incapsule ? "forbid" : "allowed");
+      document.getElementById("cr-cap")
+        .setAttribute("aria-pressed", incapsule ? "true" : "false");
+      document.getElementById("cr-chip")
+        .setAttribute("aria-pressed", incapsule ? "false" : "true");
+      document.getElementById("cd-lint").classList.toggle("is-ok", !refused);
+      document.getElementById("cv-yes").classList.toggle("is-off", refused);
+      document.getElementById("cv-no").classList.toggle("is-off", !refused);
+      var NAMES = ["clean", "forbid", "allowed"], i;
+      for (i = 0; i < NAMES.length; i++) {
+        document.getElementById("lp-" + NAMES[i])
+          .classList.toggle("is-on", NAMES[i] === which);
+      }
+    }
+    document.getElementById("cr-cap").addEventListener("click", function () {
+      incapsule = true; draw();
+    });
+    document.getElementById("cr-chip").addEventListener("click", function () {
+      incapsule = false; draw();
+    });
+    group("cd-", "cdp-", 3, "", "is-on", "is-off", function (k) {
+      line = k;
+      draw();
+    });
+  }());
 
   /* ---------------- Figure 3: counting the word ----------------
      Counts of `unsafe` in the .rs files under each path, taken twice: once
@@ -1251,8 +1391,34 @@ dfn {
     });
   }());
 
-  /* ---------------- Figure 4: six steps ---------------- */
-  group("hp-", "hpp-", 6, "", "is-on", "is-off");
+  /* ---------------- Figure 4: six steps, and what each layer knows ----------
+     The chapter's third goal is to be able to say which layer first knows what
+     chip this is. That is a question with an answer per step, so it is asked
+     per step: five of the six could be running on anything, and all three
+     answers turn over together at the same one.
+
+     "Knows an address" is true at step 5 because RPGpioPin holds SIO's base --
+     the StaticRef from Figure 5 -- and true at step 6 because the offset is
+     added there. */
+  (function () {
+    var CHIP  = ["no", "no", "no", "no", "yes", "yes"];
+    var PIN   = ["no", "no", "no", "no", "yes", "yes"];
+    var ADDR  = ["no", "no", "no", "no", "the base", "base + offset"];
+    var WHERE = ["capsules/core", "capsules/core", "kernel/src/hil",
+                 "kernel/src/hil", "chips/rp2350", "chips/rp2350"];
+
+    group("hp-", "hpp-", 6, "", "is-on", "is-off", function (k) {
+      document.getElementById("kn-chip").textContent = CHIP[k];
+      document.getElementById("kn-pin").textContent = PIN[k];
+      document.getElementById("kn-addr").textContent = ADDR[k];
+      document.getElementById("kn-where").textContent = WHERE[k];
+      /* Marked from the step the chip appears, so "five of the six could be
+         running on anything" is something the readings say. */
+      document.getElementById("kn-chip").classList.toggle("is-good", CHIP[k] === "yes");
+      document.getElementById("kn-pin").classList.toggle("is-good", PIN[k] === "yes");
+      document.getElementById("kn-addr").classList.toggle("is-good", ADDR[k] !== "no");
+    });
+  }());
 
   /* ---------------- Figure 5: twelve addresses ----------------
      Opens on the last one rather than the first, because that is the one
@@ -1268,8 +1434,64 @@ dfn {
   /* ---------------- Figure 8: what is left over ---------------- */
   group("st-", "stp-", 3, "", "is-on", "is-off");
 
-  /* ---------------- Figure 9: what the guard reads ---------------- */
-  group("mx-", "mxp-", 3, "", "is-on", "is-off");
+  /* ---------------- Figure 9: what the guard reads ----------------
+     Two bits decide everything, and FUNCSEL is not one of them:
+
+       pad_output_disable = !gpio_pad[pin].OD
+       sio_output_enable  = gpio_oe & (1 << pin)
+
+       (true,  true)  -> Output
+       (true,  false) -> Input
+       (false, _)     -> LowPower
+
+     set_function clears OD through activate_pads and never touches gpio_oe,
+     so it can only ever produce Input -- whichever block it names. Only
+     make_output sets the second bit, which is why it is the only one of the
+     four that leaves a pin a store can move. gpio.rs:1310-1322 and :1380. */
+  (function () {
+    /* action -> [FUNCSEL, OD cleared, gpio_oe set, which sentence] */
+    var ACT = {
+      none: ["none", false, false, "low"],
+      spi:  ["SPI",  true,  false, "mux"],
+      sio:  ["SIO",  true,  false, "sio"],
+      out:  ["SIO",  true,  true,  "out"]
+    };
+    var ORDER = ["none", "spi", "sio", "out"];
+    var at = "spi";
+
+    function draw() {
+      var i, a = ACT[at], mode, stores;
+      for (i = 0; i < ORDER.length; i++) {
+        document.getElementById("fn-" + ORDER[i])
+          .setAttribute("aria-pressed", ORDER[i] === at ? "true" : "false");
+      }
+      mode = !a[1] ? "LowPower" : (a[2] ? "Output" : "Input");
+      stores = mode === "Output";
+      document.getElementById("gm-fn").textContent = a[0];
+      document.getElementById("gm-od").textContent = a[1] ? "cleared" : "set";
+      document.getElementById("gm-oe").textContent = a[2] ? "set" : "clear";
+      document.getElementById("gm-mode").textContent = mode;
+      document.getElementById("gm-set").textContent =
+        stores ? "stores" : "stores nothing";
+      document.getElementById("gm-mode").classList.toggle("is-bad", !stores);
+      document.getElementById("gm-mode").classList.toggle("is-good", stores);
+      document.getElementById("gm-set").classList.toggle("is-bad", !stores);
+      document.getElementById("gm-set").classList.toggle("is-good", stores);
+      var SAY = ["mux", "sio", "low", "out"], k;
+      for (k = 0; k < SAY.length; k++) {
+        document.getElementById("gs-" + SAY[k]).classList.toggle("is-on",
+          SAY[k] === a[3]);
+      }
+    }
+    function wire(k) {
+      document.getElementById("fn-" + k)
+        .addEventListener("click", function () { at = k; draw(); });
+    }
+    var i;
+    for (i = 0; i < ORDER.length; i++) { wire(ORDER[i]); }
+    draw();
+    group("mx-", "mxp-", 3, "", "is-on", "is-off");
+  }());
 
   /* ---------------- Check yourself ----------------
      The answer text is in the markup; this only reveals it and marks which
