@@ -595,6 +595,138 @@ dfn {
 .costp.is-off { display: none; }
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
+
+/* ---------- one frame, three jobs ----------
+   The chapter's cleverest observation is that answering a request and
+   delivering a call are the same operation on the same eight words, and that
+   nothing in the frame records which job was done. Told as eight panels, each
+   naming its three meanings, the reader has to hold the job fixed in their
+   head and read down. Holding the job fixed is what a control is for.
+
+   What the readout counts is the claim the note makes: two of the three jobs
+   write only the first four words, and the third writes seven, leaving out
+   exactly the one the interface ignores. */
+.jobrow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  margin: .2rem 0 .9rem; }
+.jobrow-k { font-family: var(--display); font-size: .7rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 4.2rem; }
+.jobrow button { font-family: var(--body); font-size: .85rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0; padding: .32rem .65rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule); }
+.jobrow button[aria-pressed="true"] { border-color: var(--accent);
+  background: var(--accent-soft); color: var(--accent); }
+/* What each word holds for the job in hand. Filled in beside the word rather
+   than instead of it, so the frame stays the thing on screen. */
+.vt .fr-holds { font-family: var(--mono); font-size: .78rem; color: var(--ink-soft); }
+.vt button[aria-pressed="true"] .fr-holds { color: var(--hot); }
+/* A word the kernel writes for this job. */
+.vt button.is-written { border-left: 3px solid var(--accent); }
+.writes { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: 0 0 1rem; }
+.writes b { font-family: var(--mono); color: var(--ink); }
+.jw { display: none; }
+.jw.is-on { display: block; }
+
+
+
+/* ---------- Figure 8: the allow bench ----------
+   Four named cases in a row of buttons is a list of four answers. The check
+   itself is three comparisons against two pairs of bounds, and which of them
+   fails is the whole lesson -- so the bounds are drawn, the buffer is dragged
+   across them, and the three comparisons are shown flipping. The watermark
+   only accumulates, which is a thing a reveal panel cannot do at all. */
+.abrow { display: flex; align-items: center; gap: .7rem; margin-bottom: .55rem;
+  flex-wrap: wrap; }
+.abrow label { font-family: var(--display); font-size: .74rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 4.6rem; }
+.abrow .abgrow { flex: 1 1 12rem; min-width: 9rem; display: block; }
+.abrow input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block; }
+.abval { font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  color: var(--hot-ink); background: var(--hot-fill); border-radius: 2px;
+  padding: .12rem .45rem; flex: 0 0 auto; min-width: 7rem; text-align: center; }
+
+.abstrip { position: relative; height: 2.8rem; margin: .15rem 0 .1rem;
+  border: 1px solid var(--rule); border-radius: 2px; overflow: hidden;
+  background: var(--surface-sunk); display: flex; }
+.abzone { position: relative; display: flex; align-items: flex-start;
+  justify-content: center; padding-top: .22rem; font-family: var(--display); font-size: .58rem;
+  font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink-faint); text-align: center; line-height: 1.15;
+  border-right: 1px dashed var(--rule-strong); padding: 0 .2rem; }
+.abzone:last-child { border-right: 0; }
+.abzone.ok { background: var(--accent-soft); color: var(--accent); }
+.abbar { position: absolute; top: 1.35rem; bottom: .15rem; background: var(--hot-fill);
+  border-left: 2px solid var(--hot); border-right: 2px solid var(--hot);
+  display: none; }
+.abbar.is-on { display: block; }
+.abbar.is-bad { background: var(--danger-soft); border-color: var(--danger); }
+.abmark { position: absolute; top: 1.2rem; bottom: 0; width: 2px;
+  background: var(--danger); z-index: 2; }
+.abmark::after { content: "mark"; position: absolute; bottom: .05rem; left: .18rem;
+  font-family: var(--display); font-size: .55rem; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--danger); }
+.abstrip-k { font-family: var(--display); font-size: .62rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  margin: .6rem 0 .1rem; }
+
+.abtest { width: 100%; border-collapse: collapse; margin: .6rem 0 .8rem;
+  font-size: .82rem; }
+.abtest th, .abtest td { border: 1px solid var(--rule); padding: .3rem .5rem;
+  text-align: left; }
+.abtest th { font-family: var(--display); font-size: .62rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  background: var(--surface-sunk); }
+.abtest td { font-family: var(--mono); color: var(--ink-soft); }
+.abtest td.yes { color: var(--accent); background: var(--accent-soft); }
+.abtest td.no { color: var(--danger); background: var(--danger-soft); }
+.abtest th[scope="row"] { font-family: var(--mono); font-size: .78rem;
+  text-transform: none; letter-spacing: 0; color: var(--ink);
+  font-weight: 600; background: var(--surface); }
+.abfoot { font-size: .82rem; line-height: 1.5; color: var(--ink-faint);
+  margin: -.4rem 0 .9rem; }
+.absay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: 0 0 1rem; }
+.abp { display: none; }
+.abp.is-on { display: block; }
+
+/* ---------- readouts beside a figure ---------- */
+.pinstate { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: .1rem; margin: .5rem 0 .8rem;
+  border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--rule); overflow: hidden; }
+.ps { background: var(--surface); padding: .5rem .7rem; }
+.ps-k { display: block; font-family: var(--display); font-size: .62rem;
+  font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-faint); margin-bottom: .2rem; }
+.ps-v { font-family: var(--mono); font-size: .88rem; font-weight: 600; color: var(--ink); }
+.loop-ctl { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center;
+  margin-bottom: .8rem; }
+
+/* ---------- the queue that nothing drains on its own ----------
+   Step four of this figure is "nothing happens", and it is the step that
+   surprises people. A list cannot show a thing not happening; a queue you can
+   fill while nothing empties it can. Ten slots, because ten is the constant,
+   and the eleventh event is the one worth producing yourself. */
+.queue { display: flex; gap: 3px; margin: .4rem 0 .6rem; flex-wrap: wrap; }
+.qs { flex: 1 1 0; min-width: 1.9rem; height: 1.9rem; border-radius: 2px;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  font-family: var(--mono); font-size: .72rem; color: var(--ink-faint);
+  display: flex; align-items: center; justify-content: center; }
+.qs.is-full { background: var(--accent-soft); border-color: var(--accent);
+  color: var(--accent); }
+.qs.is-next { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+/* At the constant the rack stops reading as progress and starts reading as
+   pressure, because a full rack and a half-full one otherwise look like the
+   same picture with more of it. */
+.queue.is-brimmed .qs.is-full { background: var(--danger-soft); border-color: var(--danger);
+  color: var(--danger); }
+.qsay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: 0 0 1rem; }
+.qp { display: none; }
+.qp.is-on { display: block; }
+
 /* ---------- Numbered steps: Figure 6 ---------- */
 .seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
 .seq button {
@@ -874,7 +1006,41 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <span class="instrument-title">Six steps from a driver's event to a function running in a process</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each step. Step four is the one that is not an action.</p>
+    <p class="dothis">Give the driver events without ever yielding, and watch what the queue does. Ten is a real constant, and the eleventh event is the one worth producing for yourself.</p>
+    <div class="queue" id="q-rack" aria-hidden="true">
+      <span class="qs" id="qs-0">1</span>
+      <span class="qs" id="qs-1">2</span>
+      <span class="qs" id="qs-2">3</span>
+      <span class="qs" id="qs-3">4</span>
+      <span class="qs" id="qs-4">5</span>
+      <span class="qs" id="qs-5">6</span>
+      <span class="qs" id="qs-6">7</span>
+      <span class="qs" id="qs-7">8</span>
+      <span class="qs" id="qs-8">9</span>
+      <span class="qs" id="qs-9">10</span>
+    </div>
+    <div class="pinstate">
+      <div class="ps"><span class="ps-k">waiting</span>
+        <span class="ps-v" id="q-wait">0</span></div>
+      <div class="ps"><span class="ps-k">delivered</span>
+        <span class="ps-v" id="q-done">0</span></div>
+      <div class="ps"><span class="ps-k">dropped</span>
+        <span class="ps-v" id="q-lost">0</span></div>
+      <div class="ps"><span class="ps-k">process is</span>
+        <span class="ps-v" id="q-state">running</span></div>
+    </div>
+    <div class="loop-ctl">
+      <button type="button" id="q-event">The driver has an event</button>
+      <button type="button" id="q-yield">The process yields</button>
+      <button type="button" id="q-reset">Start over</button>
+    </div>
+    <p class="qsay" aria-live="polite">
+      <span class="qp is-on" id="qp-idle">Nothing waiting. Give the driver something to report.</span>
+      <span class="qp" id="qp-holding">Waiting, and nothing is going to move it. A running process is never stopped to take one of these, so the driver's event has visibly happened to nobody.</span>
+      <span class="qp" id="qp-full">Full. Ten slots is a constant belonging to the process implementation rather than to any board. The next event is not queued: the driver is told so, and the kernel keeps nothing to retry from.</span>
+      <span class="qp" id="qp-lost">That one is gone. What happens next is the driver's business, because nothing here remembers it &mdash; and a process that never yields reaches this state and stays in it.</span>
+      <span class="qp" id="qp-drain">Delivered, exactly one. Yielding is what puts the process into a state where an upcall can be handed over, and it takes one; anything else waiting is waiting for the next yield.</span>
+    </p>
     <div class="seq" role="group" aria-label="Six steps in delivering an upcall">
       <button type="button" id="uc-0" aria-pressed="true"><span class="seq-n">1</span><span>The driver has something, and asks for the process's function to be run <span class="seq-src">grant.rs:610</span></span></button>
       <button type="button" id="uc-1" aria-pressed="false"><span class="seq-n">2</span><span>The kernel builds an upcall out of it: three values from the driver, and a fourth the driver never saw <span class="seq-src">upcall.rs:183</span></span></button>
@@ -908,17 +1074,28 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <span class="instrument-title">Eight words, and the three jobs each one does</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each word. The left column is how far up the frame it sits.</p>
-    <div class="vt" role="group" aria-label="The eight words of the exception frame">
-      <button type="button" id="fr-0" aria-pressed="true"><span class="vt-at">+0</span><span>r0</span></button>
-      <button type="button" id="fr-1" aria-pressed="false"><span class="vt-at">+4</span><span>r1</span></button>
-      <button type="button" id="fr-2" aria-pressed="false"><span class="vt-at">+8</span><span>r2</span></button>
-      <button type="button" id="fr-3" aria-pressed="false"><span class="vt-at">+12</span><span>r3</span></button>
-      <button type="button" id="fr-4" aria-pressed="false"><span class="vt-at">+16</span><span>r12</span></button>
-      <button type="button" id="fr-5" aria-pressed="false"><span class="vt-at">+20</span><span>lr</span></button>
-      <button type="button" id="fr-6" aria-pressed="false"><span class="vt-at">+24</span><span>pc</span></button>
-      <button type="button" id="fr-7" aria-pressed="false"><span class="vt-at">+28</span><span>xPSR</span></button>
+    <p class="dothis">Pick a job, and the same eight words say what they hold for it. Then click a word to read all three at once &mdash; the point being that nothing in the frame records which job was done.</p>
+    <div class="jobrow" role="group" aria-label="Which of the three jobs the frame is doing">
+      <span class="jobrow-k">job</span>
+      <button type="button" id="fm-out" aria-pressed="true">going out</button>
+      <button type="button" id="fm-back" aria-pressed="false">coming back</button>
+      <button type="button" id="fm-call" aria-pressed="false">carrying a callback</button>
     </div>
+    <div class="vt" role="group" aria-label="The eight words of the exception frame">
+      <button type="button" id="fr-0" aria-pressed="true"><span class="vt-at">+0</span><span>r0 <span class="fr-holds" id="fv-0"></span></span></button>
+      <button type="button" id="fr-1" aria-pressed="false"><span class="vt-at">+4</span><span>r1 <span class="fr-holds" id="fv-1"></span></span></button>
+      <button type="button" id="fr-2" aria-pressed="false"><span class="vt-at">+8</span><span>r2 <span class="fr-holds" id="fv-2"></span></span></button>
+      <button type="button" id="fr-3" aria-pressed="false"><span class="vt-at">+12</span><span>r3 <span class="fr-holds" id="fv-3"></span></span></button>
+      <button type="button" id="fr-4" aria-pressed="false"><span class="vt-at">+16</span><span>r12 <span class="fr-holds" id="fv-4"></span></span></button>
+      <button type="button" id="fr-5" aria-pressed="false"><span class="vt-at">+20</span><span>lr <span class="fr-holds" id="fv-5"></span></span></button>
+      <button type="button" id="fr-6" aria-pressed="false"><span class="vt-at">+24</span><span>pc <span class="fr-holds" id="fv-6"></span></span></button>
+      <button type="button" id="fr-7" aria-pressed="false"><span class="vt-at">+28</span><span>xPSR <span class="fr-holds" id="fv-7"></span></span></button>
+    </div>
+    <p class="writes" aria-live="polite">
+      <span class="jw is-on" id="jw-out">The kernel writes <b>none</b> of the eight. Every one of them is what the process put there before the <b>svc</b>, which is why a request cannot be corrupted on the way in by anything but the process itself.</span>
+      <span class="jw" id="jw-back">The kernel writes <b>up to four</b>, and only the ones the answer's shape needs. The rest still hold what the process sent, so reading <b>r2</b> after a plain success gives back the argument you passed &mdash; an accident of the encoding, and not a promise.</span>
+      <span class="jw" id="jw-call">The kernel writes <b>seven of the eight</b>, leaving out exactly the one the syscall interface ignores. Two words are the whole trick: <b>pc</b> becomes the function, and <b>lr</b> becomes the address after the <b>svc</b>, so the callback returns into the request that started it.</span>
+    </p>
     <div class="vtsay">
       <p class="vtp is-on" id="frp-0">Going out: the driver number, or the yield variant, or the exit variant, depending on the class. Coming back: which shape the answer is. Carrying a callback: the driver's first value. Three different meanings, one word, and which one applies is never written down anywhere in the frame.</p>
       <p class="vtp" id="frp-1">Going out: the command or subscribe number within the driver. Coming back: an error code, or the first value of a success. Carrying a callback: the driver's second value.</p>
@@ -943,29 +1120,74 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 8</span>
-    <span class="instrument-title">Four buffers offered, and what decides each one</span>
+    <span class="instrument-title">Offer the kernel a buffer, and watch the comparisons</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each offer. Two are accepted for different reasons, and one is accepted with no check at all.</p>
-    <div class="costs" role="group" aria-label="Four buffers a process offers the kernel">
-      <button type="button" id="bf-0" aria-pressed="true">64 bytes on my own stack</button>
-      <button type="button" id="bf-1" aria-pressed="false">64 bytes just past my break</button>
-      <button type="button" id="bf-2" aria-pressed="false">a string in my flash, read-only</button>
-      <button type="button" id="bf-3" aria-pressed="false">length zero, address anything</button>
+    <p class="dothis">Drag the buffer across the map and swap what the kernel may do with it. Two things worth producing for yourself: a read-only offer sitting in flash, which is accepted, and a length of zero, which is accepted without any comparison being made at all.</p>
+
+    <div class="abrow">
+      <label for="ab-start">starts at</label>
+      <span class="abgrow"><input type="range" id="ab-start" min="0" max="43" step="1" value="22" aria-label="where the buffer starts"></span>
+      <span class="abval" id="ab-start-v">0x20008080</span>
     </div>
+    <div class="abrow">
+      <label for="ab-len">length</label>
+      <span class="abgrow"><input type="range" id="ab-len" min="0" max="12" step="1" value="4" aria-label="how many bytes the buffer is"></span>
+      <span class="abval" id="ab-len-v">256 bytes</span>
+    </div>
+    <div class="costs" role="group" aria-label="What the kernel is allowed to do with the buffer">
+      <button type="button" id="ab-rw" aria-pressed="true">the kernel may read and write it</button>
+      <button type="button" id="ab-ro" aria-pressed="false">the kernel may only read it</button>
+    </div>
+
+    <p class="abstrip-k">the process's flash</p>
+    <div class="abstrip" aria-hidden="true">
+      <div class="abzone" style="flex: 4 0 0">header, protected</div>
+      <div class="abzone ok" style="flex: 12 0 0">its own flash</div>
+      <div class="abbar" id="ab-fbar"></div>
+    </div>
+    <p class="abstrip-k">the process's RAM</p>
+    <div class="abstrip" aria-hidden="true">
+      <div class="abzone" style="flex: 4 0 0">below it</div>
+      <div class="abzone ok" style="flex: 16 0 0">its own memory, up to the break</div>
+      <div class="abzone" style="flex: 8 0 0">past the break</div>
+      <div class="abbar" id="ab-rbar"></div>
+      <div class="abmark" id="ab-mark" style="left: 14.2857%"></div>
+    </div>
+
+    <table class="abtest">
+      <thead>
+        <tr><th>the comparison</th><th>against its memory</th><th>against its flash</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">end &gt;= start</th><td id="ab-r1">yes</td><td id="ab-f1">yes</td></tr>
+        <tr><th scope="row">start &gt;= the floor</th><td id="ab-r2">yes</td><td id="ab-f2">no</td></tr>
+        <tr><th scope="row">end &lt;= the ceiling</th><td id="ab-r3">yes</td><td id="ab-f3">no</td></tr>
+      </tbody>
+    </table>
+
+    <p class="abfoot" id="ab-foot">The first row is asked every time and cannot be made to fail here, because no length this bench offers is large enough to wrap past the end of the address space. It is shown because the kernel asks it before either of the others.</p>
+
     <div class="costgrid">
-      <div class="costcell"><span class="costcell-k">where it points</span><span class="costcell-v" id="bf-where">inside my memory</span></div>
-      <div class="costcell"><span class="costcell-k">what decides</span><span class="costcell-v" id="bf-test">start and break</span></div>
-      <div class="costcell"><span class="costcell-k">what comes back</span><span class="costcell-v" id="bf-out">accepted</span></div>
+      <div class="costcell"><span class="costcell-k">the run offered</span><span class="costcell-v" id="ab-run">0x20008080 to 0x20008180</span></div>
+      <div class="costcell"><span class="costcell-k">what comes back</span><span class="costcell-v" id="ab-out">accepted</span></div>
+      <div class="costcell"><span class="costcell-k">the mark now</span><span class="costcell-v" id="ab-mark-v">0x20008000</span></div>
     </div>
-    <div class="costsay">
-      <p class="costp is-on" id="bfp-0">The ordinary case. Both ends land inside the span, so the kernel builds a checked handle and files it, and hands back whichever allowed buffer that driver held before. It also raises a mark: the highest address ever offered, which the process cannot shrink below for as long as it keeps running.</p>
-      <p class="costp" id="bfp-1">Refused, with an invalid-argument error, and nothing about the fence in chapter 5 was involved. The comparison is arithmetic on two pointers, made before any handle exists, and the same comparison would refuse a length so large it wrapped around the end of the address space.</p>
-      <p class="costp" id="bfp-2">Accepted, and only because it is read-only. A read-write offer is checked against the process's memory alone; a read-only offer is checked against its memory or its flash, and a constant string lives in flash. This is why printing a literal works without copying it into RAM first.</p>
-      <p class="costp" id="bfp-3">Accepted without any bounds check whatsoever, deliberately. A length of zero is how a process takes a buffer back. It replaces whatever the driver held with something that cannot be read or written, so no address it could name would make it unsafe.</p>
+    <div class="loop-ctl">
+      <button type="button" id="ab-offer">make the offer</button>
+      <button type="button" id="ab-reset">restart the process</button>
+    </div>
+
+    <div class="absay">
+      <p class="abp is-on" id="abp-ram">Both ends land inside the process's own memory, so the kernel builds a checked handle, files it, and hands back whichever allowed buffer that driver held before. Make the offer and the mark moves up to the far end of it.</p>
+      <p class="abp" id="abp-flash">Accepted, and only because it is read-only. A read-write offer is checked against the process's memory alone; a read-only one is checked against its memory or its flash, and a constant string lives in flash. This is how printing a literal works without copying it into RAM first. The mark does not move, because nothing in flash is memory the break can be dragged over.</p>
+      <p class="abp" id="abp-zero">Accepted with no comparison made at all, deliberately, whatever address it names. A length of zero is how a process takes a buffer back: it replaces whatever the driver held with something that cannot be read or written, so no address could make it unsafe.</p>
+      <p class="abp" id="abp-rwflash">Refused. Flash is not memory the kernel will write, so a read-write offer is only ever checked against the process's RAM, and a flash address fails that floor before anything else is asked. Offer the same run as read-only and it is accepted.</p>
+      <p class="abp" id="abp-ceiling">Refused, with an invalid-argument error, and nothing about the fence in chapter 5 was involved. The comparison is arithmetic on two pointers, made before any handle exists, and the same comparison refuses a length so large that adding it wrapped around the end of the address space.</p>
+      <p class="abp" id="abp-floor">Refused, because the run starts below the floor. Both checks ask this first, and the address here is beneath the start of anything this process owns.</p>
     </div>
   </div>
-  <div class="instrument-note" id="bf-note">Notice the mark in the first panel. Once a process has offered a stretch of memory, it may not move its break back below the far end of it, and nothing a running process can do lowers that mark. The kernel has no way to know a driver has finished with an allowed buffer, so it assumes none of them ever has. One thing does clear it: the restart variant of exit, back in Figure 2, which rebuilds the process's memory from the start. So the cost is permanent for the life of a process, and the only refund is not being that process any more.</div>
+  <div class="instrument-note" id="bf-note">Notice that the mark only ever goes up. Make a high offer, then a low one, and the mark stays where the high one put it. Once a process has offered a stretch of memory, it may not move its break back below the far end of it, and nothing a running process can do lowers that line. The kernel has no way to know a driver has finished with an allowed buffer, so it assumes none of them ever has. One thing does clear it, and it is the button labelled restart the process: the restart variant of exit, back in Figure 2, which rebuilds the process's memory from the start. So the cost is permanent for the life of a process, and the only refund is not being that process any more.</div>
 </figure>
 
 <section class="col">
@@ -1216,25 +1438,215 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     });
   }());
 
-  /* ---------------- Figure 6: delivering an upcall ---------------- */
-  group("uc-", "ucp-", 6, "", "is-on", "is-off");
+  /* ---------------- Figure 6: the queue, filled and drained ----------------
+     Ten slots, CALLBACK_LEN, and the two things that surprise people are both
+     things you have to do rather than read: a running process is never stopped
+     to take one, so the queue only grows; and the eleventh event is dropped
+     with nothing kept to retry from.
 
-  /* ---------------- Figure 7: the eight words of the frame ---------------- */
-  group("fr-", "frp-", 8, "", "is-on", "is-off");
-
-  /* ---------------- Figure 8: four buffers offered ---------------- */
+     Delivery takes exactly one, because handing an upcall over puts the
+     process back into the running state. */
   (function () {
-    var BUF = [
-      ["inside my memory", "start and break", "accepted"],
-      ["past my break", "start and break", "refused"],
-      ["inside my flash", "start and break, or flash", "accepted"],
-      ["anywhere at all", "nothing is checked", "accepted"]
-    ];
-    group("bf-", "bfp-", 4, "", "is-on", "is-off", function (k) {
-      document.getElementById("bf-where").textContent = BUF[k][0];
-      document.getElementById("bf-test").textContent = BUF[k][1];
-      document.getElementById("bf-out").textContent = BUF[k][2];
+    var CAP = 10;
+    var waiting = 0, done = 0, lost = 0, last = "idle";
+
+    function draw() {
+      var i, q;
+      for (i = 0; i < CAP; i++) {
+        q = document.getElementById("qs-" + i);
+        q.classList.toggle("is-full", i < waiting);
+        q.classList.toggle("is-next", i === 0 && waiting > 0);
+      }
+      document.getElementById("q-wait").textContent = String(waiting);
+      document.getElementById("q-done").textContent = String(done);
+      document.getElementById("q-lost").textContent = String(lost);
+      document.getElementById("q-state").textContent =
+        waiting >= CAP ? "running, and losing them" : "running";
+      document.getElementById("q-rack").classList.toggle("is-brimmed",
+        waiting >= CAP);
+      var SAY = ["idle", "holding", "full", "lost", "drain"], k;
+      for (k = 0; k < SAY.length; k++) {
+        document.getElementById("qp-" + SAY[k]).classList.toggle("is-on",
+          SAY[k] === last);
+      }
+    }
+    document.getElementById("q-event").addEventListener("click", function () {
+      if (waiting >= CAP) { lost++; last = "lost"; }
+      else { waiting++; last = waiting >= CAP ? "full" : "holding"; }
+      draw();
     });
+    document.getElementById("q-yield").addEventListener("click", function () {
+      if (waiting > 0) { waiting--; done++; last = "drain"; }
+      else { last = "idle"; }
+      draw();
+    });
+    document.getElementById("q-reset").addEventListener("click", function () {
+      waiting = 0; done = 0; lost = 0; last = "idle";
+      draw();
+    });
+    draw();
+    group("uc-", "ucp-", 6, "", "is-on", "is-off");
+  }());
+
+  /* ---------------- Figure 7: one frame, three jobs ----------------
+     The same eight words, read three ways. Which words the kernel writes is
+     the note's claim and is what the readout counts: none going out, up to
+     four coming back, and seven of the eight to deliver a call -- every one
+     but r12, which the interface ignores in both directions. */
+  (function () {
+    var HOLDS = {
+      out:  ["driver number", "command number", "an argument", "an argument",
+             "ignored", "untouched", "after the svc", "flags"],
+      back: ["which shape", "error, or a value", "a value", "a value",
+             "ignored", "untouched", "after the svc", "flags"],
+      call: ["the driver's 1st", "the driver's 2nd", "the driver's 3rd",
+             "your own word", "ignored", "after the svc", "the function",
+             "flags, restored"]
+    };
+    /* Which of the eight the kernel writes for each job. */
+    var WRITES = { out: [], back: [0, 1, 2, 3], call: [0, 1, 2, 3, 5, 6, 7] };
+    var JOBS = ["out", "back", "call"];
+    var job = "out";
+
+    function draw() {
+      var i, k;
+      for (i = 0; i < JOBS.length; i++) {
+        document.getElementById("fm-" + JOBS[i])
+          .setAttribute("aria-pressed", JOBS[i] === job ? "true" : "false");
+        document.getElementById("jw-" + JOBS[i])
+          .classList.toggle("is-on", JOBS[i] === job);
+      }
+      for (i = 0; i < 8; i++) {
+        document.getElementById("fv-" + i).textContent = HOLDS[job][i];
+        document.getElementById("fr-" + i).classList.toggle("is-written",
+          WRITES[job].indexOf(i) > -1);
+      }
+    }
+    function wire(k) {
+      document.getElementById("fm-" + k)
+        .addEventListener("click", function () { job = k; draw(); });
+    }
+    var i;
+    for (i = 0; i < JOBS.length; i++) { wire(JOBS[i]); }
+    draw();
+    group("fr-", "frp-", 8, "", "is-on", "is-off");
+  }());
+
+  /* ---------------- Figure 8: the allow bench ----------------
+     Three comparisons, twice over, against two pairs of bounds. Everything
+     below is the source's own arithmetic on real addresses -- no route is
+     hardcoded and no case is special-cased except the one the source itself
+     special-cases, which is a length of zero.
+
+         end >= start && start >= mem_start() && end <= app_break
+         end >= start && start >= flash_non_protected_start() && end <= flash_end()
+
+     A read-write offer is checked against the first alone; a read-only offer
+     against either, and only an acceptance in RAM raises the mark.
+     process_standard.rs:2554, :2571, :1092, :1154, :1099 */
+  (function () {
+    var U = 64;                          // one slider step, in bytes
+    var FLASH = 0x10020000, FLASH_UNITS = 16;   // the strip's whole flash
+    var FLOOR_F = 0x10020100, END_F = 0x10020400;   // non-protected .. end
+    var RAM = 0x20007f00, RAM_UNITS = 28;       // the strip's whole RAM
+    var FLOOR_R = 0x20008000, BREAK_R = 0x20008400; // mem_start .. app_break
+
+    var mark = FLOOR_R, write = true;
+
+    function hex(n) { return "0x" + n.toString(16); }
+    function unitAddr(u) {
+      return u < FLASH_UNITS ? FLASH + u * U : RAM + (u - FLASH_UNITS) * U;
+    }
+    function el(id) { return document.getElementById(id); }
+
+    function cell(id, ok, asked) {
+      var c = el(id);
+      c.textContent = asked ? (ok ? "yes" : "no") : "not asked";
+      c.classList.toggle("yes", asked && ok);
+      c.classList.toggle("no", asked && !ok);
+    }
+
+    function read() {
+      var u = parseInt(el("ab-start").value, 10);
+      var n = parseInt(el("ab-len").value, 10);
+      var inFlash = u < FLASH_UNITS;
+      var start = unitAddr(u), end = start + n * U;
+      return { u: u, n: n, inFlash: inFlash, start: start, end: end,
+               ram: { no_wrap: end >= start, floor: start >= FLOOR_R,
+                      ceiling: end <= BREAK_R },
+               fl:  { no_wrap: end >= start, floor: start >= FLOOR_F,
+                      ceiling: end <= END_F } };
+    }
+
+    function all(t) { return t.no_wrap && t.floor && t.ceiling; }
+
+    function verdict(o) {
+      if (o.n === 0) { return { ok: true, route: "no check", say: "zero" }; }
+      if (all(o.ram)) { return { ok: true, route: "its memory", say: "ram" }; }
+      if (!write && all(o.fl)) {
+        return { ok: true, route: "its flash", say: "flash" };
+      }
+      // Refused. Which comparison failed is the lesson, so name it rather than
+      // reporting one error for every shape of mistake.
+      var t = (!write && o.inFlash) ? o.fl : o.ram;
+      if (write && o.inFlash) { return { ok: false, route: "-", say: "rwflash" }; }
+      if (!t.floor) { return { ok: false, route: "-", say: "floor" }; }
+      return { ok: false, route: "-", say: "ceiling" };
+    }
+
+    function draw() {
+      var o = read(), v = verdict(o), asked = o.n > 0, k;
+
+      el("ab-start-v").textContent = hex(o.start);
+      el("ab-len-v").textContent = o.n === 0 ? "0 bytes" : (o.n * U) + " bytes";
+      el("ab-run").textContent = o.n === 0
+        ? hex(o.start) + ", empty" : hex(o.start) + " to " + hex(o.end);
+      el("ab-out").textContent = v.ok ? "accepted, " + v.route : "refused";
+      el("ab-mark-v").textContent = hex(mark);
+
+      cell("ab-r1", o.ram.no_wrap, asked);
+      cell("ab-r2", o.ram.floor, asked);
+      cell("ab-r3", o.ram.ceiling, asked);
+      // A read-write offer never asks the flash question at all.
+      cell("ab-f1", o.fl.no_wrap, asked && !write);
+      cell("ab-f2", o.fl.floor, asked && !write);
+      cell("ab-f3", o.fl.ceiling, asked && !write);
+
+      // The bar goes on the strip the start is in, and stops at the end of it
+      // rather than reappearing in the other memory, which is not where the
+      // rest of the run is.
+      var span = o.inFlash ? FLASH_UNITS : RAM_UNITS;
+      var from = o.inFlash ? o.u : o.u - FLASH_UNITS;
+      var wide = Math.min(o.n, span - from);
+      var on = o.inFlash ? "ab-fbar" : "ab-rbar", off = o.inFlash ? "ab-rbar" : "ab-fbar";
+      el(on).setAttribute("style", "left:" + (from / span * 100).toFixed(3)
+        + "%;width:" + (Math.max(wide, 0.25) / span * 100).toFixed(3) + "%");
+      el(on).classList.add("is-on");
+      el(on).classList.toggle("is-bad", !v.ok);
+      el(off).classList.remove("is-on");
+      el("ab-mark").setAttribute("style", "left:"
+        + ((mark - RAM) / U / RAM_UNITS * 100).toFixed(3) + "%");
+
+      var SAY = ["ram", "flash", "zero", "rwflash", "ceiling", "floor"];
+      for (k = 0; k < SAY.length; k++) {
+        el("abp-" + SAY[k]).classList.toggle("is-on", SAY[k] === v.say);
+      }
+      el("ab-rw").setAttribute("aria-pressed", String(write));
+      el("ab-ro").setAttribute("aria-pressed", String(!write));
+    }
+
+    el("ab-start").addEventListener("input", draw);
+    el("ab-len").addEventListener("input", draw);
+    el("ab-rw").addEventListener("click", function () { write = true; draw(); });
+    el("ab-ro").addEventListener("click", function () { write = false; draw(); });
+    el("ab-offer").addEventListener("click", function () {
+      var o = read(), v = verdict(o);
+      // Only an acceptance in RAM moves it, and it only ever goes up.
+      if (v.ok && v.say === "ram" && o.end > mark) { mark = o.end; }
+      draw();
+    });
+    el("ab-reset").addEventListener("click", function () { mark = FLOOR_R; draw(); });
+    draw();
   }());
 
   /* ---------------- Figure 9: three refusals ---------------- */

@@ -45,7 +45,7 @@ chk("figure 4 opens on command", REG["tm-0"].getAttribute("aria-pressed"), "true
 chk("figure 5 opens on a plain success", REG["rt-0"].getAttribute("aria-pressed"), "true");
 chk("figure 6 opens on the driver's first move", REG["uc-0"].getAttribute("aria-pressed"), "true");
 chk("figure 7 opens on the first word of the frame", REG["fr-0"].getAttribute("aria-pressed"), "true");
-chk("figure 8 opens on a buffer that is accepted", REG["bf-0"].getAttribute("aria-pressed"), "true");
+chk("figure 8 opens on an offer the kernel may write", REG["ab-rw"].getAttribute("aria-pressed"), "true");
 chk("figure 9 opens on the class that does not exist", REG["rf-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
     REG["svp-1"].classList.contains("is-on")
@@ -55,7 +55,7 @@ chk("and every one of those has its panel open",
       && REG["rtp-0"].classList.contains("is-on")
       && REG["ucp-0"].classList.contains("is-on")
       && REG["frp-0"].classList.contains("is-on")
-      && REG["bfp-0"].classList.contains("is-on")
+      && REG["abp-ram"].classList.contains("is-on")
       && REG["rfp-0"].classList.contains("is-on"), true);
 
 // ---- Figure 1: one instruction, and the number inside it ----
@@ -265,6 +265,70 @@ chk("and marks it as an accident rather than a promise",
 REG["rt-0"].fire("click");
 
 // ---- Figure 6: delivering an upcall ----
+// ---- Figure 6: the queue nothing drains on its own ----
+// Two things surprise people here and both are things a list cannot show: a
+// running process is never stopped to take one, so the queue only grows; and
+// the eleventh event is dropped with nothing kept to retry from.
+(function () {
+  function q() {
+    return [REG["q-wait"].textContent, REG["q-done"].textContent,
+            REG["q-lost"].textContent].join("/");
+  }
+  REG["q-reset"].fire("click");
+  chk("nothing waiting to begin with", q(), "0/0/0");
+
+  var i;
+  for (i = 0; i < 4; i++) { REG["q-event"].fire("click"); }
+  chk("four events queue and none is delivered", q(), "4/0/0");
+  chk("a part-full rack is not marked as brimming",
+      REG["q-rack"].classList.contains("is-brimmed"), false);
+  chk("because a running process is never stopped to take one",
+      REG["qp-holding"].classList.contains("is-on"), true);
+
+  REG["q-yield"].fire("click");
+  chk("yielding delivers exactly one", q(), "3/1/0");
+  chk("and dropping below the constant clears the mark",
+      REG["q-rack"].classList.contains("is-brimmed"), false);
+  chk("and says so", REG["qp-drain"].classList.contains("is-on"), true);
+
+  // Fill it to the constant, then produce the eleventh.
+  REG["q-reset"].fire("click");
+  for (i = 0; i < 10; i++) { REG["q-event"].fire("click"); }
+  chk("ten fill it", q(), "10/0/0");
+  chk("and it says it is full", REG["qp-full"].classList.contains("is-on"), true);
+  REG["q-event"].fire("click");
+  chk("the eleventh is dropped rather than queued", q(), "10/0/1");
+  chk("and the rack itself says it is at the constant",
+      REG["q-rack"].classList.contains("is-brimmed"), true);
+  chk("with nothing kept to retry from",
+      REG["qp-lost"].textContent.indexOf("nothing here remembers it") > -1, true);
+
+  // A process that never yields stays there.
+  for (i = 0; i < 5; i++) { REG["q-event"].fire("click"); }
+  chk("and a process that never yields keeps losing them", q(), "10/0/6");
+
+  // Yielding on an empty queue delivers nothing and is not an error.
+  REG["q-reset"].fire("click");
+  REG["q-yield"].fire("click");
+  chk("yielding with nothing waiting delivers nothing", q(), "0/0/0");
+
+  // The queue never exceeds the constant, however it is driven.
+  (function () {
+    var seq = ["q-event", "q-event", "q-yield", "q-event", "q-yield",
+               "q-yield", "q-yield"], k, r, bad = 0;
+    REG["q-reset"].fire("click");
+    for (r = 0; r < 4; r++) {
+      for (k = 0; k < seq.length; k++) {
+        REG[seq[k]].fire("click");
+        if (parseInt(REG["q-wait"].textContent, 10) > 10) { bad++; }
+        if (parseInt(REG["q-wait"].textContent, 10) < 0) { bad++; }
+      }
+    }
+    chk("the queue stays between nothing and the constant", bad, 0);
+  }());
+  REG["q-reset"].fire("click");
+}());
+
 walk("uc-", "ucp-", 6, "figure 6");
 (function () {
   // Six numbered steps, in order, and step four is deliberately the one with
@@ -299,6 +363,62 @@ chk("the section names the constant chapter 4 found",
 REG["uc-0"].fire("click");
 
 // ---- Figure 7: eight words of the frame ----
+// ---- Figure 7: one frame, three jobs ----
+// The note's claim is countable: none of the eight written going out, up to
+// four coming back, and seven of the eight to deliver a call -- every one but
+// the word the interface ignores. Counted here rather than asserted there.
+(function () {
+  function written() {
+    var i, n = 0;
+    for (i = 0; i < 8; i++) {
+      if (REG["fr-" + i].classList.contains("is-written")) { n++; }
+    }
+    return n;
+  }
+  function holds(i) { return REG["fv-" + i].textContent; }
+
+  REG["fm-out"].fire("click");
+  chk("going out, the kernel writes none of the eight", written(), 0);
+  chk("and r0 is the driver number", holds(0), "driver number");
+
+  REG["fm-back"].fire("click");
+  chk("coming back it writes at most the first four", written(), 4);
+  chk("and r0 becomes the shape of the answer", holds(0), "which shape");
+
+  REG["fm-call"].fire("click");
+  chk("carrying a callback it writes seven of the eight", written(), 7);
+  chk("and the one left out is r12", REG["fr-4"].classList.contains("is-written"), false);
+  chk("which is ignored in every job",
+      [holds(4), (REG["fm-out"].fire("click"), holds(4))].join(","), "ignored,ignored");
+
+  // pc and lr are the trick, and only the callback job touches them.
+  REG["fm-call"].fire("click");
+  chk("pc becomes the function", holds(6), "the function");
+  chk("and lr the address after the svc", holds(5), "after the svc");
+  REG["fm-back"].fire("click");
+  chk("neither of which the answering job writes",
+      REG["fr-5"].classList.contains("is-written")
+        || REG["fr-6"].classList.contains("is-written"), false);
+
+  // Every word says something for every job, and exactly one job is chosen.
+  (function () {
+    var J = ["out", "back", "call"], j, i, bad = 0, on;
+    for (j = 0; j < J.length; j++) {
+      REG["fm-" + J[j]].fire("click");
+      for (i = 0; i < 8; i++) {
+        if (holds(i) === "") { bad++; }
+      }
+      on = 0;
+      for (i = 0; i < J.length; i++) {
+        if (REG["jw-" + J[i]].classList.contains("is-on")) { on++; }
+      }
+      if (on !== 1) { bad++; }
+    }
+    chk("every word holds something, and one job is chosen, in all three", bad, 0);
+  }());
+  REG["fm-out"].fire("click");
+}());
+
 walk("fr-", "frp-", 8, "figure 7");
 (function () {
   // The frame is eight 32-bit words, so word i sits at offset 4i. Derived,
@@ -340,44 +460,163 @@ chk("and explains the low bit rather than pointing at an earlier chapter",
     REG["thumbline"].textContent.indexOf("called Thumb") > -1, true);
 REG["fr-0"].fire("click");
 
-// ---- Figure 8: four buffers offered ----
-walk("bf-", "bfp-", 4, "figure 8");
+// ---- Figure 8: the allow bench ----
+// The bench computes the source's own arithmetic, so what is worth asserting
+// is that each comparison fails on its own and that the mark only climbs.
 (function () {
-  var BUF = [
-    ["inside my memory", "start and break", "accepted"],
-    ["past my break", "start and break", "refused"],
-    ["inside my flash", "start and break, or flash", "accepted"],
-    ["anywhere at all", "nothing is checked", "accepted"]
-  ];
-  var ids = ["bf-where", "bf-test", "bf-out"];
-  var i, k, bad = [];
-  for (i = 0; i < 4; i++) {
-    REG["bf-" + i].fire("click");
-    for (k = 0; k < 3; k++) {
-      if (REG[ids[k]].textContent !== BUF[i][k]) {
-        bad.push("offer " + i + " " + ids[k] + " = " + REG[ids[k]].textContent);
+  function set(startU, lenU) {
+    REG["ab-start"].value = String(startU); REG["ab-start"].fire("input");
+    REG["ab-len"].value = String(lenU); REG["ab-len"].fire("input");
+  }
+  function out() { return REG["ab-out"].textContent; }
+  function open_() {
+    var SAY = ["ram", "flash", "zero", "rwflash", "ceiling", "floor"], i, on = [];
+    for (i = 0; i < SAY.length; i++) {
+      if (REG["abp-" + SAY[i]].classList.contains("is-on")) { on.push(SAY[i]); }
+    }
+    return on.join("+");
+  }
+  function row(id) { return REG[id].textContent; }
+
+  REG["ab-reset"].fire("click");
+  REG["ab-rw"].fire("click");
+
+  // Squarely inside the process's own memory: all three comparisons hold.
+  set(30, 4);
+  chk("a run inside its own memory is accepted", out(), "accepted, its memory");
+  chk("and all three comparisons hold",
+      [row("ab-r1"), row("ab-r2"), row("ab-r3")].join(","), "yes,yes,yes");
+  chk("and the panel is the ordinary one", open_(), "ram");
+
+  // Same start, long enough to pass the break: only the ceiling fails.
+  set(30, 12);
+  chk("running past the break is refused", out(), "refused");
+  chk("and the ceiling is the only comparison that failed",
+      [row("ab-r1"), row("ab-r2"), row("ab-r3")].join(","), "yes,yes,no");
+  chk("and the refusal is named as arithmetic, not the fence",
+      REG["abp-ceiling"].textContent.indexOf("arithmetic on two pointers") > -1, true);
+
+  // Below the start of its memory: only the floor fails.
+  set(17, 2);
+  chk("starting below its memory is refused", out(), "refused");
+  chk("and the floor is the only comparison that failed",
+      [row("ab-r1"), row("ab-r2"), row("ab-r3")].join(","), "yes,no,yes");
+  chk("and it says so", open_(), "floor");
+
+  // Flash, which turns entirely on what the kernel may do with it.
+  set(6, 4);
+  chk("a flash address offered for writing is refused", out(), "refused");
+  chk("and the flash comparisons were never asked",
+      [row("ab-f1"), row("ab-f2"), row("ab-f3")].join(","),
+      "not asked,not asked,not asked");
+  REG["ab-ro"].fire("click");
+  chk("the same run offered read-only is accepted", out(), "accepted, its flash");
+  chk("and now the flash comparisons are the ones that hold",
+      [row("ab-f1"), row("ab-f2"), row("ab-f3")].join(","), "yes,yes,yes");
+  chk("while its memory still refuses it", row("ab-r2"), "no");
+  chk("which is the read-only panel", open_(), "flash");
+
+  // The protected header is below the flash floor even read-only.
+  set(1, 2);
+  chk("the protected header is below the flash floor too", out(), "refused");
+  chk("and both floors say no",
+      [row("ab-r2"), row("ab-f2")].join(","), "no,no");
+
+  // The comparisons are <= and >=, so the only settings that tell a correct
+  // bench from a nearly-correct one are the ones sitting exactly on a bound.
+  REG["ab-rw"].fire("click");
+  set(32, 4);
+  chk("a run ending exactly at the break is accepted",
+      REG["ab-run"].textContent + " " + out(),
+      "0x20008300 to 0x20008400 accepted, its memory");
+  set(33, 4);
+  chk("and one ending a single step past it is not",
+      REG["ab-run"].textContent + " " + out(),
+      "0x20008340 to 0x20008440 refused");
+  set(20, 1);
+  chk("a run starting exactly at the floor is accepted",
+      REG["ab-start-v"].textContent + " " + out(), "0x20008000 accepted, its memory");
+  set(19, 1);
+  chk("and one starting a single step below it is not",
+      REG["ab-start-v"].textContent + " " + out(), "0x20007fc0 refused");
+  REG["ab-ro"].fire("click");
+  set(12, 4);
+  chk("the same two bounds hold for flash, at its end",
+      REG["ab-run"].textContent + " " + out(),
+      "0x10020300 to 0x10020400 accepted, its flash");
+  set(13, 4);
+  chk("and a step past the end of flash is refused",
+      REG["ab-run"].textContent + " " + out(),
+      "0x10020340 to 0x10020440 refused");
+  set(4, 1);
+  chk("and at the first byte the header does not protect",
+      REG["ab-start-v"].textContent + " " + out(), "0x10020100 accepted, its flash");
+  set(3, 1);
+  chk("with the byte below it refused",
+      REG["ab-start-v"].textContent + " " + out(), "0x100200c0 refused");
+  REG["ab-rw"].fire("click");
+
+  // Length zero: accepted at any address, with nothing asked.
+  set(1, 0);
+  chk("a length of zero is accepted at an address nothing else would take",
+      out(), "accepted, no check");
+  chk("with not one of the six comparisons made",
+      [row("ab-r1"), row("ab-r2"), row("ab-r3"),
+       row("ab-f1"), row("ab-f2"), row("ab-f3")].join(","),
+      "not asked,not asked,not asked,not asked,not asked,not asked");
+  chk("and the bench says why a row it cannot fail is still shown",
+      REG["ab-foot"].textContent.indexOf("cannot be made to fail here") > -1, true);
+  chk("and the run reads as empty rather than as a span",
+      REG["ab-run"].textContent.indexOf("empty") > -1, true);
+  REG["ab-rw"].fire("click");
+  set(40, 0);
+  chk("and past the break as well", out(), "accepted, no check");
+
+  // The mark. It starts at the floor, climbs on a RAM acceptance, and the
+  // point of the whole figure is that nothing here brings it back down.
+  REG["ab-reset"].fire("click");
+  chk("the mark starts at the floor of its memory", row("ab-mark-v"), "0x20008000");
+  set(22, 4);
+  REG["ab-offer"].fire("click");
+  chk("an accepted offer moves the mark to its far end", row("ab-mark-v"), "0x20008180");
+  set(20, 1);
+  REG["ab-offer"].fire("click");
+  chk("a lower offer, also accepted, does not bring it back down",
+      row("ab-mark-v"), "0x20008180");
+  set(30, 12);
+  REG["ab-offer"].fire("click");
+  chk("and a refused offer does not move it at all", row("ab-mark-v"), "0x20008180");
+  REG["ab-ro"].fire("click");
+  set(6, 4);
+  REG["ab-offer"].fire("click");
+  chk("nor does one accepted in flash, which the break cannot reach",
+      row("ab-mark-v"), "0x20008180");
+  REG["ab-reset"].fire("click");
+  chk("only a restart puts it back", row("ab-mark-v"), "0x20008000");
+
+  // Exactly one sentence is showing, whatever the bench is set to.
+  (function () {
+    var u, n, bad = 0;
+    REG["ab-rw"].fire("click");
+    for (u = 0; u <= 43; u += 3) {
+      for (n = 0; n <= 12; n += 2) {
+        set(u, n);
+        if (open_().indexOf("+") > -1 || open_() === "") { bad++; }
       }
     }
-  }
-  chk("each offer reads out where it points and what decided it", bad.join("; "), "");
+    REG["ab-ro"].fire("click");
+    for (u = 0; u <= 43; u += 3) {
+      for (n = 0; n <= 12; n += 2) {
+        set(u, n);
+        if (open_().indexOf("+") > -1 || open_() === "") { bad++; }
+      }
+    }
+    chk("one sentence is showing at every setting of the bench", bad, 0);
+  }());
+
+  REG["ab-rw"].fire("click");
+  set(22, 4);
 }());
-(function () {
-  var i, accepted = 0;
-  for (i = 0; i < 4; i++) {
-    REG["bf-" + i].fire("click");
-    if (REG["bf-out"].textContent === "accepted") { accepted++; }
-  }
-  chk("three of the four offers are accepted", accepted, 3);
-}());
-REG["bf-3"].fire("click");
-chk("the zero-length offer is how a buffer is taken back",
-    REG["bfp-3"].textContent.indexOf("takes a buffer back") > -1, true);
-REG["bf-2"].fire("click");
-chk("read-only is the flavour that may point into flash",
-    REG["bfp-2"].textContent.indexOf("only because it is read-only") > -1, true);
-REG["bf-1"].fire("click");
-chk("and the refusal is arithmetic, not the fence from chapter 5",
-    REG["bfp-1"].textContent.indexOf("arithmetic on two pointers") > -1, true);
 chk("the section says what the class actually buys",
     REG["consentline"].textContent.indexOf("a record of consent") > -1, true);
 chk("and that the two bounds are the ones the region was built from",
@@ -385,10 +624,9 @@ chk("and that the two bounds are the ones the region was built from",
 // The mark does come down, once: a restart rebuilds the layout. The chapter
 // documented the exit variant that gets there and still said "ever".
 chk("the note scopes the mark to a running process",
-    REG["bf-note"].textContent.indexOf("nothing a running process can do lowers that mark") > -1, true);
+    REG["bf-note"].textContent.indexOf("nothing a running process can do lowers that line") > -1, true);
 chk("and names the one thing that clears it",
     REG["bf-note"].textContent.indexOf("the restart variant of exit") > -1, true);
-REG["bf-0"].fire("click");
 
 // ---- Figure 9: three refusals ----
 walk("rf-", "rfp-", 3, "figure 9");
@@ -541,7 +779,7 @@ chk("and hands the reader on to grants",
   // `allowed buffer` was in the glossary with a single use, in a sentence
   // written to satisfy the glossary-use gate. Four uses is a term earning it.
   (function () {
-    var i, n = 0, ids = ["bufline", "bfp-0", "bf-note", "lastline"];
+    var i, n = 0, ids = ["bufline", "abp-ram", "bf-note", "lastline"];
     for (i = 0; i < ids.length; i++) {
       if (REG[ids[i]].textContent.indexOf("allowed buffer") > -1) { n++; }
     }
