@@ -667,14 +667,48 @@ def compiled_size_checks(html, chapter_dir):
         dumped = subprocess.run(
             ["arm-none-eabi-objdump", "-s", "-j", ".rodata.SIZES", obj],
             capture_output=True, text=True)
-    words = []
-    for line in dumped.stdout.split("\n"):
-        cells = re.match(r"\s*[0-9a-f]{4}\s+((?:[0-9a-f]{8}\s+){1,4})", line)
-        if cells:
-            for group in cells.group(1).split():
-                words.append(int.from_bytes(bytes.fromhex(group), "little"))
+        bench_dump = subprocess.run(
+            ["arm-none-eabi-objdump", "-s", "-j", ".rodata.BENCH", obj],
+            capture_output=True, text=True)
+
+    def read_words(text):
+        out = []
+        for line in text.split("\n"):
+            cells = re.match(r"\s*[0-9a-f]{4}\s+((?:[0-9a-f]{8}\s+){1,4})", line)
+            if cells:
+                for group in cells.group(1).split():
+                    out.append(int.from_bytes(bytes.fromhex(group), "little"))
+        return out
+
+    words = read_words(dumped.stdout)
     if not words:
         return ["nothing came back from compiling grant-sizes.rs"]
+
+    # Figure 3 runs `grant_size` again, in JavaScript, so its totals need the
+    # same treatment the page's did: a number a compiler produced, not one this
+    # chapter talked itself into. The four configurations in BENCH are picked
+    # to be ones the bench's own controls can reach, and each has to be a total
+    # the suite asserts -- so changing the arithmetic and updating the
+    # assertion to match still fails here.
+    bench = read_words(bench_dump.stdout)
+    if not bench:
+        problems.append("grant-sizes.rs compiled but BENCH came back empty, so "
+                        "figure 3's totals are checked against nothing")
+    else:
+        suite = os.path.join(TOOLS, "ch07.tests.js")
+        if not os.path.exists(suite):
+            problems.append("BENCH has configurations to check and there is no "
+                            "ch07.tests.js to check them against")
+        else:
+            with open(suite, encoding="utf-8") as fh:
+                asserted = fh.read()
+            for value in bench:
+                if not re.search(r"(?<![\w.])%d(?![\w.])" % value, asserted):
+                    problems.append(
+                        "the probe compiles a grant of %d bytes and no "
+                        "assertion in ch07.tests.js expects it, so figure 3 "
+                        "could produce any total for that configuration"
+                        % value)
 
     # The check runs from the probe to the page, not the other way. Sweeping
     # every spelled number on the page and demanding the probe produced it

@@ -75,6 +75,24 @@ const CONSOLE: usize = grant_size(3, 2, 2, size_of::<App>(), align_of::<App>());
 // The same driver with no slots at all, to price the slots on their own.
 const BARE: usize = grant_size(0, 0, 0, size_of::<App>(), align_of::<App>());
 
+// Four more configurations, which exist because chapter 7's Figure 3 is now a
+// bench: it runs the same arithmetic in JavaScript, and JavaScript that agrees
+// with a page nobody compiled is exactly how the total came out as 72 the
+// first time. Every one of these has to be a number the bench also produces.
+//
+//   1. the console's slots with a driver wanting eight-byte alignment, which
+//      is the only case where anything is padded at all
+//   2. no slots and no state: a grant is still a counters word
+//   3. the widest the bench can be set
+//   4. the smallest grant that still pays for padding
+const BENCH_ALIGN8: usize = grant_size(3, 2, 2, size_of::<App>(), 8);
+const BENCH_EMPTY: usize = grant_size(0, 0, 0, 0, 4);
+const BENCH_WIDEST: usize = grant_size(8, 8, 8, 32, 8);
+const BENCH_PADDED: usize = grant_size(0, 0, 0, 4, 8);
+
+#[no_mangle]
+pub static BENCH: [usize; 4] = [BENCH_ALIGN8, BENCH_EMPTY, BENCH_WIDEST, BENCH_PADDED];
+
 #[no_mangle]
 pub static SIZES: [usize; 8] = [
     size_of::<SavedUpcall>(),

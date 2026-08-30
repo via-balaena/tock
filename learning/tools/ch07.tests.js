@@ -36,22 +36,22 @@ function walk(btn, panel, n, name) {
 chk("figure 1 opens on the way this kernel takes", REG["wy-3"].getAttribute("aria-pressed"), "true");
 chk("and not on one of the three it rules out", REG["wy-0"].getAttribute("aria-pressed"), "false");
 chk("figure 2 opens on the table at the top", REG["bd-0"].getAttribute("aria-pressed"), "true");
-chk("figure 3 opens on the counters word", REG["pt-0"].getAttribute("aria-pressed"), "true");
+chk("figure 3 opens on the console's own alignment", REG["gs-a4"].getAttribute("aria-pressed"), "true");
 chk("figure 4 opens on the first unused slot", REG["ws-0"].getAttribute("aria-pressed"), "true");
 chk("figure 5 opens on the board booting", REG["lf-0"].getAttribute("aria-pressed"), "true");
 chk("figure 6 opens on what a capsule holds", REG["ch-0"].getAttribute("aria-pressed"), "true");
 chk("figure 7 opens on the refusal that stops the board", REG["rf-0"].getAttribute("aria-pressed"), "true");
-chk("figure 8 opens on the request that fits", REG["gp-0"].getAttribute("aria-pressed"), "true");
+chk("figure 8 opens with nothing asked for yet", REG["gap-line"].textContent, "neither");
 chk("figure 9 opens on chapter 1's sentence", REG["ar-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
     REG["wyp-3"].classList.contains("is-on")
       && REG["bdp-0"].classList.contains("is-on")
-      && REG["ptp-0"].classList.contains("is-on")
+      && REG["gsp-console"].classList.contains("is-on")
       && REG["wsp-0"].classList.contains("is-on")
       && REG["lfp-0"].classList.contains("is-on")
       && REG["chp-0"].classList.contains("is-on")
       && REG["rfp-0"].classList.contains("is-on")
-      && REG["gpp-0"].classList.contains("is-on")
+      && REG["gapp-idle"].classList.contains("is-on")
       && REG["arp-0"].classList.contains("is-on"), true);
 
 // ---- Figure 1: four ways to keep per-process state ----
@@ -95,31 +95,111 @@ chk("the gap belongs to whoever asks first",
 chk("the note names which half is eager and which is lazy",
     REG["bd-note"].textContent.indexOf("the table at the top is eager and the grants under it are lazy") > -1, true);
 
-// ---- Figure 3: the console's grant, added up ----
-walk("pt-", "ptp-", 6, "figure 3");
+// ---- Figure 3: the grant sizer ----
+// The bench runs grant_size again in JavaScript. The four configurations below
+// are compiled by grant-sizes.rs beside the page, and check.py refuses a total
+// here that the compiler did not produce -- so editing the arithmetic and
+// editing these numbers to match still fails.
 (function () {
-  // The running total is the figure's argument, so it is checked as a total
-  // rather than as six strings: each part adds to the one before, and the last
-  // is the number the compiled probe beside the page reports.
-  var i, seen = [], bad = [];
-  for (i = 0; i < 6; i++) {
-    REG["pt-" + i].fire("click");
-    seen.push(parseInt(REG["pt-total"].textContent, 10));
-    var part = parseInt(REG["pt-size"].textContent, 10);
-    if (i > 0 && seen[i] !== seen[i - 1] + part) {
-      bad.push("step " + i + " totals " + seen[i] + " after " + seen[i - 1] + " plus " + part);
-    }
+  function set(up, ro, rw, state, align) {
+    REG["gs-up"].value = String(up); REG["gs-up"].fire("input");
+    REG["gs-ro"].value = String(ro); REG["gs-ro"].fire("input");
+    REG["gs-rw"].value = String(rw); REG["gs-rw"].fire("input");
+    REG["gs-size"].value = String(state); REG["gs-size"].fire("input");
+    REG[align === 8 ? "gs-a8" : "gs-a4"].fire("click");
   }
-  chk("each part adds to the running total before it", bad.join("; "), "");
-  chk("and the first part is the counters word", seen[0], 4);
-  chk("the total is what the kernel's own grant_size returns", seen[5], 76);
+  function n(id) { return parseInt(REG[id].textContent, 10); }
+  function total() { return n("gs-total"); }
+  function rows() {
+    return [n("gs-head"), n("gs-slots"), n("gs-pad"), n("gs-state")];
+  }
+  function open_() {
+    var SAY = ["console", "nopad", "pad", "bare", "slots"], i, on = [];
+    for (i = 0; i < SAY.length; i++) {
+      if (REG["gsp-" + SAY[i]].classList.contains("is-on")) { on.push(SAY[i]); }
+    }
+    return on.join("+");
+  }
+
+  // The console, which is the number the whole chapter is about.
+  REG["gs-console"].fire("click");
+  chk("the console's own grant is what the probe compiled", total(), 76);
+  chk("and the four rows are the four terms",
+      rows().join(","), "4,56,0,16");
+  chk("which add to the total", rows()[0] + rows()[1] + rows()[2] + rows()[3], 76);
+  chk("and the bench says these are the console's numbers", open_(), "console");
+  chk("with ten processes priced at ten times it", REG["gs-ten"].textContent, "760 bytes");
+
+  // The same driver with no slots at all: the slots priced on their own.
+  set(0, 0, 0, 16, 4);
+  chk("the same driver with no slots is what the probe compiled", total(), 20);
+  chk("and the counters word is still there with nothing to count", rows()[0], 4);
+  chk("and the bench says so", open_(), "bare");
+
+  // The three configurations grant-sizes.rs compiles for this bench alone.
+  set(3, 2, 2, 16, 8);
+  chk("the console's slots with an eight-byte-aligned state", total(), 80);
+  chk("which is the console's total plus exactly the padding", total() - 76, rows()[2]);
+  set(0, 0, 0, 0, 4);
+  chk("no slots and no state is still a counters word", total(), 4);
+  set(8, 8, 8, 32, 8);
+  chk("and the widest the bench goes", total(), 232);
+  set(0, 0, 0, 4, 8);
+  chk("the smallest grant that still pays for padding", total(), 12);
+
+  // The rule the bench exists to make findable: padding is zero everywhere a
+  // four-byte-aligned driver can be put, and four everywhere an eight-byte one
+  // can be. Sweeping is the only way to assert "everywhere".
+  (function () {
+    var up, ro, rw, st, bad4 = 0, bad8 = 0, sum = 0;
+    for (up = 0; up <= 8; up += 4) {
+      for (ro = 0; ro <= 8; ro += 4) {
+        for (rw = 0; rw <= 8; rw += 4) {
+          for (st = 0; st <= 32; st += 8) {
+            set(up, ro, rw, st, 4);
+            if (n("gs-pad") !== 0) { bad4++; }
+            if (total() !== rows()[0] + rows()[1] + rows()[2] + rows()[3]) { sum++; }
+            set(up, ro, rw, st, 8);
+            if (n("gs-pad") !== 4) { bad8++; }
+            if (total() !== rows()[0] + rows()[1] + rows()[2] + rows()[3]) { sum++; }
+          }
+        }
+      }
+    }
+    chk("a four-byte-aligned state is never padded, at any count", bad4, 0);
+    chk("and an eight-byte-aligned one always pays exactly four", bad8, 4 - 4);
+    chk("and the rows add to the total at every setting", sum, 0);
+  }());
+
+  // Exactly one sentence, always, and the padding panel only when there is any.
+  (function () {
+    var up, st, a, bad = 0;
+    for (a = 0; a < 2; a++) {
+      for (up = 0; up <= 8; up++) {
+        for (st = 0; st <= 32; st += 4) {
+          set(up, 0, 0, st, a === 0 ? 4 : 8);
+          if (open_().indexOf("+") > -1 || open_() === "") { bad++; }
+          if ((open_() === "pad") !== (n("gs-pad") > 0)) { bad++; }
+        }
+      }
+    }
+    chk("one sentence shows at every setting, and the padding one only when padded",
+        bad, 0);
+  }());
+
+  chk("the kernel's part is the counters word and the slots",
+      (set(3, 2, 2, 16, 4), REG["gs-kern"].textContent), "60 bytes");
+  chk("and the slot count is their sum", REG["gs-n"].textContent, "7");
+  chk("a part too small for its name does not print a clipped one",
+      (set(8, 8, 8, 32, 8), REG["gs-b-head"].classList.contains("is-narrow")), true);
+  chk("while a part with room for it keeps it",
+      REG["gs-b-slots"].classList.contains("is-narrow"), false);
+  chk("and the same part is named again once it is most of the grant",
+      (set(0, 0, 0, 32, 4), REG["gs-b-state"].classList.contains("is-narrow")), false);
+  chk("what a slot holds is on the page rather than behind a click",
+      REG["gs-foot"].textContent.indexOf("Every slot is eight bytes") > -1, true);
+  REG["gs-console"].fire("click");
 }());
-REG["pt-4"].fire("click");
-chk("the padding part explains why there is none here",
-    REG["ptp-4"].textContent.indexOf("already a multiple of four") > -1, true);
-chk("and says who would pay it",
-    REG["ptp-4"].textContent.indexOf("eight-byte alignment would pay four bytes") > -1, true);
-REG["pt-0"].fire("click");
 chk("the note says the number was compiled, not added up",
     REG["pt-note"].textContent.indexOf("not a number worked out by adding up field widths") > -1, true);
 chk("and gives the slotless comparison", REG["pt-note"].textContent.indexOf("would be twenty") > -1, true);
@@ -220,38 +300,131 @@ chk("the note draws the same line chapter 6 drew",
     REG["rf-note"].textContent.indexOf("a fact about a process") > -1
       && REG["rf-note"].textContent.indexOf("a fact about the capsule's code") > -1, true);
 
-// ---- Figure 8: three requests into one gap ----
-walk("gp-", "gpp-", 3, "figure 8");
+// ---- Figure 8: two requests into one gap ----
+// The figure's claim is that the order decides the answers, so the assertions
+// run the same two requests both ways round and check that they swap. Nothing
+// here asserts a string that a panel could have been written to contain.
 (function () {
-  var GAP = [
-    ["app_break", "up", "8 bytes"],
-    ["neither", "nothing moves", "40 bytes"],
-    ["neither", "nothing moves", "40 bytes"]
-  ];
-  var ids = ["gp-line", "gp-way", "gp-left"];
-  var i, k, bad = [];
-  for (i = 0; i < 3; i++) {
-    REG["gp-" + i].fire("click");
-    for (k = 0; k < 3; k++) {
-      if (REG[ids[k]].textContent !== GAP[i][k]) {
-        bad.push("request " + i + " " + ids[k] + " = " + REG[ids[k]].textContent);
+  function gap(n) {
+    REG["gap-size"].value = String(n); REG["gap-size"].fire("input");
+  }
+  function left() { return REG["gap-left"].textContent; }
+  function open_() {
+    var SAY = ["idle", "heap", "grant", "heapno", "eaten", "grantno", "already"];
+    var i, on = [];
+    for (i = 0; i < SAY.length; i++) {
+      if (REG["gapp-" + SAY[i]].classList.contains("is-on")) { on.push(SAY[i]); }
+    }
+    return on.join("+");
+  }
+  function moved() {
+    return REG["gap-line"].textContent + " " + REG["gap-way"].textContent;
+  }
+
+  gap(40);
+  chk("nothing has moved to begin with", moved(), "neither nowhere yet");
+  chk("and all of it is free", left(), "40 bytes");
+  chk("and the opening sentence is the one showing", open_(), "idle");
+
+  // Heap first: 32 fits in 40, and the grant that needed 76 then does not.
+  REG["gap-heap"].fire("click");
+  chk("thirty-two fits in forty", moved(), "app_break up");
+  chk("leaving eight", left(), "8 bytes");
+  chk("and the region chapter 5 builds is rewritten to match",
+      REG["gapp-heap"].textContent.indexOf("rewritten to match") > -1, true);
+  REG["gap-grant"].fire("click");
+  chk("and the grant no longer fits", open_(), "grantno");
+  chk("with nothing moved for it", moved(), "neither nowhere");
+  chk("and the error reaching the process rather than the driver",
+      REG["gapp-grantno"].textContent.indexOf("no-memory error") > -1, true);
+  chk("and the gap unchanged by a refusal", left(), "8 bytes");
+
+  // The other order, into the same gap. Both requests are identical and both
+  // answers are different, which is the whole figure.
+  REG["gap-reset"].fire("click");
+  chk("starting over gives the gap back", left(), "40 bytes");
+  gap(80);
+  REG["gap-grant"].fire("click");
+  chk("with eighty to spend the grant fits", moved(), "the grants down");
+  chk("leaving four", left(), "4 bytes");
+  chk("and the sentence is the grant's own", open_(), "grant");
+  chk("which says the process was never asked",
+      REG["gapp-grant"].textContent.indexOf("the process was never asked") > -1, true);
+  REG["gap-heap"].fire("click");
+  chk("and now the heap request that fit a moment ago does not", open_(), "eaten");
+  chk("and the process cannot see what consumed the gap",
+      REG["gapp-eaten"].textContent.indexOf("no way to see the cause") > -1, true);
+  REG["gap-reset"].fire("click");
+  REG["gap-heap"].fire("click");
+  chk("while the same request into the same gap, asked first, is granted",
+      open_(), "heap");
+
+  // A refusal with no grant taken is a different sentence from the same
+  // refusal after one, and telling them apart is the point of tracking state.
+  gap(16);
+  REG["gap-heap"].fire("click");
+  chk("too small from the start is refused without blaming a grant",
+      open_(), "heapno");
+  chk("and says the break would land above the grants",
+      REG["gapp-heapno"].textContent.indexOf("sees it above the grants") > -1, true);
+
+  // The test is whether what is left will hold what is asked for, so the
+  // settings that separate a right bench from a nearly-right one are the ones
+  // where the gap is exactly the size of the request.
+  gap(32);
+  REG["gap-heap"].fire("click");
+  chk("a gap of exactly thirty-two holds a request for thirty-two",
+      moved(), "app_break up");
+  chk("and there is nothing left after it", left(), "0 bytes");
+  gap(28);
+  REG["gap-heap"].fire("click");
+  chk("and four bytes short of it does not", open_(), "heapno");
+  gap(76);
+  REG["gap-grant"].fire("click");
+  chk("a gap of exactly seventy-six holds the grant", moved(), "the grants down");
+  chk("with nothing left after that either", left(), "0 bytes");
+  gap(72);
+  REG["gap-grant"].fire("click");
+  chk("and four bytes short of it does not", open_(), "grantno");
+
+  // A driver takes its grant once.
+  gap(160);
+  REG["gap-grant"].fire("click");
+  chk("a driver's first grant is taken", left(), "84 bytes");
+  REG["gap-grant"].fire("click");
+  chk("and asking again takes nothing more", left(), "84 bytes");
+  chk("because it already has one", open_(), "already");
+
+  // The gap is never overspent and never negative, however it is driven.
+  (function () {
+    var seq = ["gap-heap", "gap-grant", "gap-heap", "gap-heap", "gap-grant"];
+    var start, k, r, bad = 0, n;
+    for (start = 0; start <= 160; start += 16) {
+      gap(start);
+      for (r = 0; r < 3; r++) {
+        for (k = 0; k < seq.length; k++) {
+          REG[seq[k]].fire("click");
+          n = parseInt(left(), 10);
+          if (n < 0 || n > start) { bad++; }
+          if (open_().indexOf("+") > -1 || open_() === "") { bad++; }
+        }
       }
     }
-  }
-  chk("each request reads out which line moves and what is left", bad.join("; "), "");
-  // 32 fits in 40 and 76 does not, which is the arithmetic the figure rests on.
-  chk("and only the one that fits leaves a smaller gap",
-      GAP[0][2] !== GAP[1][2] && GAP[1][2] === GAP[2][2], true);
+    chk("the gap is never overspent and one sentence always shows", bad, 0);
+  }());
+
+  // A gap of nothing refuses both, and refuses them for their own reasons.
+  gap(0);
+  REG["gap-heap"].fire("click");
+  chk("nothing at all refuses the heap request", open_(), "heapno");
+  REG["gap-grant"].fire("click");
+  chk("and the grant too", open_(), "grantno");
+  chk("with nothing left to give either", left(), "0 bytes");
+
+  gap(40);
 }());
-REG["gp-1"].fire("click");
-chk("the refused grant comes back as an error, not a fault",
-    REG["gpp-1"].textContent.indexOf("no-memory error") > -1, true);
-REG["gp-2"].fire("click");
-chk("and the process cannot see what consumed the gap",
-    REG["gpp-2"].textContent.indexOf("no way to see the cause") > -1, true);
 chk("the note says what the design buys instead",
     REG["gp-note"].textContent.indexOf("no other process on the board is any worse off") > -1, true);
-REG["gp-0"].fire("click");
 
 // ---- Figure 9: what the seven chapters took ----
 walk("ar-", "arp-", 7, "figure 9");

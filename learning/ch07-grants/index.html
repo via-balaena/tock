@@ -487,7 +487,7 @@ dfn {
 
 /* One shared rule: a register name or a line of source set inside a
    panel, whichever component the panel belongs to. */
-.dbgp b, .costp b, .vtp b {
+.dbgp b, .gsp b, .vtp b {
   font-family: var(--mono); font-weight: 500; font-size: .88rem;
 }
 
@@ -562,6 +562,95 @@ dfn {
   padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
 }
 .costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+
+/* ---------- Figure 3: the grant sizer ----------
+   Clicking down six named parts and reading a running total is a list of six
+   numbers that always add to the same thing. What the arithmetic actually does
+   is only visible when the counts move: the padding term is zero for every
+   setting a four-byte-aligned driver can have, and four for every setting an
+   eight-byte one can have, which is a rule you find by sliding and cannot find
+   by reading six panels. */
+.gsrow { display: flex; align-items: center; gap: .7rem; margin-bottom: .5rem;
+  flex-wrap: wrap; }
+.gsrow label { font-family: var(--display); font-size: .72rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 7.5rem; }
+.gsrow .gsgrow { flex: 1 1 10rem; min-width: 8rem; display: block; }
+.gsrow input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block; }
+.gsval { font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  color: var(--hot-ink); background: var(--hot-fill); border-radius: 2px;
+  padding: .12rem .45rem; flex: 0 0 auto; min-width: 5.5rem; text-align: center; }
+
+/* The parts, drawn to scale. Four numbers in a column add up; four widths in a
+   row show which of them is the cost, which is the chapter's whole point. */
+.gsbar { display: flex; height: 1.7rem; margin: .7rem 0 .3rem; border-radius: 2px;
+  overflow: hidden; border: 1px solid var(--rule); background: var(--surface-sunk); }
+.gspart { display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-size: .58rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; overflow: hidden;
+  white-space: nowrap; border-right: 1px solid var(--surface); }
+.gspart:last-child { border-right: 0; }
+.gspart.is-narrow .gsl { display: none; }
+.gspart.head { background: var(--accent-soft); color: var(--accent); }
+.gspart.slots { background: var(--hot-soft); color: var(--hot); }
+.gspart.pad { background: var(--danger-soft); color: var(--danger); }
+.gspart.state { background: var(--rule); color: var(--ink-soft); }
+
+.gssum { width: 100%; border-collapse: collapse; margin: .5rem 0 .8rem;
+  font-size: .84rem; }
+.gssum th, .gssum td { border: 1px solid var(--rule); padding: .3rem .55rem; }
+.gssum th { font-family: var(--display); font-size: .62rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  background: var(--surface-sunk); text-align: left; }
+.gssum td { font-family: var(--mono); color: var(--ink-soft); text-align: right; }
+.gssum th[scope="row"] { font-family: var(--body); font-size: .84rem;
+  text-transform: none; letter-spacing: 0; color: var(--ink);
+  font-weight: 400; background: var(--surface); }
+.gssum tr.total th[scope="row"], .gssum tr.total td { font-weight: 700;
+  color: var(--ink); background: var(--surface-sunk); }
+.gsfoot { font-size: .84rem; line-height: 1.55; color: var(--ink-faint);
+  margin: .1rem 0 .9rem; }
+.gssay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: 0 0 1rem; }
+.gsp { display: none; }
+.gsp.is-on { display: block; }
+
+/* ---------- Figure 8: two allocations into one gap ----------
+   Three named requests with three answers hides the thing that makes this
+   chapter's ending land: the second and third are the same request, and which
+   answer it gets depends on what was asked for before it. That is a sequence,
+   not a set of cases, so the gap is a quantity here and the buttons spend it.
+   Press them in the other order and the same two requests swap answers. */
+.gaprow { display: flex; align-items: center; gap: .7rem; margin-bottom: .6rem;
+  flex-wrap: wrap; }
+.gaprow label { font-family: var(--display); font-size: .72rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 8.5rem; }
+.gaprow .gapgrow { flex: 1 1 10rem; min-width: 8rem; display: block; }
+.gaprow input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block; }
+.gapval { font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  color: var(--hot-ink); background: var(--hot-fill); border-radius: 2px;
+  padding: .12rem .45rem; flex: 0 0 auto; min-width: 5.5rem; text-align: center; }
+
+.gapstrip { display: flex; height: 2.1rem; margin: .5rem 0 .2rem;
+  border: 1px solid var(--rule); border-radius: 2px; overflow: hidden;
+  background: var(--surface-sunk); }
+.gapband { display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-size: .58rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; overflow: hidden;
+  white-space: nowrap; }
+.gapband.is-narrow .gapl { display: none; }
+.gapband.heap { background: var(--hot-soft); color: var(--hot); }
+.gapband.free { background: var(--surface); color: var(--ink-faint);
+  border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); }
+.gapband.grant { background: var(--accent-soft); color: var(--accent); }
+.gapedge { display: flex; justify-content: space-between; margin: 0 0 .9rem;
+  font-family: var(--mono); font-size: .68rem; color: var(--ink-faint); }
+.gapsay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: 0 0 1rem; }
+.gapp { display: none; }
+.gapp.is-on { display: block; }
+
 .costgrid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
 }
@@ -574,13 +663,6 @@ dfn {
   display: block; margin-bottom: .25rem;
 }
 .costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
-.costsay { display: flex; flex-direction: column; gap: .45rem; }
-.costp {
-  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
-  padding: .5rem .7rem; border-left: 2px solid var(--rule);
-}
-.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
-.costp.is-off { display: none; }
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
 /* ---------- Numbered steps: Figure 6 ---------- */
@@ -743,30 +825,71 @@ dfn {
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 3</span>
-    <span class="instrument-title">The console's grant, added up</span>
+    <span class="instrument-title">The console's grant, and every other shape of one</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click down the parts. The running total on the right is what one process pays to have printed anything.</p>
-    <div class="costs" role="group" aria-label="The parts of the console's grant">
-      <button type="button" id="pt-0" aria-pressed="true">the counters word</button>
-      <button type="button" id="pt-1" aria-pressed="false">3 upcall slots</button>
-      <button type="button" id="pt-2" aria-pressed="false">2 read-only slots</button>
-      <button type="button" id="pt-3" aria-pressed="false">2 read-write slots</button>
-      <button type="button" id="pt-4" aria-pressed="false">padding</button>
-      <button type="button" id="pt-5" aria-pressed="false">the driver's own state</button>
+    <p class="dothis">Set the slot counts and the driver's own state, and the total is what one process pays that driver. Start from the console's own numbers, then find the setting where the padding row stops being zero &mdash; there is exactly one thing that turns it on.</p>
+
+    <div class="gsrow">
+      <label for="gs-up">upcall slots</label>
+      <span class="gsgrow"><input type="range" id="gs-up" min="0" max="8" step="1" value="3" aria-label="how many upcall slots"></span>
+      <span class="gsval" id="gs-up-v">3</span>
     </div>
+    <div class="gsrow">
+      <label for="gs-ro">read-only slots</label>
+      <span class="gsgrow"><input type="range" id="gs-ro" min="0" max="8" step="1" value="2" aria-label="how many read-only allow slots"></span>
+      <span class="gsval" id="gs-ro-v">2</span>
+    </div>
+    <div class="gsrow">
+      <label for="gs-rw">read-write slots</label>
+      <span class="gsgrow"><input type="range" id="gs-rw" min="0" max="8" step="1" value="2" aria-label="how many read-write allow slots"></span>
+      <span class="gsval" id="gs-rw-v">2</span>
+    </div>
+    <div class="gsrow">
+      <label for="gs-size">its own state</label>
+      <span class="gsgrow"><input type="range" id="gs-size" min="0" max="32" step="4" value="16" aria-label="how many bytes of the driver's own state"></span>
+      <span class="gsval" id="gs-size-v">16 bytes</span>
+    </div>
+    <div class="costs" role="group" aria-label="What alignment the driver's own state wants">
+      <button type="button" id="gs-a4" aria-pressed="true">its state wants 4-byte alignment</button>
+      <button type="button" id="gs-a8" aria-pressed="false">its state wants 8-byte alignment</button>
+      <button type="button" id="gs-console">the console's own numbers</button>
+    </div>
+
+    <p class="gsfoot" id="gs-foot">Every slot is eight bytes, whichever kind it is. An upcall slot holds a function pointer and the word the process passed at subscribe time that chapter 6 traced all the way back to the callback. An allow slot holds an address and a length, which is exactly what the process handed over. Read-only is for the buffer a write comes out of, which chapter 6 said may sit in flash. Read-write is for the one a read is delivered into.</p>
+
+    <div class="gsbar" aria-hidden="true">
+      <div class="gspart head" id="gs-b-head"><span class="gsl">word</span></div>
+      <div class="gspart slots" id="gs-b-slots"><span class="gsl">slots</span></div>
+      <div class="gspart pad" id="gs-b-pad"><span class="gsl">pad</span></div>
+      <div class="gspart state" id="gs-b-state"><span class="gsl">state</span></div>
+    </div>
+
+    <table class="gssum">
+      <thead>
+        <tr><th>the part</th><th style="text-align: right">bytes</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">the counters word</th><td id="gs-head">4</td></tr>
+        <tr><th scope="row">the slots, at eight bytes each</th><td id="gs-slots">56</td></tr>
+        <tr><th scope="row">padding, to reach the state's alignment</th><td id="gs-pad">0</td></tr>
+        <tr><th scope="row">the driver's own state</th><td id="gs-state">16</td></tr>
+        <tr class="total"><th scope="row">what one process pays</th><td id="gs-total">76</td></tr>
+      </tbody>
+    </table>
+
     <div class="costgrid">
-      <div class="costcell"><span class="costcell-k">this part</span><span class="costcell-v" id="pt-size">4 bytes</span></div>
-      <div class="costcell"><span class="costcell-k">running total</span><span class="costcell-v" id="pt-total">4</span></div>
-      <div class="costcell"><span class="costcell-k">used by the console</span><span class="costcell-v" id="pt-used">3 of 4 bytes</span></div>
+      <div class="costcell"><span class="costcell-k">slots in all</span><span class="costcell-v" id="gs-n">7</span></div>
+      <div class="costcell"><span class="costcell-k">the kernel's part</span><span class="costcell-v" id="gs-kern">60 bytes</span></div>
+      <div class="costcell"><span class="costcell-k">across ten processes</span><span class="costcell-v" id="gs-ten">760 bytes</span></div>
     </div>
-    <div class="costsay">
-      <p class="costp is-on" id="ptp-0">Every grant starts with one word holding how many slots of each kind it has. One byte for upcalls, one for read-only buffers, one for read-write buffers, and a fourth the source's own diagram marks unused. The kernel reads the counters word back to find where each array starts, because the arrays are different lengths in every grant.</p>
-      <p class="costp" id="ptp-1">Eight bytes each: a function pointer, and the word the process passed at subscribe time that chapter 6 traced all the way back to the callback. Three of them, because the console's upcall numbers are 1 and 2 and counting starts at 0.</p>
-      <p class="costp" id="ptp-2">Eight bytes each: an address and a length, which is exactly what the process handed over. Two of them, and the console uses one &mdash; the buffer a write comes out of, which chapter 6 said may sit in flash.</p>
-      <p class="costp" id="ptp-3">Eight bytes each, the same shape, for buffers the kernel writes into. Two again, and the console uses one, for the buffer a read is delivered into.</p>
-      <p class="costp" id="ptp-4">None, here. The kernel pads between its own part and the driver's so the driver's type lands on its alignment, and the console's state wants four-byte alignment while the kernel's part has come to sixty. Sixty is already a multiple of four, so nothing is wasted. A driver whose state wanted eight-byte alignment would pay four bytes here.</p>
-      <p class="costp" id="ptp-5">The console's four fields: how long the current write is, how much of it is still waiting, whether a write is pending at all, and how long the current read is. Three words and a flag, which the compiler lays out in sixteen bytes.</p>
+
+    <div class="gssay">
+      <p class="gsp is-on" id="gsp-console">These are the console's own numbers: three upcall slots, two read-only, two read-write, and sixteen bytes of its own state. Seventy-six bytes, and this is not a number added up on this page &mdash; it is what the kernel's own <b>grant_size</b> returns, compiled for this board.</p>
+      <p class="gsp" id="gsp-nopad">Nothing is padded. The kernel's part is a counters word and some number of eight-byte slots, so it always lands on a multiple of four. A state wanting four-byte alignment is already where it needs to be. Slide every count and the padding row stays at zero.</p>
+      <p class="gsp" id="gsp-pad">Four bytes, wasted, and always exactly four. The kernel's part is four plus a multiple of eight, which is four past an eight-byte boundary no matter how many slots there are. So a driver whose state wants eight-byte alignment pays the same four bytes with no slots as with all of them.</p>
+      <p class="gsp" id="gsp-bare">No slots at all, which prices the slots on their own. What is left is the counters word and the driver's own state, and the counters word is there even when there is nothing to count.</p>
+      <p class="gsp" id="gsp-slots">The slots are now most of it. Every one is eight bytes whether the process ever uses it or not, and the count comes from the driver's own declaration rather than from anything the process asked for.</p>
     </div>
   </div>
   <div class="instrument-note" id="pt-note">Seventy-six bytes, then, for one process to have used the console. That is not a number worked out by adding up field widths on this page. It is what the kernel's own <b>grant_size</b> returns, transcribed into <code>grant-sizes.rs</code> beside this chapter and compiled for this board. The same driver with no slots at all would be twenty.</div>
@@ -893,27 +1016,46 @@ dfn {
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 8</span>
-    <span class="instrument-title">Three requests into the same gap</span>
+    <span class="instrument-title">Two requests into one gap, and the order they arrive in</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each. Suppose the gap is forty bytes when the request arrives.</p>
-    <div class="costs" role="group" aria-label="Three requests into the gap between the two breaks">
-      <button type="button" id="gp-0" aria-pressed="true">the process asks for 32 bytes of heap</button>
-      <button type="button" id="gp-1" aria-pressed="false">the console asks for its first grant</button>
-      <button type="button" id="gp-2" aria-pressed="false">the process asks after the console has</button>
+    <p class="dothis">Set the gap, then spend it. Press the two requests in one order, start over, and press them in the other order &mdash; the same two requests swap answers, and nothing about either one changed.</p>
+
+    <div class="gaprow">
+      <label for="gap-size">the gap begins at</label>
+      <span class="gapgrow"><input type="range" id="gap-size" min="0" max="160" step="4" value="40" aria-label="how many bytes of gap there are to begin with"></span>
+      <span class="gapval" id="gap-size-v">40 bytes</span>
     </div>
+    <div class="costs" role="group" aria-label="Two requests into the gap">
+      <button type="button" id="gap-heap">the process asks for 32 bytes of heap</button>
+      <button type="button" id="gap-grant">the console asks for its first grant</button>
+      <button type="button" id="gap-reset">start over</button>
+    </div>
+
+    <div class="gapstrip" aria-hidden="true">
+      <div class="gapband heap" id="gap-b-heap"><span class="gapl">heap</span></div>
+      <div class="gapband free" id="gap-b-free"><span class="gapl">free</span></div>
+      <div class="gapband grant" id="gap-b-grant"><span class="gapl">grant</span></div>
+    </div>
+    <div class="gapedge" aria-hidden="true"><span>app_break, which grows up</span><span>the grants, which grow down</span></div>
+
     <div class="costgrid">
-      <div class="costcell"><span class="costcell-k">which line moves</span><span class="costcell-v" id="gp-line">app_break</span></div>
-      <div class="costcell"><span class="costcell-k">which way</span><span class="costcell-v" id="gp-way">up</span></div>
-      <div class="costcell"><span class="costcell-k">gap left</span><span class="costcell-v" id="gp-left">8 bytes</span></div>
+      <div class="costcell"><span class="costcell-k">which line moved</span><span class="costcell-v" id="gap-line">neither</span></div>
+      <div class="costcell"><span class="costcell-k">which way</span><span class="costcell-v" id="gap-way">nowhere yet</span></div>
+      <div class="costcell"><span class="costcell-k">gap left</span><span class="costcell-v" id="gap-left">40 bytes</span></div>
     </div>
-    <div class="costsay">
-      <p class="costp is-on" id="gpp-0">Granted. The break moves up by thirty-two, the region chapter 5 builds is rewritten to match, and eight bytes are left. The process is told where its new break is and knows nothing about what is above it.</p>
-      <p class="costp" id="gpp-1">Refused. Seventy-six will not fit in forty, so the kernel works out where the break would land, sees it below the process's own break, and moves nothing. The console gets an error and the process never hears about it &mdash; the syscall that triggered it comes back with a no-memory error instead.</p>
-      <p class="costp" id="gpp-2">Also refused, for the mirror reason: with the grant taken there is no gap left. The process asked for heap it could have had a moment earlier, and the thing that consumed it was a driver acting on the process's own earlier request. The failure is real and the process has no way to see the cause.</p>
+
+    <div class="gapsay">
+      <p class="gapp is-on" id="gapp-idle">Nothing has been asked for yet. Everything between the two lines is free, and either of them can move into it: the process's break grows up, and grants grow down from the top of its memory.</p>
+      <p class="gapp" id="gapp-heap">Granted. The break moves up by thirty-two, the region chapter 5 builds is rewritten to match, and what is left is left. The process is told where its new break is and knows nothing about what is above it.</p>
+      <p class="gapp" id="gapp-grant">Granted, and the process was never asked. The console's grant is seventy-six bytes, taken off the top of the same gap the break grows into, on the first syscall this process made to the console.</p>
+      <p class="gapp" id="gapp-heapno">Refused. There is not enough gap left for thirty-two bytes, so the kernel works out where the break would land, sees it above the grants, and moves nothing. The process gets a no-memory error back.</p>
+      <p class="gapp" id="gapp-eaten">Also refused, and this is the one worth sitting with. The process asked for heap it could have had a moment earlier, and the thing that consumed it was a driver acting on the process's own earlier request. The failure is real and the process has no way to see the cause.</p>
+      <p class="gapp" id="gapp-grantno">Refused. Seventy-six will not fit, so the kernel works out where the grant would land, sees it below the process's own break, and moves nothing. The console gets an error and the process never hears about it &mdash; the syscall that triggered it comes back with a no-memory error instead.</p>
+      <p class="gapp" id="gapp-already">It already has one. A driver's grant is allocated once per process, on the first syscall that needs it, and every syscall after that finds it already there. Nothing more is taken.</p>
     </div>
   </div>
-  <div class="instrument-note" id="gp-note">Notice what the second and third have in common. Neither is a bug in anything; both are one allocation deciding another's fate, in a system with no allocator to arbitrate. What the design buys instead is that the damage is contained: a process that runs out has run out of its own memory, and no other process on the board is any worse off.</div>
+  <div class="instrument-note" id="gp-note">Notice that both refusals are the same thing: one allocation deciding another's fate, in a system with no allocator to arbitrate. Neither is a bug in anything, and no order of the two buttons is the wrong order to press them in. What the design buys instead is that the damage is contained: a process that runs out has run out of its own memory, and no other process on the board is any worse off.</div>
 </figure>
 
 <section class="col">
@@ -1089,31 +1231,102 @@ dfn {
   /* ---------------- Figure 2: the bands of process memory ---------------- */
   group("bd-", "bdp-", 6, "", "is-on", "is-off");
 
-  /* ---------------- Figure 3: the console's grant, added up ----------------
-     Every number is grant_size run on the console's declared counts: a
-     counters word, then 3 upcalls, 2 read-only and 2 read-write slots at eight
-     bytes each, then no padding because sixty is already a multiple of the
-     driver type's four-byte alignment, then sixteen for the type. The running
-     total is the point of the figure, so it is computed here from the parts
-     rather than typed out, and the parts are what the compiled probe beside
-     this page reports. */
+  /* ---------------- Figure 3: the grant sizer ----------------
+     `EnteredGrantKernelManagedLayout::grant_size`, kernel/src/grant.rs:376,
+     transcribed a second time. The first transcription is grant-sizes.rs
+     beside this page, which the gate compiles for the board; four of the
+     settings this bench can be put into are compiled there too, and the gate
+     refuses a total this bench produces that the compiler did not.
+
+         kernel_managed = 4 + 8 * (upcalls + read_only + read_write)
+         padding        = (align - (kernel_managed & (align - 1))) & (align - 1)
+         total          = kernel_managed + padding + state
+
+     The padding term is the one worth driving: it is zero for every setting a
+     four-byte-aligned driver can have, and four for every setting an
+     eight-byte one can have, because 4 + 8n is four past an eight-byte
+     boundary whatever n is. */
   (function () {
-    var PARTS = [
-      [4,  "3 of 4 bytes"],
-      [24, "2 of 3 slots"],
-      [16, "1 of 2 slots"],
-      [16, "1 of 2 slots"],
-      [0,  "none needed"],
-      [16, "all of it"]
-    ];
-    group("pt-", "ptp-", 6, "", "is-on", "is-off", function (k) {
-      var i, total = 0;
-      for (i = 0; i <= k; i++) { total += PARTS[i][0]; }
-      document.getElementById("pt-size").textContent =
-        PARTS[k][0] + (PARTS[k][0] === 1 ? " byte" : " bytes");
-      document.getElementById("pt-total").textContent = String(total);
-      document.getElementById("pt-used").textContent = PARTS[k][1];
+    var WORD = 4, SLOT = 8, align = 4;
+
+    function el(id) { return document.getElementById(id); }
+    function num(id) { return parseInt(el(id).value, 10); }
+
+    function size() {
+      var up = num("gs-up"), ro = num("gs-ro"), rw = num("gs-rw");
+      var state = num("gs-size");
+      var slots = up + ro + rw;
+      var kernel = WORD + SLOT * slots;
+      var mask = align - 1;
+      var pad = (align - (kernel & mask)) & mask;
+      return { up: up, ro: ro, rw: rw, state: state, slots: slots,
+               kernel: kernel, pad: pad, total: kernel + pad + state };
+    }
+
+    function which(g) {
+      if (g.up === 3 && g.ro === 2 && g.rw === 2 && g.state === 16 && align === 4) {
+        return "console";
+      }
+      if (g.pad > 0) { return "pad"; }
+      if (g.slots === 0) { return "bare"; }
+      if (SLOT * g.slots > g.total / 2) { return "slots"; }
+      return "nopad";
+    }
+
+    function draw() {
+      var g = size(), open = which(g), k;
+      var SAY = ["console", "nopad", "pad", "bare", "slots"];
+
+      el("gs-up-v").textContent = String(g.up);
+      el("gs-ro-v").textContent = String(g.ro);
+      el("gs-rw-v").textContent = String(g.rw);
+      el("gs-size-v").textContent = g.state + " bytes";
+
+      el("gs-head").textContent = String(WORD);
+      el("gs-slots").textContent = String(SLOT * g.slots);
+      el("gs-pad").textContent = String(g.pad);
+      el("gs-state").textContent = String(g.state);
+      el("gs-total").textContent = String(g.total);
+
+      el("gs-n").textContent = String(g.slots);
+      el("gs-kern").textContent = g.kernel + " bytes";
+      el("gs-ten").textContent = (g.total * 10) + " bytes";
+
+      // Widths are shares of the total, so the bar is the table drawn sideways
+      // and the padding sliver is visible as a sliver rather than as a row.
+      var parts = [["gs-b-head", WORD], ["gs-b-slots", SLOT * g.slots],
+                   ["gs-b-pad", g.pad], ["gs-b-state", g.state]];
+      for (k = 0; k < parts.length; k++) {
+        el(parts[k][0]).setAttribute("style",
+          "flex: " + parts[k][1] + " 0 0; min-width: "
+            + (parts[k][1] > 0 ? "2px" : "0"));
+        // Under a seventh of the bar there is no room for the name, and a
+        // label clipped mid-word reads as a broken figure rather than a small
+        // part. The words stay in the markup either way.
+        el(parts[k][0]).classList.toggle("is-narrow",
+          parts[k][1] / g.total < 0.14);
+      }
+
+      for (k = 0; k < SAY.length; k++) {
+        el("gsp-" + SAY[k]).classList.toggle("is-on", SAY[k] === open);
+      }
+      el("gs-a4").setAttribute("aria-pressed", String(align === 4));
+      el("gs-a8").setAttribute("aria-pressed", String(align === 8));
+    }
+
+    el("gs-up").addEventListener("input", draw);
+    el("gs-ro").addEventListener("input", draw);
+    el("gs-rw").addEventListener("input", draw);
+    el("gs-size").addEventListener("input", draw);
+    el("gs-a4").addEventListener("click", function () { align = 4; draw(); });
+    el("gs-a8").addEventListener("click", function () { align = 8; draw(); });
+    el("gs-console").addEventListener("click", function () {
+      align = 4;
+      el("gs-up").value = "3"; el("gs-ro").value = "2";
+      el("gs-rw").value = "2"; el("gs-size").value = "16";
+      draw();
     });
+    draw();
   }());
 
   /* ---------------- Figure 4: the slots nobody fills ---------------- */
@@ -1128,21 +1341,72 @@ dfn {
   /* ---------------- Figure 7: three refusals ---------------- */
   group("rf-", "rfp-", 3, "", "is-on", "is-off");
 
-  /* ---------------- Figure 8: three requests into one gap ----------------
-     The gap is forty bytes. The heap request is 32 and fits, leaving 8; the
-     grant is 76 and does not, so nothing moves; and after the grant would have
-     been taken there is nothing left for the heap either. */
+  /* ---------------- Figure 8: two allocations into one gap ----------------
+     The gap is a quantity and the buttons spend it, so the order they are
+     pressed in is the whole figure. Nothing here is a special case: both
+     requests run the same test, which is whether what is left will hold what
+     is asked for, and the only asymmetry is which line moves when it does. */
   (function () {
-    var GAP = [
-      ["app_break", "up", "8 bytes"],
-      ["neither", "nothing moves", "40 bytes"],
-      ["neither", "nothing moves", "40 bytes"]
-    ];
-    group("gp-", "gpp-", 3, "", "is-on", "is-off", function (k) {
-      document.getElementById("gp-line").textContent = GAP[k][0];
-      document.getElementById("gp-way").textContent = GAP[k][1];
-      document.getElementById("gp-left").textContent = GAP[k][2];
+    var HEAP = 32, GRANT = 76;
+    var free = 40, heap = 0, grant = 0, last = "idle";
+
+    function el(id) { return document.getElementById(id); }
+    function begin() { return parseInt(el("gap-size").value, 10); }
+
+    function draw() {
+      var whole = begin(), k;
+      var SAY = ["idle", "heap", "grant", "heapno", "eaten", "grantno", "already"];
+
+      el("gap-size-v").textContent = whole + " bytes";
+      el("gap-left").textContent = free + " bytes";
+
+      var bands = [["gap-b-heap", heap], ["gap-b-free", free], ["gap-b-grant", grant]];
+      for (k = 0; k < bands.length; k++) {
+        el(bands[k][0]).setAttribute("style", "flex: " + bands[k][1] + " 0 0");
+        el(bands[k][0]).classList.toggle("is-narrow",
+          whole === 0 || bands[k][1] / whole < 0.18);
+      }
+      for (k = 0; k < SAY.length; k++) {
+        el("gapp-" + SAY[k]).classList.toggle("is-on", SAY[k] === last);
+      }
+    }
+
+    function moved(line, way) {
+      el("gap-line").textContent = line;
+      el("gap-way").textContent = way;
+    }
+
+    el("gap-heap").addEventListener("click", function () {
+      if (free >= HEAP) {
+        free -= HEAP; heap += HEAP; last = "heap";
+        moved("app_break", "up");
+      } else {
+        // The same refusal, and which sentence it gets turns on whether a
+        // grant is what took the room. That is the chapter's ending.
+        last = grant > 0 ? "eaten" : "heapno";
+        moved("neither", "nowhere");
+      }
+      draw();
     });
+    el("gap-grant").addEventListener("click", function () {
+      if (grant > 0) { last = "already"; moved("neither", "nowhere"); }
+      else if (free >= GRANT) {
+        free -= GRANT; grant += GRANT; last = "grant";
+        moved("the grants", "down");
+      } else { last = "grantno"; moved("neither", "nowhere"); }
+      draw();
+    });
+    el("gap-reset").addEventListener("click", function () {
+      free = begin(); heap = 0; grant = 0; last = "idle";
+      moved("neither", "nowhere yet");
+      draw();
+    });
+    el("gap-size").addEventListener("input", function () {
+      free = begin(); heap = 0; grant = 0; last = "idle";
+      moved("neither", "nowhere yet");
+      draw();
+    });
+    draw();
   }());
 
   /* ---------------- Figure 9: what the seven chapters took ---------------- */

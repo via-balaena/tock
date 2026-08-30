@@ -277,13 +277,31 @@ def _narrow_rules(source):
     return "".join(out)
 
 
+class Ordered(argparse.Action):
+    """Keep --click, --click-nth and --set in the order they were typed.
+
+    Three `append` actions on three dests cannot see each other, so argparse
+    hands back three lists and the order between them is the order the code
+    happens to concatenate them in. That was clicks, then nths, then sets --
+    which meant `--set gap-size=80 --click gap-grant` ran the click first and
+    then the set, and a `--set` on a control whose handler resets the figure
+    silently threw the clicks away. The render looked untouched and correct.
+
+    So they all append to one list, tagged, in command-line order.
+    """
+
+    def __call__(self, parser, namespace, value, option=None):
+        namespace.actions = getattr(namespace, "actions", None) or []
+        namespace.actions.append((self.dest, value))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("chapter", help="chapter directory under learning/")
     parser.add_argument("--out", help="write the fixture here (default: stdout)")
-    parser.add_argument("--click", action="append", default=[], metavar="ID",
+    parser.add_argument("--click", action=Ordered, metavar="ID",
                         help="fire a click on this id first; repeatable")
-    parser.add_argument("--click-nth", action="append", default=[],
+    parser.add_argument("--click-nth", action=Ordered,
                         metavar="ID:N", dest="click_nth",
                         help="click the Nth child of this container, zero-based."
                              " Generated controls carry no id -- the map rows,"
@@ -291,7 +309,7 @@ def main():
                              " all built by script -- so this is the only way to"
                              " reach them; repeatable, ordered with --click and"
                              " --set by the order given on the command line")
-    parser.add_argument("--set", action="append", default=[], metavar="ID=VALUE",
+    parser.add_argument("--set", action=Ordered, metavar="ID=VALUE",
                         dest="set_value",
                         help="set a control's value and fire input, for the two"
                              " range sliders and the four answer boxes")
@@ -322,17 +340,20 @@ def main():
     with open(page, encoding="utf-8") as handle:
         source = handle.read()
 
-    actions = [{"k": "click", "id": i} for i in args.click]
-    for spec in args.click_nth:
-        target, _, index = spec.rpartition(":")
-        if not target or not index.isdigit():
-            raise SystemExit("--click-nth wants ID:N, got %r" % spec)
-        actions.append({"k": "nth", "id": target, "n": int(index)})
-    for spec in args.set_value:
-        target, sep, value = spec.partition("=")
-        if not sep:
-            raise SystemExit("--set wants ID=VALUE, got %r" % spec)
-        actions.append({"k": "set", "id": target, "v": value})
+    actions = []
+    for kind, spec in (getattr(args, "actions", None) or []):
+        if kind == "click":
+            actions.append({"k": "click", "id": spec})
+        elif kind == "click_nth":
+            target, _, index = spec.rpartition(":")
+            if not target or not index.isdigit():
+                raise SystemExit("--click-nth wants ID:N, got %r" % spec)
+            actions.append({"k": "nth", "id": target, "n": int(index)})
+        else:
+            target, sep, value = spec.partition("=")
+            if not sep:
+                raise SystemExit("--set wants ID=VALUE, got %r" % spec)
+            actions.append({"k": "set", "id": target, "v": value})
 
     built, markup_text = generated(chapter_dir, actions)
     body = source
