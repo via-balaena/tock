@@ -517,6 +517,29 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; }
   white-space: nowrap;
 }
 
+
+/* ---------- Figure 12: one layout, two bases ----------
+   The only figure in this chapter with nothing to drive. Its whole claim is
+   that the offset is the shared half and the base is the varying one, which is
+   a claim about two numbers moving independently -- so both are controls and
+   the address is computed rather than printed twice by hand. */
+.twohalf { display: flex; flex-direction: column; gap: .5rem; margin: .3rem 0 1rem; }
+.halfrow { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.halfrow-k { font-family: var(--display); font-size: .7rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 5.2rem; }
+/* Register names and addresses, so their case is the content. */
+.halfrow button { font-family: var(--mono); font-size: .8rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .3rem .5rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule); }
+.halfrow button[aria-pressed="true"] { border-color: var(--hot);
+  background: var(--hot-soft); color: var(--hot); }
+.moved { font-size: .93rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: .2rem 0 0; }
+.mv { display: none; }
+.mv.is-on { display: block; }
+
 /* ---------- doorbell compare ---------- */
 
 .compare {
@@ -1444,34 +1467,7 @@ dfn {
 .scrub { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .scrub input[type=range] { flex: 1; min-width: 9rem; }
 
-/* Two things side by side, same geometry, so the difference is the only
-   thing that moves. */
-.multiples {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: .9rem;
-}
-.mult {
-  border: 1px solid var(--rule);
-  background: var(--surface);
-  padding: .85rem .9rem;
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-}
-.mult-name {
-  font-family: var(--mono);
-  font-size: .86rem;
-  font-weight: 600;
-  color: var(--accent);
-}
-.mult-op {
-  font-family: var(--mono);
-  font-size: .82rem;
-  color: var(--ink-soft);
-}
-.mult-says { font-size: .92rem; line-height: 1.5; color: var(--ink-soft); }
-.mult.is-hot { border-left: 3px solid var(--hot); }
+
 
 @media (prefers-reduced-motion: no-preference) {
   .bit, .digit, .trace-row { transition: background-color .18s ease, opacity .18s ease; }
@@ -3141,26 +3137,46 @@ dfn {
     <span class="instrument-title">Same layout, two different bases</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Read both columns and ask yourself what is identical and what is not.</p>
-    <div class="multiples">
-      <div class="mult is-hot">
-        <span class="mult-name">UART0</span>
-        <span class="mult-op">base 0x40070000</span>
-        <span class="mult-op">+ 0x000 &rarr; 0x40070000</span>
-        <span class="mult-op">+ 0x030 &rarr; 0x40070030</span>
-        <span class="mult-says">The serial port Tock's console uses, on GPIO 0 and 1.</span>
+    <p class="dothis">Change the port, then change the register. Each control moves one half of the address and leaves the other exactly where it was &mdash; which is the whole reason one driver serves both.</p>
+    <div class="twohalf">
+      <div class="halfrow" role="group" aria-label="Which of the two identical serial ports">
+        <span class="halfrow-k">port</span>
+        <button type="button" id="up-0" aria-pressed="true">UART0</button>
+        <button type="button" id="up-1" aria-pressed="false">UART1</button>
       </div>
-      <div class="mult">
-        <span class="mult-name">UART1</span>
-        <span class="mult-op">base 0x40078000</span>
-        <span class="mult-op">+ 0x000 &rarr; 0x40078000</span>
-        <span class="mult-op">+ 0x030 &rarr; 0x40078030</span>
-        <span class="mult-says">A second, identical serial port.</span>
+      <div class="halfrow" role="group" aria-label="Which register inside it">
+        <span class="halfrow-k">register</span>
+        <button type="button" id="ur-0" aria-pressed="true">uartdr</button>
+        <button type="button" id="ur-1" aria-pressed="false">uartfr</button>
+        <button type="button" id="ur-2" aria-pressed="false">uartibrd</button>
+        <button type="button" id="ur-3" aria-pressed="false">uartcr</button>
       </div>
     </div>
+    <div class="sum" aria-live="polite">
+      <span class="sum-row">
+        <span class="sum-op">&nbsp;</span>
+        <span class="sum-v" id="uo-base">0x40070000</span>
+        <span class="sum-k">the port's base &mdash; the half the port picks</span>
+      </span>
+      <span class="sum-row">
+        <span class="sum-op">+</span>
+        <span class="sum-v" id="uo-off">0x000</span>
+        <span class="sum-k">the register's offset &mdash; the half the register picks</span>
+      </span>
+      <span class="sum-row is-total">
+        <span class="sum-op">=</span>
+        <span class="sum-v hot" id="uo-addr">0x40070000</span>
+        <span class="sum-k" id="uo-name">uartdr</span>
+      </span>
+    </div>
+    <p class="moved" aria-live="polite">
+      <span class="mv is-on" id="mv-start">Change one of the two and watch which line moves.</span>
+      <span class="mv" id="mv-base">Only the base moved. The offset is a fact about the register, and both ports have the same registers in the same places, because they are one block of hardware built twice.</span>
+      <span class="mv" id="mv-off">Only the offset moved. The base is a fact about which port, and it does not care which register you asked for.</span>
+    </p>
     <div class="selfcheck" style="margin-top:1rem">
       <details>
-        <summary>What is the same about these two, and why does it matter?</summary>
+        <summary>Why does a driver not have to be written twice?</summary>
         <div class="answer">The offsets. <code>0x000</code> is the data register on both, <code>0x030</code> the control register on both, because both are the same block of hardware built twice. Only the base differs. That is why a driver is written once, handed a base address, and then works for either &mdash; and it is why register listings are written as offsets rather than finished addresses.</div>
       </details>
     </div>
@@ -4171,6 +4187,61 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
   wire("we2-val", ["4000"], "we2-say",
     "Right \u2014 1 << 14 is 0x4000.",
     "Same rule as before: 1 shifted left 14 places. Four bits per hex digit may help.");
+
+  /* ---------------- Figure 12: one layout, two bases ----------------
+     Bases and offsets are read off chips/rp2350/src/uart.rs: the two ports at
+     :343 and :347, and the register offsets from the block at :20-60. Both
+     halves are numbers here because the figure's whole claim is that they move
+     independently; every sentence it says is in the markup. */
+  (function () {
+    var PORTS = [0x40070000, 0x40078000];
+    var REGS = [[0x000, "uartdr"], [0x018, "uartfr"],
+                [0x024, "uartibrd"], [0x030, "uartcr"]];
+    var port = 0, reg = 0, moved = "start";
+
+    function hex(v, width) {
+      var t = v.toString(16).toUpperCase();
+      while (t.length < width) { t = "0" + t; }
+      return "0x" + t;
+    }
+    function draw() {
+      var i;
+      for (i = 0; i < PORTS.length; i++) {
+        document.getElementById("up-" + i)
+          .setAttribute("aria-pressed", i === port ? "true" : "false");
+      }
+      for (i = 0; i < REGS.length; i++) {
+        document.getElementById("ur-" + i)
+          .setAttribute("aria-pressed", i === reg ? "true" : "false");
+      }
+      document.getElementById("uo-base").textContent = hex(PORTS[port], 8);
+      document.getElementById("uo-off").textContent = hex(REGS[reg][0], 3);
+      document.getElementById("uo-addr").textContent =
+        hex(PORTS[port] + REGS[reg][0], 8);
+      document.getElementById("uo-name").textContent = REGS[reg][1];
+      document.getElementById("mv-start").classList.toggle("is-on", moved === "start");
+      document.getElementById("mv-base").classList.toggle("is-on", moved === "base");
+      document.getElementById("mv-off").classList.toggle("is-on", moved === "off");
+    }
+    function wirePort(i) {
+      document.getElementById("up-" + i).addEventListener("click", function () {
+        if (i !== port) { moved = "base"; }
+        port = i;
+        draw();
+      });
+    }
+    function wireReg(i) {
+      document.getElementById("ur-" + i).addEventListener("click", function () {
+        if (i !== reg) { moved = "off"; }
+        reg = i;
+        draw();
+      });
+    }
+    var i;
+    for (i = 0; i < PORTS.length; i++) { wirePort(i); }
+    for (i = 0; i < REGS.length; i++) { wireReg(i); }
+    draw();
+  }());
 
   /* ---------------- Figure 13: two cores, one register ---------------- */
 

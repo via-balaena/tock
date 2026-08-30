@@ -985,6 +985,103 @@ t("the sum shown always adds up to the digit shown", function () {
 REG["hx-reset"].fire("click");
 
 
+// ---- Figure 12: one layout, two bases ----
+// The figure's claim is that the two halves of an address move independently:
+// the port picks the base, the register picks the offset, and neither touches
+// the other. That is checkable rather than assertable, so it is checked across
+// every combination. Bases and offsets are read off
+// chips/rp2350/src/uart.rs -- the ports at :343 and :347, the offsets from the
+// register block at :20-60 -- and recomputed here rather than copied from the
+// page, so a wrong number in the figure fails instead of agreeing with itself.
+(function () {
+  var PORTS = [0x40070000, 0x40078000];
+  var REGS = [[0x000, "uartdr"], [0x018, "uartfr"],
+              [0x024, "uartibrd"], [0x030, "uartcr"]];
+  function hex(v, width) {
+    var t = v.toString(16).toUpperCase();
+    while (t.length < width) { t = "0" + t; }
+    return "0x" + t;
+  }
+
+  chk("it opens on the port the console uses, and its data register",
+      REG["uo-addr"].textContent, "0x40070000");
+  chk("named", REG["uo-name"].textContent, "uartdr");
+
+  // Every combination, against arithmetic done here.
+  (function () {
+    var p, r, bad = [];
+    for (p = 0; p < PORTS.length; p++) {
+      for (r = 0; r < REGS.length; r++) {
+        REG["up-" + p].fire("click");
+        REG["ur-" + r].fire("click");
+        if (REG["uo-addr"].textContent !== hex(PORTS[p] + REGS[r][0], 8)) {
+          bad.push(p + "/" + r);
+        }
+        if (REG["uo-off"].textContent !== hex(REGS[r][0], 3)) {
+          bad.push("off " + p + "/" + r);
+        }
+        if (REG["uo-name"].textContent !== REGS[r][1]) {
+          bad.push("name " + p + "/" + r);
+        }
+      }
+    }
+    chk("base plus offset, in all eight combinations", bad.join(","), "");
+  }());
+
+  // The independence claim, both ways round.
+  (function () {
+    var r, offs = [], bases = [], p;
+    REG["up-0"].fire("click");
+    for (r = 0; r < REGS.length; r++) {
+      REG["ur-" + r].fire("click");
+      offs.push(REG["uo-off"].textContent);
+      bases.push(REG["uo-base"].textContent);
+    }
+    chk("changing the register never moves the base",
+        bases.join(",") === "0x40070000,0x40070000,0x40070000,0x40070000"
+          ? "" : bases.join(","), "");
+    chk("and it does move the offset, so that is not vacuous",
+        offs.join(","), "0x000,0x018,0x024,0x030");
+
+    REG["ur-1"].fire("click");
+    offs = [];
+    for (p = 0; p < PORTS.length; p++) {
+      REG["up-" + p].fire("click");
+      offs.push(REG["uo-off"].textContent);
+    }
+    chk("changing the port never moves the offset",
+        offs.join(","), "0x018,0x018");
+  }());
+
+  // The readout naming which half moved is the lesson, so it has to be right.
+  function moved() {
+    var M = ["start", "base", "off"], i, on = [];
+    for (i = 0; i < M.length; i++) {
+      if (REG["mv-" + M[i]].classList.contains("is-on")) { on.push(M[i]); }
+    }
+    return on.join(",");
+  }
+  REG["up-0"].fire("click");
+  REG["ur-0"].fire("click");
+  REG["up-1"].fire("click");
+  chk("switching port reports that only the base moved", moved(), "base");
+  REG["ur-2"].fire("click");
+  chk("switching register reports that only the offset moved", moved(), "off");
+  // Pressing the one already chosen changes nothing, so it must not claim to.
+  REG["ur-2"].fire("click");
+  chk("re-pressing the current register claims no movement", moved(), "off");
+  (function () {
+    var seq = ["up-0", "up-1", "ur-0", "ur-3", "up-0", "ur-1"], i, bad = 0;
+    for (i = 0; i < seq.length; i++) {
+      REG[seq[i]].fire("click");
+      if (moved().indexOf(",") > -1 || moved() === "") { bad++; }
+    }
+    chk("one reading of what moved, at every step", bad, 0);
+  }());
+  REG["up-0"].fire("click");
+  REG["ur-0"].fire("click");
+}());
+
 // ---- Figure 7: base plus offset ----
 
 chk("the register figure boots on the one this chapter stores to",
