@@ -79,9 +79,9 @@
   {
     "id": "ch01-next-card-title",
     "in": "ch01",
-    "says": "Chapter 2 - Why it is not a variable",
+    "says": "Chapter 2 - Registers are not variables",
     "about": "ch02",
-    "kept_by": "Why It Is Not a Variable"
+    "kept_by": "Registers Are Not Variables"
   },
   {
     "id": "ch02-next-card-blurb",
