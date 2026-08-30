@@ -115,6 +115,137 @@ chk("and the checksum panel refuses to be mistaken for a signature",
 REG["hd-0"].fire("click");
 
 // ---- Figure 3: the walk ----
+// ---- Figure 3: the walk, walked ----
+// Two things end this loop and they are not the same thing. Running off what
+// was written is ordinary. An entry whose version is wrong ends it in the
+// middle, and every application after that one is never looked at -- which the
+// kernel cannot tell apart from having finished. That is the assertion worth
+// having, because it is the chapter's sharpest claim.
+(function () {
+  function slots(a, b, c) {
+    REG["slot-0-" + a].fire("click");
+    REG["slot-1-" + b].fire("click");
+    REG["slot-2-" + c].fire("click");
+  }
+  function counts() {
+    return [REG["fw-found"].textContent, REG["fw-skip"].textContent,
+            REG["fw-unseen"].textContent].join("/");
+  }
+  function saying() {
+    var S = ["idle", "going", "end", "early"], i, on = [];
+    for (i = 0; i < S.length; i++) {
+      if (REG["ws-" + S[i]].classList.contains("is-on")) { on.push(S[i]); }
+    }
+    return on.join(",");
+  }
+
+  slots("ok", "ok", "ok");
+  chk("nothing walked yet", saying(), "idle");
+  chk("and nothing found", counts(), "0/0/3");
+
+  REG["fw-run"].fire("click");
+  chk("three sound applications are all found", counts(), "3/0/0");
+  chk("and it ended by running off what was written", saying(), "end");
+
+  // The sharp one: erase the middle slot and the third is never looked at.
+  slots("ok", "erase", "ok");
+  REG["fw-run"].fire("click");
+  // The erased slot is reached -- reaching it is what ends the walk -- so it
+  // is not among the ones never looked at. What is lost is the one past it.
+  chk("erasing the middle one loses the third as well", counts(), "1/0/1");
+  chk("and the walk reports having finished early", saying(), "early");
+  chk("which the panel says is indistinguishable from the end",
+      REG["ws-early"].textContent.indexOf("indistinguishable") > -1, true);
+
+  // A header too small does not stop anything, because total_size is trusted
+  // on its own -- so the walk carries on past it.
+  slots("ok", "bad", "ok");
+  REG["fw-run"].fire("click");
+  chk("a header too small is skipped and the walk carries on", counts(), "2/1/0");
+  chk("ending the ordinary way", saying(), "end");
+
+  // Erasing the first slot means nothing is found at all.
+  slots("erase", "ok", "ok");
+  REG["fw-run"].fire("click");
+  chk("an erased first slot finds nothing, and hides the other two",
+      counts(), "0/0/2");
+
+  // Stepping matches running, one entry at a time.
+  slots("ok", "ok", "ok");
+  REG["fw-step"].fire("click");
+  chk("one step finds one", counts(), "1/0/2");
+  REG["fw-step"].fire("click");
+  REG["fw-step"].fire("click");
+  chk("and three steps find three", counts(), "3/0/0");
+  chk("with nothing left to step", REG["fw-step"].disabled, true);
+
+  // Changing a slot restarts, rather than leaving a stale walk on screen.
+  slots("ok", "ok", "erase");
+  chk("changing a slot starts the walk over", counts(), "0/0/3");
+  chk("and says so", saying(), "idle");
+
+  // One reading, in every arrangement of the three slots.
+  (function () {
+    var K = ["ok", "bad", "erase"], a, b, c, bad = 0;
+    for (a = 0; a < 3; a++) {
+      for (b = 0; b < 3; b++) {
+        for (c = 0; c < 3; c++) {
+          slots(K[a], K[b], K[c]);
+          REG["fw-run"].fire("click");
+          if (saying().indexOf(",") > -1 || saying() === "") { bad++; }
+        }
+      }
+    }
+    chk("one reading of how it ended, in all twenty-seven arrangements", bad, 0);
+  }());
+  slots("ok", "ok", "ok");
+}());
+
+// ---- Figure 6: the two lines that move ----
+// Five of the seven boundaries are fixed for the life of the process. Two move,
+// towards each other, out of one gap -- and when it is gone both sides start
+// failing, which is the chapter's point about a system with no allocator.
+(function () {
+  function gap() { return REG["al-gap"].textContent; }
+  function room() {
+    return REG["al-room"].classList.contains("is-on") ? "room" : "full";
+  }
+  REG["al-grants"].value = 256;
+  REG["al-grants"].fire("input");
+  REG["al-heap"].value = 256;
+  REG["al-heap"].fire("input");
+  chk("the gap is what neither side has claimed", gap(), "1536");
+  chk("and there is room either way", room(), "room");
+
+  REG["al-grants"].value = 1024;
+  REG["al-grants"].fire("input");
+  chk("grants growing down eat the gap", gap(), "768");
+  REG["al-heap"].value = 1024;
+  REG["al-heap"].fire("input");
+  chk("and the heap growing up finishes it", gap(), "0");
+  chk("at which point both sides start failing", room(), "full");
+
+  // The gap never goes negative, and the two bands never overlap.
+  (function () {
+    var g, h, bad = 0;
+    for (g = 0; g <= 2048; g += 293) {
+      for (h = 32; h <= 2048; h += 293) {
+        REG["al-grants"].value = g;
+        REG["al-grants"].fire("input");
+        REG["al-heap"].value = h;
+        REG["al-heap"].fire("input");
+        if (parseInt(gap(), 10) < 0) { bad++; }
+        if (parseInt(gap(), 10) !== Math.max(0, 2048 - g - h)) { bad++; }
+      }
+    }
+    chk("the gap is the allocation less both sides, and never negative", bad, 0);
+  }());
+  REG["al-grants"].value = 256;
+  REG["al-grants"].fire("input");
+  REG["al-heap"].value = 256;
+  REG["al-heap"].fire("input");
+}());
+
 walk("wk-", "wkp-", 6, "figure 3");
 // Six steps, and every one carries the file and line it came from. A step with
 // no citation is the shape a made-up step would take.

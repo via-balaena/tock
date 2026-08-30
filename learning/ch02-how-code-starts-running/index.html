@@ -715,6 +715,28 @@ dfn {
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
 
+
+/* ---------- the slider under Figure 5 ----------
+   Borrowed by name from chapters 1 and 5, where these are defined, and a
+   stylesheet is per page -- so until this block the control rendered as a bare
+   input with an unstyled label beside it. */
+.slider-row { display: flex; align-items: center; gap: .7rem; margin-bottom: .7rem;
+  flex-wrap: wrap; }
+.slider-row label { font-family: var(--display); font-size: .78rem; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 4.4rem; }
+.slider-row .grow { flex: 1 1 12rem; min-width: 10rem; display: block; }
+input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block; }
+.pinbadge { font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  color: var(--hot-ink); background: var(--hot-fill); border-radius: 2px;
+  padding: .12rem .45rem; flex: 0 0 auto; min-width: 6.4rem; text-align: center; }
+/* The eyebrow on the closing card, which had no rule of its own. */
+.next-eyebrow { font-family: var(--display); font-size: .75rem; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--hot); }
+@media (max-width: 30rem) {
+  .slider-row .grow { flex: 1 0 100%; }
+}
+
 /* ---------- the two costs, as they scale ----------
    Three fixed declarations made the point at three points. The point is that
    one cost grows with the array and the other does not, which is a shape, and

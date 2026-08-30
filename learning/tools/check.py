@@ -1859,6 +1859,46 @@ def unstyled_block_checks(html):
             "long line widen the page rather than scroll" % len(bare)]
 
 
+def unstyled_class_checks(html):
+    """Markup carrying a class this page's stylesheet never defines.
+
+    `dead_css_checks` is the other half of this: a rule whose class appears
+    nowhere in the markup. It cannot see the mirror, and the mirror is the one
+    that happens when a figure is written by reaching for a class name that
+    exists -- in a different chapter. A stylesheet is per page, so
+    `class="pinstate"` in chapter 4 styled nothing at all, and four readouts
+    that were meant to be a bordered grid rendered as four bare lines of text.
+    Every behavioural assertion passed, because the shim holds no stylesheet.
+
+    Only class names are checked, and only against this page's own `<style>`.
+    Ids are excluded: plenty are hooks for the script alone and were never
+    meant to be styled.
+
+    The allowlist is for classes whose rule is legitimately elsewhere: the
+    tokens the noscript block hides, which are declared inside `<noscript>`
+    rather than in the sheet.
+    """
+    if "<style>" not in html or "</style>" not in html:
+        return []
+    style = html[html.index("<style>"):html.index("</style>")]
+    body = html[html.index("</style>") + 8:].split("<script>")[0]
+
+    # Written by the script rather than by hand, so the markup need not carry
+    # them, and hidden-by-noscript tokens whose rule lives in that block.
+    allowed = {"ifjs"}
+    defined = set(re.findall(r"\.([A-Za-z][\w-]*)", style))
+    used = set()
+    for attr in re.findall(r'class="([^"]*)"', body):
+        used.update(attr.split())
+
+    missing = sorted(c for c in used - defined - allowed)
+    if not missing:
+        return []
+    return ["class %s appears in the markup and no rule on this page defines "
+            "it - a stylesheet is per page, so a name borrowed from another "
+            "chapter styles nothing here" % ", ".join(missing)]
+
+
 def dead_css_checks(html):
     """A rule whose class or id appears nowhere else on the page.
 
@@ -2122,6 +2162,7 @@ def static_checks(html, name):
     problems.extend(compiled_size_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))
     problems.extend(dead_css_checks(html))
+    problems.extend(unstyled_class_checks(html))
     problems.extend(unstyled_block_checks(html))
     problems.extend(glossary_use_checks(html))
     problems.extend(figure_order_checks(html))

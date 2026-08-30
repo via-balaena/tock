@@ -650,6 +650,112 @@ dfn {
 .costp.is-off { display: none; }
 @media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
 
+
+
+
+
+/* ---------- the two sliders under Figure 6 ---------- */
+.slider-row { display: flex; align-items: center; gap: .7rem; margin-bottom: .6rem;
+  flex-wrap: wrap; }
+.slider-row label { font-family: var(--display); font-size: .78rem; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 4rem; }
+.slider-row .grow { flex: 1 1 12rem; min-width: 10rem; display: block; }
+input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block; }
+.pinbadge { font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  color: var(--hot-ink); background: var(--hot-fill); border-radius: 2px;
+  padding: .12rem .45rem; flex: 0 0 auto; min-width: 6rem; text-align: center; }
+@media (max-width: 30rem) {
+  .slider-row .grow { flex: 1 0 100%; }
+}
+
+/* ---------- one allocation, drawn ----------
+   Seven boundaries listed top to bottom is a list of names. Three of the seven
+   move while the process runs, two of those move towards each other, and the
+   gap between them is everything either side has left -- which is a picture,
+   and cannot be got from a list at all.
+
+   Boxes rather than SVG: every edge here is a percentage of one height, which
+   is a thing CSS already does, and there is no viewBox to keep in step. */
+.alloc { display: flex; gap: .8rem; margin: .5rem 0 .9rem; }
+.alloc-bar { position: relative; flex: 0 0 5.5rem; height: 15rem;
+  border: 1px solid var(--rule-strong); border-radius: 2px;
+  background: var(--surface-sunk); overflow: hidden; }
+.band { position: absolute; left: 0; right: 0; }
+.band-grant { background: var(--accent-soft); }
+.band-gap { background: var(--surface); }
+.band-app { background: var(--hot-soft); }
+.edge { position: absolute; left: 0; right: 0; height: 2px; background: var(--rule-strong); }
+.edge.is-moving { background: var(--hot); height: 3px; }
+.alloc-keys { flex: 1 1 auto; display: flex; flex-direction: column;
+  justify-content: space-between; font-family: var(--mono); font-size: .74rem;
+  color: var(--ink-soft); padding: .1rem 0; }
+.alloc-keys b { font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.alloc-keys .moving { color: var(--hot); }
+
+/* ---------- readouts beside the walk ----------
+   These six class names were reached for out of habit from chapters 2 and 3,
+   where they are defined. A stylesheet is per page, so here they styled
+   nothing and the four readouts rendered as bare lines of text. Nothing in the
+   gate could see it: dead_css_checks finds a rule with no markup, and this is
+   the mirror -- markup with no rule. Only the render showed it. */
+.pinstate { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: .1rem; margin: .5rem 0 .8rem;
+  border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--rule); overflow: hidden; }
+.ps { background: var(--surface); padding: .5rem .7rem; }
+.ps-k { display: block; font-family: var(--display); font-size: .62rem;
+  font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-faint); margin-bottom: .2rem; }
+.ps-v { font-family: var(--mono); font-size: .88rem; font-weight: 600; color: var(--ink); }
+.loop-ctl { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center;
+  margin-bottom: .8rem; }
+/* A small muted aside inside a figure. */
+.note { font-size: .92rem; line-height: 1.55; color: var(--ink-soft); margin: 0 0 1rem; }
+
+/* ---------- walking flash ----------
+   The search is the chapter's spine and it was six steps you could put a
+   marker on. What it actually is: a loop over headers the kernel believes
+   before it has verified anything, ending not on a marker but on a header
+   that fails to be one. Both of those are things to do rather than read --
+   especially the sharp one, which is that a single wrong version field hides
+   every application after it and reports nothing.
+
+   Three applications, each of which can be sound, erased, or carrying a
+   header too small to hold its own five fields. */
+.apps { display: flex; flex-direction: column; gap: 3px; margin: .4rem 0 .8rem; }
+.approw { display: grid; grid-template-columns: 8.2rem 1fr 6rem;
+  gap: .7rem; align-items: center;
+  font-family: var(--mono); font-size: .8rem;
+  padding: .4rem .6rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  border-left: 3px solid var(--rule); border-radius: 2px; }
+/* Where the walk is standing. */
+.approw.is-at { border-left-color: var(--hot); background: var(--hot-soft); }
+/* Found and loaded. */
+.approw.is-found { border-left-color: var(--accent); }
+/* Reached, and not loaded. */
+.approw.is-skipped { border-left-color: var(--danger); }
+/* Never reached at all, which is the point of the whole figure. */
+.approw.is-unseen { color: var(--ink-faint); }
+.approw-a { color: var(--ink-faint); }
+.approw-h { color: var(--ink); }
+.approw-s { text-align: right; font-size: .72rem;
+  font-family: var(--display); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
+
+.appset { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .8rem; }
+.appset-row { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.appset-k { font-family: var(--mono); font-size: .76rem; color: var(--ink-soft);
+  flex: 0 0 5.4rem; }
+.appset-row button { font-family: var(--mono); font-size: .76rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; padding: .25rem .5rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule); }
+.appset-row button[aria-pressed="true"] { border-color: var(--accent);
+  background: var(--accent-soft); color: var(--accent); }
+.wk { display: none; }
+.wk.is-on { display: block; }
+
 /* ---------- Numbered steps: Figures 3 and 9 ---------- */
 .seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
 .seq button {
@@ -827,7 +933,38 @@ dfn {
     <span class="instrument-title">Six steps that find every application, and one that stops</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a step. The last one is the interesting one, because nothing marks the end.</p>
+    <p class="dothis">Put something in each slot, then walk flash from <b>_sapps</b>. Erase the middle one and count how many applications the kernel finds &mdash; the answer is the reason nothing here is a list.</p>
+    <div class="appset">
+      <div class="appset-row" role="group" aria-label="What is in application slot 0"><span class="appset-k">slot 0</span><button type="button" id="slot-0-ok" aria-pressed="true">sound</button><button type="button" id="slot-0-bad" aria-pressed="false">header too small</button><button type="button" id="slot-0-erase" aria-pressed="false">erased</button></div>
+      <div class="appset-row" role="group" aria-label="What is in application slot 1"><span class="appset-k">slot 1</span><button type="button" id="slot-1-ok" aria-pressed="true">sound</button><button type="button" id="slot-1-bad" aria-pressed="false">header too small</button><button type="button" id="slot-1-erase" aria-pressed="false">erased</button></div>
+      <div class="appset-row" role="group" aria-label="What is in application slot 2"><span class="appset-k">slot 2</span><button type="button" id="slot-2-ok" aria-pressed="true">sound</button><button type="button" id="slot-2-bad" aria-pressed="false">header too small</button><button type="button" id="slot-2-erase" aria-pressed="false">erased</button></div>
+    </div>
+    <div class="apps">
+      <div class="approw" id="arow-0"><span class="approw-a" id="aaddr-0">0x10040000</span><span class="approw-h" id="ahdr-0">version 2 &middot; header 76 &middot; total 0x2000</span><span class="approw-s" id="astat-0">not reached</span></div>
+      <div class="approw" id="arow-1"><span class="approw-a" id="aaddr-1">0x10042000</span><span class="approw-h" id="ahdr-1">version 2 &middot; header 76 &middot; total 0x1000</span><span class="approw-s" id="astat-1">not reached</span></div>
+      <div class="approw" id="arow-2"><span class="approw-a" id="aaddr-2">0x10043000</span><span class="approw-h" id="ahdr-2">version 2 &middot; header 76 &middot; total 0x1800</span><span class="approw-s" id="astat-2">not reached</span></div>
+    </div>
+    <div class="pinstate">
+      <div class="ps"><span class="ps-k">the walk is at</span>
+        <span class="ps-v" id="fw-pos">0x10040000</span></div>
+      <div class="ps"><span class="ps-k">loaded</span>
+        <span class="ps-v" id="fw-found">0</span></div>
+      <div class="ps"><span class="ps-k">reached and skipped</span>
+        <span class="ps-v" id="fw-skip">0</span></div>
+      <div class="ps"><span class="ps-k">never reached</span>
+        <span class="ps-v" id="fw-unseen">3</span></div>
+    </div>
+    <div class="loop-ctl">
+      <button type="button" id="fw-step">Step</button>
+      <button type="button" id="fw-run">Walk it</button>
+      <button type="button" id="fw-reset">Start over</button>
+    </div>
+    <p class="note">
+      <span class="wk is-on" id="ws-idle">Nothing walked yet. The kernel has one number, <b>_sapps</b>, and no idea how many applications are out there.</span>
+      <span class="wk" id="ws-going">Walking. Each entry is believed as far as its length, which is what says where the next one starts.</span>
+      <span class="wk" id="ws-end">Finished, and it finished by running off the end of what was written. Erased flash reads <b>0xFF</b> in every byte, so the version field of the next entry reads <b>0xFFFF</b>, which is not 2. The list ends because the next entry fails to be an entry.</span>
+      <span class="wk" id="ws-early">Finished early, and this is the one worth sitting with. An entry whose version is not 2 ends the walk where it stands, so every application after it is never looked at. Nothing reports this: from the kernel's side it is indistinguishable from having reached the end.</span>
+    </p>
     <div class="seq" role="group" aria-label="Six steps in the kernel's search for applications">
       <button type="button" id="wk-0" aria-pressed="true"><span class="seq-n">1</span><span>start at <b>_sapps</b> <span class="seq-src">main.rs:444</span></span></button>
       <button type="button" id="wk-1" aria-pressed="false"><span class="seq-n">2</span><span>read eight bytes <span class="seq-src">process_loading.rs:307</span></span></button>
@@ -922,7 +1059,37 @@ dfn {
     <span class="instrument-title">Seven lines through one allocation, top to bottom</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a boundary. The left column says which side of the machine owns what is above it.</p>
+    <p class="dothis">Move the two lines that move. They come towards each other out of one gap, and when it is gone both sides start failing &mdash; then click a boundary to read what it is.</p>
+    <div class="alloc">
+      <div class="alloc-bar">
+        <span class="band band-grant" id="bd-grant"></span>
+        <span class="band band-gap" id="bd-gap"></span>
+        <span class="band band-app" id="bd-app"></span>
+        <span class="edge is-moving" id="ed-kbreak"></span>
+        <span class="edge is-moving" id="ed-abreak"></span>
+      </div>
+      <div class="alloc-keys">
+        <span><b>memory_start + memory_len</b> &mdash; the top, fixed</span>
+        <span class="moving"><b>kernel_memory_break</b> &mdash; grants, growing down</span>
+        <span>the gap: <b id="al-gap">1536</b> bytes nobody has claimed</span>
+        <span class="moving"><b>app_break</b> &mdash; the ceiling, growing up</span>
+        <span><b>memory_start</b> &mdash; the bottom, fixed</span>
+      </div>
+    </div>
+    <div class="slider-row">
+      <label for="al-grants">Grants</label>
+      <span class="pinbadge" id="al-gb">256 bytes</span>
+      <span class="grow"><input type="range" id="al-grants" min="0" max="2048" value="256" aria-label="How much the kernel has taken for grants"></span>
+    </div>
+    <div class="slider-row">
+      <label for="al-heap">Heap</label>
+      <span class="pinbadge" id="al-hb">256 bytes</span>
+      <span class="grow"><input type="range" id="al-heap" min="32" max="2048" value="256" aria-label="How far the process has raised its break"></span>
+    </div>
+    <p class="note">
+      <span class="wk is-on" id="al-room">Room either way. Both lines can still move, and neither side has been told anything about the other's appetite.</span>
+      <span class="wk" id="al-full">The gap is gone. The process asking for more heap is refused, and so is a driver asking for its first grant &mdash; and whichever asked first got it. Neither is a bug in anything: it is one allocation deciding another's fate, in a system with no allocator to arbitrate.</span>
+    </p>
     <div class="dbg" role="group" aria-label="The seven named boundaries in a process's memory">
       <button type="button" id="mm-0" aria-pressed="false"><span class="sr-at">kernel</span><span class="sr-ad">memory_start + memory_len</span><span>the top</span></button>
       <button type="button" id="mm-1" aria-pressed="false"><span class="sr-at">kernel</span><span class="sr-ad">kernel_memory_break</span><span>grants grow down</span></button>
@@ -1289,8 +1456,155 @@ argument3: app_break,</pre></button>
   /* ---------------- Figure 2: the header fields ---------------- */
   group("hd-", "hdp-", 5, "", "is-on", "is-off");
 
-  /* ---------------- Figure 3: the walk ---------------- */
-  group("wk-", "wkp-", 6, "", "is-on", "is-off");
+  /* ---------------- Figure 3: the walk, walked ----------------
+     The loop, as process_loading.rs runs it: read eight bytes, believe the
+     version, believe the length, move on by the length. Two things end it and
+     they are not the same thing. Running off the end of what was written is
+     the ordinary one, because erased flash gives a version of 0xFFFF. An entry
+     whose version is wrong ends it too, in the middle, and every application
+     after that one is never looked at -- which the kernel cannot tell apart
+     from having finished.
+
+     A header too small to hold its own five fields is the third case and the
+     one that does not stop anything: that entry is skipped and the walk
+     carries on, because total_size is trusted on its own. */
+  (function () {
+    var SAPPS = 0x10040000;
+    var SIZE = [0x2000, 0x1000, 0x1800];
+    var HEADER = [76, 76, 76];
+    var state = ["ok", "ok", "ok"];
+    var KINDS = ["ok", "bad", "erase"];
+    var at = 0;          /* how many entries the walk has consumed */
+
+    function hex32(v) {
+      var t = (v >>> 0).toString(16).toUpperCase();
+      while (t.length < 8) { t = "0" + t; }
+      return "0x" + t;
+    }
+    /* Where the walk stops, and why, given the three slots. */
+    function outcome() {
+      var i, pos = 0;
+      for (i = 0; i < 3; i++) {
+        if (state[i] === "erase") { return { at: i, why: "end" }; }
+        pos += SIZE[i];
+      }
+      return { at: 3, why: "end" };
+    }
+    function stopsEarly() {
+      var i;
+      for (i = 0; i < 3; i++) {
+        if (state[i] === "erase" && i < 2) { return true; }
+        if (state[i] === "erase") { return false; }
+      }
+      return false;
+    }
+
+    function draw() {
+      var i, pos = SAPPS, found = 0, skipped = 0, unseen = 0, halted = -1, row;
+      for (i = 0; i < 3; i++) {
+        row = document.getElementById("arow-" + i);
+        row.classList.remove("is-at", "is-found", "is-skipped", "is-unseen");
+        document.getElementById("aaddr-" + i).textContent = hex32(pos);
+        document.getElementById("ahdr-" + i).textContent =
+          state[i] === "erase"
+            ? "version 0xFFFF \u00b7 erased"
+            : ("version 2 \u00b7 header " + (state[i] === "bad" ? 8 : HEADER[i])
+               + " \u00b7 total 0x" + SIZE[i].toString(16).toUpperCase());
+        pos += SIZE[i];
+      }
+      /* Replay the loop `at` entries deep. */
+      for (i = 0; i < 3; i++) {
+        row = document.getElementById("arow-" + i);
+        if (halted > -1 || i >= at) {
+          row.classList.add("is-unseen");
+          document.getElementById("astat-" + i).textContent = "not reached";
+          unseen++;
+          continue;
+        }
+        if (state[i] === "erase") {
+          halted = i;
+          row.classList.add("is-unseen");
+          document.getElementById("astat-" + i).textContent = "ends the walk";
+          continue;
+        }
+        if (state[i] === "bad") {
+          row.classList.add("is-skipped");
+          document.getElementById("astat-" + i).textContent = "skipped";
+          skipped++;
+        } else {
+          row.classList.add("is-found");
+          document.getElementById("astat-" + i).textContent = "loaded";
+          found++;
+        }
+      }
+      if (at < 3 && halted === -1) {
+        document.getElementById("arow-" + at).classList.add("is-at");
+        document.getElementById("astat-" + at).textContent = "reading";
+      }
+
+      pos = SAPPS;
+      for (i = 0; i < at && i < 3; i++) {
+        if (state[i] === "erase") { break; }
+        pos += SIZE[i];
+      }
+      document.getElementById("fw-pos").textContent = hex32(pos);
+      document.getElementById("fw-found").textContent = String(found);
+      document.getElementById("fw-skip").textContent = String(skipped);
+      document.getElementById("fw-unseen").textContent = String(unseen);
+
+      var done = at >= 3 || (at > 0 && state[at - 1] === "erase")
+                 || (at < 3 && state[at] === "erase" && at < at);
+      var stopped = false, k;
+      for (k = 0; k < at && k < 3; k++) {
+        if (state[k] === "erase") { stopped = true; }
+      }
+      var say = "idle";
+      if (at === 0) { say = "idle"; }
+      else if (stopped) { say = stopsEarly() ? "early" : "end"; }
+      else if (at >= 3) { say = "end"; }
+      else { say = "going"; }
+      var SAY = ["idle", "going", "end", "early"], j;
+      for (j = 0; j < SAY.length; j++) {
+        document.getElementById("ws-" + SAY[j]).classList.toggle("is-on",
+          SAY[j] === say);
+      }
+      var finished = stopped || at >= 3;
+      document.getElementById("fw-step").disabled = finished;
+      document.getElementById("fw-run").disabled = finished;
+    }
+
+    function setSlot(i, kind) {
+      state[i] = kind;
+      var k;
+      for (k = 0; k < KINDS.length; k++) {
+        document.getElementById("slot-" + i + "-" + KINDS[k])
+          .setAttribute("aria-pressed", KINDS[k] === kind ? "true" : "false");
+      }
+      at = 0;
+      draw();
+    }
+    function wire(i, kind) {
+      document.getElementById("slot-" + i + "-" + kind)
+        .addEventListener("click", function () { setSlot(i, kind); });
+    }
+    var i, k;
+    for (i = 0; i < 3; i++) {
+      for (k = 0; k < KINDS.length; k++) { wire(i, KINDS[k]); }
+    }
+    document.getElementById("fw-step").addEventListener("click", function () {
+      if (at < 3) { at++; draw(); }
+    });
+    document.getElementById("fw-run").addEventListener("click", function () {
+      at = 3;
+      draw();
+    });
+    document.getElementById("fw-reset").addEventListener("click", function () {
+      at = 0;
+      draw();
+    });
+    draw();
+    group("wk-", "wkp-", 6, "", "is-on", "is-off");
+  }());
 
   /* ---------------- Figure 4: the four regions ----------------
      Every number here is read off boards/raspberry_pi_pico_2/layout.ld. The
@@ -1310,10 +1624,54 @@ argument3: app_break,</pre></button>
     });
   }());
 
-  /* ---------------- Figure 6: seven boundaries ----------------
+  /* ---------------- Figure 6: seven boundaries, two of them moving ----------
      Opens on app_break rather than the top, because that is the one boundary
-     the process itself can move and the rest are read against it. */
-  group("mm-", "mmp-", 7, "", "is-on", "is-off");
+     the process itself can move and the rest are read against it.
+
+     The drawing is the other half. Five of the seven are fixed for the life of
+     the process; two move, they move towards each other, and the gap between
+     them is the whole of what either side has left. Chapter 7 is what moves
+     the upper one. */
+  (function () {
+    var TOTAL = 2048;      /* the allocation, in bytes, for the drawing */
+    var grants = 256, heap = 256;
+    var gi = document.getElementById("al-grants");
+    var hi = document.getElementById("al-heap");
+
+    function draw() {
+      var gap = TOTAL - grants - heap;
+      if (gap < 0) { gap = 0; }
+      var gp = 100 * grants / TOTAL;
+      var ap = 100 * heap / TOTAL;
+      var mp = 100 - gp - ap;
+      if (mp < 0) { mp = 0; }
+      document.getElementById("bd-grant")
+        .setAttribute("style", "top:0;height:" + gp.toFixed(2) + "%");
+      document.getElementById("bd-gap")
+        .setAttribute("style", "top:" + gp.toFixed(2) + "%;height:" + mp.toFixed(2) + "%");
+      document.getElementById("bd-app")
+        .setAttribute("style", "top:" + (gp + mp).toFixed(2) + "%;height:" + ap.toFixed(2) + "%");
+      document.getElementById("ed-kbreak")
+        .setAttribute("style", "top:" + gp.toFixed(2) + "%");
+      document.getElementById("ed-abreak")
+        .setAttribute("style", "top:" + (gp + mp).toFixed(2) + "%");
+      document.getElementById("al-gap").textContent = String(gap);
+      document.getElementById("al-gb").textContent = grants + " bytes";
+      document.getElementById("al-hb").textContent = heap + " bytes";
+      document.getElementById("al-room").classList.toggle("is-on", gap > 0);
+      document.getElementById("al-full").classList.toggle("is-on", gap === 0);
+    }
+    gi.addEventListener("input", function () {
+      grants = parseInt(gi.value, 10);
+      draw();
+    });
+    hi.addEventListener("input", function () {
+      heap = parseInt(hi.value, 10);
+      draw();
+    });
+    draw();
+    group("mm-", "mmp-", 7, "", "is-on", "is-off");
+  }());
 
   /* ---------------- Figure 7: the kernel's own structures ---------------- */
   group("ks-", "ksp-", 3, "", "is-on", "is-off");
