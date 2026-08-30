@@ -574,6 +574,48 @@ dfn {
   .vt button { grid-template-columns: 1fr; gap: .1rem; }
 }
 
+/* ---------- The bands drawn: Figure 2 ----------
+   The buttons below name the six bands and the panels say what each one is.
+   This draws them, so that a chapter about one line coming down to meet
+   another has the two lines on the page rather than only in a sentence.
+   The colours are Figure 8's on purpose -- grants are the accent in both, the
+   process's own memory is hot in both, the unclaimed middle is bare surface --
+   because the two figures are the same picture at two scales. */
+.pm {
+  display: flex; flex-direction: column; margin: .3rem 0 .2rem;
+  border: 1px solid var(--rule); border-radius: 2px; overflow: hidden;
+}
+.pmband, .pmrule {
+  display: flex; align-items: center; padding: 0 .6rem; overflow: hidden;
+  white-space: nowrap; flex: 0 0 auto;
+}
+.pmband {
+  font-family: var(--display); font-size: .58rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.pmband.tbl  { height: 1.9rem; background: var(--accent-soft); color: var(--accent);
+  border-bottom: 1px dashed var(--accent); }
+.pmband.gr   { height: 2.6rem; background: var(--accent-soft); color: var(--accent); }
+.pmband.free { height: 4.2rem; background: var(--surface); color: var(--ink-faint); }
+.pmband.own  { height: 5.2rem; background: var(--hot-soft); color: var(--hot); }
+/* The two that move are drawn as rules rather than regions, because a
+   boundary has no height and giving one a band's worth of it would say the
+   opposite of what this figure is for. The name sits between two lines on the
+   page's own ground rather than reversed out of a filled bar: a filled bar
+   reads as a region, and --ground on --rule-strong is 3.5:1, which is under
+   what text needs. */
+.pmrule {
+  height: 1.4rem; background: var(--ground); color: var(--ink);
+  border-top: 2px solid var(--rule-strong);
+  border-bottom: 2px solid var(--rule-strong);
+  font-family: var(--mono); font-size: .68rem;
+}
+.pm .is-lit { outline: 2px solid var(--hot-fill); outline-offset: -2px; }
+.pmband.is-lit { color: var(--ink); }
+.pmend { font-family: var(--mono); font-size: .68rem; color: var(--ink-faint); margin: 0; }
+.pmend.top { margin-bottom: .3rem; }
+.pmend.bot { margin: .3rem 0 1rem; }
+
 /* ---------- Buttons over a readout of three or four cells: Figures 1, 3, 5 and 8 ---------- */
 .costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
 /* These are lines of Rust, so their case is the content. */
@@ -890,7 +932,17 @@ dfn {
     <span class="instrument-title">One process's memory, top down, and which end each thing grows from</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each band. The two in the middle are the ones that move, and they move towards each other.</p>
+    <p class="dothis">Click each band to light it above. Two of the six are lines, not regions &mdash; find which way each of those can move.</p>
+    <p class="pmend top" aria-hidden="true">the top of this process's memory</p>
+    <div class="pm" aria-hidden="true">
+      <div class="pmband tbl is-lit" id="pm-b-0"><span>the grant pointer table</span></div>
+      <div class="pmband gr" id="pm-b-1"><span>the grants themselves</span></div>
+      <div class="pmrule" id="pm-b-2"><span>kernel_memory_break</span></div>
+      <div class="pmband free" id="pm-b-3"><span>nobody's yet</span></div>
+      <div class="pmrule" id="pm-b-4"><span>app_break</span></div>
+      <div class="pmband own" id="pm-b-5"><span>the process's own memory</span></div>
+    </div>
+    <p class="pmend bot" aria-hidden="true">the bottom of it</p>
     <div class="vt" role="group" aria-label="The bands of one process's memory">
       <button type="button" id="bd-0" aria-pressed="true"><span class="vt-at">top</span><span>the grant pointer table</span></button>
       <button type="button" id="bd-1" aria-pressed="false"><span class="vt-at">down</span><span>the grants themselves</span></button>
@@ -1049,13 +1101,18 @@ dfn {
     <span class="instrument-title">Five moments, and the only one that gives memory back</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each step. Three of the five allocate nothing.</p>
+    <p class="dothis">Step through all five in order and watch the running total. Three of the five change nothing, and the fifth is worth comparing with the second.</p>
     <div class="seq" role="group" aria-label="Five moments in the life of one grant">
       <button type="button" id="lf-0" aria-pressed="true"><span class="seq-n">1</span><span>The board boots and the driver is given a grant <span class="seq-src">kernel.rs:246</span></span></button>
       <button type="button" id="lf-1" aria-pressed="false"><span class="seq-n">2</span><span>A process starts and gets a table entry, null <span class="seq-src">process_standard.rs:2102</span></span></button>
       <button type="button" id="lf-2" aria-pressed="false"><span class="seq-n">3</span><span>That process uses the driver for the first time <span class="seq-src">process_standard.rs:1256</span></span></button>
       <button type="button" id="lf-3" aria-pressed="false"><span class="seq-n">4</span><span>It uses it again, and again <span class="seq-src">grant.rs:1373</span></span></button>
       <button type="button" id="lf-4" aria-pressed="false"><span class="seq-n">5</span><span>The process restarts <span class="seq-src">process_standard.rs:2460</span></span></button>
+    </div>
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">its table entry</span><span class="costcell-v" id="lf-tbl">no process yet</span></div>
+      <div class="costcell"><span class="costcell-k">the grant itself</span><span class="costcell-v" id="lf-gr">no process yet</span></div>
+      <div class="costcell"><span class="costcell-k">the running total</span><span class="costcell-v" id="lf-tot">0 bytes</span></div>
     </div>
     <div class="dbgsay">
       <p class="dbgp is-on" id="lfp-0">No memory anywhere. The kernel hands out a grant number, counts up by one, and the driver keeps that number for the life of the board. Once the first process is created the count is finalised, and asking for another grant panics outright, because every process's table was sized from that count.</p>
@@ -1438,8 +1495,16 @@ dfn {
     draw();
   }());
 
-  /* ---------------- Figure 2: the bands of process memory ---------------- */
-  group("bd-", "bdp-", 6, "", "is-on", "is-off");
+  /* ---------------- Figure 2: the bands of process memory ----------------
+     The strip is drawn in the markup and only lit from here. Its six pieces
+     are in the same order as the six buttons, so which one to light is the
+     index and nothing else has to be known about either. */
+  group("bd-", "bdp-", 6, "", "is-on", "is-off", function (k) {
+    var i;
+    for (i = 0; i < 6; i++) {
+      document.getElementById("pm-b-" + i).classList.toggle("is-lit", i === k);
+    }
+  });
 
   /* ---------------- Figure 3: the grant sizer ----------------
      `EnteredGrantKernelManagedLayout::grant_size`, kernel/src/grant.rs:376,
@@ -1542,8 +1607,29 @@ dfn {
   /* ---------------- Figure 4: the slots nobody fills ---------------- */
   group("ws-", "wsp-", 3, "", "is-on", "is-off");
 
-  /* ---------------- Figure 5: a grant's life ---------------- */
-  group("lf-", "lfp-", 5, "", "is-on", "is-off");
+  /* ---------------- Figure 5: a grant's life ----------------
+     The readout is a running total rather than a per-step cost, because the
+     step that matters is the fifth and what makes it interesting is where it
+     lands: back at the second, not at the first. The table is part of
+     `initial_kernel_memory_size`, which restart recomputes and subtracts all
+     over again (process_standard.rs:2430), so it survives; the entries in it
+     are nulled on the way out (process_standard.rs:821), so the grant does
+     not. Eight and seventy-six are Figure 3's numbers for the console. */
+  (function () {
+    var COST = [
+      ["no process yet", "no process yet", "0 bytes"],
+      ["8 bytes, null",  "not cut yet",    "8 bytes"],
+      ["8 bytes",        "76 bytes",       "84 bytes"],
+      ["8 bytes",        "76 bytes",       "84 bytes"],
+      ["8 bytes, null",  "handed back",    "8 bytes"]
+    ];
+    group("lf-", "lfp-", 5, "", "is-on", "is-off", function (k) {
+      var cell = ["lf-tbl", "lf-gr", "lf-tot"], i;
+      for (i = 0; i < cell.length; i++) {
+        document.getElementById(cell[i]).textContent = COST[k][i];
+      }
+    });
+  }());
 
   /* ---------------- Figure 6: from two numbers to a reference ---------------- */
   group("ch-", "chp-", 4, "", "is-on", "is-off");

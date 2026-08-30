@@ -236,6 +236,33 @@ chk("and every process carries all of it",
 REG["bd-3"].fire("click");
 chk("the gap belongs to whoever asks first",
     REG["bdp-3"].textContent.indexOf("whichever asks first gets it") > -1, true);
+(function () {
+  // The strip is the half of this figure nothing else can see, so these check
+  // that clicking a band lights that piece and only that piece. A picture wired
+  // to the wrong index still renders, and renders a lie.
+  var i, k, bad = [];
+  for (k = 0; k < 6; k++) {
+    REG["bd-" + k].fire("click");
+    for (i = 0; i < 6; i++) {
+      if (REG["pm-b-" + i].classList.contains("is-lit") !== (i === k)) {
+        bad.push("band " + k + " lights piece " + i);
+      }
+    }
+  }
+  chk("each band lights its own piece of the strip, and no other", bad.join("; "), "");
+}());
+// Two of the six are boundaries and four are regions. Drawing a boundary as a
+// region would say a line has a size, which is the one thing this figure is
+// arguing against.
+chk("the two that move are drawn as rules, not bands",
+    REG["pm-b-2"].classList.contains("pmrule")
+      && REG["pm-b-4"].classList.contains("pmrule"), true);
+chk("and the four regions are drawn as bands",
+    REG["pm-b-0"].classList.contains("pmband")
+      && REG["pm-b-1"].classList.contains("pmband")
+      && REG["pm-b-3"].classList.contains("pmband")
+      && REG["pm-b-5"].classList.contains("pmband"), true);
+REG["bd-3"].fire("click");
 chk("the note names which half is eager and which is lazy",
     REG["bd-note"].textContent.indexOf("the table at the top is eager and the grants under it are lazy") > -1, true);
 
@@ -404,7 +431,45 @@ chk("a restart is the only refund",
 // is where the exception lives, and the two have to agree.
 chk("and it says which chapter 7 claim it qualifies",
     REG["lfp-4"].textContent.indexOf("could never lower comes down with them") > -1, true);
+(function () {
+  // The running total is the figure's argument now, so assert the whole
+  // sequence rather than one step of it. Restating "84" would pass on a
+  // readout stuck at 84; the shape below only holds if three steps are free,
+  // one costs, and the last refunds part of it.
+  var WANT = ["0 bytes", "8 bytes", "84 bytes", "84 bytes", "8 bytes"];
+  var i, got = [];
+  for (i = 0; i < 5; i++) {
+    REG["lf-" + i].fire("click");
+    got.push(REG["lf-tot"].textContent);
+  }
+  chk("the running total over the five moments", got.join(" / "), WANT.join(" / "));
+  // The figure's own claim, counted rather than restated: a moment allocates
+  // nothing if it leaves the total no higher than the moment before it, and
+  // the first has nothing before it to be higher than.
+  var free = 0;
+  for (i = 0; i < 5; i++) {
+    if (i === 0 ? parseInt(got[i], 10) === 0
+                : parseInt(got[i], 10) <= parseInt(got[i - 1], 10)) { free++; }
+  }
+  chk("three of the five allocate nothing", free, 3);
+  // The point of the fifth: it hands back the grant and not the table entry,
+  // so it lands on the second's number rather than the first's.
+  chk("a restart lands back at the table entry, not at nothing",
+      got[4] === got[1] && got[4] !== got[0], true);
+  REG["lf-2"].fire("click");
+  chk("the grant is Figure 3's seventy-six while it exists",
+      REG["lf-gr"].textContent, "76 bytes");
+  REG["lf-4"].fire("click");
+  chk("and after a restart it is gone", REG["lf-gr"].textContent, "handed back");
+  chk("while the table entry is still there, null again",
+      REG["lf-tbl"].textContent, "8 bytes, null");
+  REG["lf-1"].fire("click");
+  chk("which is exactly what it was when the process started",
+      REG["lf-tbl"].textContent, "8 bytes, null");
+}());
 REG["lf-0"].fire("click");
+chk("and the readout goes back to no process yet",
+    REG["lf-tot"].textContent, "0 bytes");
 
 // ---- Figure 6: two numbers to a mutable reference ----
 walk("ch-", "chp-", 4, "figure 6");
