@@ -1395,6 +1395,17 @@ dfn {
 /* One hex digit chooses who answers. The chapter's central mechanism. */
 .decode { display: flex; flex-direction: column; gap: .9rem; }
 .digits { display: flex; gap: .3rem; flex-wrap: wrap; }
+/* Sixteen answers, one showing. They are markup so the figure still says
+   something with no scripting; the script only chooses. */
+.dsay { display: none; margin: 0; }
+.dsay.is-on { display: block; }
+/* Eighteen stripe details, one showing. Markup, so the map still reads with
+   no scripting; the script only chooses which paragraph is up. */
+.mdet { display: none; margin: 0; }
+/* Twelve lines behind four rows, one set showing. */
+.bhl { display: none; margin: 0; }
+.bhl.is-on { display: block; }
+.mdet.is-on { display: block; }
 .digit {
   font: 600 1.05rem/1 var(--mono);
   /* The base button rule uppercases, and the `font` shorthand does not reset
@@ -2607,19 +2618,19 @@ dfn {
   <div class="instrument-body">
     <p class="dothis">Click a first digit. See who claims the address, and who does not.</p>
     <div class="decode">
-      <div class="digits" id="digits" role="group" aria-label="First hexadecimal digit of the address"></div>
+      <div class="digits" id="digits" role="group" aria-label="First hexadecimal digit of the address"><button type="button" class="digit" id="digit-0" data-d="0" aria-label="addresses beginning 0">0x0</button><button type="button" class="digit" id="digit-1" data-d="1" aria-label="addresses beginning 1">0x1</button><button type="button" class="digit" id="digit-2" data-d="2" aria-label="addresses beginning 2">0x2</button><button type="button" class="digit dead" id="digit-3" data-d="3" aria-label="addresses beginning 3">0x3</button><button type="button" class="digit" id="digit-4" data-d="4" aria-label="addresses beginning 4">0x4</button><button type="button" class="digit" id="digit-5" data-d="5" aria-label="addresses beginning 5">0x5</button><button type="button" class="digit dead" id="digit-6" data-d="6" aria-label="addresses beginning 6">0x6</button><button type="button" class="digit dead" id="digit-7" data-d="7" aria-label="addresses beginning 7">0x7</button><button type="button" class="digit dead" id="digit-8" data-d="8" aria-label="addresses beginning 8">0x8</button><button type="button" class="digit dead" id="digit-9" data-d="9" aria-label="addresses beginning 9">0x9</button><button type="button" class="digit dead" id="digit-A" data-d="A" aria-label="addresses beginning A">0xA</button><button type="button" class="digit dead" id="digit-B" data-d="B" aria-label="addresses beginning B">0xB</button><button type="button" class="digit dead" id="digit-C" data-d="C" aria-label="addresses beginning C">0xC</button><button type="button" class="digit on" id="digit-D" data-d="D" aria-label="addresses beginning D">0xD</button><button type="button" class="digit" id="digit-E" data-d="E" aria-label="addresses beginning E">0xE</button><button type="button" class="digit dead" id="digit-F" data-d="F" aria-label="addresses beginning F">0xF</button></div>
       <div class="decode-out">
         <span class="d-small">address</span>
         <span class="addr" id="decode-addr">0xD0000018</span>
       </div>
-      <div class="decode-said prose"><strong id="decode-who"></strong> <span id="decode-says"></span></div>
+      <div class="decode-said prose"><p class="dsay" id="dsay-0"><strong>ROM answers.</strong> Built-in code, burned in at the factory. This is where both processors start looking when power arrives.</p><p class="dsay" id="dsay-1"><strong><dfn>Flash</dfn> answers.</strong> Your program. The kernel and the applications both live here, and the chip runs code straight out of it.</p><p class="dsay" id="dsay-2"><strong><dfn>SRAM</dfn> answers.</strong> The only general read/write memory. Variables, stacks and heaps. Holds whatever was there at power-on until something writes it.</p><p class="dsay" id="dsay-3"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay" id="dsay-4"><strong>Peripherals answers.</strong> The big shared group: clocks, resets, serial ports, timers, and the blocks that configure the pins electrically.</p><p class="dsay" id="dsay-5"><strong>Peripherals answers.</strong> A second peripheral group on a faster internal connection, used by the blocks that move a lot of data.</p><p class="dsay" id="dsay-6"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay" id="dsay-7"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay" id="dsay-8"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay" id="dsay-9"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay" id="dsay-A"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay" id="dsay-B"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay" id="dsay-C"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p><p class="dsay is-on" id="dsay-D"><strong><dfn>SIO</dfn> answers.</strong> The block that owns the output state of every pin. This is the one an address that moves a light has to reach.</p><p class="dsay" id="dsay-E"><strong>Processor's own registers answers.</strong> Controls belonging to the processor itself rather than to the chip around it.</p><p class="dsay" id="dsay-F"><strong>Nobody answers.</strong> Nothing is wired to this range. The store raises a fault rather than quietly vanishing.</p></div>
     </div>
   </div>
   <div class="instrument-note">Notice how many digits belong to nobody. The datasheet is blunt about those: <em>"Unmapped address ranges raise a bus error when accessed."</em> This space is mostly empty, with a few occupied stripes. That is the opposite of how a laptop's memory feels.</div>
 </figure>
 
 <section class="col">
-  <p>So the <code>D</code> in <code class="addr">0xD0000018</code> is not decoration. It is the routing decision, and it sends the store to a block named <dfn>SIO</dfn>.</p>
+  <p>So the <code>D</code> in <code class="addr">0xD0000018</code> is not decoration. It is the routing decision, and it sends the store to the block named SIO.</p>
   <p>SIO stands for single-cycle input/output. It is the peripheral that owns the output state of every pin, which is why an address that changes a light starts with <code>D</code> and not something else.</p>
 </section>
 
@@ -2630,8 +2641,8 @@ dfn {
   </div>
   <div class="instrument-body">
     <p class="dothis">Click any stripe to see what is really there, and where that fact was checked.</p>
-    <div class="map" id="map"></div>
-    <div class="map-detail prose" id="map-detail"></div>
+    <div class="map" id="map"><button type="button" class="map-row" id="mr-rom" aria-pressed="false"><span class="map-addr">0x00000000</span><span class="map-name">ROM</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row" id="mr-flash-boot-block" aria-pressed="false"><span class="map-addr">0x10000000</span><span class="map-name">Flash &mdash; boot block</span><span class="map-size">1 kB reserved</span></button><button type="button" class="map-row" id="mr-flash-tock-kernel" aria-pressed="false"><span class="map-addr">0x10000400</span><span class="map-name">Flash &mdash; Tock kernel</span><span class="map-size">255 kB</span></button><button type="button" class="map-row" id="mr-flash-applications" aria-pressed="false"><span class="map-addr">0x10040000</span><span class="map-name">Flash &mdash; applications</span><span class="map-size">256 kB</span></button><button type="button" class="map-row" id="mr-sram" aria-pressed="false"><span class="map-addr">0x20000000</span><span class="map-name">SRAM</span><span class="map-size">520 kB</span></button><button type="button" class="map-row is-hot" id="mr-clocks" aria-pressed="false"><span class="map-addr">0x40010000</span><span class="map-name">CLOCKS</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-resets" aria-pressed="false"><span class="map-addr">0x40020000</span><span class="map-name">RESETS</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-io-bank0" aria-pressed="false"><span class="map-addr">0x40028000</span><span class="map-name">IO_BANK0</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-pads-bank0" aria-pressed="false"><span class="map-addr">0x40038000</span><span class="map-name">PADS_BANK0</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-xosc" aria-pressed="false"><span class="map-addr">0x40048000</span><span class="map-name">XOSC</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-pll-sys" aria-pressed="false"><span class="map-addr">0x40050000</span><span class="map-name">PLL_SYS</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-pll-usb" aria-pressed="false"><span class="map-addr">0x40058000</span><span class="map-name">PLL_USB</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-uart0" aria-pressed="false"><span class="map-addr">0x40070000</span><span class="map-name">UART0</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-uart1" aria-pressed="false"><span class="map-addr">0x40078000</span><span class="map-name">UART1</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-timer0" aria-pressed="false"><span class="map-addr">0x400B0000</span><span class="map-name">TIMER0</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-ticks" aria-pressed="false"><span class="map-addr">0x40108000</span><span class="map-name">TICKS</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-sio" aria-pressed="true"><span class="map-addr">0xD0000000</span><span class="map-name">SIO</span><span class="map-size">&mdash;</span></button><button type="button" class="map-row is-hot" id="mr-processor-s-own-registers" aria-pressed="false"><span class="map-addr">0xE0000000</span><span class="map-name">Processor's own registers</span><span class="map-size">&mdash;</span></button></div>
+    <div class="map-detail prose" id="map-detail"><p class="mdet" id="mdet-rom">Code etched into the chip at manufacture and unchangeable afterwards. The datasheet puts it plainly: <q>located at address zero, which is the starting point for both Arm processors when the device is reset.</q> Chapter 2 is largely about what this code does before yours runs.</p><p class="mdet" id="mdet-flash-boot-block">Two things share this space: a 28-byte header declaring the image runnable, and a 256-byte loader that sets up flash so code can run straight out of it. Chapter 2 opens them up.</p><p class="mdet" id="mdet-flash-tock-kernel">The kernel itself. Code, so it never changes at runtime. The header in the boot block points here, which is how the chip finds it.</p><p class="mdet" id="mdet-flash-applications">Your compiled applications, one after another. Note that they sit in a different part of flash from the kernel; that separation is where isolation starts.</p><p class="mdet" id="mdet-sram">The general read/write memory: kernel data and every application's memory come out of this one block. Look hard at the size, because for the whole life of this port so far it was wrong. The RP2350 has 520 kB, but Tock's linker script for this board declared 264 kB &mdash; a number inherited unchanged from the RP2040 Pico board, where 264 kB was correct. Half the chip's memory was never handed out to anything: nothing prevented the kernel touching it, the port simply did not know it was there. It was corrected to 520 kB on 20 August 2026, three days after the commit this chapter is pinned to. That makes this stripe the one place on the page reporting a tree newer than the pin. A linker script is a claim about the hardware, and claims can be wrong.</p><p class="mdet hot" id="mdet-clocks">Decides how fast the chip runs. Get this wrong early in boot and nothing else works.</p><p class="mdet hot" id="mdet-resets">Holds other blocks switched off. Most of the chip is dead until something clears its bit here.</p><p class="mdet hot" id="mdet-io-bank0">Decides what each pin is for. A pin can be plain output, or a serial line, or several other things; this picks which.</p><p class="mdet hot" id="mdet-pads-bank0">The electrical side of each pin: how hard it drives, and whether it is gently pulled high or low when nothing else is driving it.</p><p class="mdet hot" id="mdet-xosc">The crystal oscillator: a real quartz crystal on the board, and the most accurate timing reference the chip has. It is not the only one. Two less accurate oscillators sit inside the chip, and at reset the processors are running from one of those.</p><p class="mdet hot" id="mdet-pll-sys">Multiplies the crystal's frequency up to the speed the processors run at, as high as 150 MHz.</p><p class="mdet hot" id="mdet-pll-usb">A second multiplier, fixed at 48 MHz for USB, so USB timing survives retuning the main clock.</p><p class="mdet hot" id="mdet-uart0">The serial port Tock's console uses. Kernel messages left the chip one byte at a time through a register in here.</p><p class="mdet hot" id="mdet-uart1">A second, identical serial port. Same layout, different base &mdash; the pattern from Figure 12.</p><p class="mdet hot" id="mdet-timer0">A counter that never stops, ticking once a microsecond. Reading it gives the current time, which has nothing to do with anything you wrote.</p><p class="mdet hot" id="mdet-ticks">Divides a clock down to the slower rates the timers and the watchdog need.</p><p class="mdet hot is-on" id="mdet-sio">The pin-driving block, and the one this chapter is about. The datasheet calls it <q>Core-local Peripherals</q> and says each processor gets its own connection to it. gpio_out_set sits 0x018 past this base, which is where 0xD0000018 comes from.</p><p class="mdet hot" id="mdet-processor-s-own-registers">Controls belonging to the processor itself rather than to the chip around it. What sits here is the memory protection unit that later chapters use to fence applications in, the processor's own timer, and the controller that decides what it stops for. This is the odd entry in the list. The datasheet notes these registers are &ldquo;internal to the processors, not accessed through the system bus&rdquo;, so a store here is not routed by the fabric at all. Each processor sees a different set behind the same address.</p></div>
   </div>
   <div class="instrument-note">Notice the first digit of every address in that list, then compare it with Figure&nbsp;5. Nothing here is arbitrary: the stripes start where they do <em>because</em> that is the digit the decode reads.</div>
 </figure>
@@ -2730,7 +2741,7 @@ dfn {
         </span>
       </span>
     </div>
-    <p class="figcue">Four of these eight are for the high half: GPIO 32 to 47, plus the pins that talk to the <dfn>flash</dfn> chip and the USB socket. Each one sits directly after its twin. Take them away and watch what the offsets do.</p>
+    <p class="figcue">Four of these eight are for the high half: GPIO 32 to 47, plus the pins that talk to the flash chip and the USB socket. Each one sits directly after its twin. Take them away and watch what the offsets do.</p>
     <div class="controls">
       <button type="button" id="rg-twins" aria-pressed="false">
         <span class="tw-off">Take the four away</span>
@@ -2852,10 +2863,10 @@ dfn {
       <span class="grow"><input type="range" id="pin" min="0" max="31" value="25" aria-label="GPIO pin number"></span>
     </div>
     <div class="bitwrap">
-      <div class="bitgrid" id="bits-hi"></div>
-      <div class="bitlabels" id="labels-hi"></div>
-      <div class="bitgrid" id="bits-lo" style="margin-top:.7rem"></div>
-      <div class="bitlabels" id="labels-lo"></div>
+      <div class="bitgrid" id="bits-hi"><div class="bit nopin" data-bit="31">0</div><div class="bit nopin" data-bit="30">0</div><div class="bit" data-bit="29">0</div><div class="bit" data-bit="28">0</div><div class="bit" data-bit="27">0</div><div class="bit" data-bit="26">0</div><div class="bit" data-bit="25">0</div><div class="bit" data-bit="24">0</div><div class="bit" data-bit="23">0</div><div class="bit" data-bit="22">0</div><div class="bit" data-bit="21">0</div><div class="bit" data-bit="20">0</div><div class="bit" data-bit="19">0</div><div class="bit" data-bit="18">0</div><div class="bit" data-bit="17">0</div><div class="bit" data-bit="16">0</div></div>
+      <div class="bitlabels" id="labels-hi"><div class="bitlabel nopin">31</div><div class="bitlabel nopin">30</div><div class="bitlabel">29</div><div class="bitlabel">28</div><div class="bitlabel">27</div><div class="bitlabel">26</div><div class="bitlabel">25</div><div class="bitlabel">24</div><div class="bitlabel">23</div><div class="bitlabel">22</div><div class="bitlabel">21</div><div class="bitlabel">20</div><div class="bitlabel">19</div><div class="bitlabel">18</div><div class="bitlabel">17</div><div class="bitlabel">16</div></div>
+      <div class="bitgrid" id="bits-lo" style="margin-top:.7rem"><div class="bit" data-bit="15">0</div><div class="bit" data-bit="14">0</div><div class="bit" data-bit="13">0</div><div class="bit" data-bit="12">0</div><div class="bit" data-bit="11">0</div><div class="bit" data-bit="10">0</div><div class="bit" data-bit="9">0</div><div class="bit" data-bit="8">0</div><div class="bit" data-bit="7">0</div><div class="bit" data-bit="6">0</div><div class="bit" data-bit="5">0</div><div class="bit" data-bit="4">0</div><div class="bit" data-bit="3">0</div><div class="bit" data-bit="2">0</div><div class="bit" data-bit="1">0</div><div class="bit" data-bit="0">0</div></div>
+      <div class="bitlabels" id="labels-lo"><div class="bitlabel">15</div><div class="bitlabel">14</div><div class="bitlabel">13</div><div class="bitlabel">12</div><div class="bitlabel">11</div><div class="bitlabel">10</div><div class="bitlabel">9</div><div class="bitlabel">8</div><div class="bitlabel">7</div><div class="bitlabel">6</div><div class="bitlabel">5</div><div class="bitlabel">4</div><div class="bitlabel">3</div><div class="bitlabel">2</div><div class="bitlabel">1</div><div class="bitlabel">0</div></div>
     </div>
     <div class="readout" aria-live="polite">
       <div class="readout-cell">
@@ -3075,18 +3086,18 @@ dfn {
   </div>
   <div class="instrument-body">
     <p class="dothis">Click each of the four and compare the two panels. They are not the same shape.</p>
-    <div class="map" id="beh"></div>
+    <div class="map" id="beh"><button type="button" class="map-row is-hot" id="bh-sram" aria-pressed="false"><span class="map-addr">0x20000100</span><span class="map-name">SRAM</span><span class="map-size">ordinary memory</span></button><button type="button" class="map-row is-hot" id="bh-out" aria-pressed="false"><span class="map-addr">0xD0000010</span><span class="map-name">gpio_out</span><span class="map-size">storage and effect</span></button><button type="button" class="map-row is-hot" id="bh-set" aria-pressed="true"><span class="map-addr">0xD0000018</span><span class="map-name">gpio_out_set</span><span class="map-size">an instruction, not a slot</span></button><button type="button" class="map-row is-hot" id="bh-in" aria-pressed="false"><span class="map-addr">0xD0000004</span><span class="map-name">gpio_in</span><span class="map-size">the outside world</span></button></div>
     <div class="compare">
       <div class="panel">
         <h3>Storing there does</h3>
-        <div class="panel-line prose" id="beh-w"></div>
+        <div class="panel-line prose" id="beh-w"><p class="bhl" id="bhw-sram">Keeps your value. Nothing else happens.</p><p class="bhl" id="bhw-out">Keeps your value, and moves every pin in the bank to match it.</p><p class="bhl is-on" id="bhw-set">Turns on the bits you set and leaves the rest alone. The hardware performs gpio_out |= value, then discards your value.</p><p class="bhl" id="bhw-in">Nothing. It is not yours to set.</p></div>
       </div>
       <div class="panel hot">
         <h3>Reading it gives</h3>
-        <div class="panel-line prose" id="beh-r"></div>
+        <div class="panel-line prose" id="beh-r"><p class="bhl" id="bhr-sram">Exactly what you stored.</p><p class="bhl" id="bhr-out">The last value stored &mdash; not what the pins are actually doing.</p><p class="bhl is-on" id="bhr-set">Not promised. The datasheet types it write-only.</p><p class="bhl" id="bhr-in">The voltage actually present on the pins, right now.</p></div>
       </div>
     </div>
-    <div class="map-detail prose" id="beh-d"></div>
+    <div class="map-detail prose" id="beh-d"><p class="bhl" id="bhd-sram">The only one of the four that behaves like a variable. Store it, come back an hour later, read the same thing.</p><p class="bhl" id="bhd-out">Genuine storage that also acts. The datasheet is careful here: <q>Reading back gives the last value written, NOT the input value from the pins.</q> So a read tells you your own intent, not the world.</p><p class="bhl is-on" id="bhd-set">Its whole description is an operation on a different register: GPIO_OUT |= wdata. Store a value with no bits set and nothing happens at all &mdash; which no storage location would ever do.</p><p class="bhl" id="bhd-in">Typed read-only. Read it twice with no code in between and you can get two different answers, because a button was pressed. Figure 14 is about what a compiler does to code that reads an address like this one.</p></div>
   </div>
   <div class="instrument-note">Notice that only the first behaves the way a variable does. One address in four. The other three are ordinary programming instincts quietly failing.</div>
 </figure>
@@ -3119,7 +3130,7 @@ dfn {
       <p class="brp brp-no" id="brp-3"><span class="brp-k">run it</span>store <code class="addr">0x02000000</code> to <code class="addr">0xD0000018</code>, then read <code class="addr">0xD0000018</code><span class="brp-k">what comes back</span>No promise of anything. The datasheet types that register write-only: your value was used as an argument to an OR and discarded, and nothing was kept for you to come back to. <span class="brp-src">Checked against RP2350 datasheet &sect;3.1 register tables.</span></p>
       <p class="brp brp-no" id="brp-4"><span class="brp-k">run it</span>read UART0's data register at <code class="addr">0x40070000</code><span class="brp-k">what comes back</span>A byte &mdash; and the read is what removes it. Arriving data waits in the port's receive queue, the datasheet says, <q>until read out by the CPU</q>, so the next read hands you the next byte rather than that one again. Looking did not observe the house; it took something out of it. <span class="brp-src">Checked against RP2350 datasheet &sect;12.1.2.5.</span></p>
       <p class="brp brp-no" id="brp-5"><span class="brp-k">run it</span>read <code>gpio_in</code> at <code class="addr">0xD0000004</code><span class="brp-k">what comes back</span>The voltage on the pins at this instant, put there by the outside world. Nothing you wrote is in it, and the datasheet types the register read-only. <span class="brp-src">Checked against RP2350 datasheet, Table&nbsp;19.</span></p>
-      <p class="brp brp-no" id="brp-6"><span class="brp-k">run it</span>store <code>1</code> to <code class="addr">0x60000000</code><span class="brp-k">what comes back</span>A fault. Nothing is wired to that range, so no block claims the store and the chip raises a bus error instead of quietly accepting it. <span class="brp-src">Checked against RP2350 datasheet &sect;2.2: <q>Unmapped address ranges raise a bus error when accessed.</q></span></p>
+      <p class="brp brp-no" id="brp-6"><span class="brp-k">run it</span>store <code>1</code> to <code class="addr">0x60000000</code><span class="brp-k">what comes back</span>A fault. Nothing is wired to that range, so no block claims the store, and the <dfn>bus</dfn> that carries it raises an error rather than quietly accepting it. <span class="brp-src">Checked against RP2350 datasheet &sect;2.2: <q>Unmapped address ranges raise a bus error when accessed.</q></span></p>
     </div>
   </div>
 </div>
@@ -3718,6 +3729,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <dt>address</dt><dd>A number naming one location. The processor puts it on wires and the chip decides who answers.</dd>
     <dt>atomic</dt><dd>An operation nothing can observe or interrupt halfway. A single store to <code>gpio_out_set</code> is atomic; read-change-write is not.</dd>
     <dt>bank</dt><dd>A group of pins driven together by one register, one bit each.</dd>
+    <dt>bus</dt><dd>the wiring inside the chip that carries an address to whichever block claims it, and raises an error when none does</dd>
     <dt>base address</dt><dd>The address a peripheral's block of registers starts at. SIO's is <code class="addr">0xD0000000</code>.</dd>
     <dt>bit</dt><dd>A single 0 or 1.</dd>
     <dt>byte</dt><dd>Eight bits. The unit addresses count in, which is why 32-bit registers sit 4 apart.</dd>
@@ -3740,6 +3752,7 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
     <dt>pointer</dt><dd>A number, held like any other, that is meant to be used as an address. Following it means storing to or reading from wherever it points.</dd>
     <dt>register</dt><dd>A fixed-width slot of hardware at an address. Also, confusingly, a scratch slot inside the processor.</dd>
     <dt>SIO</dt><dd>Single-cycle input/output, at <code class="addr">0xD0000000</code>. The peripheral owning the output state of every pin.</dd>
+    <dt>SRAM</dt><dd>the chip's general read/write memory: the one region where an ordinary variable can live</dd>
     <dt>store</dt><dd>The instruction that puts a number at an address.</dd>
     <dt>voltage</dt><dd>Electrical pressure. Here it is 3.3&nbsp;V or 0&nbsp;V, and nothing in between.</dd>
     <dt>volatile</dt><dd>A promise extracted from the compiler: perform every access, as written, in order, and invent none.</dd>
@@ -3792,144 +3805,56 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 
   /* ---------------- Figure 5: the first digit decides ---------------- */
 
-  var SEGMENTS = [
-    { d: "0", who: "ROM",
-      says: "Built-in code, burned in at the factory. This is where both processors start looking when power arrives." },
-    { d: "1", who: "Flash",
-      says: "Your program. The kernel and the applications both live here, and the chip runs code straight out of it." },
-    { d: "2", who: "SRAM",
-      says: "The only general read/write memory. Variables, stacks and heaps. Holds whatever was there at power-on until something writes it." },
-    { d: "3", who: null, says: null },
-    { d: "4", who: "Peripherals",
-      says: "The big shared group: clocks, resets, serial ports, timers, and the blocks that configure the pins electrically." },
-    { d: "5", who: "Peripherals",
-      says: "A second peripheral group on a faster internal connection, used by the blocks that move a lot of data." },
-    { d: "6", who: null, says: null },
-    { d: "7", who: null, says: null },
-    { d: "8", who: null, says: null },
-    { d: "9", who: null, says: null },
-    { d: "A", who: null, says: null },
-    { d: "B", who: null, says: null },
-    { d: "C", who: null, says: null },
-    { d: "D", who: "SIO",
-      says: "The block that owns the output state of every pin. This is the one an address that moves a light has to reach." },
-    { d: "E", who: "Processor's own registers",
-      says: "Controls belonging to the processor core itself rather than to the chip around it." },
-    { d: "F", who: null, says: null }
-  ];
+  /* ---------------- Figure 5: which digit answers ----------------
+     Sixteen buttons and sixteen sentences, all of them in the markup, because
+     a reader with scripting off was getting an empty row and a blank line
+     where the answer goes. The script chooses among them and nothing more. */
+  (function () {
+    var DIGITS = "0123456789ABCDEF".split("");
+    var addr = document.getElementById("decode-addr");
 
-  var digitsEl = document.getElementById("digits");
-  var decodeAddr = document.getElementById("decode-addr");
-  var decodeWho = document.getElementById("decode-who");
-  var decodeSays = document.getElementById("decode-says");
-
-  function pickDigit(seg) {
-    for (var i = 0; i < digitButtons.length; i++) {
-      digitButtons[i].classList.toggle("on", SEGMENTS[i].d === seg.d);
+    function pick(d) {
+      var i, k;
+      for (i = 0; i < DIGITS.length; i++) {
+        k = DIGITS[i];
+        document.getElementById("digit-" + k).classList.toggle("on", k === d);
+        document.getElementById("dsay-" + k).classList.toggle("is-on", k === d);
+      }
+      addr.textContent = "0x" + d + "0000018";
     }
-    decodeAddr.textContent = "0x" + seg.d + "0000018";
-    if (seg.who) {
-      decodeWho.textContent = seg.who + " answers.";
-      decodeSays.textContent = seg.says;
-    } else {
-      decodeWho.textContent = "Nobody answers.";
-      decodeSays.textContent = "Nothing is wired to this range. The store " +
-        "raises a fault rather than quietly vanishing.";
+    function wire(d) {
+      document.getElementById("digit-" + d)
+        .addEventListener("click", function () { pick(d); });
     }
-  }
-
-  var digitButtons = [];
-
-  SEGMENTS.forEach(function (seg) {
-    var b = document.createElement("button");
-    b.className = "digit" + (seg.who ? "" : " dead");
-    b.type = "button";
-    b.setAttribute("data-d", seg.d);
-    b.textContent = "0x" + seg.d;
-    b.setAttribute("aria-label", "addresses beginning " + seg.d);
-    b.addEventListener("click", function () { pickDigit(seg); });
-    digitButtons.push(b);
-    digitsEl.appendChild(b);
-  });
-  pickDigit(SEGMENTS[13]);
+    var i;
+    for (i = 0; i < DIGITS.length; i++) { wire(DIGITS[i]); }
+    pick("D");
+  }());
 
   /* ---------------- Figure 6: the address map ---------------- */
 
-  var REGIONS = [
-    { addr: "0x00000000", name: "ROM", size: "\u2014", hot: false,
-      detail: "Code etched into the chip at manufacture and unchangeable afterwards. The datasheet: it is \u201Clocated at address zero, which is the starting point for both Arm processors when the device is reset.\u201D Chapter 2 is largely about what this code does before yours runs." },
-    { addr: "0x10000000", name: "Flash \u2014 boot block", size: "1 kB reserved", hot: false,
-      detail: "Two things share this space: a 28-byte header declaring the image runnable, and a 256-byte loader that sets up flash so code can run straight out of it. Chapter 2 opens them up." },
-    { addr: "0x10000400", name: "Flash \u2014 Tock kernel", size: "255 kB", hot: false,
-      detail: "The kernel itself. Code, so it never changes at runtime. The header in the boot block points here, which is how the chip finds it." },
-    { addr: "0x10040000", name: "Flash \u2014 applications", size: "256 kB", hot: false,
-      detail: "Your compiled applications, one after another. Note that they sit in a different part of flash from the kernel; that separation is where isolation starts." },
-    { addr: "0x20000000", name: "SRAM", size: "520 kB", hot: false,
-      detail: "The general read/write memory: kernel data and every application's memory come out of this one block. Look hard at the size, because for the whole life of this port so far it was wrong. The RP2350 has 520 kB, but Tock's linker script for this board declared 264 kB \u2014 a number inherited unchanged from the RP2040 Pico board, where 264 kB was correct. Half the chip's memory was never handed out to anything: nothing prevented the kernel touching it, the port simply did not know it was there. It was corrected to 520 kB on 20 August 2026, three days after the commit this chapter is pinned to, which makes this stripe the one place on the page reporting a tree newer than the pin. A linker script is a claim about the hardware, and claims can be wrong." },
-    { addr: "0x40010000", name: "CLOCKS", size: "\u2014", hot: true,
-      detail: "Decides how fast the chip runs. Get this wrong early in boot and nothing else works." },
-    { addr: "0x40020000", name: "RESETS", size: "\u2014", hot: true,
-      detail: "Holds other blocks switched off. Most of the chip is dead until something clears its bit here." },
-    { addr: "0x40028000", name: "IO_BANK0", size: "\u2014", hot: true,
-      detail: "Decides what each pin is for. A pin can be plain output, or a serial line, or several other things; this picks which." },
-    { addr: "0x40038000", name: "PADS_BANK0", size: "\u2014", hot: true,
-      detail: "The electrical side of each pin: how hard it drives, and whether it is gently pulled high or low when nothing else is driving it." },
-    { addr: "0x40048000", name: "XOSC", size: "\u2014", hot: true,
-      detail: "The crystal oscillator: a real quartz crystal on the board, and the most accurate timing reference the chip has. It is not the only one. Two less accurate oscillators sit inside the chip, and at reset the processors are running from one of those." },
-    { addr: "0x40050000", name: "PLL_SYS", size: "\u2014", hot: true,
-      detail: "Multiplies the crystal's frequency up to the speed the processors run at, as high as 150 MHz." },
-    { addr: "0x40058000", name: "PLL_USB", size: "\u2014", hot: true,
-      detail: "A second multiplier, fixed at 48 MHz for USB, so USB timing survives retuning the main clock." },
-    { addr: "0x40070000", name: "UART0", size: "\u2014", hot: true,
-      detail: "The serial port Tock's console uses. Kernel messages left the chip one byte at a time through a register in here." },
-    { addr: "0x40078000", name: "UART1", size: "\u2014", hot: true,
-      detail: "A second, identical serial port. Same layout, different base \u2014 the pattern from Figure 12." },
-    { addr: "0x400B0000", name: "TIMER0", size: "\u2014", hot: true,
-      detail: "A counter that never stops, ticking once a microsecond. Reading it gives the current time, which has nothing to do with anything you wrote." },
-    { addr: "0x40108000", name: "TICKS", size: "\u2014", hot: true,
-      detail: "Divides a clock down to the slower rates the timers and the watchdog need." },
-    { addr: "0xD0000000", name: "SIO", size: "\u2014", hot: true,
-      detail: "The pin-driving block, and the one this chapter is about. The datasheet calls it \u201CCore-local Peripherals\u201D and says each processor gets its own connection to it. gpio_out_set sits 0x018 past this base, which is where 0xD0000018 comes from." },
-    { addr: "0xE0000000", name: "Processor's own registers", size: "\u2014", hot: true,
-      detail: "Controls belonging to the processor core rather than to the chip around it: the interrupt controller, the core's own timer, and the memory protection unit that later chapters use to fence applications in. This is the odd entry in the list. The datasheet notes these registers are \u201Cinternal to the processors, not accessed through the system bus\u201D, so a store here is not routed by the fabric at all, and each core sees a different set behind the same address." }
-  ];
-
-  var mapEl = document.getElementById("map");
-  var mapDetail = document.getElementById("map-detail");
-
-  function selectRegion(row, r) {
-    var all = mapEl.querySelectorAll(".map-row");
-    for (var i = 0; i < all.length; i++) all[i].setAttribute("aria-pressed", "false");
-    row.setAttribute("aria-pressed", "true");
-    mapDetail.textContent = r.detail;
-    mapDetail.classList.toggle("hot", r.hot);
-  }
-
-  REGIONS.forEach(function (r) {
-    var row = document.createElement("button");
-    row.className = "map-row" + (r.hot ? " is-hot" : "");
-    row.type = "button";
-    row.setAttribute("aria-pressed", "false");
-
-    var a = document.createElement("span");
-    a.className = "map-addr";
-    a.textContent = r.addr;
-    var n = document.createElement("span");
-    n.className = "map-name";
-    n.textContent = r.name;
-    var s = document.createElement("span");
-    s.className = "map-size";
-    s.textContent = r.size;
-
-    row.appendChild(a); row.appendChild(n); row.appendChild(s);
-    row.addEventListener("click", function () { selectRegion(row, r); });
-    mapEl.appendChild(row);
-  });
+  /* ---------------- Figure 6: the address map ----------------
+     Eighteen stripes and eighteen paragraphs, all of them markup. This was the
+     longest thing on the page that a reader without scripting could not see at
+     all: two empty boxes where the map goes. The script chooses a stripe. */
   (function () {
-    var rows = mapEl.querySelectorAll(".map-row");
-    for (var i = 0; i < REGIONS.length; i++) {
-      if (REGIONS[i].name === "SIO") { selectRegion(rows[i], REGIONS[i]); return; }
+    var ROWS = ["rom", "flash-boot-block", "flash-tock-kernel", "flash-applications", "sram", "clocks", "resets", "io-bank0", "pads-bank0", "xosc", "pll-sys", "pll-usb", "uart0", "uart1", "timer0", "ticks", "sio", "processor-s-own-registers"];
+    function pick(k) {
+      var i, r;
+      for (i = 0; i < ROWS.length; i++) {
+        r = ROWS[i];
+        document.getElementById("mr-" + r)
+          .setAttribute("aria-pressed", r === k ? "true" : "false");
+        document.getElementById("mdet-" + r).classList.toggle("is-on", r === k);
+      }
     }
+    function wire(k) {
+      document.getElementById("mr-" + k)
+        .addEventListener("click", function () { pick(k); });
+    }
+    var i;
+    for (i = 0; i < ROWS.length; i++) { wire(ROWS[i]); }
+    pick("sio");
   }());
 
   /* ---------------- The bet, before Figure 11 ---------------- */
@@ -3967,60 +3892,31 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 
   /* ---------------- Figure 11: four behaviors ---------------- */
 
-  var BEHAVIOURS = [
-    { addr: "0x20000100", name: "SRAM", tag: "ordinary memory",
-      w: "Keeps your value. Nothing else happens.",
-      r: "Exactly what you stored.",
-      d: "The only one of the four that behaves like a variable. Store it, come back an hour later, read the same thing." },
-    { addr: "0xD0000010", name: "gpio_out", tag: "storage and effect",
-      w: "Keeps your value, and moves every pin in the bank to match it.",
-      r: "The last value stored \u2014 not what the pins are actually doing.",
-      d: "Genuine storage that also acts. The datasheet is careful here: \u201CReading back gives the last value written, NOT the input value from the pins.\u201D So a read tells you your own intent, not the world." },
-    { addr: "0xD0000018", name: "gpio_out_set", tag: "an instruction, not a slot",
-      w: "Turns on the bits you set and leaves the rest alone. The hardware performs gpio_out |= value, then discards your value.",
-      r: "Not promised. The datasheet types it write-only.",
-      d: "Its whole description is an operation on a different register: GPIO_OUT |= wdata. Store a value with no bits set and nothing happens at all \u2014 which no storage location would ever do." },
-    { addr: "0xD0000004", name: "gpio_in", tag: "the outside world",
-      w: "Nothing. It is not yours to set.",
-      r: "The voltage actually present on the pins, right now.",
-      d: "Typed read-only. Read it twice with no code in between and you can get two different answers, because a button was pressed. This is exactly the case volatile exists for." }
-  ];
-
-  var behEl = document.getElementById("beh");
-  var behW = document.getElementById("beh-w");
-  var behR = document.getElementById("beh-r");
-  var behD = document.getElementById("beh-d");
-
-  function selectBeh(row, b) {
-    var all = behEl.querySelectorAll(".map-row");
-    for (var i = 0; i < all.length; i++) all[i].setAttribute("aria-pressed", "false");
-    row.setAttribute("aria-pressed", "true");
-    behW.textContent = b.w;
-    behR.textContent = b.r;
-    behD.textContent = b.d;
-  }
-
-  BEHAVIOURS.forEach(function (b) {
-    var row = document.createElement("button");
-    row.className = "map-row is-hot";
-    row.type = "button";
-    row.setAttribute("aria-pressed", "false");
-    var a = document.createElement("span");
-    a.className = "map-addr";
-    a.textContent = b.addr;
-    var n = document.createElement("span");
-    n.className = "map-name";
-    n.textContent = b.name;
-    var t = document.createElement("span");
-    t.className = "map-size";
-    t.textContent = b.tag;
-    row.appendChild(a); row.appendChild(n); row.appendChild(t);
-    row.addEventListener("click", function () { selectBeh(row, b); });
-    behEl.appendChild(row);
-  });
+  /* ---------------- Figure 11: four behaviours ----------------
+     Four rows and twelve paragraphs, all markup. The two panels are the point
+     of the figure -- storing and reading are independent decisions -- and with
+     no scripting both of them were blank. */
   (function () {
-    var rows = behEl.querySelectorAll(".map-row");
-    selectBeh(rows[2], BEHAVIOURS[2]);
+    var K = ["sram", "out", "set", "in"];
+    function pick(k) {
+      var i, j, kk, WHERE = ["bhw-", "bhr-", "bhd-"];
+      for (i = 0; i < K.length; i++) {
+        kk = K[i];
+        document.getElementById("bh-" + kk)
+          .setAttribute("aria-pressed", kk === k ? "true" : "false");
+        for (j = 0; j < WHERE.length; j++) {
+          document.getElementById(WHERE[j] + kk)
+            .classList.toggle("is-on", kk === k);
+        }
+      }
+    }
+    function wire(k) {
+      document.getElementById("bh-" + k)
+        .addEventListener("click", function () { pick(k); });
+    }
+    var i;
+    for (i = 0; i < K.length; i++) { wire(K[i]); }
+    pick("set");
   }());
 
   /* ---------------- Figure 8: build the value ---------------- */
@@ -4031,32 +3927,6 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
   var labelsLo = document.getElementById("labels-lo");
   var MAX_PIN = 29;
 
-  function buildBits() {
-    var i, cell, label;
-    for (i = 31; i >= 16; i--) {
-      cell = document.createElement("div");
-      cell.className = "bit" + (i > MAX_PIN ? " nopin" : "");
-      cell.setAttribute("data-bit", i);
-      cell.textContent = "0";
-      bitsHi.appendChild(cell);
-      label = document.createElement("div");
-      label.className = "bitlabel" + (i > MAX_PIN ? " nopin" : "");
-      label.textContent = i;
-      labelsHi.appendChild(label);
-    }
-    for (i = 15; i >= 0; i--) {
-      cell = document.createElement("div");
-      cell.className = "bit";
-      cell.setAttribute("data-bit", i);
-      cell.textContent = "0";
-      bitsLo.appendChild(cell);
-      label = document.createElement("div");
-      label.className = "bitlabel";
-      label.textContent = i;
-      labelsLo.appendChild(label);
-    }
-  }
-  buildBits();
 
   var pinInput = document.getElementById("pin");
 

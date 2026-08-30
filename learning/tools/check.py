@@ -2912,6 +2912,13 @@ def pedagogy_checks(html, chapter):
 
     scan = re.sub(r"<dfn[^>]*>.*?</dfn>", _blank, prose, flags=re.S | re.I)
     scan = re.sub(r"<code.*?</code>", _blank, scan, flags=re.S)
+    # A quotation is somebody else's words. The RP2350 datasheet calls SIO the
+    # "Core-local Peripherals", and reporting that name is not the reader being
+    # asked to know what a core is -- the chapter still has to define the word
+    # before using it in a sentence of its own, which is what this measures.
+    # Only found once the chapter's figures moved out of JS and into markup,
+    # where the gate could finally read them.
+    scan = re.sub(r"<q[ >].*?</q>|<q>.*?</q>", _blank, scan, flags=re.S)
     # Attribute values are not prose. Without this an id like "tab-atomic"
     # counts as the reader meeting the word "atomic".
     scan = re.sub(r"<[^>]+>", _blank, scan)

@@ -193,7 +193,7 @@
     "in": "ch02",
     "says": "Chapter 1's map labels that whole stripe as the processor's own registers",
     "about": "ch01",
-    "kept_by": "Controls belonging to the processor core"
+    "kept_by": "Processor's own registers"
   },
   {
     "id": "ch02-vtor-store",

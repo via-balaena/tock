@@ -64,17 +64,48 @@ chk("and the badge agrees", REG["pin-badge"].textContent, "25");
 
 REG["pin"].value = "25"; REG["pin"].fire("input");
 
+var BHK = ["sram", "out", "set", "in"];
+function bhopen() {
+  var i, on = [];
+  for (i = 0; i < BHK.length; i++) {
+    if (REG["bhw-" + BHK[i]].classList.contains("is-on")) { on.push(BHK[i]); }
+  }
+  return on.join("+");
+}
+
+// The eighteen map stripes, by id. They are markup now, so `children` is
+// empty as far as the harness is concerned and the ids are the way in.
+var MROWS = ["rom", "flash-boot-block", "flash-tock-kernel",
+  "flash-applications", "sram", "clocks", "resets", "io-bank0",
+  "pads-bank0", "xosc", "pll-sys", "pll-usb", "uart0", "uart1",
+  "timer0", "ticks", "sio", "processor-s-own-registers"];
+function mopen() {
+  var i, on = [];
+  for (i = 0; i < MROWS.length; i++) {
+    if (REG["mdet-" + MROWS[i]].classList.contains("is-on")) { on.push(MROWS[i]); }
+  }
+  return on.join("+");
+}
+function mpressed() {
+  var i, on = [];
+  for (i = 0; i < MROWS.length; i++) {
+    if (REG["mr-" + MROWS[i]].getAttribute("aria-pressed") === "true") {
+      on.push(MROWS[i]);
+    }
+  }
+  return on.join("+");
+}
+
 // ---- No figure may boot into an empty state ----
 // A reader who never clicks must still be shown the instructive case.
 
-chk("the address map boots with a region already chosen",
-    REG["map-detail"].textContent.length > 40, true);
-chk("and the region it chooses is SIO",
-    REG["map-detail"].textContent.indexOf("0xD0000018") > -1, true);
-chk("the behavior table boots with an address already chosen",
-    REG["beh-w"].textContent.length > 20, true);
+chk("the address map boots with a region already chosen", mopen() !== "", true);
+chk("and the region it chooses is SIO", mopen(), "sio");
+chk("whose detail derives the chapter's address",
+    REG["mdet-sio"].textContent.indexOf("0xD0000018") > -1, true);
+chk("the behavior table boots with an address already chosen", bhopen(), "set");
 chk("and it chooses the one that breaks expectations",
-    REG["beh-r"].textContent.indexOf("Not promised") > -1, true);
+    REG["bhr-set"].textContent.indexOf("Not promised") > -1, true);
 
 chk("pin 25 produces the right hex", REG["ro-hex"].textContent, "0x02000000");
 chk("pin 25 shows the right expression", REG["ro-expr"].textContent, "1 << 25");
@@ -106,23 +137,62 @@ chk("ladder resets", REG["ladder-count"].textContent, "1 of 5 shown");
 
 // ---- Instrument 3: the memory map ----
 
-chk("every mapped region is rendered", REG["map"].children.length, 18);
-// SIO is second from the end now that the processor's own registers are listed.
-REG["map"].children[16].fire("click");
+// Every stripe and every paragraph ships in the markup, so the map is a map
+// with scripting off rather than two empty boxes.
+(function () {
+  var i, n = 0;
+  for (i = 0; i < MROWS.length; i++) {
+    if (REG["mr-" + MROWS[i]] && REG["mdet-" + MROWS[i]]) { n++; }
+  }
+  chk("every mapped region is rendered, with its paragraph", n, 18);
+}());
+chk("and none of it is built on demand", REG["map"].children.length, 0);
+REG["mr-sio"].fire("click");
 chk("SIO detail derives 0xD0000018",
-    REG["map-detail"].textContent.indexOf("0xD0000018") > -1, true);
-REG["map"].children[0].fire("click");
+    REG["mdet-sio"].textContent.indexOf("0xD0000018") > -1, true);
+REG["mr-rom"].fire("click");
 chk("the list starts at address zero, where the processors start",
-    REG["map-detail"].textContent.indexOf("starting point for both Arm processors") > -1, true);
+    REG["mdet-rom"].textContent.indexOf("starting point for both Arm processors") > -1, true);
+chk("and choosing one closes the one before it", mopen(), "rom");
+// The SRAM stripe is the one place on the page reporting a tree newer than
+// the pin, and it says so rather than quietly printing the newer number.
+chk("the SRAM stripe owns up to reporting a newer tree",
+    REG["mdet-sram"].textContent.indexOf("newer than the pin") > -1, true);
+chk("and gives both numbers", REG["mdet-sram"].textContent.indexOf("520 kB") > -1
+    && REG["mdet-sram"].textContent.indexOf("264 kB") > -1, true);
 
 // ---- Figure 11: read/write behaviors ----
 
-chk("all four behaviors are rendered", REG["beh"].children.length, 4);
-REG["beh"].children[0].fire("click");
-chk("SRAM reads back what you stored", REG["beh-r"].textContent, "Exactly what you stored.");
-REG["beh"].children[2].fire("click");
+(function () {
+  var i, n = 0;
+  for (i = 0; i < BHK.length; i++) {
+    if (REG["bh-" + BHK[i]] && REG["bhw-" + BHK[i]]
+        && REG["bhr-" + BHK[i]] && REG["bhd-" + BHK[i]]) { n++; }
+  }
+  chk("all four behaviors are rendered, with all three of their lines", n, 4);
+}());
+chk("and none of it is built on demand", REG["beh"].children.length, 0);
+REG["bh-sram"].fire("click");
+chk("SRAM reads back what you stored", REG["bhr-sram"].textContent,
+    "Exactly what you stored.");
+REG["bh-set"].fire("click");
 chk("GPIO_OUT_SET is described as an OR operation",
-    REG["beh-w"].textContent.indexOf("gpio_out |= value") > -1, true);
+    REG["bhw-set"].textContent.indexOf("gpio_out |= value") > -1, true);
+// Storing and reading are two independent decisions, which is the figure's
+// whole point, so no two of the four may agree on both.
+(function () {
+  var i, j, same = 0;
+  for (i = 0; i < BHK.length; i++) {
+    for (j = i + 1; j < BHK.length; j++) {
+      if (REG["bhw-" + BHK[i]].textContent === REG["bhw-" + BHK[j]].textContent
+          && REG["bhr-" + BHK[i]].textContent === REG["bhr-" + BHK[j]].textContent) {
+        same++;
+      }
+    }
+  }
+  chk("and no two of the four make the same pair of promises", same, 0);
+}());
+REG["bh-set"].fire("click");
 
 // ---- Figure 13: the race. This is the chapter's central claim. ----
 
@@ -228,28 +298,39 @@ t("steps list does not grow when re-rendered", function(){
   if(n1!==6) throw new Error("expected 6 RMW steps, got "+n1);
 });
 
-t("map rows are not duplicated by clicking", function(){
-  var before=REG["map"].children.length;
-  for(var i=0;i<5;i++) REG["map"].children[3].fire("click");
-  if(REG["map"].children.length!==before) throw new Error("map grew");
+t("clicking a map row does not add one", function(){
+  var i;
+  for(i=0;i<5;i++) REG["mr-flash-applications"].fire("click");
+  if(REG["map"].children.length!==0) throw new Error("map grew");
+  if(mopen()!=="flash-applications") throw new Error("opened "+mopen());
 });
 
 t("only one map row stays selected", function(){
-  REG["map"].children[2].fire("click");
-  REG["map"].children[9].fire("click");
-  var sel=0;
-  for(var i=0;i<REG["map"].children.length;i++)
-    if(REG["map"].children[i].getAttribute("aria-pressed")==="true") sel++;
-  if(sel!==1) throw new Error(sel+" rows selected");
+  REG["mr-flash-tock-kernel"].fire("click");
+  REG["mr-xosc"].fire("click");
+  if(mpressed()!=="xosc") throw new Error("pressed "+mpressed());
+  if(mopen()!=="xosc") throw new Error("open "+mopen());
+});
+
+t("every one of the eighteen chooses itself and nothing else", function(){
+  var i, bad=0;
+  for(i=0;i<MROWS.length;i++){
+    REG["mr-"+MROWS[i]].fire("click");
+    if(mpressed()!==MROWS[i]||mopen()!==MROWS[i]) bad++;
+  }
+  REG["mr-sio"].fire("click");
+  if(bad) throw new Error(bad+" rows do not");
 });
 
 t("only one behavior row stays selected", function(){
-  REG["beh"].children[1].fire("click");
-  REG["beh"].children[3].fire("click");
-  var sel=0;
-  for(var i=0;i<REG["beh"].children.length;i++)
-    if(REG["beh"].children[i].getAttribute("aria-pressed")==="true") sel++;
+  REG["bh-out"].fire("click");
+  REG["bh-in"].fire("click");
+  var i, sel=0;
+  for(i=0;i<BHK.length;i++)
+    if(REG["bh-"+BHK[i]].getAttribute("aria-pressed")==="true") sel++;
   if(sel!==1) throw new Error(sel+" rows selected");
+  if(bhopen()!=="in") throw new Error("open "+bhopen());
+  REG["bh-set"].fire("click");
 });
 
 t("slider swept across the whole range without throwing", function(){
@@ -271,29 +352,79 @@ t("ladder rows not duplicated", function(){
 });
 
 // ---- Figure 5: the first hex digit decides who answers ----
+// All sixteen buttons and all sixteen answers are markup now, so the figure
+// says something with scripting off. What is left to assert is that the script
+// chooses among them, and that it chooses exactly one.
+(function () {
+  function open_() {
+    var D = "0123456789ABCDEF".split(""), i, on = [];
+    for (i = 0; i < D.length; i++) {
+      if (REG["dsay-" + D[i]].classList.contains("is-on")) { on.push(D[i]); }
+    }
+    return on.join("+");
+  }
+  function lit() {
+    var D = "0123456789ABCDEF".split(""), i, on = [];
+    for (i = 0; i < D.length; i++) {
+      if (REG["digit-" + D[i]].classList.contains("on")) { on.push(D[i]); }
+    }
+    return on.join("+");
+  }
 
-chk("all sixteen first digits are offered", REG["digits"].children.length, 16);
-chk("the decoder boots on D, not on nothing",
-    REG["decode-who"].textContent, "SIO answers.");
-chk("and boots showing the address the chapter uses",
-    REG["decode-addr"].textContent, "0xD0000018");
+  // Counted by id rather than by children.length: the harness only fills
+  // `children` from appendChild, so a list that moved into the markup has
+  // none as far as it is concerned. That is the tell that it moved.
+  (function () {
+    var D = "0123456789ABCDEF".split(""), i, n = 0;
+    for (i = 0; i < D.length; i++) {
+      if (REG["digit-" + D[i]] && REG["dsay-" + D[i]]) { n++; }
+    }
+    chk("all sixteen first digits are offered, with their answers", n, 16);
+  }());
+  chk("and they are in the markup rather than built on demand",
+      REG["digits"].children.length, 0);
+  chk("the decoder boots on D, not on nothing", lit(), "D");
+  chk("with D's answer showing", open_(), "D");
+  chk("which is the one that names the block",
+      REG["dsay-D"].textContent.indexOf("SIO answers") > -1, true);
+  chk("and boots showing the address the chapter uses",
+      REG["decode-addr"].textContent, "0xD0000018");
 
-REG["digits"].children[2].fire("click");
-chk("digit 2 is claimed by SRAM", REG["decode-who"].textContent, "SRAM answers.");
-chk("choosing a digit rewrites the address",
-    REG["decode-addr"].textContent, "0x20000018");
-chk("exactly one digit is lit after a click", (function () {
-  var n = 0, c = REG["digits"].children;
-  for (var i = 0; i < c.length; i++) if (c[i].classList.contains("on")) n++;
-  return n;
-}()), 1);
+  REG["digit-2"].fire("click");
+  chk("digit 2 is claimed by SRAM",
+      REG["dsay-2"].textContent.indexOf("SRAM answers") > -1, true);
+  chk("choosing a digit rewrites the address",
+      REG["decode-addr"].textContent, "0x20000018");
+  chk("exactly one digit is lit after a click", lit(), "2");
+  chk("and exactly one answer with it", open_(), "2");
 
-REG["digits"].children[3].fire("click");
-chk("an unmapped digit says so plainly",
-    REG["decode-who"].textContent, "Nobody answers.");
-chk("and warns it faults rather than silently doing nothing",
-    REG["decode-says"].textContent.indexOf("raises a fault") > -1, true);
-REG["digits"].children[13].fire("click");
+  REG["digit-3"].fire("click");
+  chk("an unmapped digit says so plainly",
+      REG["dsay-3"].textContent.indexOf("Nobody answers") > -1, true);
+  chk("and warns it faults rather than silently doing nothing",
+      REG["dsay-3"].textContent.indexOf("raises a fault") > -1, true);
+  chk("and is drawn as dead rather than merely unchosen",
+      REG["digit-3"].classList.contains("dead"), true);
+
+  // The eleven unmapped digits are the chapter's point about the map being
+  // mostly empty, so how many there are is worth pinning.
+  (function () {
+    var D = "0123456789ABCDEF".split(""), i, dead = 0, k;
+    for (i = 0; i < D.length; i++) {
+      if (REG["digit-" + D[i]].classList.contains("dead")) { dead++; }
+    }
+    chk("nine of the sixteen digits belong to nobody", dead, 9);
+    // And every one of the sixteen, chosen in turn, shows exactly one answer.
+    k = 0;
+    for (i = 0; i < D.length; i++) {
+      REG["digit-" + D[i]].fire("click");
+      if (lit() === D[i] && open_() === D[i]) { k++; }
+    }
+    chk("and each of the sixteen chooses itself and nothing else", k, 16);
+  }());
+
+  REG["digit-D"].fire("click");
+}());
 
 
 // ---- The bet: guess before the reveal ----
