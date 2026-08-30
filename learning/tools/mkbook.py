@@ -35,6 +35,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -150,6 +151,128 @@ def scope_css(css, key, ids):
     return "".join(out)
 
 
+CHROME_CSS = '''
+/* ---- the book's own chrome ----
+   Nine pages behind one hash is a good way to hold a book together and a bad
+   way to know where you are in one. This is the part that is the book rather
+   than any chapter: what you are reading, how far in it sits, and the two
+   links that move. It is built here rather than in a chapter because no
+   chapter can know what comes before or after it.
+
+   The bar is sticky and short. The line under it fills as you scroll, which
+   is the cheap answer to "how much of this is left" on a page that can run to
+   thirteen thousand words. */
+.bookbar { position: sticky; top: 0; z-index: 40;
+  background: var(--surface); border-bottom: 1px solid var(--rule); }
+.bookbar-in { max-width: var(--wide, 60rem); margin: 0 auto;
+  display: flex; align-items: center; gap: .9rem;
+  padding: .5rem 1.4rem; flex-wrap: wrap; }
+.bookbar a { color: inherit; text-decoration: none; }
+.bookbar-home { font-family: var(--display); font-weight: 700; font-size: .8rem;
+  letter-spacing: .02em; color: var(--ink); white-space: nowrap; }
+.bookbar-home:hover { color: var(--hot); }
+.bookbar-where { font-family: var(--display); font-size: .7rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  white-space: nowrap; }
+.bookbar-gap { flex: 1 1 auto; }
+.bookbar-move { display: flex; gap: .5rem; }
+.bookbar-move a { font-family: var(--display); font-size: .72rem; font-weight: 700;
+  letter-spacing: .04em; color: var(--ink-soft); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .25rem .55rem; white-space: nowrap; }
+.bookbar-move a:hover { border-color: var(--hot); color: var(--hot); }
+.bookbar-move a[aria-disabled="true"] { color: var(--ink-faint);
+  border-color: var(--rule); pointer-events: none; }
+/* Twelve pips, one per page, so the shape of the whole book is visible at a
+   glance and the one you are on is placed inside it. */
+.bookbar-pips { display: flex; gap: 3px; }
+.bookbar-pips i { width: 12px; height: 5px; border-radius: 1px;
+  background: var(--rule-strong); display: block; }
+.bookbar-pips i.is-done { background: var(--ink-faint); }
+.bookbar-pips i.is-here { background: var(--hot); }
+.bookread { height: 2px; background: var(--hot); width: 0; }
+@media (max-width: 34rem) {
+  .bookbar-in { padding: .45rem .9rem; gap: .6rem; }
+  .bookbar-pips { display: none; }
+}
+'''
+
+CHROME_HTML = '''<div class="bookbar">
+  <div class="bookbar-in">
+    <a class="bookbar-home" href="#cover">Learning Tock from the Ground Up</a>
+    <span class="bookbar-where" id="bookbar-where">Cover</span>
+    <span class="bookbar-pips" id="bookbar-pips" aria-hidden="true">__PIPS__</span>
+    <span class="bookbar-gap"></span>
+    <nav class="bookbar-move" aria-label="Move through the book">
+      <a id="bookbar-prev" href="#cover">&larr; Back</a>
+      <a id="bookbar-next" href="#ch00">Next &rarr;</a>
+    </nav>
+  </div>
+  <div class="bookread" id="bookread"></div>
+</div>
+'''
+
+CHROME_JS = '''
+/* ---- where you are in the book ----
+   The router already knows which page is showing; this says so out loud. The
+   titles come from each page's own <h1>, so a chapter that is renamed renames
+   itself here too. Runs after the router, and stays out of the way of the
+   gate's shim, which has no window to scroll. */
+(function () {
+  if (typeof window === "undefined" || !window.addEventListener) { return; }
+  var ORDER = __ORDER__, TITLES = __TITLES__, NUMS = __NUMS__;
+
+  function el(id) { return document.getElementById(id); }
+  function at() {
+    var i;
+    for (i = 0; i < ORDER.length; i++) {
+      if (!document.getElementById("page-" + ORDER[i]).hidden) { return i; }
+    }
+    return 0;
+  }
+
+  function link(a, i) {
+    if (i < 0 || i >= ORDER.length) {
+      a.setAttribute("aria-disabled", "true");
+      a.setAttribute("href", "#" + ORDER[at()]);
+      a.textContent = a.id === "bookbar-prev" ? "\u2190 Back" : "Done \u2192";
+      return;
+    }
+    a.removeAttribute("aria-disabled");
+    a.setAttribute("href", "#" + ORDER[i]);
+    a.textContent = (a.id === "bookbar-prev" ? "\u2190 " : "")
+      + TITLES[ORDER[i]] + (a.id === "bookbar-next" ? " \u2192" : "");
+  }
+
+  function paint() {
+    var i = at(), k, pips = el("bookbar-pips").children;
+    // The chapters number themselves from zero in their own mastheads, so
+    // the bar says what they say rather than counting positions and landing
+    // one out at both ends.
+    el("bookbar-where").textContent = i === 0
+      ? "Cover" : "Chapter " + NUMS[ORDER[i]] + " of " + NUMS[ORDER[ORDER.length - 1]];
+    for (k = 0; k < pips.length; k++) {
+      pips[k].className = k === i ? "is-here" : (k < i ? "is-done" : "");
+    }
+    link(el("bookbar-prev"), i - 1);
+    link(el("bookbar-next"), i + 1);
+    read();
+  }
+
+  function read() {
+    var doc = document.documentElement;
+    var run = doc.scrollHeight - doc.clientHeight;
+    var got = run > 40 ? (doc.scrollTop || 0) / run : 0;
+    el("bookread").setAttribute("style",
+      "width:" + Math.max(0, Math.min(1, got)) * 100 + "%");
+  }
+
+  window.addEventListener("hashchange", paint);
+  window.addEventListener("scroll", read, true);
+  window.addEventListener("resize", read);
+  paint();
+}());
+'''
+
 ROUTER = """
 /* ---- the book ----
    Nine pages in one document, one of them shown. The hash is the page, so a
@@ -256,6 +379,38 @@ def main(argv):
     router = (ROUTER.replace("__ORDER__", json.dumps(order))
                     .replace("__OWNER__", json.dumps(owner, sort_keys=True)))
 
+    # The bar names each page by that page's own <h1>, so renaming a chapter
+    # renames it here as well and the two cannot drift.
+    titles = {}
+    for key, path in sources:
+        with open(path, encoding="utf-8") as fh:
+            found = re.search(r"<h1[^>]*>(.*?)</h1>", fh.read(), re.S)
+        if not found:
+            print("%s has no <h1> for the book's bar to name it by" % key)
+            return 1
+        titles[key] = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", found.group(1))).strip()
+    titles["cover"] = "Cover"
+
+    # And the chapter number from the page's own masthead, for the same
+    # reason: two places saying which chapter this is would drift.
+    nums = {"cover": ""}
+    for key, path in sources:
+        if key == "cover":
+            continue
+        with open(path, encoding="utf-8") as fh:
+            found = re.search(
+                r'<p class="eyebrow">[^<]*?Chapter(?:\s|&nbsp;)(\d+)</p>',
+                fh.read())
+        if not found:
+            print("%s has no 'Chapter N' in its masthead for the bar to read"
+                  % key)
+            return 1
+        nums[key] = found.group(1)
+    chrome_html = CHROME_HTML.replace("__PIPS__", "<i></i>" * len(order))
+    chrome_js = (CHROME_JS.replace("__ORDER__", json.dumps(order))
+                          .replace("__TITLES__", json.dumps(titles, sort_keys=True))
+                          .replace("__NUMS__", json.dumps(nums, sort_keys=True)))
+
     # The pages agree on one font link; take theirs rather than keeping a
     # second copy here, which went stale the first time they were restyled.
     fonts = set()
@@ -286,17 +441,61 @@ def main(argv):
    to its section rather than to the document. */
 body { margin: 0; background: var(--ground); color: var(--ink); }
 .page[hidden] { display: none; }
+/* ---- the book's own chrome ----
+   Nine pages behind one hash is a good way to hold a book together and a bad
+   way to know where you are in one. This is the part that is the book rather
+   than any chapter: what you are reading, how far in it sits, and the two
+   links that move. It is built here rather than in a chapter because no
+   chapter can know what comes before or after it.
+
+   The bar is sticky and short. The line under it fills as you scroll, which
+   is the cheap answer to "how much of this is left" on a page that can run to
+   thirteen thousand words. */
+.bookbar { position: sticky; top: 0; z-index: 40;
+  background: var(--surface); border-bottom: 1px solid var(--rule); }
+.bookbar-in { max-width: var(--wide, 60rem); margin: 0 auto;
+  display: flex; align-items: center; gap: .9rem;
+  padding: .5rem 1.4rem; flex-wrap: wrap; }
+.bookbar a { color: inherit; text-decoration: none; }
+.bookbar-home { font-family: var(--display); font-weight: 700; font-size: .8rem;
+  letter-spacing: .02em; color: var(--ink); white-space: nowrap; }
+.bookbar-home:hover { color: var(--hot); }
+.bookbar-where { font-family: var(--display); font-size: .7rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  white-space: nowrap; }
+.bookbar-gap { flex: 1 1 auto; }
+.bookbar-move { display: flex; gap: .5rem; }
+.bookbar-move a { font-family: var(--display); font-size: .72rem; font-weight: 700;
+  letter-spacing: .04em; color: var(--ink-soft); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .25rem .55rem; white-space: nowrap; }
+.bookbar-move a:hover { border-color: var(--hot); color: var(--hot); }
+.bookbar-move a[aria-disabled="true"] { color: var(--ink-faint);
+  border-color: var(--rule); pointer-events: none; }
+/* Twelve pips, one per page, so the shape of the whole book is visible at a
+   glance and the one you are on is placed inside it. */
+.bookbar-pips { display: flex; gap: 3px; }
+.bookbar-pips i { width: 12px; height: 5px; border-radius: 1px;
+  background: var(--rule-strong); display: block; }
+.bookbar-pips i.is-done { background: var(--ink-faint); }
+.bookbar-pips i.is-here { background: var(--hot); }
+.bookread { height: 2px; background: var(--hot); width: 0; }
+@media (max-width: 34rem) {
+  .bookbar-in { padding: .45rem .9rem; gap: .6rem; }
+  .bookbar-pips { display: none; }
+}
 
 %s
 </style>
 
 %s
+%s
 
 <script>
 %s
 %s
+%s
 </script>
-""" % (font_link, tokens, "\n\n".join(styles), "\n\n".join(bodies), "\n\n".join(scripts), router)
+""" % (font_link, tokens, "\n\n".join(styles), chrome_html, "\n\n".join(bodies), "\n\n".join(scripts), router, chrome_js)
 
     problems = verify(page, every_id)
     if not problems:
@@ -306,6 +505,27 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
             print("  %s" % p)
         print("the book would be broken, so nothing written")
         return 1
+
+    # The book's own chrome, which no chapter suite can reach because it
+    # guards on `typeof window` and the shim has none. Skipped where node is
+    # missing, the way the compiled probes are skipped without a toolchain.
+    if shutil.which("node"):
+        with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False,
+                                         encoding="utf-8") as tmp:
+            tmp.write(page)
+            probe = tmp.name
+        try:
+            done = subprocess.run(
+                ["node", os.path.join(TOOLS, "chrome.tests.js"), probe],
+                capture_output=True, text=True)
+        finally:
+            os.unlink(probe)
+        if done.returncode != 0:
+            print("the book's chrome fails its own assertions:")
+            for line in (done.stdout + done.stderr).strip().split("\n"):
+                print("  " + line)
+            return 1
+        print("  " + done.stdout.strip().split("\n")[-1])
 
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(page)
@@ -383,6 +603,12 @@ def assertions_hold(page):
     return []
 
 
+# The ids the book itself owns, as opposed to the ones a page brought with
+# it. Anything here is written by CHROME_HTML above and by nothing else.
+BOOK_CHROME_IDS = frozenset(
+    re.findall(r'\bid="([^"]+)"', CHROME_HTML))
+
+
 def verify(page, every_id):
     """Refuse to write a book whose own links and lookups do not resolve."""
     problems = []
@@ -393,11 +619,14 @@ def verify(page, every_id):
     if missing:
         problems.append("ids lost in assembly: %s" % ", ".join(missing[:5]))
 
-    # Every id in the book has to carry a page key, or be a page container.
-    # That is the whole of what stops one chapter's figure from answering
-    # another chapter's lookup.
+    # Every id in the book has to carry a page key, be a page container, or
+    # belong to the book's own chrome. That is the whole of what stops one
+    # chapter's figure from answering another chapter's lookup. The chrome is
+    # listed by name rather than by prefix, so a chapter that invents a
+    # `bookbar-` id of its own is still caught.
     bare = sorted(i for i in present
                   if not i.startswith("page-")
+                  and i not in BOOK_CHROME_IDS
                   and not any(i.startswith(k + "--") for k in keys))
     if bare:
         problems.append("un-namespaced ids in the book: %s" % ", ".join(bare[:6]))
