@@ -197,6 +197,29 @@ a { color: var(--accent); text-underline-offset: 3px; }
 
 /* ---------- instrument (figure) ---------- */
 
+/* ---------- Predict before the reveal ----------
+   Chapter 1's component, unchanged, because a reader who has met it once
+   should not have to work out what it is again. The rule it enforces is the
+   point: you cannot see the reasoning until you have committed to an answer,
+   and a wrong guess is marked wrong rather than quietly corrected. */
+.bet { border: 1px solid var(--rule-strong); background: var(--surface);
+  padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .9rem;
+  margin: 1.6rem 0; }
+.bet-q { font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  line-height: 1.4; margin: 0; }
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt { font: inherit; text-transform: none; letter-spacing: 0;
+  text-align: left; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 2px; padding: .6rem .8rem;
+  cursor: pointer; line-height: 1.45; }
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why { font-size: .97rem; line-height: 1.55; border-top: 1px solid var(--rule);
+  padding-top: .8rem; color: var(--ink-soft); }
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+
 .instrument {
   margin: 2.25rem auto;
   max-width: var(--wide);
@@ -2075,7 +2098,14 @@ dfn {
   <p>That is not a simplification invented for teaching. It is what the hardware does, and the datasheet says so in one line:</p>
   <blockquote class="quote">Rough address decode is first performed on bits 31:28 of the address:</blockquote>
   <p>Bits 31 to 28 are the top four bits, which is the first hex digit. Before anything else happens, the chip reads that digit and hands the whole store to whichever block owns it. The remaining digits are that block's business.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-empty">
+    <p class="bet-q">Sixteen values a first hex digit can take, and each one routes a store to some block of the chip. How many of the sixteen name real hardware?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-empty-o0" data-ok="false">All sixteen &mdash; every address goes somewhere</button><button type="button" class="bet-opt" id="bet-empty-o1" data-ok="false">About half</button><button type="button" class="bet-opt" id="bet-empty-o2" data-ok="true">Seven</button><button type="button" class="bet-opt" id="bet-empty-o3" data-ok="false">One &mdash; addresses are one flat space and the digit means nothing</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-empty-w0">Nothing catches the rest. Nine of the sixteen belong to nobody, and the datasheet is blunt about them: <q>Unmapped address ranges raise a bus error when accessed.</q></p><p class="betwhy" id="bet-empty-w1">Closer, and still generous. Seven is not half of sixteen, and the seven are not evenly spread either &mdash; two of them are next door to each other and one sits on its own at the far end.</p><p class="betwhy" id="bet-empty-w2">Right, and the nine that are left are the interesting part. This space is mostly empty, with a few occupied stripes, which is the opposite of how a laptop's memory feels. A store into one of the nine is a fault rather than a value going quietly nowhere.</p><p class="betwhy" id="bet-empty-w3">The digit means everything. It is the whole routing decision, made on four bits before any of the other twenty-eight are looked at.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -2099,7 +2129,14 @@ dfn {
 <section class="col">
   <p>So the <code>D</code> in <code class="addr">0xD0000018</code> is not decoration. It is the routing decision, and it sends the store to the block named SIO.</p>
   <p>SIO stands for single-cycle input/output. It is the peripheral that owns the output state of every pin, which is why an address that changes a light starts with <code>D</code> and not something else.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-ram">
+    <p class="bet-q">The RP2350 has <strong>520 kB</strong> of SRAM. How does the kernel know how much of it there is to hand out?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-ram-o0" data-ok="false">It asks the chip at boot</button><button type="button" class="bet-opt" id="bet-ram-o1" data-ok="true">A number written in the board's linker script</button><button type="button" class="bet-opt" id="bet-ram-o2" data-ok="false">A constant in the code that describes this chip, taken from the datasheet</button><button type="button" class="bet-opt" id="bet-ram-o3" data-ok="false">It works it out from where the kernel's own data ends</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-ram-w0">Nothing asks. There is no register that reports how much memory is fitted, and no discovery step anywhere in the boot sequence &mdash; the number has to be written down by somebody.</p><p class="betwhy" id="bet-ram-w1">Right, and it was wrong for the whole life of this port. The script declared 264 kB, a number inherited unchanged from the RP2040 Pico board where 264 kB was correct. Half the chip's memory was never handed out to anything. Nothing prevented the kernel touching it; the port simply did not know it was there.</p><p class="betwhy" id="bet-ram-w2">The code that describes the chip holds the addresses of peripherals, not the size of memory. Where a board's memory starts and ends is the board's business, and boards differ.</p><p class="betwhy" id="bet-ram-w3">That gives the bottom of the free space, not the top. Something still has to say where the memory stops, and nothing on the chip will tell you.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -2619,6 +2656,42 @@ dfn {
 
 </div>
 <script>
+  /* ---------------- Predict before the reveal ----------------
+     Every option and every explanation is in the markup; this only marks the
+     guess and shows the one that goes with it. A bet answers once, because
+     the value is in having been wrong and a second go erases that. */
+  (function () {
+    var BETS = [["bet-empty", 4], ["bet-ram", 4]];
+    function wire(name, n) {
+      var done = false, i;
+      function press(k) {
+        return function () {
+          if (done) { return; }
+          done = true;
+          var j, right;
+          for (j = 0; j < n; j++) {
+            right = document.getElementById(name + "-o" + j)
+              .getAttribute("data-ok") === "true";
+            if (right) {
+              document.getElementById(name + "-o" + j).classList.add("is-right");
+            }
+            document.getElementById(name + "-w" + j).classList.toggle("is-on", j === k);
+          }
+          if (document.getElementById(name + "-o" + k)
+                .getAttribute("data-ok") !== "true") {
+            document.getElementById(name + "-o" + k).classList.add("is-wrong");
+          }
+        };
+      }
+      for (i = 0; i < n; i++) {
+        document.getElementById(name + "-o" + i)
+          .addEventListener("click", press(i));
+      }
+    }
+    var b;
+    for (b = 0; b < BETS.length; b++) { wire(BETS[b][0], BETS[b][1]); }
+  }());
+
 (function () {
   "use strict";
 

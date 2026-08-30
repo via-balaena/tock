@@ -83,6 +83,9 @@ function walk(btn, panel, n, name) {
   for (i = 0; i < n && correct === null; i++) {
     if (o[i].getAttribute("data-ok") === "true") { correct = i; }
   }
+  // Without this the run dies further down on a null index, and the message
+  // is "undefined is not an object" rather than the name of the broken bet.
+  if (correct === null) { throw new Error(name + " has no right answer at all"); }
   REG[name + "-o" + wrong].fire("click");
   chk(name + ": a wrong guess is marked wrong",
       o[wrong].classList.contains("is-wrong"), true);
