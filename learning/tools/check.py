@@ -897,6 +897,222 @@ def citation_chain_checks(html):
     return problems
 
 
+def _strip_rust_comments(src):
+    """Rust with `//` lines and `/* */` blocks removed, string literals kept.
+
+    Crude on purpose. The same rule runs over every area being compared, and
+    the only way it can be wrong is by hiding a real `unsafe` inside something
+    it mistook for a comment -- which makes the stripped count lower than the
+    whole-file one, never higher. The two counts are reported separately, so a
+    reader can see the gap rather than trust the stripping.
+    """
+    out, i, n = [], 0, len(src)
+    while i < n:
+        if src[i] == '"':
+            j = i + 1
+            while j < n:
+                if src[j] == "\\":
+                    j += 2
+                    continue
+                if src[j] == '"':
+                    break
+                j += 1
+            out.append(src[i:j + 1])
+            i = j + 1
+        elif src.startswith("//", i):
+            j = src.find("\n", i)
+            i = n if j < 0 else j
+        elif src.startswith("/*", i):
+            j = src.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+        else:
+            out.append(src[i])
+            i += 1
+    return "".join(out)
+
+
+def staticref_inventory_checks(html):
+    """A figure claiming to hold every address, that is missing some.
+
+    Chapter 3's Figure 5 said "every address on this chip, in one list" and
+    listed twelve. At the commit the chapter was re-pinned to, the chip crate
+    had eighteen `StaticRef::new` calls: the re-pin added SPI, DMA and PIO, and
+    the figure kept saying twelve. Every one of its twelve citations still
+    resolved, so `citation_chain_checks` was happy; a citation check asks
+    whether what a page says is there, and never whether something else is.
+
+    The figure now carries its inventory as `var MAP = [...]` with one entry
+    per address and the file:line that names it. This counts the real
+    `StaticRef::new` call sites per file at the pinned commit and requires the
+    figure to cite every file that has one, and to cite it as many distinct
+    lines as it has calls. It does not require one entry per call, because two
+    of PIO's calls are a `const fn` that three call sites turn into fifteen
+    addresses -- that gap is the figure's whole point, so the check counts
+    lines cited, not entries.
+
+    Skipped where git or the pinned commit is unavailable.
+    """
+    table = re.search(r"var MAP = \[(.*?)\n    \];", html, re.S)
+    if not table:
+        return []
+    block = re.search(r'<section class="col sources">(.*?)</section>', html, re.S)
+    pin = re.search(r"commit <code>([0-9a-f]{7,40})</code>",
+                    block.group(1) if block else "")
+    if not pin:
+        return ["a figure inventories the chip crate's addresses and the page "
+                "names no commit to check it against"]
+    pin = pin.group(1)
+    if subprocess.run(["git", "cat-file", "-e", pin + "^{commit}"],
+                      capture_output=True).returncode != 0:
+        return []
+
+    cited = {}
+    for name, line in re.findall(r'"([a-z_0-9]+\.rs):(\d+)"', table.group(1)):
+        cited.setdefault(name, set()).add(int(line))
+    if not cited:
+        return ["the figure's inventory cites no file:line at all"]
+
+    listed = subprocess.run(["git", "ls-tree", "-r", "--name-only", pin,
+                             "chips/rp2350/src"], capture_output=True, text=True)
+    if listed.returncode != 0:
+        return []
+
+    problems = []
+    real = {}
+    for path in listed.stdout.split("\n"):
+        if not path.endswith(".rs"):
+            continue
+        src = subprocess.run(["git", "show", "%s:%s" % (pin, path)],
+                             capture_output=True, text=True).stdout
+        hits = [n for n, text in enumerate(src.split("\n"), 1)
+                if "StaticRef::new" in text]
+        if hits:
+            real[path.rsplit("/", 1)[1]] = hits
+
+    for name in sorted(real):
+        if name not in cited:
+            problems.append(
+                "%s has %d StaticRef::new call(s) at %s and the figure's "
+                "inventory never cites it -- the figure claims to hold every "
+                "address the crate names"
+                % (name, len(real[name]), pin))
+        elif len(cited[name]) != len(real[name]):
+            problems.append(
+                "%s has %d StaticRef::new call(s) at %s and the inventory "
+                "cites %d line(s) of it: %s"
+                % (name, len(real[name]), pin, len(cited[name]),
+                   ", ".join(str(n) for n in sorted(cited[name]))))
+        else:
+            for line in sorted(cited[name]):
+                if line not in real[name]:
+                    problems.append(
+                        "the inventory cites %s:%d and the StaticRef::new "
+                        "calls in that file at %s are on %s"
+                        % (name, line, pin,
+                           ", ".join(str(n) for n in real[name])))
+    for name in sorted(cited):
+        if name not in real:
+            problems.append("the inventory cites %s, which has no "
+                            "StaticRef::new in the chip crate at %s"
+                            % (name, pin))
+
+    # The map is drawn from marks in the markup rather than built by the
+    # script, so that it is still a map with JavaScript off. That leaves two
+    # lists of the same addresses in one file, and nothing but this stops them
+    # drifting apart -- an address added to the table and not to the map is a
+    # readout with no mark under it.
+    entries = re.findall(r"\[0x[0-9a-f]+,[^\]]*\]", table.group(1))
+    made = [e for e in entries if re.search(r",\s*1\s*$", e.rstrip("]"))]
+    marks = re.findall(r'<i class="adbase( fn)?"', html)
+    if len(marks) != len(entries):
+        problems.append(
+            "the inventory has %d addresses and the map is drawn with %d "
+            "marks -- one of them was edited and the other was not"
+            % (len(entries), len(marks)))
+    elif len([m for m in marks if m.strip()]) != len(made):
+        problems.append(
+            "%d addresses are marked as made by a function and %d marks on "
+            "the map say so" % (len(made), len([m for m in marks if m.strip()])))
+    return problems
+
+
+def counted_tree_checks(html):
+    """A figure printing a count of the tree that the tree no longer supports.
+
+    Chapter 3's Figure 3 prints, for five paths, how many `.rs` files are under
+    them and how many times the word `unsafe` appears -- once with comments
+    stripped and once whole. Those fifteen numbers were counted by hand, once,
+    and then the chapter was re-pinned to a commit that had gained a board.
+    Four rows survived it. The `chips/rp2350` row said ten files and eighteen
+    uses; the commit it now cites has fourteen and twenty-four, because the
+    same re-pin that fixed the citations added SPI, PIO and DMA to that crate.
+
+    Nothing caught it. `citation_chain_checks` asks whether a cited line
+    exists, which is a question about one file, and a count is a question about
+    a directory. So this recounts all fifteen at the chapter's own pinned
+    commit and compares them to what the page prints.
+
+    The counts live in the page as `var COUNTS = [[files, code, whole], ...]`
+    beside the buttons that name the paths, so both halves are read out of the
+    page rather than restated here -- a row added to the figure is a row this
+    checks, without editing the gate.
+
+    Skipped where git or the pinned commit is unavailable, the way the citation
+    checks are.
+    """
+    table = re.search(r"var COUNTS = \[(.*?)\];", html, re.S)
+    if not table:
+        return []
+    block = re.search(r'<section class="col sources">(.*?)</section>', html, re.S)
+    pin = re.search(r"commit <code>([0-9a-f]{7,40})</code>",
+                    block.group(1) if block else "")
+    if not pin:
+        return ["a figure prints counts of the tree and the page names no "
+                "commit to count at"]
+    pin = pin.group(1)
+    if subprocess.run(["git", "cat-file", "-e", pin + "^{commit}"],
+                      capture_output=True).returncode != 0:
+        return []
+
+    rows = [[int(n) for n in re.findall(r"-?\d+", row)]
+            for row in re.findall(r"\[([^\]]*)\]", table.group(1))]
+    # The paths are the buttons' own labels, so the figure cannot drift from
+    # what it is counting without this drifting with it.
+    paths = re.findall(r'<button[^>]*id="ar-\d+"[^>]*>([^<]+)</button>', html)
+    if len(paths) != len(rows):
+        return ["the figure names %d paths and the counts table has %d rows"
+                % (len(paths), len(rows))]
+
+    listed = subprocess.run(["git", "ls-tree", "-r", "--name-only", pin],
+                            capture_output=True, text=True)
+    if listed.returncode != 0:
+        return []
+    tree = [p for p in listed.stdout.split("\n") if p.endswith(".rs")]
+
+    problems = []
+    for path, row in zip(paths, rows):
+        if len(row) != 3:
+            problems.append("the counts row for %s is not files, code, whole"
+                            % path)
+            continue
+        under = [p for p in tree if p == path or p.startswith(path + "/")]
+        code = whole = 0
+        for one in under:
+            src = subprocess.run(["git", "show", "%s:%s" % (pin, one)],
+                                 capture_output=True, text=True).stdout
+            whole += len(re.findall(r"\bunsafe\b", src))
+            code += len(re.findall(r"\bunsafe\b", _strip_rust_comments(src)))
+        for got, want, what in ((row[0], len(under), "files"),
+                                (row[1], code, "uses with comments stripped"),
+                                (row[2], whole, "uses counting comments")):
+            if got != want:
+                problems.append(
+                    "the figure says %s has %d %s and the tree at %s has %d "
+                    "-- a re-pin moves these and nothing else notices"
+                    % (path, got, what, pin, want))
+    return problems
+
+
 def assembled_listing_checks(html, chapter_dir):
     """A halfword the page prints must be one the assembler actually produced.
 
@@ -2192,6 +2408,8 @@ def static_checks(html, name):
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(assembled_listing_checks(html, os.path.join(ROOT, name)))
     problems.extend(citation_chain_checks(html))
+    problems.extend(counted_tree_checks(html))
+    problems.extend(staticref_inventory_checks(html))
     problems.extend(figure_citation_checks(html))
     problems.extend(compiled_size_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))

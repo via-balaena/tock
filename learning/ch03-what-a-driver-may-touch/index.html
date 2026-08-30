@@ -729,18 +729,59 @@ dfn {
 .gs.is-on { display: block; }
 
 /* ---------- Three columns to a row: Figure 5 ---------- */
-.dbg { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .8rem; }
-.dbg button {
-  display: grid; grid-template-columns: minmax(6.6rem, auto) minmax(6.6rem, auto) 1fr;
-  gap: .7rem; align-items: baseline;
-  text-align: left; width: 100%;
-  font-family: var(--mono); font-size: .84rem; font-weight: 400;
-  text-transform: none; letter-spacing: 0;
-  padding: .35rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
-}
-.dbg button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); }
-.sr-at { color: var(--ink-faint); }
-.sr-ad { color: var(--hot); font-weight: 500; }
+
+/* ---------- Figure 5: the address decoder ----------
+   Twelve buttons in a list were, for one thing, the wrong twelve: the chip
+   crate has eighteen StaticRef::new calls, and two of them are a const fn that
+   makes a base out of whatever it is handed. There is no line to put in a list
+   for those, which is exactly why the figure is a decoder now -- you can only
+   see PIO's addresses by working them out, which is what the function does.
+
+   The other thing a list hid is how empty the map is. Thirty-one addresses in
+   six megabytes reads as a lot until the spaces between them are drawn. */
+.adrow { display: flex; align-items: center; gap: .7rem; margin-bottom: .5rem;
+  flex-wrap: wrap; }
+.adrow label { font-family: var(--display); font-size: .72rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 5.5rem; }
+.adrow .adgrow { flex: 1 1 11rem; min-width: 9rem; display: block; }
+.adrow input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block; }
+.adval { font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  color: var(--hot-ink); background: var(--hot-fill); border-radius: 2px;
+  padding: .12rem .45rem; flex: 0 0 auto; min-width: 6.5rem; text-align: center; }
+
+.admap { margin: .7rem 0 .2rem; }
+.adbus { display: flex; align-items: center; gap: .5rem; margin-bottom: .28rem; }
+.adbus-k { font-family: var(--mono); font-size: .66rem; color: var(--ink-faint);
+  flex: 0 0 7.5rem; text-align: right; }
+.adstrip { position: relative; flex: 1 1 auto; height: 1.5rem;
+  border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--surface-sunk); overflow: hidden; }
+/* Each named base is one hairline. Drawn at the width it really occupies the
+   map would be invisible, so it is drawn as a mark and the emptiness between
+   the marks is the honest part. */
+.adbase { position: absolute; top: 0; bottom: 0; width: 2px;
+  background: var(--accent); }
+.adbase.fn { background: var(--ink-faint); }
+.adhere { position: absolute; top: -2px; bottom: -2px; width: 3px;
+  background: var(--hot); }
+.adkey { display: flex; gap: 1rem; flex-wrap: wrap; margin: .35rem 0 .9rem 8rem;
+  font-family: var(--display); font-size: .6rem; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--ink-faint); }
+.adkey b { font-weight: 700; }
+.adkey .k-base { color: var(--accent); }
+.adkey .k-fn { color: var(--ink-soft); }
+.adkey .k-here { color: var(--hot); }
+
+.adsay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: 0 0 .6rem; }
+.adp { display: none; }
+.adp.is-on { display: block; }
+.adwhat { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  margin: 0 0 1rem; padding-left: .7rem; border-left: 2px solid var(--rule); }
+.adb { display: none; }
+.adb.is-on { display: block; }
+
 .dbgsay { display: flex; flex-direction: column; gap: .45rem; }
 .dbgp {
   font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
@@ -944,7 +985,7 @@ dfn {
     <div class="costsay">
       <p class="costp is-on" id="arp-0">Eighty-eight thousand lines of drivers, and the word appears five times &mdash; every one of them inside a comment. Five crates make up this directory, and all five open with <b>#![forbid(unsafe_code)]</b>.</p>
       <p class="costp" id="arp-1">The scheduler, the syscall layer, and the code that starts and stops processes. Notice what is not in that list: there is no allocator. The kernel is <b>no_std</b> and never asks for memory it did not already have, which is the problem chapter 7 is about.</p>
-      <p class="costp" id="arp-2">Ten files describing one chip. Twelve of the eighteen are the same line with a different number in it, and Figure 5 is those twelve.</p>
+      <p class="costp" id="arp-2">Fourteen files describing one chip. Eighteen of the twenty-four are the same line with a different number in it, and Figure 5 is those eighteen.</p>
       <p class="costp" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 2, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
       <p class="costp" id="arp-4">Four, and all four are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, setup, and main. They are the entry points something outside Rust calls, plus the one this board offers to the Pico 2&nbsp;W crate that builds on it.</p>
     </div>
@@ -1003,40 +1044,78 @@ dfn {
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 5</span>
-    <span class="instrument-title">Every address on this chip, in one list</span>
+    <span class="instrument-title">Every address the chip crate names, and the space between them</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a line. One of the twelve is the one chapter 1 was about.</p>
-    <div class="dbg" role="group" aria-label="The twelve StaticRef declarations in the RP2350 chip crate">
-      <button type="button" id="sr-0" aria-pressed="false"><span class="sr-at">clocks.rs:864</span><span class="sr-ad">0x40010000</span><span>ClocksRegisters</span></button>
-      <button type="button" id="sr-1" aria-pressed="false"><span class="sr-at">resets.rs:204</span><span class="sr-ad">0x40020000</span><span>ResetsRegisters</span></button>
-      <button type="button" id="sr-2" aria-pressed="false"><span class="sr-at">gpio.rs:1165</span><span class="sr-ad">0x40028000</span><span>GpioRegisters</span></button>
-      <button type="button" id="sr-3" aria-pressed="false"><span class="sr-at">gpio.rs:1167</span><span class="sr-ad">0x40038000</span><span>GpioPadRegisters</span></button>
-      <button type="button" id="sr-4" aria-pressed="false"><span class="sr-at">xosc.rs:89</span><span class="sr-ad">0x40048000</span><span>XoscRegisters</span></button>
-      <button type="button" id="sr-5" aria-pressed="false"><span class="sr-at">clocks.rs:866</span><span class="sr-ad">0x40050000</span><span>PllRegisters</span></button>
-      <button type="button" id="sr-6" aria-pressed="false"><span class="sr-at">clocks.rs:868</span><span class="sr-ad">0x40058000</span><span>PllRegisters</span></button>
-      <button type="button" id="sr-7" aria-pressed="false"><span class="sr-at">uart.rs:344</span><span class="sr-ad">0x40070000</span><span>UartRegisters</span></button>
-      <button type="button" id="sr-8" aria-pressed="false"><span class="sr-at">uart.rs:347</span><span class="sr-ad">0x40078000</span><span>UartRegisters</span></button>
-      <button type="button" id="sr-9" aria-pressed="false"><span class="sr-at">timer.rs:169</span><span class="sr-ad">0x400B0000</span><span>TimerRegisters</span></button>
-      <button type="button" id="sr-10" aria-pressed="false"><span class="sr-at">ticks.rs:138</span><span class="sr-ad">0x40108000</span><span>TicksRegisters</span></button>
-      <button type="button" id="sr-11" aria-pressed="true"><span class="sr-at">gpio.rs:1169</span><span class="sr-ad">0xD0000000</span><span>SIORegisters</span></button>
+    <p class="dothis">Roam the map with the slider, or press the button to jump from one named base to the next. Two things to find: how far apart they are, and the three blocks whose addresses are not written down anywhere &mdash; a function makes them from a base it is handed.</p>
+
+    <div class="adrow">
+      <label for="ad-cell">where</label>
+      <span class="adgrow"><input type="range" id="ad-cell" min="0" max="194" step="1" value="194" aria-label="which thirty-two kilobytes of the address space"></span>
+      <span class="adval" id="ad-addr">0xD0000000</span>
     </div>
-    <div class="dbgsay">
-      <p class="dbgp" id="srp-0">The clock generators. Chapter 1 called this the block that decides how fast the chip runs.</p>
-      <p class="dbgp" id="srp-1">Holds other blocks switched off. Most of the chip is dead until something clears its bit here.</p>
-      <p class="dbgp" id="srp-2">Decides what each pin is for: plain output, or a serial line, or one of several other things.</p>
-      <p class="dbgp" id="srp-3">The electrical side of each pin &mdash; how hard it drives, and which way it is pulled when nothing is driving it.</p>
-      <p class="dbgp" id="srp-4">The crystal oscillator: a real quartz crystal on the board, and the most accurate timing the chip has.</p>
-      <p class="dbgp" id="srp-5">Multiplies the crystal up to the speed the processors run at.</p>
-      <p class="dbgp" id="srp-6">A second multiplier, held at 48 MHz for USB so its timing survives retuning the main clock.</p>
-      <p class="dbgp" id="srp-7">The serial port Tock's console uses. Kernel messages leave the chip one byte at a time through here.</p>
-      <p class="dbgp" id="srp-8">A second, identical serial port. Same layout, different base.</p>
-      <p class="dbgp" id="srp-9">A counter that never stops, ticking once a microsecond.</p>
-      <p class="dbgp" id="srp-10">Divides a clock down to the slower rates the timers and the watchdog need.</p>
-      <p class="dbgp is-on" id="srp-11">This one. Chapter 1 spent its whole length inside this block, and <b>gpio_out_set</b> sits <b>0x018</b> past this base. Every layer above this line works in types; this line is where the number stops being a number.</p>
+    <div class="adrow">
+      <label for="ad-off">plus</label>
+      <span class="adgrow"><input type="range" id="ad-off" min="0" max="32764" step="4" value="0" aria-label="how far into that thirty-two kilobytes"></span>
+      <span class="adval" id="ad-off-v">+0x000</span>
+    </div>
+    <div class="costs" role="group" aria-label="Move to a named base">
+      <button type="button" id="ad-next">jump to the next base</button>
+      <button type="button" id="ad-sio">the one chapter 1 was about</button>
+    </div>
+
+    <div class="admap" aria-hidden="true">
+      <div class="adbus">
+        <span class="adbus-k">0x40000000</span>
+        <span class="adstrip" id="ad-s0"><i class="adbase" style="left:5.8824%"></i><i class="adbase" style="left:11.7647%"></i><i class="adbase" style="left:14.7059%"></i><i class="adbase" style="left:20.5882%"></i><i class="adbase" style="left:26.4706%"></i><i class="adbase" style="left:29.4118%"></i><i class="adbase" style="left:32.3529%"></i><i class="adbase" style="left:41.1765%"></i><i class="adbase" style="left:44.1176%"></i><i class="adbase" style="left:47.0588%"></i><i class="adbase" style="left:50.0000%"></i><i class="adbase" style="left:64.7059%"></i><i class="adbase" style="left:97.0588%"></i><i class="adhere" id="ad-h0"></i></span>
+      </div>
+      <div class="adbus">
+        <span class="adbus-k">0x50000000</span>
+        <span class="adstrip" id="ad-s1"><i class="adbase" style="left:0.0000%"></i><i class="adbase" style="left:0.0195%"></i><i class="adbase fn" style="left:40.0000%"></i><i class="adbase fn" style="left:40.0069%"></i><i class="adbase fn" style="left:40.0781%"></i><i class="adbase fn" style="left:40.1562%"></i><i class="adbase fn" style="left:40.2344%"></i><i class="adbase fn" style="left:60.0000%"></i><i class="adbase fn" style="left:60.0069%"></i><i class="adbase fn" style="left:60.0781%"></i><i class="adbase fn" style="left:60.1562%"></i><i class="adbase fn" style="left:60.2344%"></i><i class="adbase fn" style="left:80.0000%"></i><i class="adbase fn" style="left:80.0069%"></i><i class="adbase fn" style="left:80.0781%"></i><i class="adbase fn" style="left:80.1562%"></i><i class="adbase fn" style="left:80.2344%"></i><i class="adhere" id="ad-h1"></i></span>
+      </div>
+      <div class="adbus">
+        <span class="adbus-k">0xD0000000</span>
+        <span class="adstrip" id="ad-s2"><i class="adbase" style="left:0.0000%"></i><i class="adhere" id="ad-h2"></i></span>
+      </div>
+    </div>
+    <p class="adkey" aria-hidden="true"><span class="k-base">written down</span><span class="k-fn">made by a function</span><span class="k-here">where you are</span></p>
+
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">the nearest base at or below</span><span class="costcell-v" id="ad-base">0xD0000000</span></div>
+      <div class="costcell"><span class="costcell-k">which is</span><span class="costcell-v" id="ad-name">SIORegisters</span></div>
+      <div class="costcell"><span class="costcell-k">named at</span><span class="costcell-v" id="ad-line">gpio.rs:1169</span></div>
+    </div>
+
+    <div class="adsay">
+      <p class="adp is-on" id="adp-on">You are on a base exactly. This is one of the thirty-one addresses the chip crate names, and every one of them was written by somebody reading the datasheet.</p>
+      <p class="adp" id="adp-past">Past a base, and inside no block this figure can vouch for. What the readout gives is the nearest named base at or below, and how far past it you are &mdash; not whether the block is that big. The crate names bases; how far each one reaches is the register struct's business.</p>
+      <p class="adp" id="adp-none">Below everything the crate names on this bus. Nothing in the chip crate resolves here, which is most of the map: thirty-one addresses in six megabytes of space, and the spaces between them are the honest part of this picture.</p>
+      <p class="adp" id="adp-fn">This address is not written down anywhere. A <b>const fn</b> makes it from a base it is handed, so no line in any file holds the number. The two lines in <b>pio.rs</b> take a base and add to it, and three call sites hand them three different bases. A list of declarations cannot show you this address. Working it out is the only way to see it.</p>
+    </div>
+
+    <div class="adwhat">
+      <p class="adb" id="adb-none">&mdash;</p>
+      <p class="adb" id="adb-clocks">The clock generators. Chapter 1 called this the block that decides how fast the chip runs.</p>
+      <p class="adb" id="adb-resets">Holds other blocks switched off. Most of the chip is dead until something clears its bit here.</p>
+      <p class="adb" id="adb-gpio">Decides what each pin is for: plain output, or a serial line, or one of several other things.</p>
+      <p class="adb" id="adb-pads">The electrical side of each pin &mdash; how hard it drives, and which way it is pulled when nothing is driving it.</p>
+      <p class="adb" id="adb-xosc">The crystal oscillator: a real quartz crystal on the board, and the most accurate timing the chip has.</p>
+      <p class="adb" id="adb-pllsys">Multiplies the crystal up to the speed the processors run at.</p>
+      <p class="adb" id="adb-pllusb">A second multiplier, held at 48 MHz for USB so its timing survives retuning the main clock.</p>
+      <p class="adb" id="adb-uart0">The serial port Tock's console uses. Kernel messages leave the chip one byte at a time through here.</p>
+      <p class="adb" id="adb-uart1">A second, identical serial port. Same layout, different base.</p>
+      <p class="adb" id="adb-spi0">A synchronous serial port. On the Pico 2 W this is how the kernel reaches the radio, over four wires instead of one.</p>
+      <p class="adb" id="adb-spi1">A second one, same layout. Nothing on the plain Pico 2 uses it.</p>
+      <p class="adb" id="adb-timer">A counter that never stops, ticking once a microsecond.</p>
+      <p class="adb" id="adb-ticks">Divides a clock down to the slower rates the timers and the watchdog need.</p>
+      <p class="adb" id="adb-dmach">Sixteen channels that copy memory without the processor doing the copying. One <b>StaticRef</b> covers all sixteen, because the declaration names an array.</p>
+      <p class="adb" id="adb-dmairq">Which channels have finished, and which ones are allowed to say so. A named constant away from the channels above it rather than a number of its own.</p>
+      <p class="adb" id="adb-pio">A small programmable machine that drives pins on its own schedule. Three of these, and the same two lines describe all three.</p>
+      <p class="adb" id="adb-pioirq">The same block's interrupt registers, at a fixed distance into it. The distance differs from the RP2040's, which is the sort of thing a shared driver has to be told.</p>
+      <p class="adb" id="adb-sio">This one. Chapter 1 spent its whole length inside this block, and <b>gpio_out_set</b> sits <b>0x018</b> past this base. Every layer above this line works in types; this line is where the number stops being a number.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice that these are declarations, not code that runs. Twelve constants, each naming one number the datasheet gave.</div>
+  <div class="instrument-note">Notice how few of these are declarations you could read off a page. Sixteen are constants, each naming one number the datasheet gave. The other fifteen are one function called three times, and no file holds their addresses at all.</div>
 </figure>
 
 <section class="col">
@@ -1384,7 +1463,7 @@ dfn {
     var COUNTS = [
       [269, 0, 5],
       [101, 259, 356],
-      [10, 18, 18],
+      [14, 24, 24],
       [11, 67, 68],
       [4, 4, 4]
     ];
@@ -1424,10 +1503,169 @@ dfn {
     });
   }());
 
-  /* ---------------- Figure 5: twelve addresses ----------------
-     Opens on the last one rather than the first, because that is the one
-     chapter 1 was about and the reader arrives looking for it. */
-  group("sr-", "srp-", 12, "", "is-on", "is-off");
+  /* ---------------- Figure 5: the address decoder ----------------
+     Every StaticRef::new in chips/rp2350/src at the pinned commit. There are
+     eighteen calls and thirty-one addresses, because two of the calls are a
+     const fn that three call sites hand three different bases:
+
+         const fn regs(base: usize) -> StaticRef<PioRegisters>       pio.rs:55
+         const fn irq_regs(base: usize) -> StaticRef<PioIrqRegisters> pio.rs:59
+         pio(base) uses regs(base), irq_regs(base), and regs(base + 0x1000),
+         + 0x2000 and + 0x3000                                     pio.rs:62-70
+
+     So five addresses per PIO block and three blocks, none of which appears as
+     a number in any file. `made` marks those. The rest are literals, except
+     DMA's two, which are DMA_BASE and DMA_BASE + IRQ_OFFSET.
+
+     The map is drawn as three strips because the three regions are nowhere
+     near each other, and one strip covering all of it would be a strip of
+     nothing with three marks at the far ends. */
+  (function () {
+    /* addr, which description, where it is named, made-by-a-function */
+    var MAP = [
+      [0x40010000, "clocks", "clocks.rs:864", 0],
+      [0x40020000, "resets", "resets.rs:204", 0],
+      [0x40028000, "gpio",   "gpio.rs:1165",  0],
+      [0x40038000, "pads",   "gpio.rs:1167",  0],
+      [0x40048000, "xosc",   "xosc.rs:89",    0],
+      [0x40050000, "pllsys", "clocks.rs:866", 0],
+      [0x40058000, "pllusb", "clocks.rs:868", 0],
+      [0x40070000, "uart0",  "uart.rs:344",   0],
+      [0x40078000, "uart1",  "uart.rs:347",   0],
+      [0x40080000, "spi0",   "spi.rs:20",     0],
+      [0x40088000, "spi1",   "spi.rs:23",     0],
+      [0x400b0000, "timer",  "timer.rs:169",  0],
+      [0x40108000, "ticks",  "ticks.rs:138",  0],
+      [0x50000000, "dmach",  "dma.rs:56",     0],
+      [0x50000400, "dmairq", "dma.rs:58",     0],
+      [0x50200000, "pio",    "pio.rs:55",     1],
+      [0x5020016c, "pioirq", "pio.rs:59",     1],
+      [0x50201000, "pio",    "pio.rs:55",     1],
+      [0x50202000, "pio",    "pio.rs:55",     1],
+      [0x50203000, "pio",    "pio.rs:55",     1],
+      [0x50300000, "pio",    "pio.rs:55",     1],
+      [0x5030016c, "pioirq", "pio.rs:59",     1],
+      [0x50301000, "pio",    "pio.rs:55",     1],
+      [0x50302000, "pio",    "pio.rs:55",     1],
+      [0x50303000, "pio",    "pio.rs:55",     1],
+      [0x50400000, "pio",    "pio.rs:55",     1],
+      [0x5040016c, "pioirq", "pio.rs:59",     1],
+      [0x50401000, "pio",    "pio.rs:55",     1],
+      [0x50402000, "pio",    "pio.rs:55",     1],
+      [0x50403000, "pio",    "pio.rs:55",     1],
+      [0xd0000000, "sio",    "gpio.rs:1169",  0]
+    ];
+    /* base, how many 32 kB cells, which strip */
+    var BUS = [[0x40000000, 34], [0x50000000, 160], [0xd0000000, 1]];
+    var CELL = 0x8000;
+
+    function el(id) { return document.getElementById(id); }
+    function hex8(n) {
+      var s = (n >>> 0).toString(16).toUpperCase();
+      while (s.length < 8) { s = "0" + s; }
+      return "0x" + s;
+    }
+    function hex3(n) {
+      var s = n.toString(16).toUpperCase();
+      while (s.length < 3) { s = "0" + s; }
+      return "+0x" + s;
+    }
+
+    /* Cell index to address, walking the three strips in order. */
+    function cellAddr(k) {
+      var i, n = k;
+      for (i = 0; i < BUS.length; i++) {
+        if (n < BUS[i][1]) { return BUS[i][0] + n * CELL; }
+        n -= BUS[i][1];
+      }
+      return BUS[BUS.length - 1][0] + (BUS[BUS.length - 1][1] - 1) * CELL;
+    }
+    function addrCell(a) {
+      var i, k = 0;
+      for (i = 0; i < BUS.length; i++) {
+        if (a >= BUS[i][0] && a < BUS[i][0] + BUS[i][1] * CELL) {
+          return k + Math.floor((a - BUS[i][0]) / CELL);
+        }
+        k += BUS[i][1];
+      }
+      return -1;
+    }
+    function busOf(a) {
+      var i;
+      for (i = 0; i < BUS.length; i++) {
+        if (a >= BUS[i][0] && a < BUS[i][0] + BUS[i][1] * CELL) { return i; }
+      }
+      return -1;
+    }
+
+    function here() {
+      return cellAddr(parseInt(el("ad-cell").value, 10))
+        + parseInt(el("ad-off").value, 10);
+    }
+
+    /* The nearest base at or below, on the same strip. Crossing from one
+       strip to another is not "just past" anything. */
+    function below(a) {
+      var i, best = -1, bus = busOf(a);
+      for (i = 0; i < MAP.length; i++) {
+        if (MAP[i][0] <= a && busOf(MAP[i][0]) === bus) { best = i; }
+      }
+      return best;
+    }
+
+    function draw() {
+      var a = here(), i = below(a), k;
+      var SAY = ["on", "past", "none", "fn"];
+      var open = i < 0 ? "none" : (MAP[i][0] === a ? (MAP[i][3] ? "fn" : "on")
+                                                   : "past");
+
+      el("ad-addr").textContent = hex8(a);
+      el("ad-off-v").textContent = hex3(parseInt(el("ad-off").value, 10));
+      el("ad-base").textContent = i < 0 ? "nothing below" : hex8(MAP[i][0]);
+      el("ad-name").textContent = i < 0 ? "nothing here"
+        : (MAP[i][3] ? "made, not written" : "written down");
+      el("ad-line").textContent = i < 0 ? "no line" : MAP[i][2];
+
+      for (k = 0; k < SAY.length; k++) {
+        el("adp-" + SAY[k]).classList.toggle("is-on", SAY[k] === open);
+      }
+      // One block description, and the dash when nothing is named below.
+      for (k = 0; k < BLOCKS.length; k++) {
+        el("adb-" + BLOCKS[k]).classList.toggle("is-on",
+          i < 0 ? BLOCKS[k] === "none" : BLOCKS[k] === MAP[i][1]);
+      }
+      // The marker on whichever strip the address is on, and off the others.
+      var bus = busOf(a);
+      for (k = 0; k < BUS.length; k++) {
+        el("ad-h" + k).setAttribute("style", k !== bus ? "display:none"
+          : "left:" + ((a - BUS[k][0]) / (BUS[k][1] * CELL) * 100).toFixed(4) + "%");
+      }
+    }
+
+    var BLOCKS = ["none", "clocks", "resets", "gpio", "pads", "xosc", "pllsys",
+                  "pllusb", "uart0", "uart1", "spi0", "spi1", "timer", "ticks",
+                  "dmach", "dmairq", "pio", "pioirq", "sio"];
+
+
+    function goto_(a) {
+      var c = addrCell(a);
+      el("ad-cell").value = String(c);
+      el("ad-off").value = String(a - cellAddr(c));
+      draw();
+    }
+
+    el("ad-cell").addEventListener("input", draw);
+    el("ad-off").addEventListener("input", draw);
+    el("ad-next").addEventListener("click", function () {
+      var a = here(), i;
+      for (i = 0; i < MAP.length; i++) {
+        if (MAP[i][0] > a) { goto_(MAP[i][0]); return; }
+      }
+      goto_(MAP[0][0]);
+    });
+    el("ad-sio").addEventListener("click", function () { goto_(0xd0000018); });
+    draw();
+  }());
 
   /* ---------------- Figure 6: the board's two lines ---------------- */
   group("wr-", "wrp-", 2, "", "is-on", "is-off");

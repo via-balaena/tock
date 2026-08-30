@@ -51,15 +51,16 @@ chk("and each of those has its panel open",
       && REG["wrp-0"].classList.contains("is-on")
       && REG["bdp-0"].classList.contains("is-on"), true);
 
-// Figure 5 is the exception, and deliberately: the reader arrives at a list of
-// twelve addresses looking for the one chapter 1 was about, so the list opens
-// on that one rather than on the numerically first.
-chk("figure 5 opens on SIO rather than on the first line",
-    REG["sr-11"].getAttribute("aria-pressed"), "true");
-chk("and not on the first", REG["sr-0"].getAttribute("aria-pressed"), "false");
-chk("the SIO panel is the open one", REG["srp-11"].classList.contains("is-on"), true);
-chk("and it is the one that names chapter 1's block",
-    REG["srp-11"].textContent.indexOf("gpio_out_set") > -1, true);
+// Figure 5 is the exception, and deliberately: the reader arrives at the map
+// looking for the address chapter 1 was about, so the decoder opens sitting on
+// SIO rather than at the bottom of the space.
+chk("figure 5 opens on SIO rather than at the bottom of the map",
+    REG["ad-addr"].textContent, "0xD0000000");
+chk("and names the line that declares it", REG["ad-line"].textContent, "gpio.rs:1169");
+chk("the SIO description is the open one",
+    REG["adb-sio"].classList.contains("is-on"), true);
+chk("and it is the one that names chapter 1's register",
+    REG["adb-sio"].textContent.indexOf("gpio_out_set") > -1, true);
 
 // ---- Figure 1: the declaration ----
 walk("sg-", "sgp-", 5, "figure 1");
@@ -157,11 +158,17 @@ REG["cd-0"].fire("click");
 // The numbers are the argument, so they are asserted rather than trusted. Each
 // was taken by counting `unsafe` in the .rs files under that path at the pinned
 // commit, once with comments stripped and once whole.
+//
+// These fifteen numbers are restated here, which is worth being honest about:
+// restating a number cannot catch it going stale, and this row said 10/18/18
+// for as long as the figure did. What catches it is counted_tree_checks in
+// check.py, which recounts all fifteen at the pinned commit. This asserts only
+// that the figure shows the row it was clicked on.
 (function () {
   var CASE = [
     ["capsules",              "269", "0",   "5"],
     ["kernel",                "101", "259", "356"],
-    ["chips/rp2350",          "10",  "18",  "18"],
+    ["chips/rp2350",          "14",  "24",  "24"],
     ["arch/cortex-m",         "11",  "67",  "68"],
     ["the Pico 2 board",      "4",   "4",   "4"]
   ];
@@ -233,21 +240,148 @@ chk("and the last step lands on chapter 1's register",
     REG["hpp-5"].textContent.indexOf("0x018") > -1, true);
 REG["hp-0"].fire("click");
 
-// ---- Figure 5: twelve addresses ----
-walk("sr-", "srp-", 12, "figure 5");
-chk("there are twelve and not eleven or thirteen",
-    REG["sr-11"] !== undefined && REG["sr-12"] === undefined, true);
+// ---- Figure 5: the address decoder ----
+// The figure's claim is an inventory: eighteen StaticRef::new calls in the chip
+// crate, thirty-one addresses, and fifteen of those made by a const fn rather
+// than written anywhere. staticref_inventory_checks in check.py recounts the
+// call sites against the tree at the pinned commit; what is asserted here is
+// that the decoder resolves them.
 (function () {
-  // Every line in the list shows an address, and every address is distinct.
-  var i, seen = {}, count = 0, text;
-  for (i = 0; i < 12; i++) {
-    text = REG["sr-" + i].textContent;
-    if (text.indexOf("0x") < 0) { throw new Error("line " + i + " shows no address"); }
-    if (!seen[text]) { seen[text] = 1; count++; }
+  function at(a) {
+    // Reach an address the way the reader would: the coarse slider picks the
+    // 32 kB, the fine one the rest.
+    var BUS = [[0x40000000, 34], [0x50000000, 160], [0xd0000000, 1]];
+    var CELL = 0x8000, i, k = 0, cell = -1, off = 0;
+    for (i = 0; i < BUS.length; i++) {
+      if (a >= BUS[i][0] && a < BUS[i][0] + BUS[i][1] * CELL) {
+        cell = k + Math.floor((a - BUS[i][0]) / CELL);
+        off = (a - BUS[i][0]) % CELL;
+        break;
+      }
+      k += BUS[i][1];
+    }
+    if (cell < 0) { throw new Error("no cell holds " + a); }
+    REG["ad-cell"].value = String(cell); REG["ad-cell"].fire("input");
+    REG["ad-off"].value = String(off); REG["ad-off"].fire("input");
   }
-  chk("all twelve lines are different", count, 12);
+  function shown() {
+    return [REG["ad-addr"].textContent, REG["ad-base"].textContent,
+            REG["ad-name"].textContent, REG["ad-line"].textContent].join(" ");
+  }
+  function open_() {
+    var SAY = ["on", "past", "none", "fn"], i, on = [];
+    for (i = 0; i < SAY.length; i++) {
+      if (REG["adp-" + SAY[i]].classList.contains("is-on")) { on.push(SAY[i]); }
+    }
+    return on.join("+");
+  }
+  function block() {
+    var B = ["none", "clocks", "resets", "gpio", "pads", "xosc", "pllsys",
+             "pllusb", "uart0", "uart1", "spi0", "spi1", "timer", "ticks",
+             "dmach", "dmairq", "pio", "pioirq", "sio"], i, on = [];
+    for (i = 0; i < B.length; i++) {
+      if (REG["adb-" + B[i]].classList.contains("is-on")) { on.push(B[i]); }
+    }
+    return on.join("+");
+  }
+
+  // Chapter 1's own address, which is the one thing a reader comes here for.
+  REG["ad-sio"].fire("click");
+  chk("the button lands on chapter 1's register, not just its block",
+      REG["ad-addr"].textContent, "0xD0000018");
+  chk("resolving to SIO's base", REG["ad-base"].textContent, "0xD0000000");
+  chk("twenty-four bytes past it", REG["ad-off-v"].textContent, "+0x018");
+  chk("which is past a base rather than on one", open_(), "past");
+  chk("and the block is still SIO", block(), "sio");
+
+  // A base written down as a literal.
+  at(0x40028000);
+  chk("GPIO's base is written down", shown(),
+      "0x40028000 0x40028000 written down gpio.rs:1165");
+  chk("and sitting on it says so", open_(), "on");
+  chk("with the right description", block(), "gpio");
+
+  // The two that the re-pin added and the old list of twelve did not have.
+  at(0x40080000);
+  chk("SPI0 is in the inventory", shown(),
+      "0x40080000 0x40080000 written down spi.rs:20");
+  at(0x50000400);
+  chk("and DMA's interrupt registers, at a named constant off the channels",
+      shown(), "0x50000400 0x50000400 written down dma.rs:58");
+  chk("which is its own description", block(), "dmairq");
+
+  // The ones no line holds. This is the figure's reason for existing.
+  at(0x50200000);
+  chk("PIO0's base is made, not written", shown(),
+      "0x50200000 0x50200000 made, not written pio.rs:55");
+  chk("and the panel says a list cannot show it", open_(), "fn");
+  chk("naming the const fn as the reason",
+      REG["adp-fn"].textContent.indexOf("const fn") > -1, true);
+  at(0x5030016c);
+  chk("PIO1's interrupt registers are the same function, a different base",
+      shown(), "0x5030016C 0x5030016C made, not written pio.rs:59");
+  at(0x50403000);
+  chk("and the third block's third mirror is reached the same way",
+      shown(), "0x50403000 0x50403000 made, not written pio.rs:55");
+
+  // Emptiness. Most of the map resolves to nothing, which a list hid.
+  at(0x40000000);
+  chk("below everything on the first bus, nothing resolves",
+      REG["ad-base"].textContent, "nothing below");
+  chk("and it says so rather than reaching back to another bus", open_(), "none");
+  chk("with a dash where a description would be", block(), "none");
+  at(0x40100000);
+  chk("a gap between two named blocks resolves to the one below it",
+      REG["ad-line"].textContent, "timer.rs:169");
+  chk("as past it, not on it", open_(), "past");
+
+  // Crossing buses is not "just past" the block before it.
+  at(0xd0000000);
+  chk("SIO does not resolve to anything on the bus below it",
+      REG["ad-base"].textContent, "0xD0000000");
+  at(0x50000000);
+  chk("nor does DMA reach back to the peripherals",
+      REG["ad-base"].textContent, "0x50000000");
+
+  // The tour. Pressing next from the bottom reaches every one of the
+  // thirty-one addresses, in order, and wraps.
+  (function () {
+    var seen = {}, n = 0, i, a, last = -1, out_of_order = 0, adrift = 0;
+    at(0x40000000);
+    for (i = 0; i < 31; i++) {
+      REG["ad-next"].fire("click");
+      a = REG["ad-addr"].textContent;
+      if (!seen[a]) { seen[a] = 1; n++; }
+      if (parseInt(a, 16) <= last) { out_of_order++; }
+      last = parseInt(a, 16);
+      // A base is either written down or made by the function; the tour must
+      // never stop somewhere that is merely past one, or on nothing.
+      if (open_() !== "on" && open_() !== "fn") { adrift++; }
+      if (block() === "none" || block().indexOf("+") > -1) { adrift++; }
+    }
+    chk("the tour reaches thirty-one distinct addresses", n, 31);
+    chk("in increasing order", out_of_order, 0);
+    chk("and every stop is a base with one description", adrift, 0);
+    REG["ad-next"].fire("click");
+    chk("and it wraps to the lowest rather than sticking at the top",
+        REG["ad-addr"].textContent, "0x40010000");
+  }());
+
+  // Fifteen of the thirty-one are made rather than written, which is the
+  // count the figure's whole argument rests on.
+  (function () {
+    var i, made = 0;
+    at(0x40000000);
+    for (i = 0; i < 31; i++) {
+      REG["ad-next"].fire("click");
+      if (REG["ad-name"].textContent === "made, not written") { made++; }
+    }
+    chk("fifteen of the thirty-one are made by the function", made, 15);
+    chk("and sixteen are written down", 31 - made, 16);
+  }());
+
+  REG["ad-sio"].fire("click");
 }());
-REG["sr-11"].fire("click");
 
 // ---- Figure 6: the board's two lines ----
 walk("wr-", "wrp-", 2, "figure 6");

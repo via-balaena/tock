@@ -315,13 +315,6 @@
     "kept_by": "#0x18]"
   },
   {
-    "id": "ch03-fig5-imperative-ch1",
-    "in": "ch03",
-    "says": "One of the twelve is the one chapter 1 was about",
-    "about": "ch01",
-    "kept_by": "0xD0000000"
-  },
-  {
     "id": "ch03-clocks-ch1",
     "in": "ch03",
     "says": "Chapter 1 called this the block that decides how fast the chip runs",
@@ -1160,5 +1153,12 @@
     "says": "Chapter 4 is where the other route is",
     "about": "ch04",
     "kept_by": "program-openocd"
+  },
+  {
+    "id": "ch03-fig5-button-ch1",
+    "in": "ch03",
+    "says": "the one chapter 1 was about",
+    "about": "ch01",
+    "kept_by": "0xD0000000"
   }
 ]
