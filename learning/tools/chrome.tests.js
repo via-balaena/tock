@@ -63,7 +63,7 @@ chk("and Back is disabled on it", ids["bookbar-prev"].getAttribute("aria-disable
 chk("with Next naming the chapter that follows", ids["bookbar-next"].textContent, "Getting It Running →");
 
 goto("ch04");
-chk("a chapter says which one it is", ids["bookbar-where"].textContent, "Chapter 4 of 8");
+chk("a chapter says which one it is", ids["bookbar-where"].textContent, "Chapter 4");
 chk("Back names the one before it", ids["bookbar-prev"].textContent, "← How Code Starts Running");
 chk("Next names the one after", ids["bookbar-next"].textContent, "What a Process Is →");
 chk("and Back is live again", ids["bookbar-prev"].getAttribute("aria-disabled"), null);
@@ -77,7 +77,7 @@ chk("the pip for this page is the one marked here",
 goto("ch08");
 chk("the last chapter has nowhere to go next", ids["bookbar-next"].getAttribute("aria-disabled"), "true");
 chk("and says so", ids["bookbar-next"].textContent, "Done →");
-chk("and is the last chapter of eight", ids["bookbar-where"].textContent, "Chapter 8 of 8");
+chk("and the last one names itself too", ids["bookbar-where"].textContent, "Chapter 8");
 
 // Jump forward, then back: a chapter skipped over stays unread, and one
 // already read stays read. That is the whole reason this is stored rather

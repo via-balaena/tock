@@ -151,51 +151,6 @@ def scope_css(css, key, ids):
     return "".join(out)
 
 
-CHROME_CSS = '''
-/* ---- the book's own chrome ----
-   Nine pages behind one hash is a good way to hold a book together and a bad
-   way to know where you are in one. This is the part that is the book rather
-   than any chapter: what you are reading, how far in it sits, and the two
-   links that move. It is built here rather than in a chapter because no
-   chapter can know what comes before or after it.
-
-   The bar is sticky and short. The line under it fills as you scroll, which
-   is the cheap answer to "how much of this is left" on a page that can run to
-   thirteen thousand words. */
-.bookbar { position: sticky; top: 0; z-index: 40;
-  background: var(--surface); border-bottom: 1px solid var(--rule); }
-.bookbar-in { max-width: var(--wide, 60rem); margin: 0 auto;
-  display: flex; align-items: center; gap: .9rem;
-  padding: .5rem 1.4rem; flex-wrap: wrap; }
-.bookbar a { color: inherit; text-decoration: none; }
-.bookbar-home { font-family: var(--display); font-weight: 700; font-size: .8rem;
-  letter-spacing: .02em; color: var(--ink); white-space: nowrap; }
-.bookbar-home:hover { color: var(--hot); }
-.bookbar-where { font-family: var(--display); font-size: .7rem; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
-  white-space: nowrap; }
-.bookbar-gap { flex: 1 1 auto; }
-.bookbar-move { display: flex; gap: .5rem; }
-.bookbar-move a { font-family: var(--display); font-size: .72rem; font-weight: 700;
-  letter-spacing: .04em; color: var(--ink-soft); border: 1px solid var(--rule);
-  border-radius: 2px; padding: .25rem .55rem; white-space: nowrap; }
-.bookbar-move a:hover { border-color: var(--hot); color: var(--hot); }
-.bookbar-move a[aria-disabled="true"] { color: var(--ink-faint);
-  border-color: var(--rule); pointer-events: none; }
-/* Twelve pips, one per page, so the shape of the whole book is visible at a
-   glance and the one you are on is placed inside it. */
-.bookbar-pips { display: flex; gap: 3px; }
-.bookbar-pips i { width: 12px; height: 5px; border-radius: 1px;
-  background: var(--rule-strong); display: block; }
-.bookbar-pips i.is-done { background: var(--ink-faint); }
-.bookbar-pips i.is-here { background: var(--hot); }
-.bookread { height: 2px; background: var(--hot); width: 0; }
-@media (max-width: 34rem) {
-  .bookbar-in { padding: .45rem .9rem; gap: .6rem; }
-  .bookbar-pips { display: none; }
-}
-'''
-
 CHROME_HTML = '''<div class="bookbar">
   <div class="bookbar-in">
     <a class="bookbar-home" href="#cover">Learning Tock from the Ground Up</a>
@@ -267,11 +222,11 @@ CHROME_JS = '''
 
   function paint() {
     var i = at(), k, pips = el("bookbar-pips").children;
-    // The chapters number themselves from zero in their own mastheads, so
-    // the bar says what they say rather than counting positions and landing
-    // one out at both ends.
-    el("bookbar-where").textContent = i === 0
-      ? "Cover" : "Chapter " + NUMS[ORDER[i]] + " of " + NUMS[ORDER[ORDER.length - 1]];
+    // Just the number the chapter calls itself. "Chapter 3 of 8" reads as
+    // third-of-eight and is not: the chapters number from zero, so there are
+    // nine and the last is 8. The pips carry how far along you are, which is
+    // what the "of" was reaching for.
+    el("bookbar-where").textContent = i === 0 ? "Cover" : "Chapter " + NUMS[ORDER[i]];
     markRead(ORDER[i]);
     var seen = readSet();
     for (k = 0; k < pips.length; k++) {
@@ -506,7 +461,10 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .bookread { height: 2px; background: var(--hot); width: 0; }
 @media (max-width: 34rem) {
   .bookbar-in { padding: .45rem .9rem; gap: .6rem; }
-  .bookbar-pips { display: none; }
+  /* Narrower rather than gone: with the count off the label, these are the
+     only thing saying how far along you are. */
+  .bookbar-pips { gap: 2px; }
+  .bookbar-pips i { width: 7px; }
 }
 
 %s
