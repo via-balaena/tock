@@ -1202,5 +1202,12 @@
     "says": "Chapter 2 is what happens when ordinary instincts about variables meet a register",
     "about": "ch02",
     "kept_by": "what a read gives back"
+  },
+  {
+    "id": "ch02-opening-ch01",
+    "in": "ch02",
+    "says": "Where chapter 1 left off",
+    "about": "ch01",
+    "kept_by": "0xD0000018"
   }
 ]
