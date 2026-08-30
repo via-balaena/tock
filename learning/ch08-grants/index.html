@@ -304,7 +304,7 @@ button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
 }
 
 /* ---------- the reading order ----------
-   Seven chapters that were seven islands. Until this, no page linked to any
+   Eight chapters that were eight islands. Until this, no page linked to any
    other, and the cover was the only thing holding the order -- so a reader who
    arrived at a chapter directly had no way on and no way back. The running
    head carries the way back; the card at the foot carries the way on.
@@ -1113,27 +1113,29 @@ dfn {
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 9</span>
-    <span class="instrument-title">Seven chapters, and what each one took out of that sentence</span>
+    <span class="instrument-title">Eight chapters, and what each one took out of that sentence</span>
   </div>
   <div class="instrument-body">
     <p class="dothis">Click each chapter. The sentence is still true of the kernel and no longer true of a process.</p>
     <div class="vt" role="group" aria-label="What each chapter took out of chapter 1's sentence">
-      <button type="button" id="ar-0" aria-pressed="true"><span class="vt-at">one</span><span>any code, any address</span></button>
-      <button type="button" id="ar-1" aria-pressed="false"><span class="vt-at">two</span><span>where the first instruction comes from</span></button>
-      <button type="button" id="ar-2" aria-pressed="false"><span class="vt-at">three</span><span>what a driver may touch</span></button>
-      <button type="button" id="ar-3" aria-pressed="false"><span class="vt-at">four</span><span>what a process is</span></button>
-      <button type="button" id="ar-4" aria-pressed="false"><span class="vt-at">five</span><span>the fence</span></button>
-      <button type="button" id="ar-5" aria-pressed="false"><span class="vt-at">six</span><span>the door</span></button>
-      <button type="button" id="ar-6" aria-pressed="false"><span class="vt-at">seven</span><span>the filing cabinet</span></button>
+      <button type="button" id="ar-0" aria-pressed="true"><span class="vt-at">one</span><span>an address reaching a pin</span></button>
+      <button type="button" id="ar-1" aria-pressed="false"><span class="vt-at">two</span><span>a register is not a variable</span></button>
+      <button type="button" id="ar-2" aria-pressed="false"><span class="vt-at">three</span><span>where the first instruction comes from</span></button>
+      <button type="button" id="ar-3" aria-pressed="false"><span class="vt-at">four</span><span>what a driver may touch</span></button>
+      <button type="button" id="ar-4" aria-pressed="false"><span class="vt-at">five</span><span>what a process is</span></button>
+      <button type="button" id="ar-5" aria-pressed="false"><span class="vt-at">six</span><span>the fence</span></button>
+      <button type="button" id="ar-6" aria-pressed="false"><span class="vt-at">seven</span><span>the door</span></button>
+      <button type="button" id="ar-7" aria-pressed="false"><span class="vt-at">eight</span><span>the filing cabinet</span></button>
     </div>
     <div class="vtsay">
-      <p class="vtp is-on" id="arp-0">The problem, stated. A store is a store, and a peripheral register is an address like any other. The processor running the instruction has no opinion about which address it lands on. Everything after this is somebody deciding which addresses a given piece of code may land on.</p>
-      <p class="vtp" id="arp-1">Nothing taken away yet, but the ground laid. The first instruction is never yours: the chip fetches from zero, inside a boot ROM nobody can change, and that ROM hunts through flash for something it recognises. Everything after it runs because something earlier chose to run it.</p>
-      <p class="vtp" id="arp-2">The first real cut, and it is not the hardware's. A capsule reaches only what its board handed it, and the crate it lives in will not compile the raw pointer that would reach anything else. Nothing stops a capsule writing a wild address while it runs. What stops it is that the code to do so was refused at build time.</p>
-      <p class="vtp" id="arp-3">A second kind of code, compiled separately, that the compiler behind the kernel never saw. The kernel cannot check what it does. What it can check is sixteen bytes at the front, which it decides to trust so that it can find where one application ends and the next begins.</p>
-      <p class="vtp" id="arp-4">The cut that is hardware. Two pairs of registers, checked on every access a process makes. The sentence stops being true of a process: it may write its own memory and nothing else, and no wrong pointer changes that.</p>
-      <p class="vtp" id="arp-5">The one way back out, made so narrow that no pointer can find it. Not an address the process may write, but an instruction that stops it, and eight kinds of question it may ask on the way through.</p>
-      <p class="vtp" id="arp-6">And the last piece: the kernel's own answer to needing memory it never asked for. It takes it from whoever caused the need, in the process's own allocation, above the fence, and never gives it back until that process is not that process any more.</p>
+      <p class="vtp is-on" id="arp-0">Nothing taken away, because there is nothing yet to take it from. This is where the sentence gets its terms: an address names a block, an offset names a control inside it, and one bit names a pin. Until a store can be followed all the way to a wire, "any address" means nothing in particular.</p>
+      <p class="vtp" id="arp-1">The problem, stated. A store is a store, and a peripheral register is an address like any other. The processor running the instruction has no opinion about which address it lands on. Everything after this is somebody deciding which addresses a given piece of code may land on.</p>
+      <p class="vtp" id="arp-2">Nothing taken away yet, but the ground laid. The first instruction is never yours: the chip fetches from zero, inside a boot ROM nobody can change, and that ROM hunts through flash for something it recognises. Everything after it runs because something earlier chose to run it.</p>
+      <p class="vtp" id="arp-3">The first real cut, and it is not the hardware's. A capsule reaches only what its board handed it, and the crate it lives in will not compile the raw pointer that would reach anything else. Nothing stops a capsule writing a wild address while it runs. What stops it is that the code to do so was refused at build time.</p>
+      <p class="vtp" id="arp-4">A second kind of code, compiled separately, that the compiler behind the kernel never saw. The kernel cannot check what it does. What it can check is sixteen bytes at the front, which it decides to trust so that it can find where one application ends and the next begins.</p>
+      <p class="vtp" id="arp-5">The cut that is hardware. Two pairs of registers, checked on every access a process makes. The sentence stops being true of a process: it may write its own memory and nothing else, and no wrong pointer changes that.</p>
+      <p class="vtp" id="arp-6">The one way back out, made so narrow that no pointer can find it. Not an address the process may write, but an instruction that stops it, and eight kinds of question it may ask on the way through.</p>
+      <p class="vtp" id="arp-7">And the last piece: the kernel's own answer to needing memory it never asked for. It takes it from whoever caused the need, in the process's own allocation, above the fence, and never gives it back until that process is not that process any more.</p>
     </div>
   </div>
   <div class="instrument-note" id="ar-note">Notice how little of this is hardware. One mechanism is: the unit in chapter 6, which checks an address before the access finishes. Chapter 7's instruction is hardware as well, but it enforces nothing on its own &mdash; it is a door, and what makes it the only way through is the fence beside it. The rest are enforced by a compiler, by a type, by a boot sequence and by a convention. Every one is a decision somebody made and wrote down in a file this series has quoted. That is the answer to chapter 2's question: nothing on the chip stops it, so people did, in software, one mechanism at a time.</div>
@@ -1186,13 +1188,13 @@ dfn {
   <h2>What you can say now</h2>
   <p id="closing">A driver keeps its state about a process inside that process's own memory, above the line the process can reach and below a table cut before the process started. The memory is taken the first time that driver is used by that process, by moving one pointer down, and nothing moves it back while the process lives. What it costs is a number you can add up: for the console on this board, seventy-six bytes, twenty-four of them slots kept empty so that an older numbering still works.</p>
   <p id="closing2">A capsule never holds any of it. It holds two numbers, and it borrows the bytes for the length of one closure, which is chapter 4's rule applied to memory that belongs to somebody else. Reaching for the same grant twice at once stops the board, because the alternative is two mutable references to one object and the kernel will not pretend otherwise.</p>
-  <p id="lastline">And that is the last mechanism. Chapter 1 said that nothing stops a store from landing anywhere. The answer took seven chapters, and it is that nothing on the chip does, so the rest was built. A compiler that will not compile the reach. A header the kernel parses before it trusts anything. Two registers per region, checked on every access. One instruction wide enough for eight kinds of question. And this, the place where the kernel puts what it has been handed. Every one of them is in a file this series has quoted, and every one is a decision somebody wrote down.</p>
+  <p id="lastline">And that is the last mechanism. Chapter 2 said that nothing stops a store from landing anywhere. The answer took eight chapters, and it is that nothing on the chip does, so the rest was built. A compiler that will not compile the reach. A header the kernel parses before it trusts anything. Two registers per region, checked on every access. One instruction wide enough for eight kinds of question. And this, the place where the kernel puts what it has been handed. Every one of them is in a file this series has quoted, and every one is a decision somebody wrote down.</p>
 </section>
 
 <div class="col next" id="endbox">
   <p class="eyebrow forward">The end</p>
-  <h3 style="margin-top:0">Seven chapters, one question</h3>
-  <p>There is no chapter 9. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names where it came from: a file and a line in this tree, or a section of the datasheet. All of them are still there at the commit these pages pin. The most useful next thing is not more reading. It is <code>make flash-openocd</code> in <code>boards/raspberry_pi_pico_2</code>, which pushes the kernel down the debug probe and needs no mounted drive at all. Chapter 5 is where the other route is, and why it does nothing on a Mac. Then break something on purpose, and watch which of these seven mechanisms catches it.</p>
+  <h3 style="margin-top:0">Eight chapters, one question</h3>
+  <p>There is no chapter 9. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these eight pages names where it came from: a file and a line in this tree, or a section of the datasheet. All of them are still there at the commit these pages pin. The most useful next thing is not more reading. It is <code>make flash-openocd</code> in <code>boards/raspberry_pi_pico_2</code>, which pushes the kernel down the debug probe and needs no mounted drive at all. Chapter 5 is where the other route is, and why it does nothing on a Mac. Then break something on purpose, and watch which of these seven mechanisms catches it.</p>
   <nav class="pager" aria-label="Chapter navigation">
     <a href="../ch07-asking-the-kernel/">&larr;&nbsp;Chapter 7</a>
     <a href="../">Contents</a>
@@ -1492,8 +1494,8 @@ dfn {
     draw();
   }());
 
-  /* ---------------- Figure 9: what the seven chapters took ---------------- */
-  group("ar-", "arp-", 7, "", "is-on", "is-off");
+  /* ---------------- Figure 9: what the eight chapters took ---------------- */
+  group("ar-", "arp-", 8, "", "is-on", "is-off");
 
   /* ---------------- Check yourself ----------------
      The answer text is in the markup; this only reveals it and marks which

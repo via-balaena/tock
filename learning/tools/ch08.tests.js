@@ -122,7 +122,7 @@ chk("figure 5 opens on the board booting", REG["lf-0"].getAttribute("aria-presse
 chk("figure 6 opens on what a capsule holds", REG["ch-0"].getAttribute("aria-pressed"), "true");
 chk("figure 7 opens on the refusal that stops the board", REG["rf-0"].getAttribute("aria-pressed"), "true");
 chk("figure 8 opens with nothing asked for yet", REG["gap-line"].textContent, "neither");
-chk("figure 9 opens on chapter 1's sentence", REG["ar-0"].getAttribute("aria-pressed"), "true");
+chk("figure 9 opens on chapter 1", REG["ar-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
     REG["wyp-3"].classList.contains("is-on")
       && REG["bdp-0"].classList.contains("is-on")
@@ -520,9 +520,9 @@ walk("ar-", "arp-", 7, "figure 9");
   }
   chk("the seven chapters are in order, one to seven", bad.join("; "), "");
 }());
-REG["ar-4"].fire("click");
+REG["ar-5"].fire("click");
 chk("chapter 6 is named as the one the hardware enforces",
-    REG["arp-4"].textContent.indexOf("The cut that is hardware") > -1, true);
+    REG["arp-5"].textContent.indexOf("The cut that is hardware") > -1, true);
 // "Only one of the seven is enforced by hardware" left a reader arriving from
 // chapter 7 with an obvious objection: svc is hardware too. The note answers
 // it now rather than inviting it.
@@ -532,7 +532,7 @@ chk("and says why chapter 7's instruction does not count as enforcement",
     REG["ar-note"].textContent.indexOf("it enforces nothing on its own") > -1, true);
 chk("which is the answer the chapter closes on",
     REG["ar-note"].textContent.indexOf("nothing on the chip stops it, so people did") > -1, true);
-REG["ar-0"].fire("click");
+REG["ar-1"].fire("click");
 
 // ---- Check yourself ----
 (function () {
@@ -576,27 +576,27 @@ REG["ar-0"].fire("click");
 // source files, and four of the seven panels were wrong on the first draft.
 // Each of these pins the summary against what that chapter actually says.
 (function () {
-  REG["ar-1"].fire("click");
+  REG["ar-2"].fire("click");
   // Chapter 3's headline is "The first instruction is never yours."
   chk("the chapter 3 panel does not say the chip fetches your first instruction",
-      REG["arp-1"].textContent.indexOf("The first instruction is never yours") > -1, true);
+      REG["arp-2"].textContent.indexOf("The first instruction is never yours") > -1, true);
   chk("and names the ROM that hunts for it",
-      REG["arp-1"].textContent.indexOf("hunts through flash") > -1, true);
-  REG["ar-2"].fire("click");
+      REG["arp-2"].textContent.indexOf("hunts through flash") > -1, true);
+  REG["ar-3"].fire("click");
   // Chapter 4 credits a crate-level refusal and says outright that this is the
   // half the type system does not cover.
   chk("the chapter 4 panel credits the crate, not the type system",
-      REG["arp-2"].textContent.indexOf("the crate it lives in will not compile") > -1, true);
+      REG["arp-3"].textContent.indexOf("the crate it lives in will not compile") > -1, true);
   chk("and puts the refusal at build time",
-      REG["arp-2"].textContent.indexOf("refused at build time") > -1, true);
-  REG["ar-3"].fire("click");
+      REG["arp-3"].textContent.indexOf("refused at build time") > -1, true);
+  REG["ar-4"].fire("click");
   // Chapter 5's distinction is the compiler, and it spends a figure on the
   // header the kernel does check.
   chk("the chapter 5 panel says which tool never saw the code",
-      REG["arp-3"].textContent.indexOf("the compiler behind the kernel never saw") > -1, true);
+      REG["arp-4"].textContent.indexOf("the compiler behind the kernel never saw") > -1, true);
   chk("and does not claim the kernel checks nothing",
-      REG["arp-3"].textContent.indexOf("sixteen bytes at the front") > -1, true);
-  REG["ar-0"].fire("click");
+      REG["arp-4"].textContent.indexOf("sixteen bytes at the front") > -1, true);
+  REG["ar-1"].fire("click");
   // Chapter 1's sentence, as chapter 1 has it, without the clause this chapter
   // had been adding to it.
   chk("chapter 1's sentence is quoted as chapter 1 has it",
@@ -659,7 +659,7 @@ chk("and the chapter says what those marks are doing",
 // and it had the wrong axis: this series is about which addresses code may
 // reach, not which code runs.
 chk("the closing figure opens on addresses rather than on which code runs",
-    REG["arp-0"].textContent.indexOf("which addresses a given piece of code may land on") > -1, true);
+    REG["arp-1"].textContent.indexOf("which addresses a given piece of code may land on") > -1, true);
 
 // ---- What a process pays before it calls anything ----
 // Figure 1 sold the design on "never pays for it" and figures 2 and 5 spend

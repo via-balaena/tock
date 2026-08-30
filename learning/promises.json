@@ -1099,11 +1099,11 @@
     "kept_by": "allowed to touch"
   },
   {
-    "id": "ch08-asked-ch01",
+    "id": "ch08-asked-ch02",
     "in": "ch08",
-    "says": "Chapter 1 said that nothing stops a store from landing anywhere",
-    "about": "ch01",
-    "kept_by": "store"
+    "says": "Chapter 2 said that nothing stops a store from landing anywhere",
+    "about": "ch02",
+    "kept_by": "any code can write any address"
   },
   {
     "id": "ch08-pin-ch04",
