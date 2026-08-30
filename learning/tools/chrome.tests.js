@@ -31,7 +31,14 @@ const pips = mk("bookbar-pips");
 pips.children = ORDER.map(() => ({ className: "" }));
 
 const handlers = {};
-global.window = { addEventListener: (e, f) => { (handlers[e] = handlers[e] || []).push(f); } };
+const store = {};
+global.window = {
+  addEventListener: (e, f) => { (handlers[e] = handlers[e] || []).push(f); },
+  localStorage: {
+    getItem: k => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v); },
+  },
+};
 global.document = {
   getElementById: id => ids[id] || null,
   documentElement: { scrollHeight: 4000, clientHeight: 1000, scrollTop: 0 },
@@ -49,6 +56,8 @@ function goto(key) {
 }
 
 goto("cover");
+chk("nothing is marked read before anything is visited",
+    pips.children.map(c => c.className).slice(1).join(""), "");
 chk("the cover says so", ids["bookbar-where"].textContent, "Cover");
 chk("and Back is disabled on it", ids["bookbar-prev"].getAttribute("aria-disabled"), "true");
 chk("with Next naming the chapter that follows", ids["bookbar-next"].textContent, "Getting It Running →");
@@ -58,13 +67,27 @@ chk("a chapter says which one it is", ids["bookbar-where"].textContent, "Chapter
 chk("Back names the one before it", ids["bookbar-prev"].textContent, "← How Code Starts Running");
 chk("Next names the one after", ids["bookbar-next"].textContent, "What a Process Is →");
 chk("and Back is live again", ids["bookbar-prev"].getAttribute("aria-disabled"), null);
+// The pips are a record of what has been read, not of what is behind you.
+// ch07 stays marked below because the run above visited it.
+//
+// the cover and ch00..ch03 were visited above, so those are the ones marked.
 chk("the pip for this page is the one marked here",
-    pips.children.map(c => c.className).join(","), "is-done,is-done,is-done,is-done,is-here,,,,");
+    pips.children.map(c => c.className).join(","), "is-done,,,,is-here,,,,");
 
 goto("ch07");
 chk("the last chapter has nowhere to go next", ids["bookbar-next"].getAttribute("aria-disabled"), "true");
 chk("and says so", ids["bookbar-next"].textContent, "Done →");
 chk("and is the last chapter of seven", ids["bookbar-where"].textContent, "Chapter 7 of 7");
+
+// Jump forward, then back: a chapter skipped over stays unread, and one
+// already read stays read. That is the whole reason this is stored rather
+// than derived from where you happen to be standing.
+goto("ch06");
+chk("skipping ahead does not mark what was skipped",
+    pips.children.map(c => c.className).join(","), "is-done,,,,is-done,,,is-here,is-done");
+goto("ch03");
+chk("and coming back finds the later one still read",
+    pips.children.map(c => c.className).join(","), "is-done,,,,is-here,,,is-done,is-done");
 
 document.documentElement.scrollTop = 1500;
 handlers.scroll.forEach(f => f());

@@ -222,6 +222,28 @@ CHROME_JS = '''
   var ORDER = __ORDER__, TITLES = __TITLES__, NUMS = __NUMS__;
 
   function el(id) { return document.getElementById(id); }
+
+  /* What you have already read, kept in this browser and nowhere else. Every
+     access is guarded: a private window, cleared site data, or a browser set
+     to refuse storage all throw here rather than returning nothing, and a
+     book that will not render because it could not remember anything would
+     be a poor trade. Without it the pips fall back to position, which is
+     what they meant before this existed. */
+  var KEY = "tock-book-read";
+  function readSet() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return null; }
+  }
+  function markRead(key) {
+    try {
+      var seen = readSet() || {};
+      if (seen[key]) { return; }
+      seen[key] = 1;
+      window.localStorage.setItem(KEY, JSON.stringify(seen));
+    } catch (e) {}
+  }
   function at() {
     var i;
     for (i = 0; i < ORDER.length; i++) {
@@ -250,8 +272,11 @@ CHROME_JS = '''
     // one out at both ends.
     el("bookbar-where").textContent = i === 0
       ? "Cover" : "Chapter " + NUMS[ORDER[i]] + " of " + NUMS[ORDER[ORDER.length - 1]];
+    markRead(ORDER[i]);
+    var seen = readSet();
     for (k = 0; k < pips.length; k++) {
-      pips[k].className = k === i ? "is-here" : (k < i ? "is-done" : "");
+      pips[k].className = k === i ? "is-here"
+        : ((seen ? seen[ORDER[k]] : k < i) ? "is-done" : "");
     }
     link(el("bookbar-prev"), i - 1);
     link(el("bookbar-next"), i + 1);

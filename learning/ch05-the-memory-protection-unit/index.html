@@ -1137,6 +1137,16 @@ dfn {
   .mo-fig { grid-template-columns: 1fr; }
   .mo { text-align: left; }
 }
+
+/* ---------- reachable with a thumb ----------
+   A control 28 px tall is fine with a mouse and a coin-toss with a thumb.
+   Both platform guidelines ask for 44, which is 2.75rem here. Scoped to
+   coarse pointers, so nothing about the desktop layout moves: this is the
+   one rule in the file that exists for the reader holding a phone. */
+@media (pointer: coarse) {
+  .instrument button, .bet-opt, .q-opt { min-height: 2.75rem; }
+  .instrument input[type="range"] { height: 2.75rem; }
+}
 </style>
 
 <div class="wrap">
