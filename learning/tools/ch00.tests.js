@@ -38,18 +38,18 @@ function walk(btn, panel, n, name) {
 chk("figure 1 opens on the board", REG["pt-0"].getAttribute("aria-pressed"), "true");
 chk("figure 2 opens on the target directory", REG["pa-0"].getAttribute("aria-pressed"), "true");
 chk("figure 3 opens on the route this chapter uses", REG["tg-0"].getAttribute("aria-pressed"), "true");
-chk("figure 4 opens on the debug wires", REG["wr-0"].getAttribute("aria-pressed"), "true");
+chk("figure 4 opens correctly wired", REG["wtx-gp1"].getAttribute("aria-pressed"), "true");
 chk("figure 5 opens on the banner", REG["bo-0"].getAttribute("aria-pressed"), "true");
 chk("figure 6 opens on the step that is always the same machine", REG["sp-0"].getAttribute("aria-pressed"), "true");
-chk("figure 7 opens on the silence that wastes evenings", REG["sy-0"].getAttribute("aria-pressed"), "true");
+chk("figure 7 opens on a working bench", REG["f-cable-data"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
     REG["ptp-0"].classList.contains("is-on")
       && REG["pap-0"].classList.contains("is-on")
       && REG["tgp-0"].classList.contains("is-on")
-      && REG["wrp-0"].classList.contains("is-on")
+      && REG["wsym-good"].classList.contains("is-on")
       && REG["bop-0"].classList.contains("is-on")
       && REG["spp-0"].classList.contains("is-on")
-      && REG["syp-0"].classList.contains("is-on"), true);
+      && REG["sep-good"].classList.contains("is-on"), true);
 
 // ---- Figure 1: the parts ----
 walk("pt-", "ptp-", 5, "figure 1");
@@ -112,20 +112,94 @@ chk("and names OpenOCD as the one thing you do fetch",
     REG["tgp-0"].textContent.indexOf("one thing you fetch") > -1, true);
 
 // ---- Figure 4: the wiring ----
-walk("wr-", "wrp-", 4, "figure 4");
-// Transmit joins receive, both ways. Getting this backwards is silent, which
-// is why it is a figure rather than a sentence.
-REG["wr-1"].fire("click");
-chk("the probe's transmit joins the board's receive, which is pin 1",
-    REG["wrp-1"].textContent.indexOf("receive") > -1
-      && REG["wrp-1"].textContent.indexOf("pin") > -1, true);
-REG["wr-2"].fire("click");
-chk("and the probe's receive joins the board's transmit, which is pin 0",
-    REG["wrp-2"].textContent.indexOf("transmit") > -1, true);
-REG["wr-3"].fire("click");
-chk("the ground panel says the symptom is nonsense rather than silence",
-    REG["wrp-3"].textContent.indexOf("not silence but nonsense") > -1, true);
-REG["wr-0"].fire("click");
+// The bench decides an outcome from three facts, not from which of the
+// sixty-four arrangements it is: whether the board's transmit reaches the
+// probe, whether the probe's transmit reaches the board, and whether ground is
+// shared. Every symptom it can produce is one the chapter names elsewhere.
+(function () {
+  var WHERE = ["gp0", "gp1", "gnd", "off"];
+
+  function set(tx, rx, gnd) {
+    REG["wtx-" + tx].fire("click");
+    REG["wrx-" + rx].fire("click");
+    REG["wgnd-" + gnd].fire("click");
+  }
+  function showing() {
+    var S = ["good", "clash", "noise", "dead", "oneway", "blind"], i, on = [];
+    for (i = 0; i < S.length; i++) {
+      if (REG["wsym-" + S[i]].classList.contains("is-on")) { on.push(S[i]); }
+    }
+    return on.join(",");
+  }
+
+  // With no JavaScript the head has to be one phrase, not both run together.
+  chk("the markup ships one of the two head phrases already away",
+      REG["wv-bad"].classList.contains("is-off"), true);
+  chk("it opens on the wiring that works", showing(), "good");
+  chk("and says so rather than naming a symptom",
+      REG["wv-ok"].classList.contains("is-off"), false);
+
+  // The named mistake: the probe transmitting onto the pin the board
+  // transmits on. This is the one the figure is titled for.
+  set("gp0", "gp1", "gnd");
+  chk("swapping the two console leads is a clash", showing(), "clash");
+  chk("and the head stops saying it works",
+      REG["wv-ok"].classList.contains("is-off"), true);
+
+  // Ground is the one people leave out, and its symptom is not silence.
+  set("gp1", "gp0", "off");
+  chk("leaving the ground off gives noise, not silence", showing(), "noise");
+  chk("and the panel says exactly that",
+      REG["wsym-noise"].textContent.indexOf("not silence") > -1, true);
+
+  // One direction at a time.
+  set("off", "gp0", "gnd");
+  chk("the probe's transmit unconnected: banner, then nothing", showing(), "oneway");
+  set("gp1", "off", "gnd");
+  chk("the probe's receive unconnected: nothing arrives, typing lands", showing(), "blind");
+  set("off", "off", "gnd");
+  chk("neither connected is silence", showing(), "dead");
+
+  // The three presets put the bench into the states the prose names.
+  REG["w-swap"].fire("click");
+  chk("the swap preset produces the clash", showing(), "clash");
+  REG["w-nognd"].fire("click");
+  chk("the no-ground preset produces the noise", showing(), "noise");
+  REG["w-good"].fire("click");
+  chk("and the good preset puts it back", showing(), "good");
+
+  // Exactly one symptom, in all sixty-four arrangements, and only one of them
+  // is the working one.
+  (function () {
+    var a, b, c, bad = 0, working = 0, now;
+    for (a = 0; a < 4; a++) {
+      for (b = 0; b < 4; b++) {
+        for (c = 0; c < 4; c++) {
+          set(WHERE[a], WHERE[b], WHERE[c]);
+          now = showing();
+          if (now.indexOf(",") > -1 || now === "") { bad++; }
+          if (now === "good") { working++; }
+        }
+      }
+    }
+    chk("one symptom and only one, in all sixty-four arrangements", bad, 0);
+    chk("and exactly one arrangement works", working, 1);
+  }());
+
+  // The wire ends move in the drawing, which is the only thing the reader can
+  // see change before the verdict does.
+  REG["w-good"].fire("click");
+  chk("the transmit wire ends on the board's receive pin",
+      REG["wire-tx"].getAttribute("y2"), "150");
+  REG["wtx-off"].fire("click");
+  chk("and parks off the board when nothing is chosen",
+      REG["wire-tx"].getAttribute("x2"), "250");
+  chk("marked as unconnected rather than merely moved",
+      REG["wire-tx"].classList.contains("is-off"), true);
+  REG["w-good"].fire("click");
+  chk("the drawing comes back with it",
+      REG["wire-tx"].classList.contains("is-off"), false);
+}());
 
 // ---- Figure 5: what the console offers ----
 walk("bo-", "bop-", 4, "figure 5");
@@ -185,23 +259,121 @@ chk("and the chapter says Tock's own testing is built the same way",
     REG["splitci"].textContent.indexOf("testbed") > -1, true);
 
 // ---- Figure 7: five silences ----
-walk("sy-", "syp-", 5, "figure 7");
-REG["sy-0"].fire("click");
+// The bench answers in an order: a probe that is not there stops the flash
+// before anything else can be wrong, a terminal on the wrong device never sees
+// the board whatever the wires do, and only then does the wiring decide
+// between silence and noise. The separator is the figure's real output.
+(function () {
+  function set(cable, wire, baud, dev) {
+    REG["f-cable-" + cable].fire("click");
+    REG["f-wire-" + wire].fire("click");
+    REG["f-baud-" + baud].fire("click");
+    REG["f-dev-" + dev].fire("click");
+  }
+  function con() {
+    var C = ["good", "silent", "noise", "nodev", "oneway"], i, on = [];
+    for (i = 0; i < C.length; i++) {
+      if (REG["fo-con-" + C[i]].classList.contains("is-on")) { on.push(C[i]); }
+    }
+    return on.join(",");
+  }
+  function sep() {
+    var S = ["good", "loud", "silent", "noise", "oneway"], i, on = [];
+    for (i = 0; i < S.length; i++) {
+      if (REG["sep-" + S[i]].classList.contains("is-on")) { on.push(S[i]); }
+    }
+    return on.join(",");
+  }
+
+  chk("it opens on a bench that works", con(), "good");
+  chk("with nothing to separate", sep(), "good");
+  chk("and the flash reading the successful one",
+      REG["fo-flash-ok"].classList.contains("is-on"), true);
+
+  // A charge-only cable is the loud failure, and it stops the flash rather
+  // than producing a silence further down.
+  set("charge", "ok", "ok", "probe");
+  chk("a charge-only cable fails the flash",
+      REG["fo-flash-bad"].classList.contains("is-on"), true);
+  chk("and is marked as an error rather than a silence",
+      REG["fo-flash"].classList.contains("is-loud"), true);
+  chk("there is no serial device either", con(), "nodev");
+  chk("and it is the loud one", sep(), "loud");
+
+  // The two silences that cannot be told apart by looking.
+  set("data", "swap", "ok", "probe");
+  chk("swapped console wires are silence", con(), "silent");
+  set("data", "ok", "ok", "other");
+  chk("the wrong device is the same silence", con(), "silent");
+  chk("and gets the same separator, because that is the point", sep(), "silent");
+  chk("which names listing /dev as the cheap discriminator",
+      REG["sep-silent"].textContent.indexOf("before and after") > -1, true);
+
+  // The two noises, likewise.
+  set("data", "nognd", "ok", "probe");
+  chk("no ground is noise", con(), "noise");
+  set("data", "ok", "bad", "probe");
+  chk("a wrong baud is the same noise", con(), "noise");
+  chk("and the separator says to check the free one first",
+      REG["sep-noise"].textContent.indexOf("free") > -1, true);
+
+  // The flash is independent of everything on the console side: it goes down
+  // the debug wires, and only the cable can stop it here.
+  (function () {
+    var W = ["ok", "swap", "nognd", "rxoff", "txoff"], B = ["ok", "bad"],
+        D = ["probe", "other"], w, b, d, bad = 0;
+    for (w = 0; w < W.length; w++) {
+      for (b = 0; b < B.length; b++) {
+        for (d = 0; d < D.length; d++) {
+          set("data", W[w], B[b], D[d]);
+          if (!REG["fo-flash-ok"].classList.contains("is-on")) { bad++; }
+        }
+      }
+    }
+    chk("with a good cable the flash succeeds whatever the console side is", bad, 0);
+  }());
+
+  // Exactly one reading in each of the three panels, in every combination.
+  (function () {
+    var C = ["data", "charge"], W = ["ok", "swap", "nognd", "rxoff", "txoff"],
+        B = ["ok", "bad"], D = ["probe", "other"];
+    var c, w, b, d, bad = 0;
+    for (c = 0; c < C.length; c++) {
+      for (w = 0; w < W.length; w++) {
+        for (b = 0; b < B.length; b++) {
+          for (d = 0; d < D.length; d++) {
+            set(C[c], W[w], B[b], D[d]);
+            if (con().indexOf(",") > -1 || con() === "") { bad++; }
+            if (sep().indexOf(",") > -1 || sep() === "") { bad++; }
+          }
+        }
+      }
+    }
+    chk("one reading and one separator, in all forty benches", bad, 0);
+  }());
+
+  // The fifth silence: the banner arrives and typing does nothing. It is the
+  // only one of them that tells you which wire, because arriving at all proves
+  // the other three.
+  set("data", "txoff", "ok", "probe");
+  chk("the probe's transmit off gives banner-then-nothing", con(), "oneway");
+  chk("and its own separator", sep(), "oneway");
+
+  set("data", "ok", "ok", "probe");
+  chk("and it comes back to the working bench", sep(), "good");
+}());
 // A flash that reported success proves the probe's USB carries data, so the
 // cable cannot be the cause of this one. It belongs two entries down.
 chk("the first silence is scoped to what a successful flash leaves open",
-    REG["syp-0"].textContent.indexOf("three console wires") > -1, true);
-REG["sy-2"].fire("click");
+    REG["sep-silent"].textContent.indexOf("three console wires") > -1, true);
 chk("the probe failure is named as the good one, because it is loud",
-    REG["syp-2"].textContent.indexOf("good failure") > -1, true);
+    REG["sep-loud"].textContent.indexOf("good failure") > -1, true);
 // Cheapest first, and this is the symptom a charge-only cable actually makes.
 chk("and the cable is ruled out here, before any rewiring",
-    REG["syp-2"].textContent.indexOf("Swap the probe's USB cable before rewiring") > -1, true);
-REG["sy-3"].fire("click");
+    REG["sep-loud"].textContent.indexOf("swap the cable before rewiring") > -1, true);
 chk("banner-then-nothing is one wire, and points at the figure with it in",
-    REG["syp-3"].textContent.indexOf("One wire") > -1
-      && REG["syp-3"].textContent.indexOf("Figure 4") > -1, true);
-REG["sy-0"].fire("click");
+    REG["sep-oneway"].textContent.indexOf("One wire") > -1
+      && REG["sep-oneway"].textContent.indexOf("Figure 4") > -1, true);
 
 // ---- The board that is not this board ----
 // Chapter 3 and chapter 4 both carry a version of this. Chapter 0 is where a
@@ -259,7 +431,7 @@ chk("goal 4, the routes that do nothing quietly, is delivered by figure 3",
 // pair a reader has to separate. Figure 7's five silences are.
 chk("goal 5, separating the silences, is figure 7's job",
     REG["goalbox"].textContent.indexOf("one silence") > -1
-      && REG["syp-0"].textContent.length > 40, true);
+      && REG["sep-silent"].textContent.length > 40, true);
 
 // ---- The glossary ----
 chk("the glossary says a target is never the machine doing the building",
@@ -298,17 +470,17 @@ chk("and it hands over a method rather than a name to copy",
 // The debug header is labelled on the board; anchoring to the silkscreen beats
 // reasoning about which edge the USB is on, which is what this used to do.
 chk("the debug connections are named by the label the board prints",
-    REG["wrp-0"].textContent.indexOf("labelled DEBUG") > -1, true);
+    REG["w-power"].textContent.indexOf("silkscreens DEBUG") > -1, true);
 // Nothing in the chapter said the board needs its own power. Wire only the
 // probe and you get a dead board and no reason for it.
 // Scoping this to the debug set implied the UART one might supply power. It
 // does not: TX, GND, RX. Neither connector powers the target.
 chk("and neither connector is claimed to carry power",
-    REG["wrp-0"].textContent.indexOf("Neither of the probe's connectors carries power") > -1, true);
+    REG["w-power"].textContent.indexOf("neither of the probe's connectors carries power") > -1, true);
 
 // Captured by unplugging the probe: the literal message, not a paraphrase.
-chk("the probe-not-found panel quotes what OpenOCD actually prints",
-    REG["syp-2"].textContent.indexOf("unable to find a matching CMSIS-DAP device") > -1, true);
+chk("the probe-not-found reading quotes what OpenOCD actually prints",
+    REG["fo-flash-bad"].textContent.indexOf("unable to find a matching CMSIS-DAP device") > -1, true);
 
 // `list` prints a header even with nothing loaded, so "empty" was the wrong
 // word for what a reader sees.

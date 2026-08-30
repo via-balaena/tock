@@ -281,6 +281,101 @@ button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
 }
 
 
+/* A small muted aside inside a figure: a caveat, or a fact the figure rests
+   on without being about. */
+.note { font-size: .92rem; line-height: 1.55; color: var(--ink-soft); margin: 0 0 1rem; }
+
+/* ---------- the wiring bench ----------
+   Chapter 5's lesson applied to a physical task: the reader sets the thing up
+   and the figure reports what the bench would do, rather than telling them
+   what to do and hoping. Three leads, three choices each, and the symptom is
+   the answer -- because on a real bench the symptom is all you get.
+
+   The drawing is markup with ids, not built at load: the shim has no
+   createElementNS, so a figure that builds its own SVG cannot be tested at
+   all, and this one has arithmetic worth testing. */
+
+.bench { margin: .4rem 0 1rem; }
+.bench svg { width: 100%; height: auto; display: block; }
+.b-box { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1.5; }
+.b-sunk { fill: var(--surface-sunk); stroke: var(--rule); stroke-width: 1; }
+.b-t { font-family: var(--display); font-size: 12px; font-weight: 600; fill: var(--ink); }
+.b-s { font-family: var(--mono); font-size: 10.5px; fill: var(--ink-faint); }
+.b-pin { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1.5; }
+/* The debug three are settled: drawn, labelled, and not a control, because
+   both ends name the same signals and there is nothing to get backwards. */
+.b-fixed { stroke: var(--rule-strong); stroke-width: 2; fill: none; stroke-dasharray: 3 2; }
+/* The console three. Colour is identity rather than verdict -- the point is to
+   trace which lead went where, and the symptom below is the feedback. */
+.b-wire { stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.b-wire.w-tx { stroke: var(--hot-fill); }
+.b-wire.w-rx { stroke: var(--accent); }
+.b-wire.w-gnd { stroke: var(--rule-strong); }
+/* An unconnected lead loses its identity colour rather than its
+   opacity: opacity composites toward the background, which the contrast
+   checks cannot see. */
+.b-wire.is-off { stroke: var(--rule); stroke-dasharray: 2 4; }
+
+.leads { display: flex; flex-direction: column; gap: .5rem; margin: .2rem 0 1rem; }
+.lead { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.lead-k {
+  font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  flex: 0 0 8.5rem;
+}
+.lead-k.k-tx { color: var(--hot); }
+.lead-k.k-rx { color: var(--accent); }
+.lead-k.k-gnd { color: var(--ink-soft); }
+/* Pin names, so their case is the content. */
+.lead button {
+  font-family: var(--mono); font-size: .8rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .3rem .55rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.lead button[aria-pressed="true"] {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+}
+
+/* What the bench would do. One of six, and every one of them is a sentence in
+   the markup. */
+.symptom { border: 1px solid var(--rule-strong); border-radius: 2px; overflow: hidden; }
+.symptom-head {
+  padding: .5rem .8rem;
+  font-family: var(--display); font-size: .9rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  background: var(--danger-soft); color: var(--danger);
+}
+.symptom.is-working .symptom-head { background: var(--accent-soft); color: var(--accent); }
+/* One phrase or the other, never both -- and with no JavaScript the markup's
+   own choice has to be the one that shows. */
+.symptom-head .is-off { display: none; }
+.symptom-why { padding: .7rem .8rem; font-size: .92rem; line-height: 1.55; }
+.symptom-why p { margin: 0; }
+.wsym { display: none; }
+.wsym.is-on { display: block; }
+.bench-ctl { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+/* ---------- the whole bench, with faults you choose ----------
+   Figure 4 is the console wiring on its own. This is everything at once, and
+   its job is the chapter's actual difficulty: several different failures
+   produce the same nothing, so the useful output is not the cause but what
+   separates it from its neighbours. */
+.diag { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: .1rem; margin: 1rem 0 .8rem;
+  border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--rule); overflow: hidden; }
+.diag-cell { background: var(--surface); padding: .6rem .8rem; }
+.diag-k { display: block;
+  font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  margin-bottom: .3rem; }
+.diag-v { font-size: .92rem; line-height: 1.5; color: var(--ink); }
+.diag-v code { font-size: .84em; }
+.dv { display: none; }
+.dv.is-on { display: block; }
+/* The one reading that is an error rather than a silence. */
+.diag-v.is-loud { color: var(--danger); }
+
 /* ---------- closing ---------- */
 
 .next {
@@ -733,24 +828,90 @@ $ picocom -b 115200 /dev/ttyACM0</pre>
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 4</span>
-    <span class="instrument-title">Six wires, and the two that cross</span>
+    <span class="instrument-title">Wire the console yourself, and see what the bench does</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each connection. The middle two are the ones people get backwards, and getting them backwards produces silence rather than an error.</p>
-    <div class="vt" role="group" aria-label="The wiring between probe and board">
-      <button type="button" id="wr-0" aria-pressed="true"><span class="vt-at">debug</span><span>three wires, straight across</span></button>
-      <button type="button" id="wr-1" aria-pressed="false"><span class="vt-at">TX &rarr; 1</span><span>probe transmit to board pin 1</span></button>
-      <button type="button" id="wr-2" aria-pressed="false"><span class="vt-at">RX &rarr; 0</span><span>probe receive to board pin 0</span></button>
-      <button type="button" id="wr-3" aria-pressed="false"><span class="vt-at">ground</span><span>the one people leave out</span></button>
+    <p class="dothis">Put each of the probe's three console leads on a board pin. Get it wrong on purpose &mdash; every wrong answer here is a real bench failure, and the point is that almost none of them say so.</p>
+
+    <div class="bench">
+      <svg viewBox="0 0 560 250" role="img" aria-label="A debug probe on the left and a Pico 2 on the right. The three debug wires run straight across between them. The three console leads are drawn from the probe to whichever board pin has been chosen for each.">
+        <rect class="b-box" x="26" y="52" width="132" height="150" rx="4"></rect>
+        <text class="b-t" x="92" y="76" text-anchor="middle">Debug Probe</text>
+        <text class="b-s" x="92" y="92" text-anchor="middle">USB to your machine</text>
+        <rect class="b-sunk" x="42" y="104" width="100" height="30" rx="3"></rect>
+        <text class="b-s" x="92" y="123" text-anchor="middle">D &mdash; debug</text>
+        <rect class="b-sunk" x="42" y="146" width="100" height="44" rx="3"></rect>
+        <text class="b-s" x="92" y="163" text-anchor="middle">U &mdash; console</text>
+
+        <rect class="b-box" x="402" y="32" width="132" height="186" rx="4"></rect>
+        <text class="b-t" x="468" y="52" text-anchor="middle">Pico 2</text>
+        <rect class="b-sunk" x="418" y="62" width="100" height="26" rx="3"></rect>
+        <text class="b-s" x="468" y="79" text-anchor="middle">DEBUG header</text>
+
+        <path class="b-fixed" d="M142 119 L418 75"></path>
+        <text class="b-s" x="290" y="112" text-anchor="middle">SWCLK &middot; GND &middot; SWDIO</text>
+
+        <circle class="b-pin" cx="418" cy="118" r="7"></circle>
+        <text class="b-s" x="432" y="122">GP0 &mdash; board transmit</text>
+        <circle class="b-pin" cx="418" cy="150" r="7"></circle>
+        <text class="b-s" x="432" y="154">GP1 &mdash; board receive</text>
+        <circle class="b-pin" cx="418" cy="182" r="7"></circle>
+        <text class="b-s" x="432" y="186">GND</text>
+
+        <line class="b-wire w-tx" id="wire-tx" x1="142" y1="158" x2="418" y2="150"></line>
+        <line class="b-wire w-rx" id="wire-rx" x1="142" y1="170" x2="418" y2="118"></line>
+        <line class="b-wire w-gnd" id="wire-gnd" x1="142" y1="182" x2="418" y2="182"></line>
+        <text class="b-s" x="60" y="212">probe TX &middot; RX &middot; GND</text>
+      </svg>
     </div>
-    <div class="vtsay">
-      <p class="vtp is-on" id="wrp-0">The probe's debug connector to the header labelled <b>DEBUG</b>: SWCLK, GND, SWDIO. Both ends name the same three signals, and they join like to like. This set carries flashing only and says nothing to you. Neither of the probe's connectors carries power &mdash; both are three signal wires and a ground &mdash; so the board needs powering some other way before any of this does anything.</p>
-      <p class="vtp" id="wrp-1">The probe's transmit joins the board's <em>receive</em>, which is pin&nbsp;1. This is the wire that carries what you type into the running kernel.</p>
-      <p class="vtp" id="wrp-2">The probe's receive joins the board's <em>transmit</em>, which is pin&nbsp;0. This is the wire that carries everything the kernel prints, including the one line you are about to look for.</p>
-      <p class="vtp" id="wrp-3">A shared ground between the two. Without it the two sides have no agreement about what a one and a zero are, and the symptom is not silence but nonsense &mdash; occasional characters, mostly wrong.</p>
+
+    <p class="note" id="w-power">Three of the six are settled, and are drawn dashed above. They run from the probe's debug connector to the header the board silkscreens <b>DEBUG</b>: SWCLK, GND, SWDIO, joining like to like. Both ends name the same three signals, so there is nothing to get backwards. Before any of it does anything: neither of the probe's connectors carries power. Both are three signal wires and a ground, so the board needs powering some other way, and wiring only the probe gives you a dead board and no reason for it.</p>
+
+    <div class="leads">
+      <div class="lead" role="group" aria-label="Where the probe's transmit lead goes">
+        <span class="lead-k k-tx">probe TX &rarr;</span>
+        <button type="button" id="wtx-gp0">GP0</button>
+        <button type="button" id="wtx-gp1" class="is-on" aria-pressed="true">GP1</button>
+        <button type="button" id="wtx-gnd">GND</button>
+        <button type="button" id="wtx-off">nothing</button>
+      </div>
+      <div class="lead" role="group" aria-label="Where the probe's receive lead goes">
+        <span class="lead-k k-rx">probe RX &rarr;</span>
+        <button type="button" id="wrx-gp0" class="is-on" aria-pressed="true">GP0</button>
+        <button type="button" id="wrx-gp1">GP1</button>
+        <button type="button" id="wrx-gnd">GND</button>
+        <button type="button" id="wrx-off">nothing</button>
+      </div>
+      <div class="lead" role="group" aria-label="Where the probe's ground lead goes">
+        <span class="lead-k k-gnd">probe GND &rarr;</span>
+        <button type="button" id="wgnd-gp0">GP0</button>
+        <button type="button" id="wgnd-gp1">GP1</button>
+        <button type="button" id="wgnd-gnd" class="is-on" aria-pressed="true">GND</button>
+        <button type="button" id="wgnd-off">nothing</button>
+      </div>
+    </div>
+
+    <div class="bench-ctl">
+      <button type="button" id="w-good">Wire it correctly</button>
+      <button type="button" id="w-swap">Swap TX and RX</button>
+      <button type="button" id="w-nognd">Leave the ground off</button>
+    </div>
+
+    <div class="symptom is-working" id="w-verdict" aria-live="polite">
+      <div class="symptom-head">
+        <span id="wv-ok">It works</span><span id="wv-bad" class="is-off">On the bench you would see</span>
+      </div>
+      <div class="symptom-why">
+        <p class="wsym is-on" id="wsym-good">The banner arrives when the board resets, and typing <code>list</code> gets an answer back. Both directions carry, and the two sides agree what a one and a zero are.</p>
+        <p class="wsym" id="wsym-clash">Nothing readable. The probe's transmit and the board's transmit are on the same wire, both driving it, so neither side can be heard. This is the mistake the figure is named for, and it looks exactly like a board that never started.</p>
+        <p class="wsym" id="wsym-noise">Occasional characters, mostly wrong. Without a shared ground the two sides have no agreement about what a one and a zero are, so the levels arrive but do not decode. The symptom is not silence, which is what makes it worth telling apart.</p>
+        <p class="wsym" id="wsym-dead">Nothing at all. Neither direction is connected, so the banner never leaves the board and nothing you type reaches it. Indistinguishable from a kernel that did not boot &mdash; which is why the flash reporting success is worth something.</p>
+        <p class="wsym" id="wsym-oneway">The banner arrives, and then typing does nothing. The board's transmit reaches the probe, so you see everything the kernel prints; nothing carries the other way. This is the one silence that tells you which wire to look at.</p>
+        <p class="wsym" id="wsym-blind">Nothing arrives, though what you type does reach the board. The kernel is running and answering into a wire that goes nowhere. The most misleading of the five, because the board really is working.</p>
+      </div>
     </div>
   </div>
-  <div class="instrument-note">Notice why the crossing is not arbitrary. Every serial connector is labelled from the point of view of the thing it is attached to. Two devices that both transmit on the wire they call transmit would be shouting at each other and listening to nobody.</div>
+  <div class="instrument-note">Notice why the crossing is not arbitrary. Every serial connector is labelled from the point of view of the thing it is attached to. Two devices that both transmit on the wire they call transmit would be shouting at each other and listening to nobody. Notice too that only one of the six outcomes above is an error you could call an error; the rest are quiet, and four of them look the same from outside.</div>
 </figure>
 
 <section class="col">
@@ -849,26 +1010,71 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 7</span>
-    <span class="instrument-title">Five silences, and what tells them apart</span>
+    <span class="instrument-title">Break the bench on purpose, and read what it tells you</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each symptom. The third is the loud one, and the only one that tells you what is wrong without your help.</p>
-    <div class="blk" role="group" aria-label="Symptoms and what separates them">
-      <button type="button" id="sy-0" aria-pressed="true">nothing at all</button>
-      <button type="button" id="sy-1" aria-pressed="false">nonsense characters</button>
-      <button type="button" id="sy-2" aria-pressed="false">no probe found</button>
-      <button type="button" id="sy-3" aria-pressed="false">banner, then dead</button>
-      <button type="button" id="sy-4" aria-pressed="false">wrong device</button>
+    <p class="dothis">Set any of the four wrong. Watch the two readouts, and then read the third &mdash; because two of these faults are indistinguishable from outside, and knowing which two is the whole skill.</p>
+
+    <div class="leads">
+      <div class="lead" role="group" aria-label="The USB cable to the probe">
+        <span class="lead-k">USB cable</span>
+        <button type="button" id="f-cable-data" class="is-on" aria-pressed="true">carries data</button>
+        <button type="button" id="f-cable-charge">charge only</button>
+      </div>
+      <div class="lead" role="group" aria-label="The three console wires">
+        <span class="lead-k">console wires</span>
+        <button type="button" id="f-wire-ok" class="is-on" aria-pressed="true">correct</button>
+        <button type="button" id="f-wire-swap">TX and RX swapped</button>
+        <button type="button" id="f-wire-nognd">no ground</button>
+        <button type="button" id="f-wire-rxoff">probe RX off</button>
+        <button type="button" id="f-wire-txoff">probe TX off</button>
+      </div>
+      <div class="lead" role="group" aria-label="The baud both ends are set to">
+        <span class="lead-k">baud</span>
+        <button type="button" id="f-baud-ok" class="is-on" aria-pressed="true">115200</button>
+        <button type="button" id="f-baud-bad">something else</button>
+      </div>
+      <div class="lead" role="group" aria-label="Which serial device the terminal opened">
+        <span class="lead-k">terminal on</span>
+        <button type="button" id="f-dev-probe" class="is-on" aria-pressed="true">the probe</button>
+        <button type="button" id="f-dev-other">another device</button>
+      </div>
     </div>
-    <div class="blksay">
-      <p class="blkp is-on" id="syp-0">No output at all, from a flash that reported success. That is worth something: the kernel is on the chip, so what is left is the three console wires. Check the board's transmit, the probe's receive, and the ground between them. If all three are right, the last entry here is the other candidate.</p>
-      <p class="blkp" id="syp-1">Characters arrive but are wrong. That is the two ends disagreeing about speed, or a missing ground. Both are cheap to check and neither looks like what it is &mdash; corrupted text reads as a broken board rather than a wrong number.</p>
-      <p class="blkp" id="syp-2">OpenOCD prints <b>unable to find a matching CMSIS-DAP device</b> and exits non-zero. This is the good failure: it is loud, it happens immediately, and it is about the probe rather than about anything you wrote. Swap the probe's USB cable before rewiring anything, because a great many carry power and no data, and one of those leaves the probe powered and invisible. After that, check the debug three are on the right pads.</p>
-      <p class="blkp" id="syp-3">The banner appears and then typing does nothing. One wire. The line from probe to board is not carrying, and Figure 4's middle two are where to look.</p>
-      <p class="blkp" id="syp-4">The flash worked, the console three are right, and the terminal still shows nothing. A probe presents more than one interface, and most machines have other serial devices besides. Open the one that appeared when you plugged the probe in, rather than the first name that looked plausible.</p>
+
+    <div class="diag">
+      <div class="diag-cell">
+        <span class="diag-k">make flash-openocd says</span>
+        <div class="diag-v" id="fo-flash">
+          <span class="dv is-on" id="fo-flash-ok">It writes the kernel, reads it back without naming a single address, resets the board and exits.</span>
+          <span class="dv" id="fo-flash-bad"><code>unable to find a matching CMSIS-DAP device</code>, and exits non-zero.</span>
+        </div>
+      </div>
+      <div class="diag-cell">
+        <span class="diag-k">the terminal shows</span>
+        <div class="diag-v" id="fo-con">
+          <span class="dv is-on" id="fo-con-good">The banner, as the board resets. Typing <code>list</code> prints a header row and no rows under it.</span>
+          <span class="dv" id="fo-con-silent">Nothing at all.</span>
+          <span class="dv" id="fo-con-oneway">The banner, as the board resets &mdash; and then typing does nothing at all.</span>
+          <span class="dv" id="fo-con-noise">Characters, arriving at about the right moments, and almost all of them wrong.</span>
+          <span class="dv" id="fo-con-nodev">There is no device to open. The probe is powered and invisible, so its serial side is missing too.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="symptom is-working" id="f-sep" aria-live="polite">
+      <div class="symptom-head">
+        <span id="fs-ok">Nothing to separate</span><span id="fs-bad" class="is-off">What separates this from its neighbour</span>
+      </div>
+      <div class="symptom-why">
+        <p class="wsym is-on" id="sep-good">Both directions carry and both ends agree on the speed. This is the state the rest of the chapter assumes.</p>
+        <p class="wsym" id="sep-loud">Nothing to separate, and that is what makes this the good failure. It is loud, it happens immediately, and it names the probe rather than anything you wrote. A great many USB cables carry power and no data, and one of those leaves the probe powered and invisible, so swap the cable before rewiring anything.</p>
+        <p class="wsym" id="sep-silent">Silence, and two quite different causes produce it. The flash reported success, so the kernel is on the chip and the debug side is fine &mdash; which leaves the three console wires, or a terminal opened on the wrong device. Those two look identical from here. List <code>/dev</code> before and after plugging the probe in and open the name that appeared, because that costs seconds and rewiring does not.</p>
+        <p class="wsym" id="sep-oneway">One wire, and the banner arriving is what tells you which. It proves the board's transmit, the probe's receive and the shared ground are all good, and the kernel is up. The only thing left untested is the other direction, which is the probe's transmit to the board's receive &mdash; Figure 4's middle two.</p>
+        <p class="wsym" id="sep-noise">Nonsense is not silence, and that is the useful part: characters arriving at all proves the board is transmitting and something is listening. Two causes remain, a wrong speed and a missing ground. Check the number first, because it is free, and only then go back to the wire.</p>
+      </div>
     </div>
   </div>
-  <div class="instrument-note">Notice the shape of the advice. Every entry here is a way to make one failure look different from another. The expensive mistake is not being wrong about the cause; it is having five candidates and no way to rule any out.</div>
+  <div class="instrument-note">Notice the shape of the advice. Not one entry here is a way to find the cause directly; every one is a way to make one failure look different from another. The expensive mistake is not being wrong about the cause. It is having five candidates and no way to rule any of them out, which is why the loud failure is the one to hope for: it names the probe, and it stops.</div>
 </figure>
 
 <section class="col">
@@ -1018,8 +1224,83 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
   /* ---------------- Figure 3: the four targets ---------------- */
   group("tg-", "tgp-", 4, "", "is-on", "is-off");
 
-  /* ---------------- Figure 4: the wiring ---------------- */
-  group("wr-", "wrp-", 4, "", "is-on", "is-off");
+  /* ---------------- Figure 4: the wiring bench ----------------
+     Three leads, four places each could go, and the outcome is decided by
+     three facts rather than by which of the sixty-four arrangements it is:
+
+       out    the board's transmit (GP0) reaches the probe's receive
+       in     the probe's transmit reaches the board's receive (GP1)
+       clash  the probe is transmitting onto GP0, which the board also drives
+
+     Every symptom below is one the chapter names elsewhere, which is the
+     point: this is Figure 7's list, produced rather than described. */
+  (function () {
+    var WHERE = ["gp0", "gp1", "gnd", "off"];
+    var at = { tx: "gp1", rx: "gp0", gnd: "gnd" };
+    var SYMPTOMS = ["good", "clash", "noise", "dead", "oneway", "blind"];
+
+    /* Where each board pin sits in the drawing, and where an unconnected lead
+       is parked. The wire ends move; nothing is created. */
+    var PIN = { gp0: [418, 118], gp1: [418, 150], gnd: [418, 182],
+                off: [250, 232] };
+
+    function verdict() {
+      var out = at.rx === "gp0";
+      var into = at.tx === "gp1";
+      var gnd = at.gnd === "gnd";
+      if (at.tx === "gp0") { return "clash"; }
+      if (!out && !into) { return "dead"; }
+      if (!gnd) { return "noise"; }
+      if (out && !into) { return "oneway"; }
+      if (!out && into) { return "blind"; }
+      return "good";
+    }
+
+    function draw() {
+      var i, k, lead, now = verdict();
+      for (k in at) {
+        for (i = 0; i < WHERE.length; i++) {
+          lead = document.getElementById("w" + k + "-" + WHERE[i]);
+          lead.setAttribute("aria-pressed", at[k] === WHERE[i] ? "true" : "false");
+          lead.classList.toggle("is-on", at[k] === WHERE[i]);
+        }
+        document.getElementById("wire-" + k)
+          .setAttribute("x2", String(PIN[at[k]][0]));
+        document.getElementById("wire-" + k)
+          .setAttribute("y2", String(PIN[at[k]][1]));
+        document.getElementById("wire-" + k)
+          .classList.toggle("is-off", at[k] === "off");
+      }
+      for (i = 0; i < SYMPTOMS.length; i++) {
+        document.getElementById("wsym-" + SYMPTOMS[i])
+          .classList.toggle("is-on", SYMPTOMS[i] === now);
+      }
+      document.getElementById("w-verdict")
+        .classList.toggle("is-working", now === "good");
+      document.getElementById("wv-ok").classList.toggle("is-off", now !== "good");
+      document.getElementById("wv-bad").classList.toggle("is-off", now === "good");
+    }
+
+    function wire(k, w) {
+      document.getElementById("w" + k + "-" + w)
+        .addEventListener("click", function () { at[k] = w; draw(); });
+    }
+    var k, i;
+    for (k in at) {
+      for (i = 0; i < WHERE.length; i++) { wire(k, WHERE[i]); }
+    }
+
+    function preset(tx, rx, gnd) {
+      return function () { at.tx = tx; at.rx = rx; at.gnd = gnd; draw(); };
+    }
+    document.getElementById("w-good")
+      .addEventListener("click", preset("gp1", "gp0", "gnd"));
+    document.getElementById("w-swap")
+      .addEventListener("click", preset("gp0", "gp1", "gnd"));
+    document.getElementById("w-nognd")
+      .addEventListener("click", preset("gp1", "gp0", "off"));
+    draw();
+  }());
 
   /* ---------------- Figure 5: the console ---------------- */
   group("bo-", "bop-", 4, "", "is-on", "is-off");
@@ -1027,8 +1308,77 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
   /* ---------------- Figure 6: which machine each step is on ---------------- */
   group("sp-", "spp-", 4, "", "is-on", "is-off");
 
-  /* ---------------- Figure 7: five silences ---------------- */
-  group("sy-", "syp-", 5, "", "is-on", "is-off");
+  /* ---------------- Figure 7: the whole bench ----------------
+     Four faults, and the two readouts a reader actually has. The order below
+     is the order the bench answers in: a probe that is not there stops the
+     flash before anything else can be wrong, a terminal on the wrong device
+     never sees the board whatever the wires do, and only then does the wiring
+     decide between silence and noise.
+
+     The point of the third readout is that `silent` has two causes and `noise`
+     has two, and neither pair can be told apart by looking. */
+  (function () {
+    var OPTS = { cable: ["data", "charge"],
+                 wire: ["ok", "swap", "nognd", "rxoff", "txoff"],
+                 baud: ["ok", "bad"],
+                 dev: ["probe", "other"] };
+    var at = { cable: "data", wire: "ok", baud: "ok", dev: "probe" };
+    var CONSOLE = ["good", "silent", "noise", "nodev", "oneway"];
+    var SEP = ["good", "loud", "silent", "noise", "oneway"];
+
+    function console_() {
+      if (at.cable === "charge") { return "nodev"; }
+      if (at.dev === "other") { return "silent"; }
+      if (at.wire === "swap" || at.wire === "rxoff") { return "silent"; }
+      if (at.wire === "nognd" || at.baud === "bad") { return "noise"; }
+      /* Last, because a ground or a speed fault corrupts the banner this one
+         relies on having arrived cleanly. */
+      if (at.wire === "txoff") { return "oneway"; }
+      return "good";
+    }
+    function separator(con) {
+      if (at.cable === "charge") { return "loud"; }
+      return con === "good" ? "good" : con;
+    }
+
+    function draw() {
+      var k, i, b, con = console_(), sep = separator(con);
+      for (k in OPTS) {
+        for (i = 0; i < OPTS[k].length; i++) {
+          b = document.getElementById("f-" + k + "-" + OPTS[k][i]);
+          b.setAttribute("aria-pressed", at[k] === OPTS[k][i] ? "true" : "false");
+          b.classList.toggle("is-on", at[k] === OPTS[k][i]);
+        }
+      }
+      document.getElementById("fo-flash-ok")
+        .classList.toggle("is-on", at.cable !== "charge");
+      document.getElementById("fo-flash-bad")
+        .classList.toggle("is-on", at.cable === "charge");
+      document.getElementById("fo-flash")
+        .classList.toggle("is-loud", at.cable === "charge");
+      for (i = 0; i < CONSOLE.length; i++) {
+        document.getElementById("fo-con-" + CONSOLE[i])
+          .classList.toggle("is-on", CONSOLE[i] === con);
+      }
+      for (i = 0; i < SEP.length; i++) {
+        document.getElementById("sep-" + SEP[i])
+          .classList.toggle("is-on", SEP[i] === sep);
+      }
+      document.getElementById("f-sep").classList.toggle("is-working", sep === "good");
+      document.getElementById("fs-ok").classList.toggle("is-off", sep !== "good");
+      document.getElementById("fs-bad").classList.toggle("is-off", sep === "good");
+    }
+
+    function wire(k, v) {
+      document.getElementById("f-" + k + "-" + v)
+        .addEventListener("click", function () { at[k] = v; draw(); });
+    }
+    var k, i;
+    for (k in OPTS) {
+      for (i = 0; i < OPTS[k].length; i++) { wire(k, OPTS[k][i]); }
+    }
+    draw();
+  }());
 
   /* ---------------- Check yourself ----------------
      The answer text is in the markup; this only reveals it and marks which
