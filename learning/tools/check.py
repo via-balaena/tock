@@ -1092,6 +1092,34 @@ def staticref_inventory_checks(html):
     return problems
 
 
+def figure_reachable_checks(html):
+    """A figure that carries no id, and so can never be rendered on its own.
+
+    Nothing in this gate can see a rendered pixel, so every visual defect this
+    series has shipped was found by rendering a figure and looking at it. That
+    only works on figures that can be isolated, and `fixture.py --isolate`
+    keys on an id inside the figure. A figure with none is the one nobody has
+    ever looked at alone -- chapter 1's address-split drawing was exactly that,
+    for the whole life of the chapter, and it took building the contact sheet
+    to notice.
+
+    A drawing with no controls still needs a name for this reason alone.
+    """
+    problems = []
+    for block in re.findall(r"<figure.*?</figure>", html, flags=re.S):
+        if re.search(r'\bid="[a-zA-Z][a-zA-Z0-9_-]*"', block):
+            continue
+        label = re.search(r'instrument-label">([^<]*)</span>', block)
+        title = re.search(r'instrument-title">([^<]*)</span>', block)
+        alt = re.search(r'aria-label="([^"]{0,60})', block)
+        problems.append(
+            "a figure carries no id, so it cannot be isolated or rendered on "
+            "its own: %s" % (label.group(1) if label else
+                             title.group(1) if title else
+                             (alt.group(1) + "..." if alt else "unnamed")))
+    return problems
+
+
 def map_node_checks(html):
     """A node on the cover's map drawn with a number that is not its own.
 
@@ -2499,6 +2527,7 @@ def static_checks(html, name):
     problems.extend(demo_asm_checks(html, os.path.join(ROOT, name)))
     problems.extend(assembled_listing_checks(html, os.path.join(ROOT, name)))
     problems.extend(citation_chain_checks(html))
+    problems.extend(figure_reachable_checks(html))
     problems.extend(counted_tree_checks(html))
     problems.extend(staticref_inventory_checks(html))
     problems.extend(shared_client_checks(html))
