@@ -187,10 +187,10 @@ chk("and every one of those has its panel open",
   chk("one copy refuses everybody after the first",
       REG["way-s2"].textContent.indexOf("refuses 2") > -1, true);
   chk("while the grant serves them all", REG["way-s3"].textContent, "all 3");
-  set(4, 1);
-  chk("and reads naturally when there is only one",
-      REG["way-s3"].textContent, "the one caller");
   chk("and the panel says what refusing costs", open_(), "refused");
+  set(4, 1);
+  chk("and it reads naturally when there is only one",
+      REG["way-s3"].textContent, "the one caller");
 
   // Users can never exceed the room the board made.
   (function () {
