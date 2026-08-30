@@ -269,6 +269,522 @@ button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
 }
 
 
+/* ---------- the bench ----------
+   Chapter 1's Figure 8 is the model: a control the reader drags, numbers that
+   recompute under it, and no sentence anywhere in the script. Everything this
+   figure can say is already in the markup; the script picks which of it shows
+   and fills in the arithmetic. */
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin-bottom: .7rem;
+}
+.slider-row label {
+  font-family: var(--display);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  flex: 0 0 5.6rem;
+}
+.slider-row .grow { flex: 1 1 auto; display: block; }
+input[type="range"] {
+  accent-color: var(--hot-fill);
+  width: 100%;
+  display: block;
+}
+/* At phone width the label and the readout already fill the row, so the track
+   itself was left about a centimetre wide and could not be dragged with any
+   precision. Below this width it gets a line of its own. */
+@media (max-width: 30rem) {
+  .slider-row { flex-wrap: wrap; }
+  .slider-row .grow { flex: 1 0 100%; }
+  .slider-row label { flex: 0 0 auto; }
+}
+.pinbadge {
+  font-family: var(--mono);
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--hot-ink);
+  background: var(--hot-fill);
+  border-radius: 2px;
+  padding: .12rem .45rem;
+  flex: 0 0 auto;
+  min-width: 7.4rem;
+  text-align: center;
+}
+
+/* The permission picker. Same button group the rest of the page uses, but the
+   pressed one is filled rather than merely outlined, because here it is a
+   setting that stays rather than a panel that was opened. */
+.perm-row { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 .3rem; }
+.perm-row button.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+
+/* ---------- the two registers, drawn ----------
+   Each is a strip of fields whose widths are their real bit widths, so BASE
+   at 27 bits is visibly the whole register and ENABLE at one bit is visibly a
+   sliver. The hex above each strip is what the kernel writes. */
+
+.regbox { margin-top: 1.1rem; }
+.reg-line {
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  margin-bottom: .3rem;
+}
+.reg-name {
+  font-family: var(--mono);
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  flex: 0 0 4.6rem;
+}
+.reg-hex {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--hot);
+}
+.reg-strip {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: .9rem;
+}
+.reg-f {
+  /* These are buttons, and the shared button rule uppercases. A field is
+     called AP and ATTRINDX, not Ap and Attrindx, so the case is pinned here. */
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  border-radius: 0;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: var(--surface-sunk);
+  padding: .3rem .1rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: .66rem;
+  line-height: 1.25;
+  border-right: 1px solid var(--rule);
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+  overflow: hidden;
+}
+.reg-f:last-child { border-right: 0; }
+/* Widths are the real bit widths: BASE is 27 of the 32 and looks it, ENABLE is
+   one and looks it. The min-width is what keeps a one-bit field's name
+   readable at phone width. */
+.f-27 { flex: 27 1 0; }
+.f-3  { flex: 3 1 0; }
+.f-2  { flex: 2 1 0; }
+.f-1  { flex: 1 1 0; }
+.reg-f { min-width: 3.1rem; }
+.reg-f:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.reg-f b { display: block; font-size: .74rem; color: var(--ink); font-weight: 700; }
+/* The fields the permission picker moves. Everything else in the pair is
+   written once and never varies, and looking different is how a reader sees
+   which is which. */
+.reg-f.is-live { background: var(--hot-soft); color: var(--hot); }
+.reg-f.is-live b { color: var(--hot); }
+
+/* Reading the pair back the other way: the two address fields shifted up five
+   and turned into the range they actually name. */
+.decode {
+  margin: .2rem 0 0;
+  font-size: .88rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.decode-v { font-family: var(--mono); font-weight: 600; color: var(--ink); }
+
+/* ---------- the permission matrix ----------
+   Five rows, and the whole of what the kernel can ask for. The two bit columns
+   are the encoding; the three after them are what unprivileged code may then
+   do. A row is a button, so the case of a Rust variant name has to be pinned
+   the same way the register fields are. */
+.pmx { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .9rem; }
+.pmx-head, .pmx button {
+  display: grid;
+  grid-template-columns: minmax(7rem, 2.4fr) repeat(5, minmax(2.4rem, 1fr));
+  gap: .4rem;
+  align-items: center;
+  text-align: left;
+}
+.pmx-head {
+  font-family: var(--display);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 .6rem .25rem;
+}
+.pmx button {
+  font-family: var(--mono);
+  font-size: .8rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: .45rem .6rem;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+}
+.pmx button[aria-pressed="true"] {
+  border-color: var(--hot);
+  background: var(--hot-soft);
+}
+.pmx-b { color: var(--accent); font-weight: 700; }
+.pmx-y { color: var(--ink); }
+.pmx-n2 { color: var(--ink-faint); }
+.pmx-q { color: var(--ink-faint); }
+@media (max-width: 34rem) {
+  .pmx-head { display: none; }
+  .pmx button { grid-template-columns: 1fr repeat(5, auto); font-size: .72rem; }
+}
+
+/* ---------- the eight slots ----------
+   The rack is the figure. Two are spoken for before a process starts, six can
+   be handed out, and region 0 is never offered however many times you ask. */
+.rack { display: flex; gap: 3px; margin: .3rem 0 .7rem; }
+.slot {
+  flex: 1 1 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .45rem .2rem;
+  text-align: center;
+  background: var(--surface-sunk);
+  min-width: 0;
+}
+.slot-n {
+  display: block;
+  font-family: var(--mono);
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.slot-w {
+  display: block;
+  font-family: var(--display);
+  font-size: .6rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  overflow: hidden;
+}
+.slot.is-ram { background: var(--hot-soft); border-color: var(--hot); }
+.slot.is-ram .slot-n, .slot.is-ram .slot-w { color: var(--hot); }
+.slot.is-flash { background: var(--accent-soft); border-color: var(--accent); }
+.slot.is-flash .slot-n, .slot.is-flash .slot-w { color: var(--accent); }
+.slot.is-taken { background: var(--accent); border-color: var(--accent); }
+.slot.is-taken .slot-n, .slot.is-taken .slot-w { color: var(--surface); }
+
+.rack-say { margin: 0 0 .7rem; font-size: .9rem; line-height: 1.55; color: var(--ink-soft); }
+.rk.is-off { display: none; }
+.rack-ctl { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.rack-count {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.rack-count span { font-family: var(--mono); color: var(--ink); }
+
+/* ---------- the machine, while the fault is being handled ----------
+   Four readings that change as the reader steps forward. None of them is a
+   sentence: they are what a debugger would show at that moment, and the panel
+   below the steps is where the words stay. */
+.machine {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: .1rem;
+  margin: .3rem 0 .8rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.mrow { background: var(--surface); padding: .5rem .7rem; }
+.mrow-k {
+  display: block;
+  font-family: var(--display);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: .2rem;
+}
+.mrow-v { font-family: var(--mono); font-size: .88rem; font-weight: 600; color: var(--ink); }
+/* The two readings that mean the fault has been recorded. */
+.mrow-v.is-hot { color: var(--hot); }
+.step-ctl { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .8rem; }
+
+/* ---------- two chips, side by side ----------
+   One request, and four numbers each. The rows are what the two size rules
+   actually cost, which is not the same question as which one is bigger. */
+.cmp {
+  margin: .3rem 0 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cmp-head, .cmp-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1.6fr) 1fr 1fr;
+  gap: .5rem;
+  padding: .45rem .7rem;
+  align-items: baseline;
+}
+.cmp-head {
+  font-family: var(--display);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--surface-sunk);
+}
+.cmp-row + .cmp-row { border-top: 1px solid var(--rule); }
+.cmp-k { font-size: .84rem; color: var(--ink-soft); line-height: 1.4; }
+.cmp-v { font-family: var(--mono); font-size: .86rem; font-weight: 600; color: var(--ink); }
+/* The older unit's answer, whenever it is the worse of the two. */
+.cmp-v.is-worse { color: var(--danger); }
+
+/* ---------- three switches ----------
+   The chapter's claim is that two of the three fields are about who is *not*
+   being protected against, and the fastest way to show that is to let a reader
+   turn them off and read what breaks. */
+.switches { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 .8rem; }
+.sw {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-family: var(--mono);
+  font-size: .8rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: .4rem .6rem;
+}
+.sw[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.sw-n { color: var(--ink); }
+.sw-v {
+  font-weight: 700;
+  min-width: 1.1rem;
+  text-align: center;
+  border-radius: 2px;
+  background: var(--surface-sunk);
+  color: var(--ink-soft);
+}
+.sw[aria-pressed="true"] .sw-v { background: var(--accent); color: var(--surface); }
+.ctrl-tag {
+  font-family: var(--display);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--hot);
+}
+.ctrl-tag.is-off { display: none; }
+.conseq { list-style: none; margin: .2rem 0 1rem; padding: 0; }
+.conseq li {
+  font-size: .9rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  padding: .4rem .7rem;
+  border-left: 2px solid var(--rule);
+  margin-bottom: .3rem;
+}
+.cq.is-off { display: none; }
+
+/* ---------- one access, taken apart ----------
+   Four things about a single store, three of which the unit reads and one of
+   which it cannot see. The privilege buttons under it are the whole chapter in
+   one gesture: nothing about the access changes, and the answer does. */
+.access { margin: .3rem 0 .8rem; }
+.access-code {
+  font-family: var(--mono);
+  font-size: 1rem;
+  color: var(--ink);
+  margin: 0 0 .6rem;
+}
+.access-code b { color: var(--hot); }
+.access-arrow { color: var(--ink-faint); }
+.access-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: .1rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.ag { background: var(--surface); padding: .5rem .7rem; }
+.ag-k {
+  display: block;
+  font-family: var(--display);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.ag-v {
+  display: block;
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: .15rem 0;
+}
+.ag-t {
+  display: block;
+  font-size: .7rem;
+  color: var(--accent);
+}
+/* The one row the hardware has no wire for. */
+.ag.is-blind { background: var(--surface-sunk); }
+.ag.is-blind .ag-v { color: var(--ink-faint); }
+.ag.is-blind .ag-t { color: var(--ink-faint); }
+.f1p { margin: 0; }
+.f1p.is-off { display: none; }
+
+/* ---------- the map strip ----------
+   Where the region sits and where the probe is pointing. Drawn with plain
+   boxes rather than an SVG because every edge here is a percentage of one
+   width, which CSS already does. */
+
+.mapstrip {
+  position: relative;
+  height: 2.6rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--surface-sunk);
+  margin-top: 1.2rem;
+  overflow: hidden;
+}
+.map-region {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent-soft);
+  border-left: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+}
+.map-probe {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  background: var(--hot-fill);
+}
+.map-probe::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--hot-fill);
+}
+.map-legend {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--ink-faint);
+  margin-top: .25rem;
+}
+
+/* ---------- the verdict ----------
+   Three verbs, and the answer to whichever is pressed. The answer is a
+   sentence, so it lives in the markup: all six possible ones ship visible and
+   the script puts five away. */
+
+.verb-row { display: flex; gap: .4rem; margin-top: 1.3rem; }
+.verb-row button { flex: 1 1 0; }
+.verb-row button.is-on { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+
+.verdict {
+  margin-top: .7rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.verdict-head {
+  padding: .55rem .8rem;
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.verdict.is-allowed .verdict-head { background: var(--accent-soft); color: var(--accent); }
+.verdict.is-refused .verdict-head { background: var(--danger-soft); color: var(--danger); }
+/* The head is one word or the other, never both. The markup ships the second
+   already put away, so this is the rule that has to exist for the first render
+   to be right with no JavaScript at all. */
+.verdict-head .is-off { display: none; }
+.verdict-why { padding: .7rem .8rem; font-size: .9rem; line-height: 1.55; }
+.verdict-why p { margin: 0; }
+
+/* ---------- a row of computed numbers ----------
+   Four cells under a control, each a label and a value the script fills in.
+   Nothing here is a sentence: every one of these is arithmetic the reader
+   could do by hand, which is the point of showing it moving. */
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: .1rem;
+  margin-top: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.readout-cell {
+  background: var(--surface);
+  padding: .55rem .7rem;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+.readout-k {
+  font-family: var(--display);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.readout-v {
+  font-family: var(--mono);
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.readout-v.hot { color: var(--hot); }
+
+/* The five possible answers. All ship visible so a reader with no JavaScript
+   meets every one; the script puts four away. */
+.vdp { margin: 0; display: none; }
+.vdp.is-on { display: block; }
+
 /* ---------- closing ---------- */
 
 .next {
@@ -513,7 +1029,7 @@ dfn {
   font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
   padding: .5rem .7rem; border-left: 2px solid var(--rule);
 }
-.mop b, .dbgp b, .costp b, .vtp b {
+.mop b, .dbgp b, .vtp b {
   font-family: var(--mono); font-weight: 500; font-size: .88rem;
 }
 .mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
@@ -563,38 +1079,6 @@ dfn {
   .vt button { grid-template-columns: 1fr; gap: .1rem; }
 }
 
-/* ---------- Buttons over a three-cell readout: Figure 3 ---------- */
-.costs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
-/* These are lines of Rust, so their case is the content. */
-.costs button {
-  font-family: var(--mono); font-size: .82rem; font-weight: 400;
-  text-transform: none; letter-spacing: 0;
-  /* Lines of Rust. The longest wraps, and a button centres by default. */
-  text-align: left;
-  padding: .45rem .6rem; background: var(--surface-sunk); border: 1px solid var(--rule);
-}
-.costs button[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
-.costgrid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: .2rem 0 .8rem;
-}
-.costcell {
-  border: 1px solid var(--rule); background: var(--surface-sunk); padding: .55rem .7rem;
-}
-.costcell-k {
-  font-family: var(--display); font-size: .64rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
-  display: block; margin-bottom: .25rem;
-}
-.costcell-v { font-family: var(--mono); font-size: .92rem; color: var(--ink); }
-.costsay { display: flex; flex-direction: column; gap: .45rem; }
-.costp {
-  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
-  padding: .5rem .7rem; border-left: 2px solid var(--rule);
-}
-.costp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
-.costp.is-off { display: none; }
-@media (max-width: 30rem) { .costgrid { grid-template-columns: 1fr; } }
-
 /* ---------- Numbered steps: Figure 7 ---------- */
 .seq { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 .4rem; }
 .seq button {
@@ -639,7 +1123,7 @@ dfn {
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>The Memory Protection Unit</h1>
-  <p class="standfirst">Chapter 4 ended on a sentence with a hole in it. Every edge it drew &mdash; where a process starts, where its memory ends, how far up it may reach &mdash; was a number the kernel was holding. Not one of them stops an instruction. This is the thing that stops the instruction.</p>
+  <p class="standfirst">Chapter 4 ended on a sentence with a hole in it. Every edge it drew was a number the kernel was holding: where a process starts, where its memory ends, how far up it may reach. Not one of them stops an instruction. This chapter is about the thing that does.</p>
   <noscript>
     <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
@@ -657,13 +1141,14 @@ dfn {
       <li>Read one <dfn>region</dfn> out of the two registers that describe it, and get back the addresses the kernel put in.</li>
       <li>Say how many regions this board has, which two are spoken for before your process starts, and what runs out first.</li>
       <li>Follow one forbidden store from the instruction to the stopped process, naming every step in between.</li>
+      <li>Say what the older Cortex-M units cost that this one does not, in address space and in alignment.</li>
     </ul>
-    <p class="cost">Plan on forty minutes. Chapter 4 is assumed: what a process is, and the seven boundaries through its memory. Chapter 1 comes back too &mdash; a register with fields in it, except that this time the fields govern what other addresses may be touched.</p>
+    <p class="cost">Plan on forty minutes, and plan on dragging things: most of this chapter is built to be handled rather than read. Chapter 4 is assumed: what a process is, and the seven boundaries through its memory. Chapter 1 comes back too, as a register with fields in it &mdash; except that this time the fields govern what other addresses may be touched.</p>
   </div>
 </section>
 
 <section class="col">
-  <h2>Nine words, before we start</h2>
+  <h2>Nine words this chapter needs</h2>
   <p id="wordcount">Each is one sentence now and repeated in context below. Two of them are the names of Cortex-M exceptions, and only one of the two ever fires on this board.</p>
 </section>
 
@@ -683,10 +1168,10 @@ dfn {
 
 <section class="col">
   <h2>The gap chapter 4 left</h2>
-  <p id="gapline">Chapter 4 drew a process's memory as seven boundaries and named the field behind each one. <code>app_break</code>, <code>kernel_memory_break</code>, <code>memory_start</code>: all of them real, all of them held by the kernel, and every one of them a number in a struct.</p>
-  <p>A number in a struct is a note about what should happen. The processor executing a store does not consult it. Between the moment a process issues an instruction and the moment memory changes, no kernel code runs at all &mdash; that is what running means.</p>
-  <p id="unitline">So the enforcement cannot be in the kernel. It is in the processor, next to the thing doing the accessing, and it is the one piece of this series that is not software. The RP2350 datasheet lists what it is for in three lines: "enforce privilege rules", "separate processes", "manage memory attributes".</p>
-  <p id="threeuses">The first two are this chapter. The third comes down to one line the kernel writes on every configure and never changes.</p>
+  <p id="gapline">Chapter 4 drew a process's memory as seven boundaries and named the field behind each one. <code>app_break</code>, <code>kernel_memory_break</code>, <code>memory_start</code>. They are all real, and the kernel holds all of them. But every one is a number in a struct.</p>
+  <p>A number in a struct is a note about what should happen. The processor running a store never reads it. Between the instruction a process issues and the memory that changes, no kernel code runs at all. That is what running means.</p>
+  <p id="unitline">So the enforcement cannot live in the kernel. It lives in the processor, right beside the thing doing the accessing, and it is the one piece of this series that is not software. The RP2350 datasheet gives it three jobs: "enforce privilege rules", "separate processes", "manage memory attributes".</p>
+  <p id="threeuses">The first two jobs are this chapter. The third comes down to one line the kernel writes on every configure and never changes.</p>
 </section>
 
 <figure class="instrument">
@@ -695,7 +1180,29 @@ dfn {
     <span class="instrument-title">Five things the unit is asked, and one it never sees</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each one. The last is the one that decides what this hardware can and cannot be used for.</p>
+    <p class="dothis">Here is one access. Change nothing about it except who is making it, and watch the answer turn over.</p>
+    <div class="access">
+      <p class="access-code"><b>store</b> 0x000000FF <span class="access-arrow">into</span> 0x2000F000</p>
+      <div class="access-grid">
+        <div class="ag"><span class="ag-k">Address</span><span class="ag-v">0x2000F000</span><span class="ag-t">examined</span></div>
+        <div class="ag"><span class="ag-k">Verb</span><span class="ag-v">store</span><span class="ag-t">examined</span></div>
+        <div class="ag"><span class="ag-k">Who</span><span class="ag-v" id="ac-who">a process</span><span class="ag-t">examined</span></div>
+        <div class="ag is-blind"><span class="ag-k">Value</span><span class="ag-v">0x000000FF</span><span class="ag-t">never looked at</span></div>
+      </div>
+    </div>
+    <div class="perm-row" role="group" aria-label="Who is making the access">
+      <button type="button" class="is-on" id="who-proc" aria-pressed="true">A process is running</button>
+      <button type="button" id="who-kern" aria-pressed="false">The kernel is running</button>
+    </div>
+    <div class="verdict is-refused" id="f1-verdict" aria-live="polite">
+      <div class="verdict-head">
+        <span id="f1-no">Refused</span><span id="f1-yes" class="is-off">Allowed</span>
+      </div>
+      <div class="verdict-why">
+        <p class="f1p" id="f1p-0">Unprivileged, and 0x2000F000 is outside every region this process was given. The store never reaches memory.</p>
+        <p class="f1p is-off" id="f1p-1">Privileged, and the same store to the same address goes through. The regions were never pointed at the kernel: the line that turns the unit on also hands privileged code the whole default memory map. Nothing about the access changed. Only who was making it.</p>
+      </div>
+    </div>
     <div class="blk" role="group" aria-label="What the memory protection unit checks">
       <button type="button" id="ck-0" aria-pressed="true">when</button>
       <button type="button" id="ck-1" aria-pressed="false">against whom</button>
@@ -716,9 +1223,9 @@ dfn {
 
 <section class="col">
   <h2>One region, two registers</h2>
-  <p>Chapter 1 spent itself on a register with fields packed into it: bits that meant something to hardware rather than to the program. This is the same shape and a different job. Instead of a bit per pin, the fields describe a stretch of addresses and what may be done inside it.</p>
-  <p id="wordregion">One warning about the word. Chapter 4 used <em>region</em> for the four areas a linker script cuts the chip into, and that sense is not this one. From here on it means what the glossary above defines: one run of addresses, described by two registers, carrying one set of permissions.</p>
-  <p id="whereregs">The registers sit at <code class="addr">0xE000ED90</code>. Three registers matter for one region: <b>MPU_RNR</b> at <code class="addr">0xE000ED98</code> picks which of the eight you are talking about, and then <b>MPU_RBAR</b> and <b>MPU_RLAR</b>, at <code class="addr">0xE000ED9C</code> and <code class="addr">0xE000EDA0</code>, describe it.</p>
+  <p>Chapter 1 spent itself on a register with fields packed into it: bits that meant something to the hardware rather than to the program. Same shape here, different job. Instead of one bit per pin, these fields describe a stretch of addresses and what may be done inside it.</p>
+  <p id="wordregion">One warning about the word. Chapter 4 used <em>region</em> for the four areas a linker script cuts the chip into. That is not this sense. From here on it means what the glossary above says: one run of addresses, described by two registers, carrying one set of permissions.</p>
+  <p id="whereregs">The registers sit at <code class="addr">0xE000ED90</code>. Three of them describe one region. <b>MPU_RNR</b> at <code class="addr">0xE000ED98</code> picks which of the eight you are talking about. Then <b>MPU_RBAR</b> and <b>MPU_RLAR</b>, at <code class="addr">0xE000ED9C</code> and <code class="addr">0xE000EDA0</code>, describe it.</p>
 </section>
 
 <figure class="instrument">
@@ -727,63 +1234,141 @@ dfn {
     <span class="instrument-title">Two registers, seven fields, one region</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis" id="rf-do">Click each field. The first and fourth carry the addresses; the rest are one, two or three bits, and the fifth is the one Figure 3's arithmetic needs.</p>
-    <div class="vt" role="group" aria-label="The fields of MPU_RBAR and MPU_RLAR">
-      <button type="button" id="rf-0" aria-pressed="true"><span class="vt-at">RBAR</span><span>BASE, bits 31:5</span></button>
-      <button type="button" id="rf-1" aria-pressed="false"><span class="vt-at">RBAR</span><span>AP, bits 2:1</span></button>
-      <button type="button" id="rf-2" aria-pressed="false"><span class="vt-at">RBAR</span><span>XN, bit 0</span></button>
-      <button type="button" id="rf-3" aria-pressed="false"><span class="vt-at">RLAR</span><span>LIMIT, bits 31:5</span></button>
-      <button type="button" id="rf-4" aria-pressed="false"><span class="vt-at">RLAR</span><span>PXN, bit 4</span></button>
-      <button type="button" id="rf-5" aria-pressed="false"><span class="vt-at">RLAR</span><span>ATTRINDX, bits 3:1</span></button>
-      <button type="button" id="rf-6" aria-pressed="false"><span class="vt-at">RLAR</span><span>ENABLE, bit 0</span></button>
+    <p class="dothis" id="rf-do">Pick a permission and drag the size. The two registers rebuild as you go &mdash; watch which fields move and which never do. Click any field to read what it is.</p>
+
+    <div class="perm-row" role="group" aria-label="The permission the kernel asks for">
+      <button type="button" id="bp-0" aria-pressed="false">ReadWriteExecute</button>
+      <button type="button" class="is-on" id="bp-1" aria-pressed="true">ReadWriteOnly</button>
+      <button type="button" id="bp-2" aria-pressed="false">ReadExecuteOnly</button>
+      <button type="button" id="bp-3" aria-pressed="false">ReadOnly</button>
     </div>
-    <div class="vtsay">
-      <p class="vtp is-on" id="rfp-0">The first address of the region, with its bottom five bits missing. The kernel writes <b>logical_start &gt;&gt; 5</b>, so what the hardware stores is the address in units of 32 bytes. Those five absent bits are half the size rule on this chip: a region may start on any multiple of 32. The limit field three rows down carries the other half.</p>
-      <p class="vtp" id="rfp-1">Two bits, four values, and only two of them get used for a process: <b>ReadWrite</b> and <b>ReadOnly</b>. The other two are the privileged-only pair, and they grant unprivileged code nothing at all &mdash; which for a process means no access to that region. Figure 4 is where each one comes from.</p>
-      <p class="vtp" id="rfp-2">One bit, and the reason this chapter has the phrase <dfn>execute-never</dfn> in it. Set the bit and no instruction may be fetched from the region. The names in the Tock source read backwards at first glance: <b>XN::Disable</b> is the value that sets the bit, because what it disables is execution.</p>
-      <p class="vtp" id="rfp-3">The last address of the region, inclusive, in the same 32-byte units. The kernel writes <b>(logical_end - 1) &gt;&gt; 5</b>, and the comment above that line says why. The limit counts the last byte that is <em>in</em>. Passing the end address itself would stretch the region 32 bytes past where it should stop.</p>
-      <p class="vtp" id="rfp-4">The other execute-never bit, and the only field in the pair that speaks about nothing but privileged code. The source calls it "privileged execute-never. Defines whether code can be executed from this privileged region", and the value names read backwards here too: Tock writes <b>PXN::Disable</b> into every region it builds, which sets the bit. That is the <code>0x10</code> Figure 3 adds to every limit it shows.</p>
+
+    <div class="slider-row">
+      <label for="bench-size">Size</label>
+      <span class="pinbadge" id="bench-size-badge">2048 bytes</span>
+      <span class="grow"><input type="range" id="bench-size" min="1" max="128" value="64" aria-label="Region size, in units of 32 bytes"></span>
+    </div>
+
+    <div class="regbox">
+      <div class="reg-line">
+        <span class="reg-name">MPU_RBAR</span>
+        <span class="reg-hex" id="rb-hex">0x20008003</span>
+      </div>
+      <div class="reg-strip" role="group" aria-label="The four fields of MPU_RBAR">
+        <button type="button" class="reg-f f-27" id="rf-0" aria-pressed="true">BASE<b id="rb-base">0x1000400</b></button>
+        <button type="button" class="reg-f f-2" id="rf-7" aria-pressed="false">SH<b id="rb-sh">0</b></button>
+        <button type="button" class="reg-f f-2 is-live" id="rf-1" aria-pressed="false">AP<b id="rb-ap">01</b></button>
+        <button type="button" class="reg-f f-1 is-live" id="rf-2" aria-pressed="false">XN<b id="rb-xn">1</b></button>
+      </div>
+
+      <div class="reg-line">
+        <span class="reg-name">MPU_RLAR</span>
+        <span class="reg-hex" id="rl-hex">0x200087F1</span>
+      </div>
+      <div class="reg-strip" role="group" aria-label="The four fields of MPU_RLAR">
+        <button type="button" class="reg-f f-27 is-live" id="rf-3" aria-pressed="false">LIMIT<b id="rl-limit">0x100043F</b></button>
+        <button type="button" class="reg-f f-1" id="rf-4" aria-pressed="false">PXN<b id="rl-pxn">1</b></button>
+        <button type="button" class="reg-f f-3" id="rf-5" aria-pressed="false">ATTRINDX<b id="rl-idx">0</b></button>
+        <button type="button" class="reg-f f-1" id="rf-6" aria-pressed="false">EN<b id="rl-en">1</b></button>
+      </div>
+      <p class="decode">Which describes
+        <span class="decode-v" id="rb-decode">0x20008000</span> through
+        <span class="decode-v" id="rl-decode">0x200087FF</span> &mdash;
+        <span class="decode-v" id="rg-decode">2048 bytes</span>, read back out of the two registers above.</p>
+    </div>
+
+    <div class="blksay">
+      <p class="vtp is-on" id="rfp-0">The first address of the region, with its bottom five bits missing. The kernel writes <b>logical_start &gt;&gt; 5</b>, so what the hardware stores is the address in units of 32 bytes. Those five absent bits are half the size rule on this chip: a region may start on any multiple of 32. The limit field in the pair below carries the other half. Drag the size and this field never moves.</p>
+      <p class="vtp" id="rfp-1">Two bits, four values, and only two of them get used for a process: ReadWrite and ReadOnly. The other two are the privileged-only pair, and they grant unprivileged code nothing at all. Watch this field as you press the four buttons above: it is one of only two things they change.</p>
+      <p class="vtp" id="rfp-2">One bit, and the reason this chapter has the phrase execute-never in it. Set the bit and no instruction may be fetched from the region. The names in the Tock source read backwards at first glance: <b>XN::Disable</b> is the value that sets the bit, because what it disables is execution.</p>
+      <p class="vtp" id="rfp-3">The last address of the region, inclusive, in the same 32-byte units. The kernel writes <b>(logical_end - 1) &gt;&gt; 5</b>. The limit counts the last byte that is in, so passing the end address itself would stretch the region 32 bytes past where it should stop. This is the one address field the size slider moves.</p>
+      <p class="vtp" id="rfp-4">The other execute-never bit, and the only field in the pair that speaks about nothing but privileged code. The source calls it "privileged execute-never. Defines whether code can be executed from this privileged region", and the value names read backwards here too: Tock writes <b>PXN::Disable</b> into every region it builds, which sets the bit. That is the <code>0x10</code> this figure adds to every limit it shows.</p>
+      <p class="vtp" id="rfp-7">Shareability, and the field this page can say least about. Tock writes zero into it on every region it builds and never varies, so nothing you can do above will move it.</p>
       <p class="vtp" id="rfp-5">Three bits pointing at one of eight attribute slots. Every region Tock builds points at slot 0, and the only line that ever writes those slots sets slot 0 to normal, non-cacheable memory. It is set on every configure and never varies.</p>
       <p class="vtp" id="rfp-6">The switch. A region with this bit clear is ignored no matter what else is in the pair, which is how the unit holds eight regions when a process only needs two. An unused slot is written as a base of zero and this bit cleared.</p>
     </div>
   </div>
-  <div class="instrument-note" id="rf-note">Notice where the low bits of each address went. The pair has no room for bits 4 to 0 of the start or of the end, because those ten positions are carrying the fields in the rows above. So a region beginning at an odd address cannot be described, and the kernel is never allowed to want one. One field is left out of those rows, <b>SH</b>: Tock writes zero into it every time and never varies.</div>
+  <div class="instrument-note" id="rf-note">Notice how little of the pair the permission buttons touch: two bits out of sixty-four. Everything else is either an address or a constant Tock writes the same way every time. And notice where the low bits of each address went. The pair has no room for bits 4 to 0 of either address, because those ten positions are carrying the fields in the rows above. A region beginning at an odd address cannot be described, so the kernel is never allowed to want one.</div>
 </figure>
 
 <section class="col">
-  <h2>A region you can work out by hand</h2>
-  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. Here is what the two registers hold at three moments in that process's life. One caveat on that base: it is picked to make the arithmetic easy to follow, not read off this board like every other address in this series. Where a process's memory really starts depends on how much RAM the kernel's own data took.</p>
+  <h2>Build a region yourself</h2>
+  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. The figure below is that process. Drag how much it asks for, then drag a probe across the edge and see where the answer changes. One caveat on that base: it is picked to make the arithmetic easy to follow, not read off this board like every other address in this series. Where a process's memory really starts depends on how much RAM the kernel's own data took.</p>
 </section>
 
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 3</span>
-    <span class="instrument-title">The same region, three moments, two registers</span>
+    <span class="instrument-title">Grow the region, then try to reach past it</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a moment. The readouts are what the kernel writes into the hardware.</p>
-    <div class="costs" role="group" aria-label="One process's RAM region at three moments">
-      <button type="button" id="mm-0" aria-pressed="true">first instruction</button>
-      <button type="button" id="mm-1" aria-pressed="false">after asking for 2&nbsp;kB</button>
-      <button type="button" id="mm-2" aria-pressed="false">asking for one byte more</button>
+    <p class="dothis">Drag the top slider to ask for memory, and the bottom one to point at an address. Then press a verb. Move the probe one byte at a time across the right-hand edge and watch where the answer actually changes.</p>
+
+    <div class="slider-row">
+      <label for="brk">Asked for</label>
+      <span class="pinbadge" id="brk-badge">2049 bytes</span>
+      <span class="grow"><input type="range" id="brk" min="1" max="4096" value="2049" aria-label="How many bytes the process has asked for"></span>
     </div>
-    <div class="costgrid">
-      <div class="costcell"><span class="costcell-k">RBAR</span><span class="costcell-v addr" id="mm-rbar">0x20008003</span></div>
-      <div class="costcell"><span class="costcell-k">RLAR</span><span class="costcell-v addr" id="mm-rlar">0x20008011</span></div>
-      <div class="costcell"><span class="costcell-k">reachable</span><span class="costcell-v" id="mm-len">32 bytes</span></div>
+
+    <div class="readout">
+      <div class="readout-cell">
+        <span class="readout-k">Reachable</span>
+        <span class="readout-v hot" id="ro-grant">2080 bytes</span>
+      </div>
+      <div class="readout-cell">
+        <span class="readout-k">Handed over unasked</span>
+        <span class="readout-v" id="ro-waste">31 bytes</span>
+      </div>
+      <div class="readout-cell">
+        <span class="readout-k">Last address inside</span>
+        <span class="readout-v" id="ro-last">0x2000881F</span>
+      </div>
+      <div class="readout-cell">
+        <span class="readout-k">MPU_RLAR</span>
+        <span class="readout-v" id="ro-rlar">0x20008811</span>
+      </div>
     </div>
-    <div class="costsay">
-      <p class="costp is-on" id="mmp-0">A single 32-byte region, which is the smallest this hardware can describe and exactly the size of the exception frame the processor pushes on the way in. <b>RBAR</b> is the base with three low bits of permission stuck on it: <b>0b01</b> in the access field for read-write, then the execute-never bit. <b>RLAR</b>'s limit field holds the same value as the base, because a region this small starts and ends inside one multiple of 32.</p>
-      <p class="costp" id="mmp-1"><b>RBAR</b> has not moved and will not: the start of a process's memory is fixed when it is loaded. Only the limit changes. Take the new end, subtract one, shift down five and back up, then add bit 4 for privileged-execute-never and bit 0 for enable. That is the extra <code>0x11</code> added to every limit this figure shows.</p>
-      <p class="costp" id="mmp-2">Ask for one byte past a multiple of 32 and you are given the next whole multiple. The kernel rounds the requested end <em>up</em> before it builds the region, because it has nowhere to put a finer answer. The rounding always goes the process's way: a request that is not already a multiple of 32 comes back a little larger than it went in.</p>
+
+    <div class="mapstrip">
+      <div class="map-region" id="map-region"></div>
+      <div class="map-probe" id="map-probe"></div>
+    </div>
+    <div class="map-legend">
+      <span>0x20007FC0</span>
+      <span>0x20009040</span>
+    </div>
+
+    <div class="slider-row" style="margin-top:1rem">
+      <label for="probe">Probe</label>
+      <span class="pinbadge" id="probe-badge">0x20008000</span>
+      <span class="grow"><input type="range" id="probe" min="0" max="4224" value="64" aria-label="The address the process tries to touch"></span>
+    </div>
+
+    <div class="verb-row" role="group" aria-label="What the process tries to do at that address">
+      <button type="button" class="is-on" id="vb-0" aria-pressed="true">Read it</button>
+      <button type="button" id="vb-1" aria-pressed="false">Write it</button>
+      <button type="button" id="vb-2" aria-pressed="false">Execute it</button>
+    </div>
+
+    <div class="verdict is-allowed" id="verdict" aria-live="polite">
+      <div class="verdict-head">
+        <span id="vd-yes">Allowed</span><span id="vd-no" class="is-off">Refused</span>
+      </div>
+      <div class="verdict-why">
+        <p class="vdp is-on" id="vdp-0">Inside the region, and the access field reads ReadWrite. A process may read its own memory, which is the least surprising thing on this page.</p>
+        <p class="vdp" id="vdp-1">Inside the region, and the access field reads ReadWrite. The store lands. This is the only one of the three verbs that both permission bits have to agree on.</p>
+        <p class="vdp" id="vdp-2">Inside the region, and refused anyway. A process's RAM is asked for as ReadWriteOnly, which sets the execute-never bit, so no instruction may be fetched from here. A buffer that arrives full of instructions is still only a buffer.</p>
+        <p class="vdp" id="vdp-3">Below the base. The address does not fall inside any enabled region, and an address that matches nothing is refused rather than allowed. This is the end the process cannot grow towards: its own memory starts here and stays here.</p>
+        <p class="vdp" id="vdp-4">Past the limit. The store never reaches memory, no kernel code has run yet, and the processor is about to raise the fault Figure 7 follows to the end. Drag back a byte at a time to find the exact address where this becomes allowed.</p>
+      </div>
     </div>
   </div>
-  <div class="instrument-note">Notice which number never changes. A process's memory cannot be moved once it is running, because its own compiled addresses point into it &mdash; chapter 4's four arguments were how it learned them. Growth happens at one end only.</div>
+  <div class="instrument-note" id="mm-note">Notice that the edge does not move where you would expect. A request that is not already a multiple of 32 comes back rounded up to the next whole multiple, because the limit field has nowhere to record a finer boundary. The rounding always goes the process's way, it is never reported, and the process simply finds it can reach a little further than it asked to. Notice too which number never changes: a process's memory cannot be moved once it is running, because its own compiled addresses point into it, and chapter 4's four arguments were how it learned them. Growth happens at one end only.</div>
 </figure>
 
 <section class="col">
-  <h2>Five words for permission</h2>
-  <p>The kernel does not write those bit patterns at the call site. It names a permission, and the chip's implementation turns the name into a pair of fields. There are five names.</p>
+  <h2>Five permissions, and the two Tock actually uses</h2>
+  <p>The kernel never writes those bit patterns itself. It names a permission, and the chip's own file turns that name into a pair of fields. There are five names, and Tock asks for two of them.</p>
 </section>
 
 <figure class="instrument">
@@ -792,29 +1377,42 @@ dfn {
     <span class="instrument-title">Five names, and the two fields each becomes</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each name. Two of the five are the only ones any code in this tree asks for; the fifth is the strange one.</p>
-    <div class="vt" role="group" aria-label="The five Permissions variants and the fields they set">
-      <button type="button" id="pm-0" aria-pressed="true"><span class="vt-at">1</span><span>ReadWriteExecute</span></button>
-      <button type="button" id="pm-1" aria-pressed="false"><span class="vt-at">2</span><span>ReadWriteOnly</span></button>
-      <button type="button" id="pm-2" aria-pressed="false"><span class="vt-at">3</span><span>ReadExecuteOnly</span></button>
-      <button type="button" id="pm-3" aria-pressed="false"><span class="vt-at">4</span><span>ReadOnly</span></button>
-      <button type="button" id="pm-4" aria-pressed="false"><span class="vt-at">5</span><span>ExecuteOnly</span></button>
+    <p class="dothis">Read down the two bit columns first: five names, and every one of them is just those three bits. Then click a row for what it is for.</p>
+    <div class="pmx" role="group" aria-label="The five Permissions variants, the fields they set, and what unprivileged code may do">
+      <div class="pmx-head" aria-hidden="true">
+        <span>Name</span><span>AP</span><span>XN</span><span>Read</span><span>Write</span><span>Run</span>
+      </div>
+      <button type="button" id="pm-0" aria-pressed="true">
+        <span class="pmx-n">ReadWriteExecute</span><span class="pmx-b">01</span><span class="pmx-b">0</span>
+        <span class="pmx-y">yes</span><span class="pmx-y">yes</span><span class="pmx-y">yes</span></button>
+      <button type="button" id="pm-1" aria-pressed="false">
+        <span class="pmx-n">ReadWriteOnly</span><span class="pmx-b">01</span><span class="pmx-b">1</span>
+        <span class="pmx-y">yes</span><span class="pmx-y">yes</span><span class="pmx-n2">no</span></button>
+      <button type="button" id="pm-2" aria-pressed="false">
+        <span class="pmx-n">ReadExecuteOnly</span><span class="pmx-b">11</span><span class="pmx-b">0</span>
+        <span class="pmx-y">yes</span><span class="pmx-n2">no</span><span class="pmx-y">yes</span></button>
+      <button type="button" id="pm-3" aria-pressed="false">
+        <span class="pmx-n">ReadOnly</span><span class="pmx-b">11</span><span class="pmx-b">1</span>
+        <span class="pmx-y">yes</span><span class="pmx-n2">no</span><span class="pmx-n2">no</span></button>
+      <button type="button" id="pm-4" aria-pressed="false">
+        <span class="pmx-n">ExecuteOnly</span><span class="pmx-b">10</span><span class="pmx-b">0</span>
+        <span class="pmx-n2">no</span><span class="pmx-n2">no</span><span class="pmx-q">&mdash;</span></button>
     </div>
     <div class="vtsay">
       <p class="vtp is-on" id="pmp-0">Access field <b>ReadWrite</b>, execute allowed: everything permitted. A region that is both writable and executable is the arrangement every other mechanism in this chapter exists to avoid.</p>
       <p class="vtp" id="pmp-1">Access field <b>ReadWrite</b>, execute-never bit set. This is what a process's RAM gets. A process may keep whatever it likes in its own memory and may not run it, so a buffer that arrives full of instructions is still only a buffer.</p>
       <p class="vtp" id="pmp-2">Access field <b>ReadOnly</b>, execute allowed. This is what a process's flash gets, asked for by name when the process is loaded. A process cannot rewrite its own code, which is the other half of the pair above.</p>
       <p class="vtp" id="pmp-3">Access field <b>ReadOnly</b>, execute-never. Readable data that is neither writable nor runnable.</p>
-      <p class="vtp" id="pmp-4">The odd one. It sets the access field to <b>ReadOnlyPrivilegedOnly</b> and leaves execution allowed, so unprivileged code may run the instructions and may not read them back. It exists because the hardware can express it.</p>
+      <p class="vtp" id="pmp-4">The odd one, and the reason its last cell is a dash rather than a yes. It sets the access field to <b>ReadOnlyPrivilegedOnly</b> and leaves the execute-never bit clear. That access field is a privileged-only one, so a process may not read them back. Whether a process may <em>run</em> them is a question the Tock source cannot answer on its own, and nothing in the tree asks for this variant, so nothing here settles it. It exists because the hardware can express it.</p>
     </div>
   </div>
   <div class="instrument-note" id="pm-note">Notice that the two the loader uses are the two that split writing from running. Flash: read and execute, never write. RAM: read and write, never execute. Between them there is no address a process can both write and later run. The other three names have no caller anywhere in the tree.</div>
 </figure>
 
 <section class="col">
-  <h2>Eight regions, and who has them</h2>
+  <h2>You get eight regions. Two are gone before you start.</h2>
   <p id="eightline">The datasheet says the unit "supports 16 memory regions: 8 secure and 8 non-secure" &mdash; two separate sets of eight rather than sixteen in one pool. Tock asks for eight, in one line of the chip crate: <b>cortexm33::mpu::MPU&lt;8&gt;</b>.</p>
-  <p>By the time a process runs its first instruction, two of those eight are already spoken for, and one of the two was never up for discussion.</p>
+  <p>By the time a process runs its first instruction, two of those eight are already taken. One of the two was never on offer in the first place.</p>
 </section>
 
 <figure class="instrument">
@@ -823,7 +1421,27 @@ dfn {
     <span class="instrument-title">Where the eight go, and the request that gets nothing</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each. The last one is a slot that does not exist, and what happens when something asks for it.</p>
+    <p class="dothis">Press the button until the kernel says no. Count how many times you got a slot, and watch which one it never offers you.</p>
+    <div class="rack" aria-hidden="true">
+      <div class="slot is-ram" id="rs-0"><span class="slot-n">0</span><span class="slot-w">RAM</span></div>
+      <div class="slot is-flash" id="rs-1"><span class="slot-n">1</span><span class="slot-w">flash</span></div>
+      <div class="slot" id="rs-2"><span class="slot-n">2</span><span class="slot-w" id="rw-2">free</span></div>
+      <div class="slot" id="rs-3"><span class="slot-n">3</span><span class="slot-w" id="rw-3">free</span></div>
+      <div class="slot" id="rs-4"><span class="slot-n">4</span><span class="slot-w" id="rw-4">free</span></div>
+      <div class="slot" id="rs-5"><span class="slot-n">5</span><span class="slot-w" id="rw-5">free</span></div>
+      <div class="slot" id="rs-6"><span class="slot-n">6</span><span class="slot-w" id="rw-6">free</span></div>
+      <div class="slot" id="rs-7"><span class="slot-n">7</span><span class="slot-w" id="rw-7">free</span></div>
+    </div>
+    <p class="rack-say" aria-live="polite">
+      <span class="rk" id="rk-0">Two slots are gone before the process runs a single instruction. Six are left.</span>
+      <span class="rk is-off" id="rk-1">Granted. The allocator walked up from region 1 and took the first slot that was free.</span>
+      <span class="rk is-off" id="rk-2">Refused. Every slot the allocator is willing to hand out is taken, and it never offers region 0 &mdash; that one belongs to the process's own memory and its limit moves while the process runs.</span>
+    </p>
+    <div class="rack-ctl">
+      <button type="button" id="rk-ask">Ask for a region</button>
+      <button type="button" id="rk-reset">Start over</button>
+      <span class="rack-count">granted <span id="rk-count">0</span> of 6</span>
+    </div>
     <div class="vt" role="group" aria-label="How the eight MPU regions are allocated">
       <button type="button" id="rn-0" aria-pressed="true"><span class="vt-at">0</span><span>the process's RAM</span></button>
       <button type="button" id="rn-1" aria-pressed="false"><span class="vt-at">1</span><span>the process's flash</span></button>
@@ -841,8 +1459,8 @@ dfn {
 </figure>
 
 <section class="col">
-  <h2>The same interface, two very different chips</h2>
-  <p id="twochips">Everything above is one implementation of a trait. The kernel never touches <b>MPU_RBAR</b>. It asks for a region of at least so many bytes, with these permissions, somewhere inside this stretch of free memory. A file under <code>arch/</code> works out the rest. That file is different on the older Cortex-M cores, and the difference is not a detail.</p>
+  <h2>The same request on an older chip</h2>
+  <p id="twochips">Everything above is one implementation of a trait. The kernel never touches <b>MPU_RBAR</b>. It asks for a region of at least so many bytes, with these permissions, somewhere inside this stretch of free memory. A file under <code>arch/</code> works out the rest. That file is very different on the older Cortex-M cores, and the difference is not a detail.</p>
 </section>
 
 <figure class="instrument">
@@ -851,7 +1469,19 @@ dfn {
     <span class="instrument-title">One request, two hardware answers</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Pick a chip. Both are asked for a region of 3&nbsp;kB starting wherever is convenient.</p>
+    <p class="dothis">Drag the request and read the two columns against each other. Watch the last row especially &mdash; it is the one that decides where in memory a process can be put at all.</p>
+    <div class="slider-row">
+      <label for="cmp">Asked for</label>
+      <span class="pinbadge" id="cmp-badge">3072 bytes</span>
+      <span class="grow"><input type="range" id="cmp" min="32" max="8192" value="3072" aria-label="How many bytes the kernel asks for"></span>
+    </div>
+    <div class="cmp">
+      <div class="cmp-head" aria-hidden="true"><span></span><span>Cortex-M33</span><span>Cortex-M0+ to M7</span></div>
+      <div class="cmp-row"><span class="cmp-k">Address space taken</span><span class="cmp-v" id="cmp-a8">3072 bytes</span><span class="cmp-v" id="cmp-a7">4096 bytes</span></div>
+      <div class="cmp-row"><span class="cmp-k">The process gets</span><span class="cmp-v" id="cmp-g8">3072 bytes</span><span class="cmp-v" id="cmp-g7">3072 bytes</span></div>
+      <div class="cmp-row"><span class="cmp-k">Smallest step it can grow by</span><span class="cmp-v" id="cmp-s8">32 bytes</span><span class="cmp-v" id="cmp-s7">512 bytes</span></div>
+      <div class="cmp-row"><span class="cmp-k">Must start on a multiple of</span><span class="cmp-v" id="cmp-l8">32 bytes</span><span class="cmp-v" id="cmp-l7">4096 bytes</span></div>
+    </div>
     <div class="mo-fig two" role="group" aria-label="Two Cortex-M memory protection unit designs">
       <button type="button" class="mo is-on" id="tc-0" aria-pressed="true">
         <span class="mo-when">Cortex-M33</span><span class="mo-who">base and limit</span></button>
@@ -867,8 +1497,8 @@ dfn {
 </figure>
 
 <section class="col">
-  <h2>The instant a process gets it wrong</h2>
-  <p id="instantline">A process stores one byte past the end of its region. The <dfn>fault</dfn> that follows is the point of everything above, and it takes six steps to turn into a stopped process. The chip's own documentation names the first destination, and this board never goes there.</p>
+  <h2>What happens the instant a process gets it wrong</h2>
+  <p id="instantline">A process stores one byte past the end of its region. The <dfn>fault</dfn> that follows is the point of everything above, and it takes six steps to turn into a stopped process. The chip's own documentation names the first stop on that route, and this board never goes there.</p>
 </section>
 
 <figure class="instrument">
@@ -877,7 +1507,18 @@ dfn {
     <span class="instrument-title">Six steps from a refused store to a stopped process</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a step. Step 3 is the one that explains why this board has no handler named after the thing that went wrong.</p>
+    <p class="dothis">Walk it forward one step at a time and watch the four readings change. Step 3 is the one that explains why this board has no handler named after the thing that went wrong.</p>
+    <div class="machine">
+      <div class="mrow"><span class="mrow-k">Running</span><span class="mrow-v" id="mx-who">the process</span></div>
+      <div class="mrow"><span class="mrow-k">Mode</span><span class="mrow-v" id="mx-mode">unprivileged</span></div>
+      <div class="mrow"><span class="mrow-k">MMFAR</span><span class="mrow-v" id="mx-mmfar">nothing yet</span></div>
+      <div class="mrow"><span class="mrow-k">APP_HARD_FAULT</span><span class="mrow-v" id="mx-flag">clear</span></div>
+    </div>
+    <div class="step-ctl">
+      <button type="button" id="fl-prev">Back</button>
+      <button type="button" id="fl-next">Step forward</button>
+      <span class="rack-count">step <span id="fl-at">1</span> of 6</span>
+    </div>
     <div class="seq" role="group" aria-label="Six steps from a protection violation to a stopped process">
       <button type="button" id="fl-0" aria-pressed="true"><span class="seq-n">1</span><span>the store is refused <span class="seq-src">in hardware</span></span></button>
       <button type="button" id="fl-1" aria-pressed="false"><span class="seq-n">2</span><span>the chip raises <b>MemManage</b> <span class="seq-src">datasheet &sect;3.7.4.7</span></span></button>
@@ -899,7 +1540,7 @@ dfn {
 </figure>
 
 <section class="col">
-  <h2>Three bits, once per context switch</h2>
+  <h2>Turning the unit on is three bits</h2>
   <p id="ctrlline">The regions go into the hardware before a switch into a process, and the unit is turned on immediately after. Turning it on is a single write of three fields to <b>MPU_CTRL</b>, and two of the three are about who is <em>not</em> being protected against.</p>
   <p id="skipline">The regions do not always go in. Each process's configuration carries an id and a dirty flag, and the routine that loads it compares both against what the hardware already holds. Come back to the same process with its regions unchanged and the eight pairs are left alone.</p>
   <p id="sameline">The three fields are written every time, and they are worth one comparison. The older unit from Figure 6 is a different design end to end, and its own enable routine writes the identical three, in the same order, under the same comment. Whatever else changed between those two chips, the answer to "who is this for" did not.</p>
@@ -911,7 +1552,22 @@ dfn {
     <span class="instrument-title">One write, three fields, two exemptions</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each field. The second is the one to sit with.</p>
+    <p class="dothis">Flip the three switches and read what each one costs. Tock's own setting is the one they start in; every other combination is a board that behaves differently.</p>
+    <div class="switches" role="group" aria-label="The three fields of MPU_CTRL, as switches">
+      <button type="button" class="sw" id="sw-en" aria-pressed="true"><span class="sw-n">ENABLE</span><span class="sw-v" id="swv-en">1</span></button>
+      <button type="button" class="sw" id="sw-priv" aria-pressed="true"><span class="sw-n">PRIVDEFENA</span><span class="sw-v" id="swv-priv">1</span></button>
+      <button type="button" class="sw" id="sw-hf" aria-pressed="false"><span class="sw-n">HFNMIENA</span><span class="sw-v" id="swv-hf">0</span></button>
+    </div>
+    <div class="reg-line">
+      <span class="reg-name">MPU_CTRL</span>
+      <span class="reg-hex" id="ctrl-hex">0x00000005</span>
+      <span class="ctrl-tag" id="ctrl-tag">what Tock writes</span>
+    </div>
+    <ul class="conseq">
+      <li><span class="cq" id="cq-en-a">The regions are live, and every access a process makes is checked against them.</span><span class="cq is-off" id="cq-en-b">The regions are inert. Every pair still holds what the kernel wrote, and none of it is consulted &mdash; this is the state the board boots into.</span></li>
+      <li><span class="cq" id="cq-priv-a">Privileged code keeps the default memory map behind the regions, so the kernel reaches anything the regions do not cover.</span><span class="cq is-off" id="cq-priv-b">The kernel is now fenced by the same eight regions as the process. It would fault on its first access outside them, which is why nothing in this tree clears this bit.</span></li>
+      <li><span class="cq is-off" id="cq-hf-a">The unit stays on inside a HardFault or an NMI. The handler that runs after a violation is fenced too, so it could not reach into the process's stack to read out what happened.</span><span class="cq" id="cq-hf-b">Inside a HardFault, or an NMI, the unit does not apply. That is exactly what lets the handler reach into the process's own stack and read out what happened.</span></li>
+    </ul>
     <div class="blk" role="group" aria-label="The three fields written to MPU_CTRL">
       <button type="button" id="cb-0" aria-pressed="true">ENABLE, set</button>
       <button type="button" id="cb-1" aria-pressed="false">PRIVDEFENA, set</button>
@@ -927,7 +1583,7 @@ dfn {
 </figure>
 
 <section class="col">
-  <h2>What this does not buy</h2>
+  <h2>What the unit does not protect</h2>
   <p>A process cannot reach the kernel's memory, cannot reach another process's memory, cannot write its own code and cannot run its own data. That is a real, hardware-backed list, and it is worth being clear about what is not on it.</p>
 </section>
 
@@ -999,7 +1655,7 @@ dfn {
   <h2>What you can say now</h2>
   <p id="closing">A process is confined by two pairs of registers inside the processor, checked on every access it makes. The unit holds eight pairs; two is what a process gets. Both are spoken for before it starts: its RAM, read-write and never executable, and its flash, read-execute and never writable. The addresses in those registers are stored in units of 32 bytes, which is the only size rule this chip has, and it rounds in the process's favour.</p>
   <p>When a process reaches past them the store never happens. A handler works out from one bit whether the kernel or the process was running, records the address that was refused, and hands the decision to the policy chapter 4 described.</p>
-  <p>None of it applies to the kernel. That was never an oversight &mdash; it is the shape of the whole design, and it is why the door in this wall has to be built so carefully.</p>
+  <p>None of it applies to the kernel. That was never an oversight. It is the shape of the whole design, and it is why the door in this wall has to be built so carefully.</p>
 </section>
 
 <div class="col next">
@@ -1091,45 +1747,361 @@ dfn {
     pick(opening);
   }
 
-  /* ---------------- Figure 1: what the unit checks ---------------- */
-  group("ck-", "ckp-", 5, "", "is-on", "is-off");
-
-  /* ---------------- Figure 2: the six fields ---------------- */
-  group("rf-", "rfp-", 7, "", "is-on", "is-off");
-
-  /* ---------------- Figure 3: one region at three moments ----------------
-     Every number here is the arithmetic in mpu_v8m.rs run by hand on a base of
-     0x20008000. RBAR is base | AP(ReadWrite) | XN set, which never changes
-     once a process is placed. RLAR is ((end - 1) >> 5) << 5 plus 0x11 -- bit 4
-     for PXN, bit 0 for enable. The third row is the rounding: 2049 bytes asked
-     for becomes 2080 reachable, because align32 rounds the end up. */
+  /* ---------------- Figure 1: what the unit checks ----------------
+     One store, and the only thing the buttons change is who is making it.
+     Tock sets PRIVDEFENA when it turns the unit on, so privileged code keeps
+     the whole default memory map and the same access goes through. */
   (function () {
-    var MOMENTS = [
-      ["0x20008003", "0x20008011", "32 bytes"],
-      ["0x20008003", "0x200087F1", "2048 bytes"],
-      ["0x20008003", "0x20008811", "2080 bytes"]
-    ];
-    group("mm-", "mmp-", 3, "", "is-on", "is-off", function (k) {
-      document.getElementById("mm-rbar").textContent = MOMENTS[k][0];
-      document.getElementById("mm-rlar").textContent = MOMENTS[k][1];
-      document.getElementById("mm-len").textContent = MOMENTS[k][2];
+    function pick(kernel) {
+      document.getElementById("who-proc")
+        .setAttribute("aria-pressed", kernel ? "false" : "true");
+      document.getElementById("who-kern")
+        .setAttribute("aria-pressed", kernel ? "true" : "false");
+      document.getElementById("who-proc").classList.toggle("is-on", !kernel);
+      document.getElementById("who-kern").classList.toggle("is-on", kernel);
+      document.getElementById("ac-who").textContent =
+        kernel ? "the kernel" : "a process";
+      document.getElementById("f1p-0").classList.toggle("is-off", kernel);
+      document.getElementById("f1p-1").classList.toggle("is-off", !kernel);
+      document.getElementById("f1-yes").classList.toggle("is-off", !kernel);
+      document.getElementById("f1-no").classList.toggle("is-off", kernel);
+      document.getElementById("f1-verdict").classList.toggle("is-allowed", kernel);
+      document.getElementById("f1-verdict").classList.toggle("is-refused", !kernel);
+    }
+    document.getElementById("who-proc")
+      .addEventListener("click", function () { pick(false); });
+    document.getElementById("who-kern")
+      .addEventListener("click", function () { pick(true); });
+    pick(false);
+    group("ck-", "ckp-", 5, "", "is-on", "is-off");
+  }());
+
+  /* ---------------- Figures 2 and 3: one region, built and then tested -------
+     Every number below is the arithmetic in mpu_v8m.rs, run on a base of
+     0x20008000. RBAR is BASE(start >> 5) | SH(0) | AP | XN. RLAR is
+     LIMIT((end - 1) >> 5) | PXN | ATTRINDX(0) | ENABLE, and Tock writes
+     PXN::Disable and ENABLE::SET on every region it builds, which is the
+     constant 0x11 riding on the bottom of every limit this page shows.
+
+     The base is fixed. A process's memory does not move once it is running,
+     so the only address either figure can vary is the far end. */
+  var BASE = 0x20008000;
+
+  function hex32(v) {
+    var h = (v >>> 0).toString(16).toUpperCase();
+    while (h.length < 8) { h = "0" + h; }
+    return "0x" + h;
+  }
+
+  /* AP and XN as the source writes them, in source order. Only the four the
+     kernel can ask for on behalf of a process are here; ExecuteOnly maps to
+     the privileged-only access field and has no caller anywhere in the tree,
+     so putting it on a control that answers for unprivileged code would be
+     inventing a result rather than showing one. Figure 4 has it instead. */
+  var PERMS = [
+    { ap: 1, xn: 0 },   /* ReadWriteExecute */
+    { ap: 1, xn: 1 },   /* ReadWriteOnly -- what a process's RAM gets */
+    { ap: 3, xn: 0 },   /* ReadExecuteOnly -- what a process's flash gets */
+    { ap: 3, xn: 1 }    /* ReadOnly */
+  ];
+
+  (function () {
+    var perm = 1, units = 64;
+    var sizeIn = document.getElementById("bench-size");
+
+    function bin2(v) { return (v & 2 ? "1" : "0") + (v & 1 ? "1" : "0"); }
+
+    function draw() {
+      var p = PERMS[perm];
+      var bytes = units * 32;
+      var end = BASE + bytes;
+      var rbar = (BASE & ~31) | (p.ap << 1) | p.xn;
+      var rlar = ((end - 1) & ~31) | 0x10 | 0x01;
+
+      document.getElementById("bench-size-badge").textContent = bytes + " bytes";
+      document.getElementById("rb-hex").textContent = hex32(rbar);
+      document.getElementById("rl-hex").textContent = hex32(rlar);
+      document.getElementById("rb-base").textContent = "0x" + (BASE >>> 5).toString(16).toUpperCase();
+      document.getElementById("rb-sh").textContent = "0";
+      document.getElementById("rb-ap").textContent = bin2(p.ap);
+      document.getElementById("rb-xn").textContent = String(p.xn);
+      document.getElementById("rl-limit").textContent = "0x" + ((end - 1) >>> 5).toString(16).toUpperCase();
+      document.getElementById("rl-pxn").textContent = "1";
+      document.getElementById("rl-idx").textContent = "0";
+      document.getElementById("rl-en").textContent = "1";
+      document.getElementById("rb-decode").textContent = hex32(BASE);
+      document.getElementById("rl-decode").textContent = hex32(end - 1);
+      document.getElementById("rg-decode").textContent = bytes + " bytes";
+
+    }
+
+    var i;
+    for (i = 0; i < 4; i++) {
+      (function (k) {
+        document.getElementById("bp-" + k).addEventListener("click", function () {
+          var j;
+          perm = k;
+          for (j = 0; j < 4; j++) {
+            document.getElementById("bp-" + j)
+              .setAttribute("aria-pressed", j === k ? "true" : "false");
+            document.getElementById("bp-" + j).classList.toggle("is-on", j === k);
+          }
+          draw();
+        });
+      }(i));
+    }
+    sizeIn.addEventListener("input", function () {
+      units = parseInt(sizeIn.value, 10);
+      draw();
     });
+    draw();
+
+    /* The field explanations under the strips, which are the one part of this
+       figure that is still a panel: seven fields, seven paragraphs, all of
+       them in the markup. */
+    group("rf-", "rfp-", 8, "", "is-on", "is-off");
+  }());
+
+  /* ---------------- Figure 3: growth, and the edge ---------------- */
+  (function () {
+    /* The strip spans two 64-byte margins either side of a 4 kB maximum, so
+       the region can be dragged to its full size and still show both edges. */
+    var SPAN = 4224, LEFT = 64;
+    var brk = document.getElementById("brk");
+    var probe = document.getElementById("probe");
+    var verb = 0;
+
+    function draw() {
+      var asked = parseInt(brk.value, 10);
+      /* align32: round the end up to the next multiple of 32, never down. */
+      var granted = Math.ceil(asked / 32) * 32;
+      if (granted < 32) { granted = 32; }
+      var last = BASE + granted - 1;
+      var addr = BASE - LEFT + parseInt(probe.value, 10);
+      var inside = addr >= BASE && addr <= last;
+
+      document.getElementById("brk-badge").textContent = asked + " bytes";
+      document.getElementById("ro-grant").textContent = granted + " bytes";
+      document.getElementById("ro-waste").textContent = (granted - asked) + " bytes";
+      document.getElementById("ro-last").textContent = hex32(last);
+      document.getElementById("ro-rlar").textContent = hex32((last & ~31) | 0x11);
+      document.getElementById("probe-badge").textContent = hex32(addr);
+
+      document.getElementById("map-region")
+        .setAttribute("style", "left:" + (100 * LEFT / SPAN).toFixed(3)
+                      + "%;width:" + (100 * granted / SPAN).toFixed(3) + "%");
+      document.getElementById("map-probe")
+        .setAttribute("style", "left:" + (100 * (addr - BASE + LEFT) / SPAN).toFixed(3) + "%");
+
+      /* Which of the five answers applies. Outside beats the verb: an address
+         that matches no enabled region is refused whatever was being tried. */
+      var which;
+      if (!inside) { which = addr < BASE ? 3 : 4; }
+      else { which = verb; }
+      var allowed = inside && verb !== 2;
+
+      var i;
+      for (i = 0; i < 5; i++) {
+        document.getElementById("vdp-" + i).classList.toggle("is-on", i === which);
+      }
+      document.getElementById("verdict").classList.toggle("is-allowed", allowed);
+      document.getElementById("verdict").classList.toggle("is-refused", !allowed);
+      document.getElementById("vd-yes").classList.toggle("is-off", !allowed);
+      document.getElementById("vd-no").classList.toggle("is-off", allowed);
+    }
+
+    var i;
+    for (i = 0; i < 3; i++) {
+      (function (k) {
+        document.getElementById("vb-" + k).addEventListener("click", function () {
+          var j;
+          verb = k;
+          for (j = 0; j < 3; j++) {
+            document.getElementById("vb-" + j)
+              .setAttribute("aria-pressed", j === k ? "true" : "false");
+            document.getElementById("vb-" + j).classList.toggle("is-on", j === k);
+          }
+          draw();
+        });
+      }(i));
+    }
+    brk.addEventListener("input", draw);
+    probe.addEventListener("input", draw);
+    draw();
   }());
 
   /* ---------------- Figure 4: the five permission names ---------------- */
   group("pm-", "pmp-", 5, "", "is-on", "is-off");
 
-  /* ---------------- Figure 5: where the eight regions go ---------------- */
-  group("rn-", "rnp-", 4, "", "is-on", "is-off");
+  /* ---------------- Figure 5: where the eight regions go ----------------
+     unused_region_number walks from 1 upwards and skips index 0 on every pass,
+     and the kernel's own array of remembered regions is six long. Both limits
+     are six here, and the rack runs out at the same place either way. */
+  (function () {
+    var FIRST = 2, LAST = 7, taken = 0;
 
-  /* ---------------- Figure 6: two chips, one interface ---------------- */
-  group("tc-", "tcp-", 2, "is-on", "is-on", "");
+    function draw() {
+      var i;
+      for (i = FIRST; i <= LAST; i++) {
+        document.getElementById("rs-" + i)
+          .classList.toggle("is-taken", i < FIRST + taken);
+        document.getElementById("rw-" + i).textContent =
+          i < FIRST + taken ? "given" : "free";
+      }
+      document.getElementById("rk-count").textContent = String(taken);
+    }
+    function say(k) {
+      var i;
+      for (i = 0; i < 3; i++) {
+        document.getElementById("rk-" + i).classList.toggle("is-off", i !== k);
+      }
+    }
+    document.getElementById("rk-ask").addEventListener("click", function () {
+      if (taken < 6) { taken++; draw(); say(1); }
+      else { say(2); }
+    });
+    document.getElementById("rk-reset").addEventListener("click", function () {
+      taken = 0; draw(); say(0);
+    });
+    draw();
+    group("rn-", "rnp-", 4, "", "is-on", "is-off");
+  }());
 
-  /* ---------------- Figure 7: the fault path ---------------- */
-  group("fl-", "flp-", 6, "", "is-on", "is-off");
+  /* ---------------- Figure 6: two chips, one interface ----------------
+     The newer unit rounds the end up to a multiple of 32 and is done. The
+     older one needs a power-of-two region aligned to its own size, and covers
+     an awkward length by cutting that region into eight subregions and
+     switching off the ones the process should not have -- so its step is an
+     eighth of the region, and a region needs 256 bytes before an eighth of it
+     reaches the 32-byte floor. */
+  (function () {
+    var cmp = document.getElementById("cmp");
 
-  /* ---------------- Figure 8: the three control bits ---------------- */
-  group("cb-", "cbp-", 3, "", "is-on", "is-off");
+    function pow2(n) {
+      var p = 32;
+      while (p < n) { p *= 2; }
+      return p;
+    }
+    function set(id, v, worse) {
+      document.getElementById(id).textContent = v + " bytes";
+      if (worse !== undefined) {
+        document.getElementById(id).classList.toggle("is-worse", worse);
+      }
+    }
+    function draw() {
+      var asked = parseInt(cmp.value, 10);
+      var new8 = Math.ceil(asked / 32) * 32;
+      var phys = Math.max(256, pow2(asked));
+      var sub = phys / 8;
+      var old7 = Math.ceil(asked / sub) * sub;
+
+      document.getElementById("cmp-badge").textContent = asked + " bytes";
+      set("cmp-a8", new8);
+      set("cmp-a7", phys, phys > new8);
+      set("cmp-g8", new8);
+      set("cmp-g7", old7, old7 !== new8);
+      set("cmp-s8", 32);
+      set("cmp-s7", sub, sub > 32);
+      set("cmp-l8", 32);
+      set("cmp-l7", phys, phys > 32);
+    }
+    cmp.addEventListener("input", draw);
+    draw();
+    group("tc-", "tcp-", 2, "is-on", "is-on", "");
+  }());
+
+  /* ---------------- Figure 7: the fault path ----------------
+     The four readings are what a debugger would show at each step. MMFAR is
+     written at step 5, with the other four status words, and the flag the
+     kernel reads afterwards is set in the same handler -- so both turn over
+     between steps 4 and 5, which is the moment worth seeing. */
+  (function () {
+    var WHO = ["the process", "the process", "the process",
+               "the HardFault handler", "the HardFault handler", "the kernel"];
+    var MODE = ["unprivileged", "unprivileged", "unprivileged",
+                "privileged", "privileged", "privileged"];
+    var MMFAR = ["nothing yet", "nothing yet", "nothing yet", "nothing yet",
+                 "0x20008820", "0x20008820"];
+    var FLAG = ["clear", "clear", "clear", "clear", "set", "set"];
+    var at = 0;
+
+    function show(k) {
+      var i;
+      at = k;
+      for (i = 0; i < 6; i++) {
+        document.getElementById("fl-" + i)
+          .setAttribute("aria-pressed", i === k ? "true" : "false");
+        document.getElementById("flp-" + i).classList.toggle("is-on", i === k);
+        document.getElementById("flp-" + i).classList.toggle("is-off", i !== k);
+      }
+      document.getElementById("mx-who").textContent = WHO[k];
+      document.getElementById("mx-mode").textContent = MODE[k];
+      document.getElementById("mx-mmfar").textContent = MMFAR[k];
+      document.getElementById("mx-flag").textContent = FLAG[k];
+      document.getElementById("mx-mmfar").classList.toggle("is-hot", k >= 4);
+      document.getElementById("mx-flag").classList.toggle("is-hot", k >= 4);
+      document.getElementById("fl-at").textContent = String(k + 1);
+      document.getElementById("fl-prev").disabled = k === 0;
+      document.getElementById("fl-next").disabled = k === 5;
+    }
+
+    var i;
+    for (i = 0; i < 6; i++) {
+      (function (k) {
+        document.getElementById("fl-" + k)
+          .addEventListener("click", function () { show(k); });
+      }(i));
+    }
+    document.getElementById("fl-prev").addEventListener("click", function () {
+      if (at > 0) { show(at - 1); }
+    });
+    document.getElementById("fl-next").addEventListener("click", function () {
+      if (at < 5) { show(at + 1); }
+    });
+    show(0);
+  }());
+
+  /* ---------------- Figure 8: the three control bits ----------------
+     PRIVDEFENA is bit 2, HFNMIENA bit 1, ENABLE bit 0, and all three reset to
+     zero. Tock writes ENABLE and PRIVDEFENA and leaves HFNMIENA alone, which
+     is 0b101. Every other combination here is a board that is not this one. */
+  (function () {
+    /* Named rather than indexed, because these are three independent
+       switches and not one choice of three -- and because sharing 0..2 with
+       the panel group below would say they were. */
+    var NAME = ["en", "priv", "hf"];
+    var BIT = { en: 0, priv: 2, hf: 1 };
+    var TOCK = { en: true, priv: true, hf: false };
+    var on = { en: true, priv: true, hf: false };
+
+    function draw() {
+      var v = 0, i, n, same = true;
+      for (i = 0; i < NAME.length; i++) {
+        n = NAME[i];
+        if (on[n]) { v |= 1 << BIT[n]; }
+        if (on[n] !== TOCK[n]) { same = false; }
+        document.getElementById("sw-" + n)
+          .setAttribute("aria-pressed", on[n] ? "true" : "false");
+        document.getElementById("swv-" + n).textContent = on[n] ? "1" : "0";
+        document.getElementById("cq-" + n + "-a").classList.toggle("is-off", !on[n]);
+        document.getElementById("cq-" + n + "-b").classList.toggle("is-off", on[n]);
+      }
+      document.getElementById("ctrl-hex").textContent = hex32(v);
+      document.getElementById("ctrl-tag").classList.toggle("is-off", !same);
+    }
+
+    var i;
+    for (i = 0; i < NAME.length; i++) {
+      (function (n) {
+        document.getElementById("sw-" + n).addEventListener("click", function () {
+          on[n] = !on[n];
+          draw();
+        });
+      }(NAME[i]));
+    }
+    draw();
+    group("cb-", "cbp-", 3, "", "is-on", "is-off");
+  }());
 
   /* ---------------- Figure 9: what the fence is not ---------------- */
   group("nt-", "ntp-", 3, "", "is-on", "is-off");
