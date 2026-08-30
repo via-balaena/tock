@@ -21,7 +21,7 @@ last one lands on grants, which is the last mechanism chapter 1 names, so the
 arc closes where the first chapter said it would.
 
 Chapter 0 sits outside that arc and answers nothing in it. It is the hands-on
-chapter the other seven had been assuming rather than teaching: chapter 7 ends
+chapter the other seven had been assuming rather than teaching: chapter 8 ends
 by telling the reader to run `make flash-openocd`, and until chapter 0 the
 series never said how to reach the point where that command works. It is
 optional, and it says so on the cover.
@@ -30,12 +30,12 @@ optional, and it says so on the cover.
 |---|-------|--------|--------|
 | 0 | [Getting It Running](ch00-getting-it-running/) | Tock on a chip you can hold: build it, put it there with one command, three wires to make it talk -- and which two of this board's four flashing routes fail without saying so | published, verified on hardware |
 | 1 | [Everything Is Memory](ch01-everything-is-memory/) | One `str` instruction to 3.3 V on a pin, and why, before anything later introduces a protection, nothing stops it landing anywhere | published |
-| 2 | [How Code Starts Running](ch02-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
-| 3 | [What a Driver May Touch](ch03-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
-| 4 | [What a Process Is](ch04-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
-| 5 | [The Memory Protection Unit](ch05-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | published |
-| 6 | [Asking the Kernel](ch06-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | published |
-| 7 | [Grants](ch07-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and not freed until the process exits | published |
+| 2 | [How Code Starts Running](ch03-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
+| 3 | [What a Driver May Touch](ch04-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
+| 4 | [What a Process Is](ch05-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
+| 5 | [The Memory Protection Unit](ch06-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | published |
+| 6 | [Asking the Kernel](ch07-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | published |
+| 7 | [Grants](ch08-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and not freed until the process exits | published |
 
 ## The cover
 
@@ -74,7 +74,7 @@ Three things have to be reconciled to put nine standalone pages in one DOM,
 and each of them is a way the book could be quietly wrong:
 
 - **Ids collide** -- 104 of the series' 983 are declared on more than one page,
-  and `qo-` means one thing in chapter 1 and another in chapter 2. Every id in
+  and `qo-` means one thing in chapter 1 and another in chapter 3. Every id in
   the markup is prefixed with its page's key.
 - **The scripts are left alone.** They get a `document` that adds the prefix for
   them. Rewriting them was tried twice and is a trap both ways: by value it
@@ -113,15 +113,15 @@ every chapter to one commit that contains it, which closed the split as a side
 effect.
 
 **Why those seven and not the five chapter 1 promises.** Chapter 1 commits to
-itself, to chapter 2 by name, and then to three more in a single clause:
+itself, to chapter 3 by name, and then to three more in a single clause:
 "capsules, the memory protection unit, and grants -- and each one gets its own
 chapter". Two of those three cannot be written as promised. `kernel/src/grant.rs`
 describes grants as allocating "memory from a process to hold state on the
 process's behalf", out of a region inside that process's own memory, and they
 hold the upcalls and allowed buffers that syscalls create. So grants need
 processes and syscalls underneath them, and the MPU needs processes -- it is
-what it fences. Chapters 4 and 6 are those missing prerequisites; nothing in
-chapter 1 promised them, and without them chapters 5 and 7 have no ground to
+what it fences. Chapters 5 and 7 are those missing prerequisites; nothing in
+chapter 1 promised them, and without them chapters 6 and 8 have no ground to
 stand on.
 
 **Reading order is dependency order.** 3 needs 1 and 2. 5 needs 4. 6 needs 4
@@ -130,21 +130,21 @@ wall, then find the door, which is the same shape as letting the read-modify-wri
 race lose a pin before the atomic register is offered.
 
 **Units.** After a numeral it is `kB`; spelled out it is "kilobyte". Chapter 1
-shipped `KB`, chapter 2 spells it out throughout, and chapter 4 arrived with a
+shipped `KB`, chapter 3 spells it out throughout, and chapter 5 arrived with a
 third spelling before this was written down -- three conventions for one unit
 across four chapters, which is what a cross-chapter notation pass is for.
 
-**Size.** Chapter 6 is the longest of the later chapters -- 9 figures, and
-about a fifth more words than chapter 5 by the same measure. Chapter 7 lands
+**Size.** Chapter 7 is the longest of the later chapters -- 9 figures, and
+about a fifth more words than chapter 6 by the same measure. Chapter 8 lands
 between them at 7,100 and 9 figures, which is where a closing chapter should
 sit: it introduces one mechanism and spends the rest of its length paying off
 eight promises made by four earlier chapters. Some of that is
 the subject: it is the only chapter that has to teach a calling convention,
 which means naming four registers three times over. Some of it is not, and a
-review pass should ask which. Chapter 4 came out at 12 figures against the 8 to
+review pass should ask which. Chapter 5 came out at 12 figures against the 8 to
 10 below, which is the target doing its job rather than failing: three of those twelve were added
 by review passes, and each one replaced a section that was prose only on the
-skim path. Chapter 5 landed inside it first time, at 4,800 words and 9 figures,
+skim path. Chapter 6 landed inside it first time, at 4,800 words and 9 figures,
 which is what a chapter looks like when the vocabulary is already there. Chapter 1 runs to about 10,900 prose words across 17 figures, and is
 the outlier on purpose -- it defines the vocabulary from nothing and has no
 chapter to lean on. Later chapters inherit that vocabulary and should be roughly
@@ -173,14 +173,14 @@ tree has no `raspberry_pi_pico_2_w`; the `_w` board it does have is built on
 `chips/rp2040`, an earlier chip. The series cites the plain crate throughout and
 says, in the chapter where it costs something, what a wireless board does
 differently -- chapter 1 for GPIO 25 being the radio's chip select rather than
-the LED, chapter 3 for the panic blink landing there, chapter 4 for which crate
+the LED, chapter 4 for the panic blink landing there, chapter 5 for which crate
 `make program` flashes. A new chapter that reaches for hardware owes the reader
 the same sentence.
 
 ## The reading order, carried by the chapters
 
 The cover used to hold the order alone. Every chapter was a standalone page
-with no link to any other -- chapters 3 to 7 had no `<a>` on them at all -- so
+with no link to any other -- chapters 4 to 8 had no `<a>` on them at all -- so
 a reader who arrived at one directly had no way on and no way back, and the
 cover was the only thing that could be handed to somebody.
 
@@ -190,7 +190,7 @@ Each chapter now carries three links:
 - **The next chapter's title**, on the card that was already at the foot of
   every chapter, which had been written and styled but never linked.
 - **`.pager`**, under that card: back one chapter, and out to the cover.
-  Chapter 7 has no card to link, because there is no chapter 8.
+  Chapter 8 has no card to link, because there is no chapter 9.
 
 **The cover is a page in the order, not a table of it.** It links down into all
 seven chapters, and for a while nothing linked it *forward* -- so the one page
@@ -199,7 +199,7 @@ the odd one out, with an empty left slot. What is behind chapter 1 is the
 cover. So the cover carries a `.begin` card at its foot, where a chapter's
 next-card sits, and chapter 1's pager goes back to it: `&larr;&nbsp;Contents`,
 one link and no separate Contents beside it, which would be the same link
-twice. The chain runs cover to chapter 7 with no special case in it.
+twice. The chain runs cover to chapter 8 with no special case in it.
 
 Every href is relative, so a clone reads exactly as a static host does, and
 `mkindex.py` is what rewrites them for a host where neither path exists.
@@ -218,7 +218,7 @@ and the label is checked too, because a link whose href moved and whose text
 did not is worse than a broken one.
 
 **A navigation label is not a promise, and the ledger does not hold it.** A
-pager reading "Chapter 2" says where it goes, not what the page claims, so
+pager reading "Chapter 3" says where it goes, not what the page claims, so
 `_without_nav` cuts these controls out before the promise ledger and the
 pedagogy limits see the page -- the same reason `<title>` and `<h1>` are
 already cut out of both. This is not the reference going unchecked: resolving a
@@ -277,7 +277,7 @@ way a page ends up unreadable in one of the two color schemes.
 Twenty-seven more static checks exist because each caught a live defect. Keep the
 count above honest when adding one; it has now said the wrong number twice:
 
-- **A byte count a figure printed without compiling anything.** Chapter 7's
+- **A byte count a figure printed without compiling anything.** Chapter 8's
   whole argument is a number: what one driver costs one process. The first
   version of that number was 72, arrived at by adding up the field widths of
   the three slot types and the driver's own struct -- and wrong, because
@@ -298,7 +298,7 @@ count above honest when adding one; it has now said the wrong number twice:
 - **A citation whose line number is not in the file it resolves to.** The
   sources lists say "the same file" a lot, because repeating a path for every
   line of one function is noise. That works until a bullet names two files:
-  chapter 6's names `kernel/src/kernel.rs` and then the board crate, and the
+  chapter 7's names `kernel/src/kernel.rs` and then the board crate, and the
   "the same file, :903-911" under it therefore pointed at a 481-line file. The
   lines it meant are in `kernel.rs`. Three review passes verified every
   citation on that page and none of them caught it, because each verified from
@@ -307,28 +307,28 @@ count above honest when adding one; it has now said the wrong number twice:
   Each `:N` now resolves back to the last path actually named and the tree is
   asked, at the chapter's own pinned commit, whether that file has an Nth line.
   A bare basename counts as a path if the full one appeared earlier in the same
-  list, which is a reader-followable abbreviation and the thing chapter 5 does
+  list, which is a reader-followable abbreviation and the thing chapter 6 does
   six times after giving `arch/cortex-m33/src/mpu_v8m.rs` once; a basename
   nothing introduced is not. What it does not check is whether the line *says*
   anything in particular -- that stays a review lens. Skipped where git or the
   pinned commit is unavailable.
 
 - **A chapter's summary of another chapter.** Only a closing chapter has this
-  problem, and chapter 7 has it badly: its last figure walks all seven chapters
+  problem, and chapter 8 has it badly: its last figure walks all seven chapters
   in one panel each, and four of the seven were wrong on the first draft --
   written from memory about pages that were not open. It said the chip is wired
-  to fetch the first instruction, where chapter 2's headline is that the first
+  to fetch the first instruction, where chapter 3's headline is that the first
   instruction is never yours. It credited the type system with a refusal
-  chapter 3 attributes to a crate-level `forbid`, having said outright that
+  chapter 4 attributes to a crate-level `forbid`, having said outright that
   this is the half the type system does not cover. It said the kernel cannot
-  check a process, where chapter 4 spends a figure on the sixteen bytes it does
+  check a process, where chapter 5 spends a figure on the sixteen bytes it does
   check. And it quoted chapter 1's closing sentence with a clause chapter 1
   does not have. There is no gate for this: the check is to open the chapter
   being summarised and read what it says. `RETIRED_PHRASES` holds the four
   wrong ones so they cannot come back.
 
 - **A halfword a figure printed without assembling it.** The sibling of the
-  Rust one below, for chapter 6, whose whole opening rests on `svc N` being
+  Rust one below, for chapter 7, whose whole opening rests on `svc N` being
   `0xDF00` with N in its low byte -- which is why the class of a request is the
   one part of it a runaway pointer cannot touch. `syscall-demo.s` ships beside
   that page and `arm-none-eabi-as` runs on it, and then every line of the
@@ -341,7 +341,7 @@ count above honest when adding one; it has now said the wrong number twice:
   A gate that skips when its input is missing has to be sure the input ships,
   and this one nearly did not: `learning/.gitignore` ignores `*.s`, because
   following chapter 1's build line drops one beside `optimizer-demo.rs`, and it
-  swallowed chapter 6's source the first time it was committed. Nothing noticed
+  swallowed chapter 7's source the first time it was committed. Nothing noticed
   -- the page cited a file that would not have been in the clone, and the check
   would have skipped in silence on every machine but this one. It now refuses
   outright if git ignores its own input. The file also carries Tock's licence
@@ -359,7 +359,7 @@ count above honest when adding one; it has now said the wrong number twice:
   shipped Figure 13's "then try *the hardware's way* ." with the full stop half
   a rem adrift and kept it through every review pass of every chapter -- nothing
   here can see layout, and nobody re-rendered a figure that already worked.
-  Chapter 6 found it by putting an `svc 2` in one. Six lines across four
+  Chapter 7 found it by putting an `svc 2` in one. Six lines across four
   chapters were affected. The check is narrow twice over: it wants a direct
   inline child with words on *both* sides of it, because words on one side only
   is the badge-and-label idiom that chapter 1's roadmap chips are built on; and
@@ -371,7 +371,7 @@ count above honest when adding one; it has now said the wrong number twice:
   named the offending tags as markup, and the tag-balance check counts what a
   comment says, so all six chapters failed on one unclosed `code`.
 
-- **A phrase a review pass removed, back on the page.** Chapter 5's second
+- **A phrase a review pass removed, back on the page.** Chapter 6's second
   chapter-2 collision, `block`, was struck from six places in its first review
   pass and survived in two source-list bullets, because that pass read the prose
   and not the citations. `RETIRED_PHRASES` is a per-chapter list of phrasings a
@@ -382,15 +382,15 @@ count above honest when adding one; it has now said the wrong number twice:
 
 - **A stylesheet comment with no rule under it.** `dead_css_checks` finds a rule
   with no markup and has nothing to say about a comment with no rule. Ten of
-  these were inherited across chapters 1 to 4, describing rules deleted when a
-  chapter pruned what it did not use -- including one that survived chapter 3's
+  these were inherited across chapters 1 to 5, describing rules deleted when a
+  chapter pruned what it did not use -- including one that survived chapter 4's
   five review passes. Section banners (`/* ---- name ---- */`) are exempt,
   because heading a section rather than a rule is their job. Beware the fix:
   removing the same comment text from five chapters at once deleted two correct
   ones, where that comment really did head `.note`.
 
 - **An assertion naming the figure its element used to be in.** Fixing the
-  bullet below meant renumbering all twelve of chapter 4's figures. The page
+  bullet below meant renumbering all twelve of chapter 5's figures. The page
   came out right and every assertion still passed, because the suite addresses
   elements by id and an id carries no number -- so eight assertion descriptions
   were left naming the old figure. A suite that reads correct, runs green, and
@@ -400,7 +400,7 @@ count above honest when adding one; it has now said the wrong number twice:
   description. An assertion that deliberately points at a different figure is
   left alone.
 
-- **A figure numbered out of order.** Chapter 4's third review pass inserted a
+- **A figure numbered out of order.** Chapter 5's third review pass inserted a
   figure after Figure 4 and numbered it 12, which is what the last label had
   been. Every cross-reference on the page still resolved, all 138 assertions
   still passed, and the number was correct in the narrow sense that it named
@@ -410,7 +410,7 @@ count above honest when adding one; it has now said the wrong number twice:
 
 - **A word the glossary defines and the chapter never uses.** The list makes a
   promise in its own lead sentence -- "each is one sentence now and repeated in
-  context below" -- and nothing checked it. Chapter 4 shipped eleven words of
+  context below" -- and nothing checked it. Chapter 5 shipped eleven words of
   which two, `userspace` and `TBF`, appeared exactly once each: in the list.
   The chapter said "application" and "the header" everywhere it could have said
   them, so the reader was handed two words and never shown one in use. Both
@@ -420,7 +420,7 @@ count above honest when adding one; it has now said the wrong number twice:
   direction entirely. This one asks whether a defined word is ever used, and it
   is the easier of the two to get wrong, because a glossary is written before
   the prose that was supposed to need it. The first version looked only at the
-  prose *after* the block, which is right for chapters 3 and 4, where the
+  prose *after* the block, which is right for chapters 4 and 5, where the
   glossary is front matter, and wrong for chapter 1, whose list is a closing
   summary with nothing after it -- it reported all twenty-three of chapter 1's
   terms as unused. It reads the whole page outside the list now.
@@ -428,7 +428,7 @@ count above honest when adding one; it has now said the wrong number twice:
 - **A word the series leans on and never defines.** The `<dfn>` rule is
   bidirectional but narrow: every term a chapter *marks* has to be in its
   glossary and vice versa. It says nothing about a word used constantly and
-  never marked at all. Chapter 3 used `crate` fourteen times with its whole
+  never marked at all. Chapter 4 used `crate` fourteen times with its whole
   argument resting on it -- "what makes it legal there and illegal here is only
   which crate it sits in" -- and `process` twelve times, three chapters before
   the one that explains what a process is. Neither was defined anywhere, and
@@ -436,9 +436,9 @@ count above honest when adding one; it has now said the wrong number twice:
   required in a glossary. Any watched term used four or more times in a chapter
   must now be defined by that chapter or an earlier one. It found nine: chapter
   1 had never said what a kernel, an instruction, a processor, a crate or flash
-  was, and chapter 2 had never defined RAM.
+  was, and chapter 3 had never defined RAM.
 
-- **A control the script never reaches.** Chapter 3's Figure 8 shipped with
+- **A control the script never reaches.** Chapter 4's Figure 8 shipped with
   three buttons, three panels, a correct opening state in the markup and no
   listener -- the one line binding them was never written. Every static check
   passed, because the markup was internally consistent: the opening state a
@@ -449,7 +449,7 @@ count above honest when adding one; it has now said the wrong number twice:
   only knew about numeric suffixes and reported nine correctly-bound buttons in
   chapter 1, which build ids as `"opt-" + a word`.
 
-- **A CSS rule the page never uses.** Chapter 2 was built by copying chapter
+- **A CSS rule the page never uses.** Chapter 3 was built by copying chapter
   1's stylesheet and deleting what it did not need -- 237 rules went, and 23
   survived with nothing left to style, plus three media queries left with empty
   bodies. None of it rendered wrong, which is exactly the problem: dead CSS is
@@ -457,20 +457,20 @@ count above honest when adding one; it has now said the wrong number twice:
   is inherited rather than found. The check reads every class and id in a rule's
   selector and asks whether the page mentions it anywhere outside the `<style>`
   block, so a class the script alone adds still counts as used.
-  Classes and ids were the whole of it until chapter 4's second review pass,
+  Classes and ids were the whole of it until chapter 5's second review pass,
   which left a rule made only of element names invisible. `.selfcheck details`,
   `.selfcheck summary` and `summary:focus-visible` rode from chapter 1 into
-  chapters 3 and 4, neither of which contains a `<details>` anywhere, and the
+  chapters 4 and 5, neither of which contains a `<details>` anywhere, and the
   comment above them asserted they were "still load-bearing" -- which is how
-  they survived five review passes of chapter 3. A tag named in a selector must
+  they survived five review passes of chapter 4. A tag named in a selector must
   now appear in the markup too. The test is deliberately narrow: only element
   names occurring nowhere on the page are refused, so `p` and `button` are
   never in question, and `html`, `body` and `head` are exempt because a browser
   creates them whether or not the file writes them. On first run it found
-  twenty-five more rules across chapters 2, 3 and 4 -- `strong`, `a`,
+  twenty-five more rules across chapters 3, 4 and 5 -- `strong`, `a`,
   `input[type="range"]`, `.next ol`, `.instrument-body svg` and the rest.
   One of them was not dead but misdirected: `.goals ol` has said `ol` since
-  chapter 2 and every chapter after the first writes `<ul>`, so the flex layout
+  chapter 3 and every chapter after the first writes `<ul>`, so the flex layout
   and the gap it sets had never once applied to a goals list. That one was
   repointed rather than deleted.
   What this still cannot see is a rule whose element exists somewhere else on
@@ -478,11 +478,11 @@ count above honest when adding one; it has now said the wrong number twice:
 
 - **A stylesheet comment naming a figure the chapter does not have.** Not a
   check -- a habit the checks cannot enforce, recorded because it went wrong
-  once. Chapter 4 inherited chapter 3's sheet, and with it seven section
-  comments naming chapter 3's figure numbers: `/* Figure 7: two boards, one
-  capsule */` heads the component chapter 4 uses for Figure 10, which has no
+  once. Chapter 5 inherited chapter 4's sheet, and with it seven section
+  comments naming chapter 4's figure numbers: `/* Figure 7: two boards, one
+  capsule */` heads the component chapter 5 uses for Figure 10, which has no
   capsule in it. Two of the seven named Figure 12 and Figure 14, which exist in
-  chapter *one* and have never existed in chapter 3 or 4. Name the component by
+  chapter *one* and have never existed in chapter 4 or 4. Name the component by
   what it does and put this chapter's figures after it.
 
 - **Non-ASCII with no charset declared.** These pages carry no `<meta charset>`
@@ -639,7 +639,7 @@ Two more are preventive rather than forensic:
   it looks like something. It also refuses a ternary whose two arms agree --
   `REG["x"] ? true : true` walks straight past an identity test, and was
   written within the hour by the person who had just added one.
-- **A chapter with no sources and no licence.** Chapter 2 shipped without
+- **A chapter with no sources and no licence.** Chapter 3 shipped without
   either. The section was inserted by a string replacement whose anchor did not
   match, which silently did nothing, and nothing downstream noticed -- the page
   passed every check and every assertion it had. Two promises broke quietly:
@@ -662,26 +662,26 @@ temptation to gate them will come back.
 
 - **An instruction the chapter tells the reader to run.** Seven chapters
   checked every assertion against source and none of them ever checked an
-  *imperative*. Chapter 7 ended the series on "it is `make program` in
+  *imperative*. Chapter 8 ended the series on "it is `make program` in
   `boards/raspberry_pi_pico_2`", which errors out without an `APP` variable,
   does nothing on a Mac, and ignores the debug probe the same sentence says the
-  reader has -- all three of which chapter 4 had already documented with
+  reader has -- all three of which chapter 5 had already documented with
   citations, and two review passes read that sentence without checking it. The
   gate written for it checks that a named `make` target exists, which **would
   not have caught this**: `program` exists, and the defect was that it is the
-  wrong target. It also fails chapter 4, which names `make flash-app` on
+  wrong target. It also fails chapter 5, which names `make flash-app` on
   purpose to report that the board's README sends readers to a target the board
   does not define. So: run it by hand. Read every command a chapter prints,
   open the Makefile, and ask whether it does what the sentence claims *on the
   reader's machine and hardware*.
 
 - **A prose anchor nothing reads.** An id on a paragraph exists so an assertion
-  can pin what it claims. Chapter 5 shipped three unread, chapter 6 fifteen,
-  chapter 7 twelve. The exemption is what cannot be got right: it has to let
+  can pin what it claims. Chapter 6 shipped three unread, chapter 7 fifteen,
+  chapter 8 twelve. The exemption is what cannot be got right: it has to let
   through the ids a figure builds without letting through a hand-written
   anchor, and three versions each failed differently -- stripping digits
   swallowed `closing2` because `closing` is asserted; no exemption reported 38
-  of chapter 7's 137; assuming the shape `prefix-N` reported twenty of chapter
+  of chapter 8's 137; assuming the shape `prefix-N` reported twenty of chapter
   1's, which builds ids as `"dd-" + a word`. Asking the script which prefixes
   it builds gets closest and still reports chapter 1's SVG marker defs, its
   section ids and its `aria-labelledby` targets, none of which any script
@@ -693,21 +693,21 @@ sitting behind buttons a reader might never press. Four rules are enforced:
 
 1. Every load-bearing term is wrapped in `<dfn>` at or before its first bare use
    in the running prose, and carried in a `class="glossary"` list. The term list
-   is `MUST_DEFINE` in `check.py`, keyed by chapter prefix, so chapter 2 inherits
+   is `MUST_DEFINE` in `check.py`, keyed by chapter prefix, so chapter 3 inherits
    chapter 1's vocabulary instead of redefining it. Separately, the `<dfn>` tags
    and the glossary must name exactly the same set in both directions, which is
    what stops a term defined inline but absent from `MUST_DEFINE` from going
    missing at the end -- `compiler` had, while the chapter's own text promised
    every word it uses is collected there.
    A chapter's own name is not running prose, and counting it made this rule
-   refuse correct work: chapter 4 is called "What a Process Is", so `process`
+   refuse correct work: chapter 5 is called "What a Process Is", so `process`
    appeared at character 21 of what the scan called prose, several hundred
    characters before the glossary that defines it. `<title>` is never rendered
    in the page at all and `<h1>` is the masthead, so both are now cut before
-   the scan; chapters 5 and 7 are titled the same way and would have hit it
+   the scan; chapters 6 and 8 are titled the same way and would have hit it
    too. Everything else in the masthead -- the eyebrow, the standfirst -- is
    prose a reader reads, and still counts, which a mutation confirms: put a
-   bare `process` in chapter 4's standfirst and the rule fires again.
+   bare `process` in chapter 5's standfirst and the rule fires again.
 2. No sentence introduces more than two new technical terms, and none runs past
    34 words. The novel-term limit is the one with a mechanism behind it --
    cognitive load theory measures difficulty as how many unfamiliar things must
@@ -722,11 +722,11 @@ sitting behind buttons a reader might never press. Four rules are enforced:
    protruding. Add to it whenever a reader trips; an author's own sense of
    what is obvious is measurably unreliable.
 4. At most 20% of the prose may be reachable only by clicking, counted two
-   ways. Chapter 3 shipped 33 panels with `is-off` already on the element, so a
+   ways. Chapter 4 shipped 33 panels with `is-off` already on the element, so a
    reader with JavaScript off lost 1,018 words -- 26.6% of the chapter -- while
    this rule reported roughly nothing, because it only looked inside script
-   strings and chapter 3 keeps its sentences in the markup, as the rule says to.
-   Chapters 1 and 2 ship every panel showing and let the script put the others
+   strings and chapter 4 keeps its sentences in the markup, as the rule says to.
+   Chapters 1 and 3 ship every panel showing and let the script put the others
    away, so a reader with no script meets all of them; markup that ships hidden
    now counts against the same limit. The script-string half is measured by
    tokenising the literals rather than matching them with a regex: a pattern that only accepts literals over some length
@@ -737,8 +737,8 @@ sitting behind buttons a reader might never press. Four rules are enforced:
    datasheet quote cannot be rewritten to suit a house style. That exemption
    had never once applied. It matched `<div class="sources">` and every chapter
    writes `<section class="col sources">`, so the sources list was being held
-   to the prose limits all along; chapters 1 to 3 happened to keep every bullet
-   short enough that nobody found out. Chapter 4 cites a Makefile target
+   to the prose limits all along; chapters 1 to 4 happened to keep every bullet
+   short enough that nobody found out. Chapter 5 cites a Makefile target
    against a README naming a different one, which cannot be said in thirty-four
    words, and that is what surfaced it.
 
@@ -790,16 +790,16 @@ the chapter directory's prefix and needs no changes.
 
 **Promise checks**, across chapters rather than within one, read from
 `promises.json`. A chapter that says something about another chapter has made a
-claim somebody has to keep, and two of the three findings in chapter 2's third
-review pass were exactly that: chapter 1's Figure 6 promised "Chapter 2 opens
-them up" of the two things sharing the first kilobyte of flash, and chapter 2
+claim somebody has to keep, and two of the three findings in chapter 3's third
+review pass were exactly that: chapter 1's Figure 6 promised "Chapter 3 opens
+them up" of the two things sharing the first kilobyte of flash, and chapter 3
 opened one of them; Figure 7 told the reader all six instructions were ones
 they had already met, and one appears nowhere else in the series.
 
-That risk grows with every chapter. Chapter 2 makes fourteen claims about what
-chapter 1 says, and chapter 1 was rewritten heavily after chapter 2 was
+That risk grows with every chapter. Chapter 3 makes fourteen claims about what
+chapter 1 says, and chapter 1 was rewritten heavily after chapter 3 was
 drafted -- seven passages converted from prose into tables, ten openings cut.
-Any one of those edits could have removed a sentence chapter 2 cites, and
+Any one of those edits could have removed a sentence chapter 3 cites, and
 nothing would have said so.
 
 The gate is deliberately narrow, because the wide version would be a lie: no
@@ -812,9 +812,9 @@ does enforce is the bookkeeping.
   alone. An unlogged reference fails the build.
 - **The pattern over-matches on purpose.** It takes any "chapter *N*", and
   also bare "later", "for now", "not yet", "you will see". A regex sharp
-  enough to tell "chapter 5 covers this" from "come back an hour later" is
+  enough to tell "chapter 6 covers this" from "come back an hour later" is
   also sharp enough to drop a real promise silently, and silent is how chapter
-  2 shipped with no sources section at all. A false match costs one ledger
+  3 shipped with no sources section at all. A false match costs one ledger
   line and a written reason; a missed one costs a broken promise nobody sees.
   Entries with `"about": null` must say `"why"`.
 - **The quoted line must still be on the page.** Rewrite the sentence and its
@@ -826,7 +826,7 @@ does enforce is the bookkeeping.
   author, the bookkeeping does not.
 - **Debts owed by chapters that do not exist yet are printed, not failed.**
   `preflight.sh` surfaces them, because that list is the specification the
-  next chapter gets written against. Chapter 3 currently owes four.
+  next chapter gets written against. Chapter 4 currently owes four.
 
 A chapter naming its own number is identifying itself, not referring to
 anything, and is skipped.

@@ -4,7 +4,7 @@
 //
 // Behavioural assertions for chapter 0, run by check.py under JavaScriptCore.
 
-// Same helpers as chapters 3 to 7: every figure here is one row of buttons and
+// Same helpers as chapters 4 to 8: every figure here is one row of buttons and
 // one row of panels sharing an index, built by one function. That is a single
 // point of failure, so each figure is walked separately rather than once.
 function onlyOne(prefix, n, cls) {
@@ -112,7 +112,7 @@ function walk(btn, panel, n, name) {
 // ---- What a reader with no JavaScript is shown ----
 // The house rule is that the markup ships everything and the script puts parts
 // away, so the markup's own opening state is the one nobody else ever checks
-// and the only one a reader with scripting off will see. Chapter 5 shipped a
+// and the only one a reader with scripting off will see. Chapter 6 shipped a
 // switch reading 0 over a sentence describing a 1; this is the same guard,
 // applied where this chapter has the same shape.
 (function () {
@@ -586,7 +586,7 @@ chk("banner-then-nothing is one wire, and points at the figure with it in",
       && REG["sep-oneway"].textContent.indexOf("Figure 4") > -1, true);
 
 // ---- The board that is not this board ----
-// Chapter 3 and chapter 4 both carry a version of this. Chapter 0 is where a
+// Chapter 4 and chapter 5 both carry a version of this. Chapter 0 is where a
 // reader is most likely to be holding the wrong one, having just bought it.
 chk("the chapter says which pin the difference costs",
     REG["wpin"].textContent.indexOf("25") > -1, true);

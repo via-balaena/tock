@@ -457,7 +457,7 @@ dfn {
   letter-spacing: .02em;
   color: var(--accent);
 }
-/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
    flex item of every inline child, so an emphasis or a code span inside one
    of these lines came out with a half-rem gap on each side and the
    punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
@@ -717,7 +717,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
 .alloc-keys .moving { color: var(--hot); }
 
 /* ---------- readouts beside the walk ----------
-   These six class names were reached for out of habit from chapters 2 and 3,
+   These six class names were reached for out of habit from chapters 3 and 4,
    where they are defined. A stylesheet is per page, so here they styled
    nothing and the four readouts rendered as bare lines of text. Nothing in the
    gate could see it: dead_css_checks finds a rule with no markup, and this is
@@ -843,11 +843,11 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
 
 <header class="masthead">
   <div class="runhead">
-    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 4</p>
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 5</p>
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>What a Process Is</h1>
-  <p class="standfirst">Chapter 3's guarantee came from the compiler: a capsule cannot reach what it cannot name. That works because the compiler saw every line. This chapter is about code the compiler never saw.</p>
+  <p class="standfirst">Chapter 4's guarantee came from the compiler: a capsule cannot reach what it cannot name. That works because the compiler saw every line. This chapter is about code the compiler never saw.</p>
   <noscript>
     <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
@@ -862,11 +862,11 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
     <h2>What you'll be able to do at the end</h2>
     <ul>
       <li>Say what a <dfn>process</dfn> is on this board: what sits in flash, and what sits in RAM.</li>
-      <li>Explain why the kernel cannot make chapter 3's promise about one, and name what it uses instead.</li>
+      <li>Explain why the kernel cannot make chapter 4's promise about one, and name what it uses instead.</li>
       <li>Walk the search that finds every application at boot, and say what makes that search stop.</li>
       <li>Say what a process is handed the moment it starts, and why it has to be handed anything.</li>
     </ul>
-    <p class="cost">Plan on forty minutes. Chapters 1 to 3 are assumed: what an address is, how the kernel gets started, and what a capsule may touch. There is no new Rust here. Almost every line in this chapter is arithmetic.</p>
+    <p class="cost">Plan on forty minutes. Chapters 1 to 4 are assumed: what an address is, how the kernel gets started, and what a capsule may touch. There is no new Rust here. Almost every line in this chapter is arithmetic.</p>
   </div>
 </section>
 
@@ -885,19 +885,19 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
     <dt><dfn>scheduler</dfn></dt><dd>The part of the kernel that decides which process runs next.</dd>
     <dt><dfn>timeslice</dfn></dt><dd>How long a process may run before the kernel takes the processor back.</dd>
     <dt><dfn>fault</dfn></dt><dd>What the hardware raises when code touches memory it is not allowed to touch.</dd>
-    <dt><dfn>panic</dfn></dt><dd>Rust's word for stopping because something happened that never should have. Chapter 3 met the handler.</dd>
-    <dt><dfn>syscall</dfn></dt><dd>The one way a process may ask the kernel for anything at all. Chapter 6 is the whole of it.</dd>
-    <dt><dfn>grant</dfn></dt><dd>Memory a driver is lent inside a process, to keep that process's state in. Chapter 7 is about them.</dd>
+    <dt><dfn>panic</dfn></dt><dd>Rust's word for stopping because something happened that never should have. Chapter 4 met the handler.</dd>
+    <dt><dfn>syscall</dfn></dt><dd>The one way a process may ask the kernel for anything at all. Chapter 7 is the whole of it.</dd>
+    <dt><dfn>grant</dfn></dt><dd>Memory a driver is lent inside a process, to keep that process's state in. Chapter 8 is about them.</dd>
   </dl>
 </div>
 
 <section class="col">
   <h2>The compiler saw the capsule. It never sees the app.</h2>
-  <p>Chapter 3's answer rested on one fact that was never said out loud. Every line of a capsule went through the same compiler, in the same build, under a rule its crate could not switch off.</p>
+  <p>Chapter 4's answer rested on one fact that was never said out loud. Every line of a capsule went through the same compiler, in the same build, under a rule its crate could not switch off.</p>
   <p>Take that away and there is nothing left. An application is not built here. It is a separate binary, produced by a separate set of tools, and the kernel meets it for the first time as bytes sitting in flash.</p>
   <p id="premise">Tock's specification states the position outright. Applications are <em>untrusted</em>, and so "the kernel uses hardware memory protection to isolate the kernel from processes".</p>
   <p id="userspaceline">That is what buys the rest. Applications may be "written in C (or even assembly)" and are still meant to work, because none of the guarantee depends on how they were built. Everything on the far side of that line, Tock calls <dfn>userspace</dfn>.</p>
-  <p>So chapter 3's question &mdash; what may this code touch? &mdash; has to be answered a second time, and none of the first answer survives.</p>
+  <p>So chapter 4's question &mdash; what may this code touch? &mdash; has to be answered a second time, and none of the first answer survives.</p>
 </section>
 
 <figure class="instrument">
@@ -919,7 +919,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
       <p class="blkp" id="twp-1"><b>Capsule:</b> Rust, and Rust with <b>#![forbid(unsafe_code)]</b> at the top of its crate. <b>Process:</b> anything at all that ends up as instructions this processor will execute.</p>
       <p class="blkp" id="twp-2"><b>Capsule:</b> inside the kernel binary, in the 255&nbsp;kB of flash it is linked into. <b>Process:</b> a separate 256&nbsp;kB region that the kernel binary reserves and does not occupy.</p>
       <p class="blkp" id="twp-3"><b>Capsule:</b> the compiler, once, before anything ran. <b>Process:</b> sixteen bytes of header at boot, and hardware for every instruction after that. Figure 2 is the sixteen bytes.</p>
-      <p class="blkp" id="twp-4"><b>Capsule:</b> nothing. Chapter 3 ended on exactly that. <b>Process:</b> the scheduler. A process has a timeslice, and the kernel gets the processor back whether the process agrees or not.</p>
+      <p class="blkp" id="twp-4"><b>Capsule:</b> nothing. Chapter 4 ended on exactly that. <b>Process:</b> the scheduler. A process has a timeslice, and the kernel gets the processor back whether the process agrees or not.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that only one of the five is about the code itself. A process is not defined by what it is written in. It is defined by the fact that nobody here compiled it.</div>
@@ -1049,8 +1049,8 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
       <div class="costcell"><span class="costcell-k">ends at</span><span class="costcell-v" id="rg-hi">0x10000400</span></div>
     </div>
     <div class="costsay">
-      <p class="costp is-on" id="rgp-0">Chapter 2's kilobyte. The boot ROM searches the first four kilobytes of flash for the block that lives in here, before a single instruction of Tock runs.</p>
-      <p class="costp" id="rgp-1">Everything in this tree that ends up in the binary: the scheduler, the syscall layer, the chip crate, and every capsule chapter 3 was about. The 255&nbsp;kB is what the region reserves, not what the binary comes to; the slack at the end is unused flash.</p>
+      <p class="costp is-on" id="rgp-0">Chapter 3's kilobyte. The boot ROM searches the first four kilobytes of flash for the block that lives in here, before a single instruction of Tock runs.</p>
+      <p class="costp" id="rgp-1">Everything in this tree that ends up in the binary: the scheduler, the syscall layer, the chip crate, and every capsule chapter 4 was about. The 255&nbsp;kB is what the region reserves, not what the binary comes to; the slack at the end is unused flash.</p>
       <p class="costp" id="rgp-2">The applications. The linker marks this section as one the loader should not fill in, which is why applications are flashed separately from the kernel. Tock does have a capsule that lets an application write its own slice of it back; this board does not include one. <b>_sapps</b> is the first of these addresses.</p>
       <p class="costp" id="rgp-3">The only one of the four whose start is not a round number. It begins wherever the kernel's own zeroed data happens to end, so it moves whenever the kernel is rebuilt, and it runs to the last byte of the 520&nbsp;kB this chip has.</p>
     </div>
@@ -1062,7 +1062,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
   <h2>How an application reaches the board</h2>
   <p id="installsrc">Nothing in this repository builds an application. They are built out of tree, in whatever language, and arrive as a <code>.tbf</code> file: a TBF header with a program behind it. Tock's own getting-started guide points at two places to get one, libtock-c for C and C++ and libtock-rs for Rust.</p>
   <p>Getting one onto the board is two lines of <code>objcopy</code> and a choice of target, and all three are about the region Figure 4 just showed.</p>
-  <p id="inboard">One thing to settle before you plug anything in: the Makefile those targets come from is this board's, and this board is the plain Pico&nbsp;2. There is a <code>raspberry_pi_pico_2_w</code> too, on the same chip, and its Makefile is one line that includes this board's. Nothing in this chapter turns on which one you own &mdash; flash and RAM do not know what the pins reach &mdash; but chapter 3's panic blink does.</p>
+  <p id="inboard">One thing to settle before you plug anything in: the Makefile those targets come from is this board's, and this board is the plain Pico&nbsp;2. There is a <code>raspberry_pi_pico_2_w</code> too, on the same chip, and its Makefile is one line that includes this board's. Nothing in this chapter turns on which one you own &mdash; flash and RAM do not know what the pins reach &mdash; but chapter 4's panic blink does.</p>
 </section>
 
 <figure class="instrument">
@@ -1141,7 +1141,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
     </div>
     <div class="dbgsay">
       <p class="dbgp" id="mmp-0">The end of the allocation. Everything between here and <b>kernel_memory_break</b> belongs to the kernel, sits inside the process's own slice of RAM, and is what Figure 7 is about.</p>
-      <p class="dbgp" id="mmp-1">The kernel's floor. It starts at the very top and moves downward as grants are handed out, which is chapter 7. Below it is the process's.</p>
+      <p class="dbgp" id="mmp-1">The kernel's floor. It starts at the very top and moves downward as grants are handed out, which is chapter 8. Below it is the process's.</p>
       <p class="dbgp is-on" id="mmp-2">The ceiling, and the only line here the process can move. Above it is refused. It begins thirty-two bytes above <b>memory_start</b> &mdash; thirty-two, not thirty-two thousand &mdash; and the application has to raise it with a syscall before it can do anything at all.</p>
       <p class="dbgp" id="mmp-3">Where the heap begins. It grows upward, towards <b>app_break</b>, and the distance between the two is how much room the application has left.</p>
       <p class="dbgp" id="mmp-4">The application's globals: whatever it started life knowing. Below this line the stack begins, and the two never move towards each other.</p>
@@ -1154,7 +1154,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
 
 <section class="col">
   <h2>What the kernel keeps inside your memory</h2>
-  <p>Chapter 3 noticed something in passing that pays off here: there is no allocator. The kernel never asks for memory, because there is nothing to ask.</p>
+  <p>Chapter 4 noticed something in passing that pays off here: there is no allocator. The kernel never asks for memory, because there is nothing to ask.</p>
   <p>So when it needs somewhere to keep its record of a process, there is exactly one place available &mdash; the memory it has just handed that process.</p>
 </section>
 
@@ -1172,8 +1172,8 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="ksp-0">The kernel's whole record of this process: which state it is in, its saved registers, its identifier, its counters. The reservation is written as <b>size_of::&lt;ProcessStandard&gt;()</b> plus its alignment, so the structure describing the process is stored in the process.</p>
-      <p class="blkp" id="ksp-1">Room for ten calls waiting to go back into the application. Ten is a single constant, <b>CALLBACK_LEN</b>, and it belongs to the process implementation rather than to the board &mdash; every board in the tree uses that one. What puts things in this queue is chapter 6.</p>
-      <p class="blkp" id="ksp-2">One empty slot for every grant the board's capsules declared, counted once at boot and never counted again. Filling them is chapter 7, and this reservation is the reason that chapter can exist.</p>
+      <p class="blkp" id="ksp-1">Room for ten calls waiting to go back into the application. Ten is a single constant, <b>CALLBACK_LEN</b>, and it belongs to the process implementation rather than to the board &mdash; every board in the tree uses that one. What puts things in this queue is chapter 7.</p>
+      <p class="blkp" id="ksp-2">One empty slot for every grant the board's capsules declared, counted once at boot and never counted again. Filling them is chapter 8, and this reservation is the reason that chapter can exist.</p>
     </div>
   </div>
   <div class="instrument-note">Notice what this makes true. A process's memory is what the application asked for plus everything the kernel needs in order to remember it &mdash; and the second part is charged to the first.</div>
@@ -1256,7 +1256,7 @@ argument3: app_break,</pre></button>
 
 <section class="col">
   <h2>Six states a capsule cannot be in</h2>
-  <p>Chapter 3 ended on a capsule that loops forever, and on the fact that nothing stops it. A process is the other case entirely: the kernel keeps a state for it, and can move it between them.</p>
+  <p>Chapter 4 ended on a capsule that loops forever, and on the fact that nothing stops it. A process is the other case entirely: the kernel keeps a state for it, and can move it between them.</p>
 </section>
 
 <figure class="instrument">
@@ -1283,7 +1283,7 @@ argument3: app_break,</pre></button>
       <p class="blkp" id="psp-5">Finished, or killed. Everything it had has been released, and a process in this state can be run again from the beginning if somebody asks for it.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice that a capsule has none of these. It is called, it returns, and there is no state anywhere describing it in between &mdash; which is exactly why chapter 3's loop could not be stopped.</div>
+  <div class="instrument-note">Notice that a capsule has none of these. It is called, it returns, and there is no state anywhere describing it in between &mdash; which is exactly why chapter 4's loop could not be stopped.</div>
 </figure>
 
 <section class="col">
@@ -1305,11 +1305,11 @@ argument3: app_break,</pre></button>
         <span class="mo-when">imix</span><span class="mo-who">StopFaultPolicy</span></button>
     </div>
     <div class="mosay">
-      <p class="mop is-on" id="fpp-0">The whole board panics. Not the process &mdash; the machine. The handler chapter 3 ended on takes over, every other application stops with it, and the LED starts blinking its message out on GPIO&nbsp;25.</p>
+      <p class="mop is-on" id="fpp-0">The whole board panics. Not the process &mdash; the machine. The handler chapter 4 ended on takes over, every other application stops with it, and the LED starts blinking its message out on GPIO&nbsp;25.</p>
       <p class="mop" id="fpp-1">On imix that one process stops and is never scheduled again. Everything else carries on, and nothing is printed. Seven of these policies exist in the tree, and choosing between them is one line of the board's <b>main.rs</b>.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice where the decision lives. This is the same shape as chapter 3's Figure 6: the mechanism is in the kernel, and which way it points is one line in a file the board author owns.</div>
+  <div class="instrument-note">Notice where the decision lives. This is the same shape as chapter 4's Figure 6: the mechanism is in the kernel, and which way it points is one line in a file the board author owns.</div>
 </figure>
 
 <section class="col">
@@ -1339,7 +1339,7 @@ argument3: app_break,</pre></button>
     </div>
     <div class="blksay">
       <p class="blkp is-on" id="tbp-0">The checksum catches a header damaged on the way in, and that is the whole of what it catches. <b>total_size</b> is believed outright, before anything has been verified. Anyone who can write this flash can write a header saying whatever they like, and Figure 3's walk will follow it.</p>
-      <p class="blkp" id="tbp-1">A field in a struct. Chapter 1's store instruction does not read fields, and no arrangement of Rust could make it. What refuses the write is a piece of hardware holding the same number, and putting the number there is chapter 5.</p>
+      <p class="blkp" id="tbp-1">A field in a struct. Chapter 1's store instruction does not read fields, and no arrangement of Rust could make it. What refuses the write is a piece of hardware holding the same number, and putting the number there is chapter 6.</p>
       <p class="blkp" id="tbp-2">The one boundary in this chapter that anything already enforces. The processor's own counter, clocked at 125&nbsp;MHz on this board, is armed before the switch and disarmed after it. When it fires, control returns to the kernel whether the application cooperates or not.</p>
     </div>
   </div>
@@ -1347,7 +1347,7 @@ argument3: app_break,</pre></button>
 </figure>
 
 <section class="col">
-  <p id="closing">So this chapter has described a fence and not built one. The thing that builds it is the <em>memory protection unit</em>: a small piece of hardware inside the processor, reprogrammed before every switch into a process. Chapter 5 is about it.</p>
+  <p id="closing">So this chapter has described a fence and not built one. The thing that builds it is the <em>memory protection unit</em>: a small piece of hardware inside the processor, reprogrammed before every switch into a process. Chapter 6 is about it.</p>
 </section>
 
 <section class="col">
@@ -1401,17 +1401,17 @@ argument3: app_break,</pre></button>
 
 <div class="col next">
   <p class="eyebrow forward">Next</p>
-  <h3 style="margin-top:0"><a href="../ch05-the-memory-protection-unit/">Chapter 5 &mdash; The memory protection unit</a></h3>
+  <h3 style="margin-top:0"><a href="../ch06-the-memory-protection-unit/">Chapter 6 &mdash; The memory protection unit</a></h3>
   <p>The fence this chapter described and did not build. Eight regions, two registers apiece, and a size rule that rounds every allocation up to a multiple of 32&nbsp;bytes. On the way: what happens in the instant a process touches the wrong address, and why the exception that runs is not the one the chip's own documentation names.</p>
   <nav class="pager" aria-label="Chapter navigation">
-    <a href="../ch03-what-a-driver-may-touch/">&larr;&nbsp;Chapter 3</a>
+    <a href="../ch04-what-a-driver-may-touch/">&larr;&nbsp;Chapter 4</a>
     <a href="../">Contents</a>
   </nav>
 </div>
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapter 3 was pinned to. Nothing here was written from memory.</p>
+  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapter 4 was pinned to. Nothing here was written from memory.</p>
   <ul>
     <li>Applications being separate images, untrusted, and possibly "written in C (or even assembly)" &mdash; <code>doc/reference/trd104-syscalls.md</code>:24&ndash;28</li>
     <li>The five required header fields, in the order Figure 2 shows them &mdash; <code>libraries/tock-tbf/src/types.rs</code>:114&ndash;120</li>
@@ -1502,7 +1502,7 @@ argument3: app_break,</pre></button>
 (function () {
   "use strict";
 
-  /* Same shape as chapter 3: one group of buttons, one group of panels, same
+  /* Same shape as chapter 4: one group of buttons, one group of panels, same
      index. The panel class differs between components only because each was
      styled for its own figure. */
   function group(btn, panel, n, cls, onCls, offCls, extra) {
@@ -1713,7 +1713,7 @@ argument3: app_break,</pre></button>
 
      The drawing is the other half. Five of the seven are fixed for the life of
      the process; two move, they move towards each other, and the gap between
-     them is the whole of what either side has left. Chapter 7 is what moves
+     them is the whole of what either side has left. Chapter 8 is what moves
      the upper one. */
   (function () {
     var TOTAL = 2048;      /* the allocation, in bytes, for the drawing */

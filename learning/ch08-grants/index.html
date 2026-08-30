@@ -431,7 +431,7 @@ dfn {
   letter-spacing: .02em;
   color: var(--accent);
 }
-/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
    flex item of every inline child, so an emphasis or a code span inside one
    of these lines came out with a half-rem gap on each side and the
    punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
@@ -465,7 +465,7 @@ dfn {
 /* A register name anywhere in a question. All three parts of a card are set
    in the body face, and this chapter's questions are mostly about r0 and r1,
    so leaving them in it would put the same name in two families on one card.
-   Chapter 5's questions name registers as words -- MPU_RBAR, HardFault -- and
+   Chapter 6's questions name registers as words -- MPU_RBAR, HardFault -- and
    its cards are left in the body face on purpose. */
 .q-ask b, .q-opt b, .q-answer b {
   font-family: var(--mono); font-weight: 500; text-transform: none;
@@ -708,7 +708,7 @@ dfn {
 .seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
 
 /* The panels Figure 6's numbered steps open. Named for the figure in
-   chapter 4 these rules were first written for, and kept because renaming a
+   chapter 5 these rules were first written for, and kept because renaming a
    class across markup, script and assertions buys nothing a comment cannot. */
 .dbgsay { display: flex; flex-direction: column; gap: .45rem; }
 .dbgp {
@@ -734,11 +734,11 @@ dfn {
 
 <header class="masthead">
   <div class="runhead">
-    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 7</p>
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 8</p>
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>Grants</h1>
-  <p class="standfirst">Chapter 6 handed the kernel two things and said it files them somewhere. Somewhere turns out to be inside the process's own memory, above a line that process can never reach. This is the last mechanism in the series, and the kernel running it cannot ask for memory.</p>
+  <p class="standfirst">Chapter 7 handed the kernel two things and said it files them somewhere. Somewhere turns out to be inside the process's own memory, above a line that process can never reach. This is the last mechanism in the series, and the kernel running it cannot ask for memory.</p>
   <noscript>
     <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
@@ -757,13 +757,13 @@ dfn {
       <li>Name the four moments in a <dfn>grant</dfn>'s life, and the one that gives the memory back.</li>
       <li>Say why reaching into a grant twice at once stops the board, and what that buys.</li>
     </ul>
-    <p class="cost">Plan on forty-five minutes. Chapter 4 drew the memory this chapter fills, chapter 6 left the two things it files, and chapter 3 asked the question it answers. If you have read those three, nothing here is new vocabulary except the mechanism itself.</p>
+    <p class="cost">Plan on forty-five minutes. Chapter 5 drew the memory this chapter fills, chapter 7 left the two things it files, and chapter 4 asked the question it answers. If you have read those three, nothing here is new vocabulary except the mechanism itself.</p>
   </div>
 </section>
 
 <section class="col">
   <h2>Eight words, before we start</h2>
-  <p id="wordcount">Each is one sentence now and repeated in context below. Chapter 4 defined a grant in one line and pointed here; the first entry is that line with the rest of the sentence attached.</p>
+  <p id="wordcount">Each is one sentence now and repeated in context below. Chapter 5 defined a grant in one line and pointed here; the first entry is that line with the rest of the sentence attached.</p>
 </section>
 
 <div class="col">
@@ -780,8 +780,8 @@ dfn {
 </div>
 
 <section class="col">
-  <h2>The problem chapter 3 named</h2>
-  <p id="noalloc">Chapter 3 ended on a sentence that has been waiting four chapters for an answer. The kernel is <b>no_std</b> and never asks for memory it did not already have. There is no <dfn>allocator</dfn> anywhere in it, and Figure 1 is about why adding one would not be the simple fix it sounds like. Nothing calls <b>malloc</b>, nothing calls <b>Box::new</b>, and there is no heap for either to work from.</p>
+  <h2>The problem chapter 4 named</h2>
+  <p id="noalloc">Chapter 4 ended on a sentence that has been waiting four chapters for an answer. The kernel is <b>no_std</b> and never asks for memory it did not already have. There is no <dfn>allocator</dfn> anywhere in it, and Figure 1 is about why adding one would not be the simple fix it sounds like. Nothing calls <b>malloc</b>, nothing calls <b>Box::new</b>, and there is no heap for either to work from.</p>
   <p id="needstate">That is easy to live with until a driver needs to remember something about a process. The console has to know how many bytes of a write are still outstanding. It cannot keep one copy, because two processes can be printing at once, and it cannot keep an array of copies without knowing how many processes there will be.</p>
   <p id="fourways">There are four ways out of that, and this kernel has ruled out three of them.</p>
 </section>
@@ -811,8 +811,8 @@ dfn {
 
 <section class="col">
   <h2>Where the memory comes from</h2>
-  <p id="topdown">Chapter 4 drew a process's memory as seven boundaries and said one of them starts at the very top and moves downward as grants are handed out. This is that movement. Everything above <b>kernel_memory_break</b> belongs to the kernel; everything below <b>app_break</b> belongs to the process; the gap between them is what neither has claimed yet.</p>
-  <p id="fenceagain">The process cannot read any of it. Chapter 5's region for a process's RAM stops at <b>app_break</b>, so the grant region is outside the fence &mdash; inside the process's allocation and outside its reach. The kernel is on the privileged side, where those regions do not apply, so it can read both.</p>
+  <p id="topdown">Chapter 5 drew a process's memory as seven boundaries and said one of them starts at the very top and moves downward as grants are handed out. This is that movement. Everything above <b>kernel_memory_break</b> belongs to the kernel; everything below <b>app_break</b> belongs to the process; the gap between them is what neither has claimed yet.</p>
+  <p id="fenceagain">The process cannot read any of it. Chapter 6's region for a process's RAM stops at <b>app_break</b>, so the grant region is outside the fence &mdash; inside the process's allocation and outside its reach. The kernel is on the privileged side, where those regions do not apply, so it can read both.</p>
 </section>
 
 <figure class="instrument">
@@ -833,10 +833,10 @@ dfn {
     <div class="vtsay">
       <p class="vtp is-on" id="bdp-0">Cut first, before the process runs a single instruction, and never resized. One entry per <dfn>grant number</dfn> the board declared, each holding a driver number and a pointer, eight bytes on this chip. Every process carries the whole table whether it uses any of those drivers or not, and every entry starts null.</p>
       <p class="vtp" id="bdp-1">Cut one at a time by a bump downward, the first time a driver is entered for this process. Each is the size that driver needs, rounded to its alignment. Each is a <dfn>bump</dfn> and only ever downward, so the order of the grants below the table is the order in which this process first used those drivers.</p>
-      <p class="vtp" id="bdp-2">The bottom of the grant region, and of everything the kernel has taken. Every new grant lowers it by that grant's size, and nothing raises it while the process runs. Chapter 4 named it; this chapter is what moves it.</p>
+      <p class="vtp" id="bdp-2">The bottom of the grant region, and of everything the kernel has taken. Every new grant lowers it by that grant's size, and nothing raises it while the process runs. Chapter 5 named it; this chapter is what moves it.</p>
       <p class="vtp" id="bdp-3">Unclaimed. The process can grow into it from below by moving its break, and the kernel can grow into it from above by cutting a grant, and whichever asks first gets it. When it is gone, both requests start failing.</p>
-      <p class="vtp" id="bdp-4">The top of what the process can touch, and the far end of the region chapter 5 built. A process asking for more heap is asking to move this line up, and the kernel refuses if it would pass the mark chapter 6 left or reach what the kernel has taken.</p>
-      <p class="vtp" id="bdp-5">Everything chapter 4 walked through: the process's stack, its data, its heap, and at the bottom the thirty-two bytes the first context switch needs. All of it readable and writable by the process, none of it readable by another one.</p>
+      <p class="vtp" id="bdp-4">The top of what the process can touch, and the far end of the region chapter 6 built. A process asking for more heap is asking to move this line up, and the kernel refuses if it would pass the mark chapter 7 left or reach what the kernel has taken.</p>
+      <p class="vtp" id="bdp-5">Everything chapter 5 walked through: the process's stack, its data, its heap, and at the bottom the thirty-two bytes the first context switch needs. All of it readable and writable by the process, none of it readable by another one.</p>
     </div>
   </div>
   <div class="instrument-note" id="bd-note">Notice that the table at the top is eager and the grants under it are lazy. Every process pays for a table entry per driver the board has, at once, before it starts; it pays for a driver's grant only if it actually calls that driver. The table is what makes the second half possible &mdash; a null pointer in a fixed slot is how the kernel knows a grant has not been cut yet.</div>
@@ -844,7 +844,7 @@ dfn {
 
 <section class="col">
   <h2>What one driver costs one process</h2>
-  <p id="costline">The console is a good one to price, because chapter 6 used it and because its per-process state is four fields. It declares how much of everything it wants in its own type, which is where the arithmetic starts:</p>
+  <p id="costline">The console is a good one to price, because chapter 7 used it and because its per-process state is four fields. It declares how much of everything it wants in its own type, which is where the arithmetic starts:</p>
   <pre class="asm" id="conslist"><code>apps: Grant&lt;
     App,                                  <span class="asm-c">// four fields, 16 bytes</span>
     UpcallCount&lt;{ upcall::COUNT }&gt;,       <span class="asm-c">// 3</span>
@@ -896,7 +896,7 @@ dfn {
       <button type="button" id="gs-console">the console's own numbers</button>
     </div>
 
-    <p class="gsfoot" id="gs-foot">Every slot is eight bytes, whichever kind it is. An upcall slot holds a function pointer and the word the process passed at subscribe time that chapter 6 traced all the way back to the callback. An allow slot holds an address and a length, which is exactly what the process handed over. Read-only is for the buffer a write comes out of, which chapter 6 said may sit in flash. Read-write is for the one a read is delivered into.</p>
+    <p class="gsfoot" id="gs-foot">Every slot is eight bytes, whichever kind it is. An upcall slot holds a function pointer and the word the process passed at subscribe time that chapter 7 traced all the way back to the callback. An allow slot holds an address and a length, which is exactly what the process handed over. Read-only is for the buffer a write comes out of, which chapter 7 said may sit in flash. Read-write is for the one a read is delivered into.</p>
 
     <div class="gsbar" aria-hidden="true">
       <div class="gspart head" id="gs-b-head"><span class="gsl">word</span></div>
@@ -993,10 +993,10 @@ dfn {
       <p class="dbgp" id="lfp-1">Eight bytes, in the table at the very top of the process's memory, holding a driver number of zero and a null pointer. Null is the flag: the kernel cannot use the driver number to tell whether a grant exists, because zero is a real driver number, so the pointer carries that meaning instead.</p>
       <p class="dbgp" id="lfp-2">Now it costs something. The kernel works out the size from the driver's type, moves <b>kernel_memory_break</b> down by it, aligns it, checks it has not run into the process's own break, and writes the pointer into the table. This is the only moment in the five where the region gets smaller.</p>
       <p class="dbgp" id="lfp-3">Free, every time after the first. The pointer is already in the table, so entering is a bounds check and a closure call. A driver that talks to a process a thousand times allocates once.</p>
-      <p class="dbgp" id="lfp-4">Everything goes back. Restarting recomputes the whole layout from the process's original allocation. The table is rebuilt, <b>kernel_memory_break</b> returns to the top, and every grant is gone. The mark chapter 6 said a running process could never lower comes down with them. It is the only refund in this chapter, and the price is that the process is no longer the one that was running.</p>
+      <p class="dbgp" id="lfp-4">Everything goes back. Restarting recomputes the whole layout from the process's original allocation. The table is rebuilt, <b>kernel_memory_break</b> returns to the top, and every grant is gone. The mark chapter 7 said a running process could never lower comes down with them. It is the only refund in this chapter, and the price is that the process is no longer the one that was running.</p>
     </div>
   </div>
-  <div class="instrument-note" id="lf-note">Notice which way the laziness runs. A driver installed on the board and never called by a process costs that process eight bytes and not one more. Chapter 3 said a board's <b>main.rs</b> decides what exists. This is the other half of it: what exists is decided at build time, and what it costs is decided by each process, one first call at a time.</div>
+  <div class="instrument-note" id="lf-note">Notice which way the laziness runs. A driver installed on the board and never called by a process costs that process eight bytes and not one more. Chapter 4 said a board's <b>main.rs</b> decides what exists. This is the other half of it: what exists is decided at build time, and what it costs is decided by each process, one first call at a time.</div>
 </figure>
 
 <section class="col">
@@ -1020,11 +1020,11 @@ dfn {
     <div class="vtsay">
       <p class="vtp is-on" id="chp-0">What the capsule was handed at boot, and what it keeps in a field for the life of the board. A driver number and a grant number, plus the types that carry the three slot counts. It refers to no memory and can be copied freely, which is why a driver can hold one without holding anything belonging to any process.</p>
       <p class="vtp" id="chp-1">The same two numbers with one process attached. Producing one is where allocation can happen. If that process has no grant at this number yet, this is the step that cuts it, and the step that can fail for want of room. A capsule that wants to know whether the memory exists asks for this and looks at the answer.</p>
-      <p class="vtp" id="chp-2">Two references, valid only inside the closure. The first is a mutable reference to the driver's own state. The second is the kernel's half &mdash; the filed function pointers and the filed buffers &mdash; and a capsule can schedule an upcall or read a buffer through it but cannot take either out. Chapter 6 said the core kernel keeps both; this is the shape of keeping them.</p>
+      <p class="vtp" id="chp-2">Two references, valid only inside the closure. The first is a mutable reference to the driver's own state. The second is the kernel's half &mdash; the filed function pointers and the filed buffers &mdash; and a capsule can schedule an upcall or read a buffer through it but cannot take either out. Chapter 7 said the core kernel keeps both; this is the shape of keeping them.</p>
       <p class="vtp" id="chp-3">The grant is marked not-entered again, by a value going out of scope rather than by anything the capsule remembers to call. That matters because a closure can return early, and an early return that skipped the closing would leave the grant locked for the rest of the board's life.</p>
     </div>
   </div>
-  <div class="instrument-note" id="ch-note">Notice that the mutable reference exists only for the duration of one call, and that nothing the capsule can write down outlives it. This is chapter 3's rule again, one level down: a capsule reaches what it is handed, for as long as it is handed it. The difference is that here the thing being handed over belongs to a process.</div>
+  <div class="instrument-note" id="ch-note">Notice that the mutable reference exists only for the duration of one call, and that nothing the capsule can write down outlives it. This is chapter 4's rule again, one level down: a capsule reaches what it is handed, for as long as it is handed it. The difference is that here the thing being handed over belongs to a process.</div>
 </figure>
 
 <section class="col">
@@ -1051,7 +1051,7 @@ dfn {
       <p class="blkp" id="rfp-2">An error, returned, and the most ordinary of the three. The kernel works out where <b>kernel_memory_break</b> would land, sees it below the process's own break, and gives up without moving anything. The capsule finds out that this process cannot afford it, which is a different thing from the board being unable to afford it.</p>
     </div>
   </div>
-  <div class="instrument-note" id="rf-note">Notice which one is treated as a bug. Running out of room is a fact about a process and comes back as a value; asking for two mutable references is a fact about the capsule's code and stops everything. That is the same line chapter 6 drew between a request the kernel cannot parse and one it cannot satisfy, drawn this time inside the kernel rather than at its edge.</div>
+  <div class="instrument-note" id="rf-note">Notice which one is treated as a bug. Running out of room is a fact about a process and comes back as a value; asking for two mutable references is a fact about the capsule's code and stops everything. That is the same line chapter 7 drew between a request the kernel cannot parse and one it cannot satisfy, drawn this time inside the kernel rather than at its edge.</div>
 </figure>
 
 <section class="col">
@@ -1094,7 +1094,7 @@ dfn {
 
     <div class="gapsay">
       <p class="gapp is-on" id="gapp-idle">Nothing has been asked for yet. Everything between the two lines is free, and either of them can move into it: the process's break grows up, and grants grow down from the top of its memory.</p>
-      <p class="gapp" id="gapp-heap">Granted. The break moves up by thirty-two, the region chapter 5 builds is rewritten to match, and what is left is left. The process is told where its new break is and knows nothing about what is above it.</p>
+      <p class="gapp" id="gapp-heap">Granted. The break moves up by thirty-two, the region chapter 6 builds is rewritten to match, and what is left is left. The process is told where its new break is and knows nothing about what is above it.</p>
       <p class="gapp" id="gapp-grant">Granted, and the process was never asked. The console's grant is seventy-six bytes, taken off the top of the same gap the break grows into, on the first syscall this process made to the console.</p>
       <p class="gapp" id="gapp-heapno">Refused. There is not enough gap left for thirty-two bytes, so the kernel works out where the break would land, sees it above the grants, and moves nothing. The process gets a no-memory error back.</p>
       <p class="gapp" id="gapp-eaten">Also refused, and this is the one worth sitting with. The process asked for heap it could have had a moment earlier, and the thing that consumed it was a driver acting on the process's own earlier request. The failure is real and the process has no way to see the cause.</p>
@@ -1106,8 +1106,8 @@ dfn {
 </figure>
 
 <section class="col">
-  <h2>Where that leaves chapter 1's question</h2>
-  <p id="closingq">Chapter 1 ended on one sentence, the one it says everything Tock does is an answer to: any code can write any address. Six chapters have been taking pieces out of that, and this is the last of them.</p>
+  <h2>Where that leaves chapter 2's question</h2>
+  <p id="closingq">Chapter 2 ended on one sentence, the one it says everything Tock does is an answer to: any code can write any address. Six chapters have been taking pieces out of that, and this is the last of them.</p>
 </section>
 
 <figure class="instrument">
@@ -1136,7 +1136,7 @@ dfn {
       <p class="vtp" id="arp-6">And the last piece: the kernel's own answer to needing memory it never asked for. It takes it from whoever caused the need, in the process's own allocation, above the fence, and never gives it back until that process is not that process any more.</p>
     </div>
   </div>
-  <div class="instrument-note" id="ar-note">Notice how little of this is hardware. One mechanism is: the unit in chapter 5, which checks an address before the access finishes. Chapter 6's instruction is hardware as well, but it enforces nothing on its own &mdash; it is a door, and what makes it the only way through is the fence beside it. The rest are enforced by a compiler, by a type, by a boot sequence and by a convention. Every one is a decision somebody made and wrote down in a file this series has quoted. That is the answer to chapter 1's question: nothing on the chip stops it, so people did, in software, one mechanism at a time.</div>
+  <div class="instrument-note" id="ar-note">Notice how little of this is hardware. One mechanism is: the unit in chapter 6, which checks an address before the access finishes. Chapter 7's instruction is hardware as well, but it enforces nothing on its own &mdash; it is a door, and what makes it the only way through is the fence beside it. The rest are enforced by a compiler, by a type, by a boot sequence and by a convention. Every one is a decision somebody made and wrote down in a file this series has quoted. That is the answer to chapter 2's question: nothing on the chip stops it, so people did, in software, one mechanism at a time.</div>
 </figure>
 
 <section class="col">
@@ -1178,35 +1178,35 @@ dfn {
       <button type="button" class="q-opt" id="qd-1" aria-pressed="false">A fault, because the kernel could not do what it was asked</button>
       <button type="button" class="q-opt" id="qd-2" aria-pressed="false">Nothing, because the kernel takes the memory from somewhere else</button>
     </div>
-    <p class="q-answer" id="qdn">The first. Running out of grant region is an ordinary failure with an ordinary answer, and it arrives back through the same four registers chapter 6 described. The second answer is the interesting mistake: a fault is what a malformed request gets, and this request was perfectly well formed &mdash; it just could not be afforded.</p>
+    <p class="q-answer" id="qdn">The first. Running out of grant region is an ordinary failure with an ordinary answer, and it arrives back through the same four registers chapter 7 described. The second answer is the interesting mistake: a fault is what a malformed request gets, and this request was perfectly well formed &mdash; it just could not be afforded.</p>
   </div>
 </div>
 
 <section class="col">
   <h2>What you can say now</h2>
   <p id="closing">A driver keeps its state about a process inside that process's own memory, above the line the process can reach and below a table cut before the process started. The memory is taken the first time that driver is used by that process, by moving one pointer down, and nothing moves it back while the process lives. What it costs is a number you can add up: for the console on this board, seventy-six bytes, twenty-four of them slots kept empty so that an older numbering still works.</p>
-  <p id="closing2">A capsule never holds any of it. It holds two numbers, and it borrows the bytes for the length of one closure, which is chapter 3's rule applied to memory that belongs to somebody else. Reaching for the same grant twice at once stops the board, because the alternative is two mutable references to one object and the kernel will not pretend otherwise.</p>
+  <p id="closing2">A capsule never holds any of it. It holds two numbers, and it borrows the bytes for the length of one closure, which is chapter 4's rule applied to memory that belongs to somebody else. Reaching for the same grant twice at once stops the board, because the alternative is two mutable references to one object and the kernel will not pretend otherwise.</p>
   <p id="lastline">And that is the last mechanism. Chapter 1 said that nothing stops a store from landing anywhere. The answer took seven chapters, and it is that nothing on the chip does, so the rest was built. A compiler that will not compile the reach. A header the kernel parses before it trusts anything. Two registers per region, checked on every access. One instruction wide enough for eight kinds of question. And this, the place where the kernel puts what it has been handed. Every one of them is in a file this series has quoted, and every one is a decision somebody wrote down.</p>
 </section>
 
 <div class="col next" id="endbox">
   <p class="eyebrow forward">The end</p>
   <h3 style="margin-top:0">Seven chapters, one question</h3>
-  <p>There is no chapter 8. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names where it came from: a file and a line in this tree, or a section of the datasheet. All of them are still there at the commit these pages pin. The most useful next thing is not more reading. It is <code>make flash-openocd</code> in <code>boards/raspberry_pi_pico_2</code>, which pushes the kernel down the debug probe and needs no mounted drive at all. Chapter 4 is where the other route is, and why it does nothing on a Mac. Then break something on purpose, and watch which of these seven mechanisms catches it.</p>
+  <p>There is no chapter 9. What there is instead is a board on your desk, a debug probe, and a tree you can now read. Every claim on these seven pages names where it came from: a file and a line in this tree, or a section of the datasheet. All of them are still there at the commit these pages pin. The most useful next thing is not more reading. It is <code>make flash-openocd</code> in <code>boards/raspberry_pi_pico_2</code>, which pushes the kernel down the debug probe and needs no mounted drive at all. Chapter 5 is where the other route is, and why it does nothing on a Mac. Then break something on purpose, and watch which of these seven mechanisms catches it.</p>
   <nav class="pager" aria-label="Chapter navigation">
-    <a href="../ch06-asking-the-kernel/">&larr;&nbsp;Chapter 6</a>
+    <a href="../ch07-asking-the-kernel/">&larr;&nbsp;Chapter 7</a>
     <a href="../">Contents</a>
   </nav>
 </div>
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapters 3 to 6 were pinned to. The byte counts were compiled rather than added up: <code>grant-sizes.rs</code> ships beside this page and the gate runs it.</p>
+  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapters 4 to 7 were pinned to. The byte counts were compiled rather than added up: <code>grant-sizes.rs</code> ships beside this page and the gate runs it.</p>
   <ul>
     <li>The kernel having no allocator to ask &mdash; <code>kernel/src/lib.rs</code>:93, <code>#![no_std]</code>, with no allocator crate anywhere in its dependencies</li>
     <li>What a grant is, in the kernel's own overview &mdash; <code>kernel/src/grant.rs</code>:5&ndash;40, "Grants allow capsules to dynamically allocate memory from a process to hold state on the process's behalf"</li>
     <li>A grant not existing until it is entered, and not existing for one process because another entered it &mdash; the same file, :17&ndash;27</li>
-    <li>Upcalls and buffers being stored outside the driver's own type, so the kernel can keep the swap promises chapter 6 described &mdash; the same file, :29&ndash;32</li>
+    <li>Upcalls and buffers being stored outside the driver's own type, so the kernel can keep the swap promises chapter 7 described &mdash; the same file, :29&ndash;32</li>
     <li>The layout of one grant, drawn &mdash; the same file, :185&ndash;211, with the counters word broken out at :212&ndash;221</li>
     <li>The arithmetic this chapter adds up &mdash; <code>grant_size</code>, the same file, :376&ndash;396: a counters word, then the three arrays, then padding to the driver type's alignment, then the type</li>
     <li>The three slot types, one pointer-pair each &mdash; the same file, :752&ndash;788; <code>MachineRegister</code> and <code>CapabilityPtr</code> are both <code>#[repr(transparent)]</code> over one pointer, at <code>kernel/src/utilities/machine_register.rs</code>:29 and <code>kernel/src/utilities/capability_ptr.rs</code>:29</li>
@@ -1274,7 +1274,7 @@ dfn {
 (function () {
   "use strict";
 
-  /* Same shape as chapters 3 to 6: one group of buttons, one group of panels,
+  /* Same shape as chapters 4 to 7: one group of buttons, one group of panels,
      same index. The panel class differs between components only because each
      was styled for its own figure. */
   function group(btn, panel, n, cls, onCls, offCls, extra) {
@@ -1520,7 +1520,7 @@ dfn {
         }(i));
       }
     }
-    // Chapter 5's were 1, 2, 0, 1 and chapter 6's were 2, 1, 0, 2. These are
+    // Chapter 6's were 1, 2, 0, 1 and chapter 7's were 2, 1, 0, 2. These are
     // 1, 0, 2, 0, which repeats neither.
     quiz("qa-", 3, 1, "qan");
     quiz("qb-", 3, 0, "qbn");

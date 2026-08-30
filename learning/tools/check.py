@@ -622,7 +622,7 @@ def _spell(n):
 def compiled_size_checks(html, chapter_dir):
     """A byte count a figure printed without compiling anything.
 
-    Chapter 7's whole argument is a number: what one driver costs one process.
+    Chapter 8's whole argument is a number: what one driver costs one process.
     The first version of that number was 72, arrived at by adding up the field
     widths of the three slot types and the driver's own struct -- and it was
     wrong, because `grant_size` begins with a counters word that nobody adding
@@ -695,10 +695,10 @@ def compiled_size_checks(html, chapter_dir):
         problems.append("grant-sizes.rs compiled but BENCH came back empty, so "
                         "figure 3's totals are checked against nothing")
     else:
-        suite = os.path.join(TOOLS, "ch07.tests.js")
+        suite = os.path.join(TOOLS, "ch08.tests.js")
         if not os.path.exists(suite):
             problems.append("BENCH has configurations to check and there is no "
-                            "ch07.tests.js to check them against")
+                            "ch08.tests.js to check them against")
         else:
             with open(suite, encoding="utf-8") as fh:
                 asserted = fh.read()
@@ -706,7 +706,7 @@ def compiled_size_checks(html, chapter_dir):
                 if not re.search(r"(?<![\w.])%d(?![\w.])" % value, asserted):
                     problems.append(
                         "the probe compiles a grant of %d bytes and no "
-                        "assertion in ch07.tests.js expects it, so figure 3 "
+                        "assertion in ch08.tests.js expects it, so figure 3 "
                         "could produce any total for that configuration"
                         % value)
 
@@ -740,7 +740,7 @@ def figure_citation_checks(html):
 
     `citation_chain_checks` asks whether a cited line exists. It says so
     itself: "This does not check that the line *says* anything in particular;
-    that stays a review lens." That lens missed five citations in chapter 3 and
+    that stays a review lens." That lens missed five citations in chapter 4 and
     one in chapter 1, all pointing thirty-four or eighteen lines away from the
     function they named, because the file gained lines after the citations were
     written and every one of the wrong lines still existed. A reader following
@@ -828,7 +828,7 @@ def citation_chain_checks(html):
 
     The sources list says "the same file" a lot, because repeating a path for
     every line of one function is noise. That works until a bullet names two
-    files: chapter 6's bullet 17 ends on the board crate, and the "the same
+    files: chapter 7's bullet 17 ends on the board crate, and the "the same
     file, :903-911" under it therefore pointed at a 481-line file. The lines
     it meant are in `kernel/src/kernel.rs`. Every hand check of these citations
     read them from a list with explicit paths, so the chain itself was never
@@ -839,7 +839,7 @@ def citation_chain_checks(html):
     tree at the chapter's own pinned commit whether that file has an Nth line.
     A bare basename counts as naming a path if the full one appeared earlier in
     the same list, because that is a reader-followable abbreviation and chapter
-    5 uses it six times after giving `arch/cortex-m33/src/mpu_v8m.rs` once. A
+    6 uses it six times after giving `arch/cortex-m33/src/mpu_v8m.rs` once. A
     basename nothing has introduced is not.
     This does not check that the line *says* anything in particular; that stays
     a review lens. It catches the citation that cannot be followed at all.
@@ -934,7 +934,7 @@ def _strip_rust_comments(src):
 def shared_client_checks(html):
     """A count of who shares a peripheral, taken by hand and gone stale.
 
-    The third hand-counted number in chapter 3 to drift with a re-pin. It said
+    The third hand-counted number in chapter 4 to drift with a re-pin. It said
     four capsules on one serial port; the board hands `uart_mux` to three --
     the console, the debug writer and the process console. Two on one timer was
     right. Nothing checked either, and the difference between a right number
@@ -990,7 +990,7 @@ def shared_client_checks(html):
 def staticref_inventory_checks(html):
     """A figure claiming to hold every address, that is missing some.
 
-    Chapter 3's Figure 5 said "every address on this chip, in one list" and
+    Chapter 4's Figure 5 said "every address on this chip, in one list" and
     listed twelve. At the commit the chapter was re-pinned to, the chip crate
     had eighteen `StaticRef::new` calls: the re-pin added SPI, DMA and PIO, and
     the figure kept saying twelve. Every one of its twelve citations still
@@ -1095,7 +1095,7 @@ def staticref_inventory_checks(html):
 def counted_tree_checks(html):
     """A figure printing a count of the tree that the tree no longer supports.
 
-    Chapter 3's Figure 3 prints, for five paths, how many `.rs` files are under
+    Chapter 4's Figure 3 prints, for five paths, how many `.rs` files are under
     them and how many times the word `unsafe` appears -- once with comments
     stripped and once whole. Those fifteen numbers were counted by hand, once,
     and then the chapter was re-pinned to a commit that had gained a board.
@@ -1172,7 +1172,7 @@ def counted_tree_checks(html):
 def assembled_listing_checks(html, chapter_dir):
     """A halfword the page prints must be one the assembler actually produced.
 
-    Chapter 6 rests on a fact about an instruction encoding -- that `svc N` is
+    Chapter 7 rests on a fact about an instruction encoding -- that `svc N` is
     `0xDF00` with N in its low byte, which is why the class of a request cannot
     be corrupted by anything the process does to its registers. A chapter that
     prints hex for that had better have run an assembler, and the way to prove
@@ -1521,7 +1521,7 @@ def assertion_checks(tests_path):
 def provenance_checks(html, name):
     """Every chapter carries its sources and its licence, at the bottom.
 
-    Chapter 2 shipped without either. The section was inserted by a string
+    Chapter 3 shipped without either. The section was inserted by a string
     replacement whose anchor did not match, which silently did nothing, and
     nothing downstream noticed: the page still passed every check and every
     assertion. Two promises broke quietly. The series tells the reader that
@@ -1753,7 +1753,7 @@ def glossary_use_checks(html):
 
     The glossary section makes a promise in its own lead sentence -- "each is
     one sentence now and repeated in context below" -- and nothing was checking
-    it. Chapter 4 shipped eleven words of which two, `userspace` and `TBF`,
+    it. Chapter 5 shipped eleven words of which two, `userspace` and `TBF`,
     appeared exactly once each: in the list itself. The chapter said
     "application" and "the header" everywhere it could have said them, which
     means the reader was handed two words and then never shown one in use.
@@ -1773,7 +1773,7 @@ def glossary_use_checks(html):
                   for t in re.findall(r"<dt[^>]*>(.*?)</dt>",
                                       block.group(2), flags=re.S)]
         # Everywhere except the list itself. The first version looked only at
-        # the prose *after* the block, which is right for chapters 3 and 4,
+        # the prose *after* the block, which is right for chapters 4 and 5,
         # where the glossary is the front matter -- and wrong for chapter 1,
         # whose list is a closing summary with nothing after it. That version
         # reported all twenty-three of chapter 1's terms as unused.
@@ -1790,7 +1790,7 @@ def glossary_use_checks(html):
 def wired_checks(html):
     """A control the script never reaches.
 
-    Chapter 3's Figure 8 shipped with three buttons, three panels, a correct
+    Chapter 4's Figure 8 shipped with three buttons, three panels, a correct
     opening state in the markup, and no listener: the `group()` call that binds
     them was never added. Every static check passed, because the markup was
     internally consistent -- the opening state a script would produce is the one
@@ -1833,7 +1833,7 @@ def wired_checks(html):
 def figure_order_checks(html):
     """Figure labels run 1..N down the page, with no gaps and no repeats.
 
-    Written after inserting a figure into the middle of chapter 4 and numbering
+    Written after inserting a figure into the middle of chapter 5 and numbering
     it 12, which is what the last label had been. Every cross-reference on the
     page still resolved, the behavioural suite still passed, and the number was
     correct in the sense that it named exactly one figure -- it just sat fifth,
@@ -1853,7 +1853,7 @@ def figure_order_checks(html):
 def figure_label_checks(html, tests_path):
     """An assertion that names a figure names the one its element is in.
 
-    Written after renumbering chapter 4's twelve figures to fix the misplaced
+    Written after renumbering chapter 5's twelve figures to fix the misplaced
     Figure 12 above. The page came out right and every assertion still passed,
     because the suite addresses elements by id and an id does not carry a
     number. What it left behind was eight assertion descriptions naming the
@@ -1906,7 +1906,7 @@ def figure_label_checks(html, tests_path):
 
 
 # Phrasings a review pass deliberately removed from a chapter's page. A word
-# that came out for a reason must not come back, and it does: chapter 5's
+# that came out for a reason must not come back, and it does: chapter 6's
 # `block` was struck from six places in its first review pass and survived in
 # two source-list bullets, because that pass scanned the prose and not the
 # citations. Adding a line here is only allowed once the phrase is gone, so the
@@ -1915,8 +1915,8 @@ def figure_label_checks(html, tests_path):
 # Markup only. A negative assertion in the test suite legitimately names the
 # phrase it forbids, and the CSS legitimately says `display: block`.
 RETIRED_PHRASES = {
-    "ch05": [
-        ("block", "chapter 2's glossary pins it as the boot ROM's "
+    "ch06": [
+        ("block", "chapter 3's glossary pins it as the boot ROM's "
                   "self-describing structure"),
         ("real region", "the worked example's base is chosen, not read off "
                         "this board"),
@@ -1926,7 +1926,7 @@ RETIRED_PHRASES = {
         ("only twice", "counting the steps with no source line got the count "
                        "wrong twice running"),
     ],
-    "ch06": [
+    "ch07": [
         ("tend to need", "a claim about what a return shape is for needs a "
                          "caller in the tree, and both of this chapter's had "
                          "none"),
@@ -1944,11 +1944,11 @@ RETIRED_PHRASES = {
                                      "figures earlier"),
         ("never comes down", "same claim, same reason"),
     ],
-    "ch07": [
-        ("wired to fetch", "chapter 2's headline is that the first "
+    "ch08": [
+        ("wired to fetch", "chapter 3's headline is that the first "
                            "instruction is never yours; the chip fetches from "
                            "zero, inside the boot ROM"),
-        ("the type system will not compile", "chapter 3 credits a crate-level "
+        ("the type system will not compile", "chapter 4 credits a crate-level "
                                              "refusal and says outright that "
                                              "this is the half the type system "
                                              "does not cover"),
@@ -1956,10 +1956,10 @@ RETIRED_PHRASES = {
                               "it runs, which figures 2 and 5 both price"),
         ("names a file and a line", "four of the seven chapters cite the "
                                     "datasheet by section"),
-        ("only one of the seven is enforced by hardware", "chapter 6's "
+        ("only one of the seven is enforced by hardware", "chapter 7's "
                                                           "instruction is "
                                                           "hardware too"),
-        ("waiting six chapters", "chapter 3 to chapter 7 is four chapters on"),
+        ("waiting six chapters", "chapter 4 to chapter 8 is four chapters on"),
         ("which code gets to run", "the series constrains which addresses code "
                                    "may reach, not which code runs"),
     ],
@@ -2007,7 +2007,7 @@ def flex_prose_checks(html):
     chapter 1 onward. Chapter 1 shipped "then try `the hardware's way` ." with
     the full stop half a rem adrift and it survived every review pass of every
     chapter, because nothing here can see layout and nobody re-rendered Figure
-    13 once it worked. Chapter 6 found it by putting an `svc 2` in one.
+    13 once it worked. Chapter 7 found it by putting an `svc 2` in one.
 
     The test is deliberately narrow, in two ways. It wants a direct inline
     child with words on *both* sides of it, because words on one side only is
@@ -2098,7 +2098,7 @@ def flex_prose_checks(html):
 def orphan_comment_checks(html):
     """A stylesheet comment with no rule under it.
 
-    Three of these were left in chapter 5 when the rules they headed were
+    Three of these were left in chapter 6 when the rules they headed were
     deleted for being dead. `dead_css_checks` finds a rule with no markup; it
     has nothing to say about a comment with no rule, and a comment that heads
     nothing is a claim about the file that stopped being true.
@@ -2135,14 +2135,14 @@ def unstyled_block_checks(html):
     dead_css_checks finds a rule nothing on the page uses. It cannot see the
     opposite, and the opposite is what happens when a sheet is copied from a
     chapter that did not need a rule this one does. Chapter 0's stylesheet came
-    from chapter 5, which has no `<pre>` anywhere, so it arrived with no rule
+    from chapter 6, which has no `<pre>` anywhere, so it arrived with no rule
     for one -- and chapter 0 has four. They rendered in the browser's default
     monospace with no background, no border, and crucially no `overflow-x`, so
     a long command line widened the whole page instead of scrolling inside its
     own box.
 
     Narrow on purpose. Only a `<pre>` carrying no class of its own is in
-    question: chapters 6 and 7 write `<pre class="asm">` and style that
+    question: chapters 7 and 8 write `<pre class="asm">` and style that
     instead, which is correct and must not be refused. And only `pre` is
     checked, because it is the one block element in this series whose default
     rendering is actively wrong rather than merely plain.
@@ -2172,7 +2172,7 @@ def unstyled_class_checks(html):
     nowhere in the markup. It cannot see the mirror, and the mirror is the one
     that happens when a figure is written by reaching for a class name that
     exists -- in a different chapter. A stylesheet is per page, so
-    `class="pinstate"` in chapter 4 styled nothing at all, and four readouts
+    `class="pinstate"` in chapter 5 styled nothing at all, and four readouts
     that were meant to be a bordered grid rendered as four bare lines of text.
     Every behavioural assertion passed, because the shim holds no stylesheet.
 
@@ -2208,10 +2208,10 @@ def unstyled_class_checks(html):
 def dead_css_checks(html):
     """A rule whose class or id appears nowhere else on the page.
 
-    Chapter 2 was built by copying chapter 1's stylesheet and deleting what it
+    Chapter 3 was built by copying chapter 1's stylesheet and deleting what it
     did not use -- 237 rules went. Fourteen survived that had nothing left to
     style: `.brp`, `.pkgp`, `.strayp`, `.hxrange` and the rest were chapter 1
-    figures that chapter 2 does not have, and each appeared exactly once in the
+    figures that chapter 3 does not have, and each appeared exactly once in the
     file, in its own rule. Two media queries were left with empty bodies and a
     comment describing a figure that is not there either.
 
@@ -2222,10 +2222,10 @@ def dead_css_checks(html):
 
     Class and id tokens were the whole of it for a while, which left a rule
     made only of element names invisible. `.selfcheck details`, `.selfcheck
-    summary` and `summary:focus-visible` rode from chapter 1 into chapters 3
-    and 4, neither of which contains a `<details>` anywhere -- and the comment
+    summary` and `summary:focus-visible` rode from chapter 1 into chapters 4
+    and 5, neither of which contains a `<details>` anywhere -- and the comment
     above them asserted they were "still load-bearing", which is how they
-    survived five review passes of chapter 3. So a tag named in a selector has
+    survived five review passes of chapter 4. So a tag named in a selector has
     to appear in the markup too. The test is narrow on purpose: only element
     names occurring nowhere on the page are refused, so `p`, `button` and the
     rest are never in question.
@@ -2241,7 +2241,7 @@ def dead_css_checks(html):
     #
     # Reading the whole page as one bag of words instead -- the first version of
     # this -- lets ordinary prose vouch for a rule. `.goals .cost` is dead in
-    # both chapters written so far, and chapter 2 passed anyway, because the
+    # both chapters written so far, and chapter 3 passed anyway, because the
     # word "cost" occurs in a figure title three screens away.
     live = set()
     markup = re.sub(r"<script.*?</script>", " ", rest, flags=re.S)
@@ -2658,7 +2658,7 @@ def behavior_checks(html, tests_path):
 # term cannot be defined inline and then go missing from the summary list.
 
 # Words this chapter is not allowed to use before defining. Keyed by the
-# chapter directory prefix, because chapter 2 inherits chapter 1's vocabulary
+# chapter directory prefix, because chapter 3 inherits chapter 1's vocabulary
 # and should not have to redefine it.
 MUST_DEFINE = {
     # Chapter 0 stands before the chapter that defines the vocabulary from
@@ -2668,29 +2668,34 @@ MUST_DEFINE = {
         "pin", "probe", "target", "toolchain", "UF2",
     ],
     "ch01": [
-        "address", "atomic", "bank", "base address", "bit", "byte", "core",
-        "crate", "disassembler", "flash", "GPIO", "hexadecimal", "instruction",
-        "interrupt", "kernel", "mask", "offset", "optimizer", "peripheral",
-        "pin", "processor", "register", "SIO", "store", "volatile",
+        "address", "bank", "base address", "bit", "byte", "crate",
+        "flash", "GPIO", "hexadecimal", "instruction", "kernel", "offset",
+        "peripheral", "pin", "processor", "register", "SIO", "store",
     ],
-    "ch03": [
+    # Chapter 2 took the words that only make sense once the store is
+    # written and something else gets in the way of it.
+    "ch02": [
+        "atomic", "core", "disassembler", "interrupt", "mask",
+        "optimizer", "volatile",
+    ],
+    "ch04": [
         "board", "capsule", "generic", "HIL", "process", "struct", "trait",
         "unsafe", "virtualizer",
     ],
-    "ch04": [
+    "ch05": [
         "fault", "grant", "heap", "panic", "process", "scheduler", "stack",
         "syscall", "TBF", "timeslice", "userspace",
     ],
-    "ch05": [
+    "ch06": [
         "execute-never", "fault", "HardFault", "MemManage",
         "memory protection unit", "permissions", "privileged", "region",
         "unprivileged",
     ],
-    "ch06": [
+    "ch07": [
         "allowed buffer", "command", "driver number", "exception frame",
         "subscribe", "svc", "syscall", "syscall class", "upcall", "yield",
     ],
-    "ch07": [
+    "ch08": [
         "allocator", "bump", "counters word", "entering", "grant",
         "grant number", "grant region", "slot",
     ],
@@ -2742,8 +2747,8 @@ MAX_GATED_PROSE = 0.20
 def _without_nav(text):
     """The page with its reading-order controls taken out.
 
-    A pager link reads "Chapter 2" because that is where it goes, not because
-    the page is claiming anything about chapter 2. The promise ledger records
+    A pager link reads "Chapter 3" because that is where it goes, not because
+    the page is claiming anything about chapter 3. The promise ledger records
     prose cross-references and the pedagogy limits measure prose; a navigation
     label is neither, for the same reason `<title>` and `<h1>` are already cut
     out of both.
@@ -2767,10 +2772,10 @@ def _strip_for_prose(html):
     text = re.sub(r"<pre.*?</pre>", " ", text, flags=re.S)
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
     # The sources list is citations, not running prose, and this rule has said
-    # so since chapter 2 -- but it matched `<div class="sources">` and every
+    # so since chapter 3 -- but it matched `<div class="sources">` and every
     # chapter writes `<section class="col sources">`, so the exemption had
-    # never once applied. Chapters 1 to 3 happened to keep every bullet under
-    # the sentence limit and nobody noticed; chapter 4 cites a Makefile target
+    # never once applied. Chapters 1 to 4 happened to keep every bullet under
+    # the sentence limit and nobody noticed; chapter 5 cites a Makefile target
     # against a README that names a different one, which cannot be said in
     # thirty-four words. Match what the pages actually write.
     text = re.sub(r'<(div|section)[^>]*class="[^"]*\bsources\b[^"]*">.*', " ",
@@ -2778,10 +2783,10 @@ def _strip_for_prose(html):
     # A chapter's own name is not running prose. `<title>` is never rendered in
     # the page at all -- it is the browser tab -- and `<h1>` is the masthead.
     # Counting them was not a strict reading of the rule, it was measuring the
-    # wrong text: chapter 4 is called "What a Process Is", so the word `process`
+    # wrong text: chapter 5 is called "What a Process Is", so the word `process`
     # appeared at character 21, several hundred characters before the glossary
     # that defines it, and the ordering rule refused a chapter for naming its
-    # own subject. Chapters 5 and 7 are titled the same way. Everything else in
+    # own subject. Chapters 6 and 8 are titled the same way. Everything else in
     # the masthead -- the eyebrow, the standfirst -- is prose and still counts.
     text = re.sub(r"<title>.*?</title>", " ", text, flags=re.S | re.I)
     text = re.sub(r"<h1[^>]*>.*?</h1>", " ", text, flags=re.S | re.I)
@@ -2945,7 +2950,7 @@ def pedagogy_checks(html, chapter):
     found_any = False
     # The chapter's vocabulary list: `glossary`, or `glossary cast` where the
     # words are collected at the front. An exact-attribute match missed the
-    # second, and chapter 2 got away with it only because it declares no
+    # second, and chapter 3 got away with it only because it declares no
     # required terms. `glossary inline` is excluded on purpose -- that modifier
     # marks a two-column table standing in for a paragraph, whose left column is
     # whatever the paragraph was about (`28 bytes`, `*ptr`) and not vocabulary.
@@ -3022,9 +3027,9 @@ def pedagogy_checks(html, chapter):
     # The second route to the same place, and the one this measurement did not
     # see for four review passes. A chapter that keeps its sentences in the
     # markup -- which is the rule -- can still hide a quarter of them by
-    # shipping the panels with `is-off` already on. Chapter 3 did: 1,018 words
+    # shipping the panels with `is-off` already on. Chapter 4 did: 1,018 words
     # in 33 blocks, 26.6% of the chapter, while this rule reported roughly
-    # nothing, because none of it was in a script string. Chapters 1 and 2 ship
+    # nothing, because none of it was in a script string. Chapters 1 and 3 ship
     # every panel visible and let the script put the others away, so a reader
     # with no JavaScript meets all of them; that is the pattern, and this is
     # what holds a later chapter to it.
@@ -3059,18 +3064,18 @@ def pedagogy_checks(html, chapter):
 # ---------------------------------------------------------------------------
 # The promise ledger.
 #
-# Two of the three findings in chapter 2's third review pass were the same
+# Two of the three findings in chapter 3's third review pass were the same
 # shape: one chapter says something about another chapter, and the other
-# chapter does not back it up. Chapter 1's Figure 6 promised "Chapter 2 opens
-# them up" of two things and chapter 2 opened one. Figure 7 said all six
+# chapter does not back it up. Chapter 1's Figure 6 promised "Chapter 3 opens
+# them up" of two things and chapter 3 opened one. Figure 7 said all six
 # instructions were ones the reader had already met, and one of them appears
 # nowhere else in the series.
 #
-# That class only gets worse from here. Chapter 2 alone makes fourteen claims
+# That class only gets worse from here. Chapter 3 alone makes fourteen claims
 # about what chapter 1 says, and chapter 1 was rewritten heavily after chapter
 # 2 was drafted -- seven passages were converted from prose to tables, ten
 # openings were cut. Any one of those edits could have taken away a sentence
-# chapter 2 cites, and nothing would have said so.
+# chapter 3 cites, and nothing would have said so.
 #
 # What a machine can check here is narrow, and pretending otherwise would be
 # worse than not checking. It cannot read a chapter and decide whether a debt
@@ -3087,7 +3092,7 @@ def pedagogy_checks(html, chapter):
 # <dfn> has to be in its glossary, and vice versa. It has nothing to say about a
 # word the chapter uses constantly and never marks at all.
 #
-# Chapter 3 used `crate` fourteen times, and its central argument turns on it --
+# Chapter 4 used `crate` fourteen times, and its central argument turns on it --
 # "what makes it legal there and illegal here is only which crate it sits in".
 # It used `process` twelve times, all load-bearing, three chapters before the
 # one that explains what a process is. Neither was defined anywhere in the
@@ -3113,8 +3118,8 @@ WEIGHT_BEARING = [
 def vocabulary_checks(root, chapters):
     """A word a chapter leans on has to be defined somewhere by then.
 
-    Somewhere, not necessarily here: chapter 3 may lean on `flash` because
-    chapter 2 defined it. What it may not do is lean on a word no chapter has
+    Somewhere, not necessarily here: chapter 4 may lean on `flash` because
+    chapter 3 defined it. What it may not do is lean on a word no chapter has
     ever explained.
     """
     problems = []
@@ -3147,14 +3152,14 @@ LEDGER = os.path.join(ROOT, "promises.json")
 
 # Chapter 0 was added after the other seven, as the hands-on chapter the
 # series had been assuming rather than teaching.
-PLANNED_CHAPTERS = ["ch%02d" % n for n in range(0, 8)]
+PLANNED_CHAPTERS = ["ch%02d" % n for n in range(0, 9)]
 
 WORD_NUMBERS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
                 "five": 5, "six": 6, "seven": 7}
 
-# Deliberately loose. A regex clever enough to tell "chapter 5 covers this"
+# Deliberately loose. A regex clever enough to tell "chapter 6 covers this"
 # from "come back an hour later" would also be clever enough to drop a real
-# promise quietly, and quiet is how chapter 2 shipped with no sources section.
+# promise quietly, and quiet is how chapter 3 shipped with no sources section.
 # Over-matching costs one ledger line and a written reason; under-matching
 # costs a broken promise nobody sees.
 PROMISE_PAT = re.compile(
@@ -3167,7 +3172,7 @@ def _chapter_sentences(html):
     """Everything a reader can end up looking at, as sentences.
 
     The prose, and then every string literal in the script. The literals
-    matter: "Chapter 2 opens them up" was a panel string, and so was Figure
+    matter: "Chapter 3 opens them up" was a panel string, and so was Figure
     7's claim about the six instructions. A scan over the markup alone sees
     neither, which would have made this gate blind to both of the findings
     that caused it to be written.
@@ -3255,7 +3260,7 @@ def promise_checks(root, chapters):
                     % (eid, says))
             continue
         if owed not in PLANNED_CHAPTERS:
-            problems.append("%s points at %s, which is not one of the seven"
+            problems.append("%s points at %s, which is not one of the chapters"
                             % (eid, owed))
             continue
         kept = entry.get("kept_by", "")
@@ -3438,7 +3443,7 @@ def index_checks(root, chapters):
                             % (chapter, want))
 
     # The cover must not pin a commit the chapters disagree about. Chapter 1
-    # sits on an earlier tree than chapters 3 to 7, so any single hash printed
+    # sits on an earlier tree than chapters 4 to 8, so any single hash printed
     # here is wrong for somebody -- which is how this check was written: the
     # first draft of the cover claimed one commit for all seven.
     cited = {}

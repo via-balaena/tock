@@ -959,7 +959,7 @@ dfn {
   letter-spacing: .02em;
   color: var(--accent);
 }
-/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
    flex item of every inline child, so an emphasis or a code span inside one
    of these lines came out with a half-rem gap on each side and the
    punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
@@ -1123,7 +1123,7 @@ dfn {
 .seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
 
 /* The panels Figure 7's numbered steps open. Named for the figure in
-   chapter 4 these rules were copied from, and kept because renaming a class
+   chapter 5 these rules were copied from, and kept because renaming a class
    across markup, script and assertions buys nothing a comment cannot. */
 .dbgsay { display: flex; flex-direction: column; gap: .45rem; }
 .dbgp {
@@ -1153,11 +1153,11 @@ dfn {
 
 <header class="masthead">
   <div class="runhead">
-    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 5</p>
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 6</p>
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>The Memory Protection Unit</h1>
-  <p class="standfirst">Chapter 4 ended on a sentence with a hole in it. Every edge it drew was a number the kernel was holding: where a process starts, where its memory ends, how far up it may reach. Not one of them stops an instruction. This chapter is about the thing that does.</p>
+  <p class="standfirst">Chapter 5 ended on a sentence with a hole in it. Every edge it drew was a number the kernel was holding: where a process starts, where its memory ends, how far up it may reach. Not one of them stops an instruction. This chapter is about the thing that does.</p>
   <noscript>
     <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
@@ -1177,7 +1177,7 @@ dfn {
       <li>Follow one forbidden store from the instruction to the stopped process, naming every step in between.</li>
       <li>Say what the older Cortex-M units cost that this one does not, in address space and in alignment.</li>
     </ul>
-    <p class="cost">Plan on forty minutes, and plan on dragging things: most of this chapter is built to be handled rather than read. Chapter 4 is assumed: what a process is, and the seven boundaries through its memory. Chapter 1 comes back too, as a register with fields in it &mdash; except that this time the fields govern what other addresses may be touched.</p>
+    <p class="cost">Plan on forty minutes, and plan on dragging things: most of this chapter is built to be handled rather than read. Chapter 5 is assumed: what a process is, and the seven boundaries through its memory. Chapter 1 comes back too, as a register with fields in it &mdash; except that this time the fields govern what other addresses may be touched.</p>
   </div>
 </section>
 
@@ -1194,15 +1194,15 @@ dfn {
     <dt><dfn>permissions</dfn></dt><dd>What may be done at an address: read it, write it, execute it, or some of the three.</dd>
     <dt><dfn>region</dfn></dt><dd>One run of addresses, described by two registers, carrying one set of permissions.</dd>
     <dt><dfn>execute-never</dfn></dt><dd>A bit forbidding instruction fetch from a region. There are two: one aimed at the process, one at the kernel.</dd>
-    <dt><dfn>fault</dfn></dt><dd>The exception the hardware raises when an access breaks the rules. Chapter 4 used the word; this is where it comes from.</dd>
+    <dt><dfn>fault</dfn></dt><dd>The exception the hardware raises when an access breaks the rules. Chapter 5 used the word; this is where it comes from.</dd>
     <dt><dfn>MemManage</dfn></dt><dd>The exception a protection violation raises, on a chip where it has been switched on. On this board it has not.</dd>
     <dt><dfn>HardFault</dfn></dt><dd>The catch-all exception everything else escalates into, and the one this board actually handles.</dd>
   </dl>
 </div>
 
 <section class="col">
-  <h2>The gap chapter 4 left</h2>
-  <p id="gapline">Chapter 4 drew a process's memory as seven boundaries and named the field behind each one. <code>app_break</code>, <code>kernel_memory_break</code>, <code>memory_start</code>. They are all real, and the kernel holds all of them. But every one is a number in a struct.</p>
+  <h2>The gap chapter 5 left</h2>
+  <p id="gapline">Chapter 5 drew a process's memory as seven boundaries and named the field behind each one. <code>app_break</code>, <code>kernel_memory_break</code>, <code>memory_start</code>. They are all real, and the kernel holds all of them. But every one is a number in a struct.</p>
   <p>A number in a struct is a note about what should happen. The processor running a store never reads it. Between the instruction a process issues and the memory that changes, no kernel code runs at all. That is what running means.</p>
   <p id="unitline">So the enforcement cannot live in the kernel. It lives in the processor, right beside the thing doing the accessing, and it is the one piece of this series that is not software. The RP2350 datasheet gives it three jobs: "enforce privilege rules", "separate processes", "manage memory attributes".</p>
   <p id="threeuses">The first two jobs are this chapter. The third comes down to one line the kernel writes on every configure and never changes.</p>
@@ -1258,7 +1258,7 @@ dfn {
 <section class="col">
   <h2>One region, two registers</h2>
   <p>Chapter 1 spent itself on a register with fields packed into it: bits that meant something to the hardware rather than to the program. Same shape here, different job. Instead of one bit per pin, these fields describe a stretch of addresses and what may be done inside it.</p>
-  <p id="wordregion">One warning about the word. Chapter 4 used <em>region</em> for the four areas a linker script cuts the chip into. That is not this sense. From here on it means what the glossary above says: one run of addresses, described by two registers, carrying one set of permissions.</p>
+  <p id="wordregion">One warning about the word. Chapter 5 used <em>region</em> for the four areas a linker script cuts the chip into. That is not this sense. From here on it means what the glossary above says: one run of addresses, described by two registers, carrying one set of permissions.</p>
   <p id="whereregs">The registers sit at <code class="addr">0xE000ED90</code>. Three of them describe one region. <b>MPU_RNR</b> at <code class="addr">0xE000ED98</code> picks which of the eight you are talking about. Then <b>MPU_RBAR</b> and <b>MPU_RLAR</b>, at <code class="addr">0xE000ED9C</code> and <code class="addr">0xE000EDA0</code>, describe it.</p>
 </section>
 
@@ -1327,7 +1327,7 @@ dfn {
 
 <section class="col">
   <h2>Build a region yourself</h2>
-  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. The figure below is that process. Drag how much it asks for, then drag a probe across the edge and see where the answer changes. One caveat on that base: it is picked to make the arithmetic easy to follow, not read off this board like every other address in this series. Where a process's memory really starts depends on how much RAM the kernel's own data took.<div class="col">
+  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 5 said the accessible part starts at 32 bytes and grows when the process asks. The figure below is that process. Drag how much it asks for, then drag a probe across the edge and see where the answer changes. One caveat on that base: it is picked to make the arithmetic easy to follow, not read off this board like every other address in this series. Where a process's memory really starts depends on how much RAM the kernel's own data took.<div class="col">
   <div class="bet" id="bet-round">
     <p class="bet-q" id="bet-round-q">A process asks the kernel for <strong>100 bytes</strong>. The unit hands it a region. How much can the process actually reach?</p>
     <div class="bet-opts" role="group" aria-labelledby="bet-round-q"><button type="button" class="bet-opt" id="bet-round-o0" data-ok="false">100 bytes &mdash; exactly what it asked for</button><button type="button" class="bet-opt" id="bet-round-o1" data-ok="true">128 bytes &mdash; rounded up to the next multiple of 32</button><button type="button" class="bet-opt" id="bet-round-o2" data-ok="false">256 bytes &mdash; rounded up to a power of two</button><button type="button" class="bet-opt" id="bet-round-o3" data-ok="false">It is refused &mdash; 100 is not a legal region size</button></div>
@@ -1404,7 +1404,7 @@ dfn {
       </div>
     </div>
   </div>
-  <div class="instrument-note" id="mm-note">Notice that the edge does not move where you would expect. A request that is not already a multiple of 32 comes back rounded up to the next whole multiple, because the limit field has nowhere to record a finer boundary. The rounding always goes the process's way, it is never reported, and the process simply finds it can reach a little further than it asked to. Notice too which number never changes: a process's memory cannot be moved once it is running, because its own compiled addresses point into it, and chapter 4's four arguments were how it learned them. Growth happens at one end only.</div>
+  <div class="instrument-note" id="mm-note">Notice that the edge does not move where you would expect. A request that is not already a multiple of 32 comes back rounded up to the next whole multiple, because the limit field has nowhere to record a finer boundary. The rounding always goes the process's way, it is never reported, and the process simply finds it can reach a little further than it asked to. Notice too which number never changes: a process's memory cannot be moved once it is running, because its own compiled addresses point into it, and chapter 5's four arguments were how it learned them. Growth happens at one end only.</div>
 </figure>
 
 <section class="col">
@@ -1581,7 +1581,7 @@ dfn {
       <p class="dbgp" id="flp-2">This board has not. The enable bit for MemManage sits in <b>SHCSR</b> and resets to zero; no line in this kernel sets it. Tock's own comment on the routine that clears that bit says what the consequence is: it "escalates the exception to a HardFault instead". So the <dfn>HardFault</dfn> handler runs, and <dfn>MemManage</dfn> never does.</p>
       <p class="dbgp" id="flp-3">The handler's first job is to find out who faulted, and it is settled by bit 2 of the link register: <b>tst lr, #4</b>. Set means the process's stack was in use, clear means the kernel's. Clear branches to a handler that never returns and takes the board down. Set carries on to step 5.</p>
       <p class="dbgp" id="flp-4">Five words are copied into a global before anything else can overwrite them: <b>CCR</b>, <b>CFSR</b>, <b>HFSR</b>, <b>MMFAR</b>, <b>BFAR</b>. <b>MMFAR</b> is the one that matters here &mdash; it holds the address that was refused. Then a flag is set, the processor is put back into privileged mode, and the handler returns into the kernel.</p>
-      <p class="dbgp" id="flp-5">Back in the kernel, one <b>if</b> reads that flag. It takes priority over everything else, and the switch reason comes out as <b>Fault</b>. From here it is chapter 4's story: the board's fault policy decides what it costs, and on the Pico&nbsp;2 that means the whole machine stops.</p>
+      <p class="dbgp" id="flp-5">Back in the kernel, one <b>if</b> reads that flag. It takes priority over everything else, and the switch reason comes out as <b>Fault</b>. From here it is chapter 5's story: the board's fault policy decides what it costs, and on the Pico&nbsp;2 that means the whole machine stops.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that step 4 is where a memory bug in a process and a memory bug in the kernel stop being the same event. One bit of one register decides whether the board keeps running, and the process's own code cannot reach it.</div>
@@ -1627,7 +1627,7 @@ dfn {
       <p class="blkp" id="cbp-2">Inside a HardFault, or an NMI &mdash; a non-maskable interrupt, the one kind the processor will not put off &mdash; the unit does not apply. The handler that runs because a process reached somewhere it should not have runs with the regions switched off. That is exactly what lets it reach into the process's own stack and read out what happened.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice that this is chapter 3's conclusion again, in hardware this time. Nothing here is protecting the board from the kernel. The unit was only ever pointed one way.</div>
+  <div class="instrument-note">Notice that this is chapter 4's conclusion again, in hardware this time. Nothing here is protecting the board from the kernel. The unit was only ever pointed one way.</div>
 </figure>
 
 <section class="col">
@@ -1648,8 +1648,8 @@ dfn {
       <button type="button" id="nt-2" aria-pressed="false">not a checked number</button>
     </div>
     <div class="blksay">
-      <p class="blkp is-on" id="ntp-0">The regions constrain unprivileged code and nothing else. A bug in a capsule can write any address on the chip, exactly as chapter 3 said, and this hardware will not notice. What the unit adds is a second kind of code that the first kind is protected from.</p>
-      <p class="blkp" id="ntp-1">It fences the process, not the process's memory. The kernel reads and writes inside a process's allocation as a matter of course, and chapter 4's three structures live up there. Chapter 7 is entirely about a driver keeping state inside a process. The barrier only ever faces outward.</p>
+      <p class="blkp is-on" id="ntp-0">The regions constrain unprivileged code and nothing else. A bug in a capsule can write any address on the chip, exactly as chapter 4 said, and this hardware will not notice. What the unit adds is a second kind of code that the first kind is protected from.</p>
+      <p class="blkp" id="ntp-1">It fences the process, not the process's memory. The kernel reads and writes inside a process's allocation as a matter of course, and chapter 5's three structures live up there. Chapter 8 is entirely about a driver keeping state inside a process. The barrier only ever faces outward.</p>
       <p class="blkp" id="ntp-2">Eight is a number written by hand. <b>MPU_TYPE</b> would report what the hardware really has, the trait offers a method that reads it, four architectures implement that method, and nothing in the tree calls it. If that hand-written eight and the silicon disagreed, nothing here would say so.</p>
     </div>
   </div>
@@ -1702,23 +1702,23 @@ dfn {
 <section class="col">
   <h2>What you can say now</h2>
   <p id="closing">A process is confined by two pairs of registers inside the processor, checked on every access it makes. The unit holds eight pairs; two is what a process gets. Both are spoken for before it starts: its RAM, read-write and never executable, and its flash, read-execute and never writable. The addresses in those registers are stored in units of 32 bytes, which is the only size rule this chip has, and it rounds in the process's favour.</p>
-  <p>When a process reaches past them the store never happens. A handler works out from one bit whether the kernel or the process was running, records the address that was refused, and hands the decision to the policy chapter 4 described.</p>
+  <p>When a process reaches past them the store never happens. A handler works out from one bit whether the kernel or the process was running, records the address that was refused, and hands the decision to the policy chapter 5 described.</p>
   <p>None of it applies to the kernel. That was never an oversight. It is the shape of the whole design, and it is why the door in this wall has to be built so carefully.</p>
 </section>
 
 <div class="col next">
   <p class="eyebrow forward">Next</p>
-  <h3 style="margin-top:0"><a href="../ch06-asking-the-kernel/">Chapter 6 &mdash; Asking the Kernel</a></h3>
+  <h3 style="margin-top:0"><a href="../ch07-asking-the-kernel/">Chapter 7 &mdash; Asking the Kernel</a></h3>
   <p>A process fenced this tightly cannot print, cannot read a button and cannot wait a second. Everything it does that reaches the world goes through one instruction and eight classes of request. On the way: how a buffer crosses a boundary that exists to stop exactly that.</p>
   <nav class="pager" aria-label="Chapter navigation">
-    <a href="../ch04-what-a-process-is/">&larr;&nbsp;Chapter 4</a>
+    <a href="../ch05-what-a-process-is/">&larr;&nbsp;Chapter 5</a>
     <a href="../">Contents</a>
   </nav>
 </div>
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapters 3 and 4 were pinned to. Hardware claims come from the RP2350 datasheet, build of 2025-07-29.</p>
+  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapters 4 and 5 were pinned to. Hardware claims come from the RP2350 datasheet, build of 2025-07-29.</p>
   <ul>
     <li>What the unit is for, in three lines &mdash; RP2350 datasheet &sect;3.7.4.7: "enforce privilege rules", "separate processes", "manage memory attributes"</li>
     <li>"MPU mismatches and permission violations invoke the MemManage handler" &mdash; the same section</li>
@@ -1800,7 +1800,7 @@ dfn {
 (function () {
   "use strict";
 
-  /* Same shape as chapters 3 and 4: one group of buttons, one group of panels,
+  /* Same shape as chapters 4 and 5: one group of buttons, one group of panels,
      same index. The panel class differs between components only because each
      was styled for its own figure. */
   function group(btn, panel, n, cls, onCls, offCls, extra) {

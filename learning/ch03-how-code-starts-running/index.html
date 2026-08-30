@@ -462,7 +462,7 @@ dfn {
   letter-spacing: .02em;
   color: var(--accent);
 }
-/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
    flex item of every inline child, so an emphasis or a code span inside one
    of these lines came out with a half-rem gap on each side and the
    punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
@@ -740,7 +740,7 @@ dfn {
 
 
 /* ---------- the slider under Figure 5 ----------
-   Borrowed by name from chapters 1 and 5, where these are defined, and a
+   Borrowed by name from chapters 1 and 6, where these are defined, and a
    stylesheet is per page -- so until this block the control rendered as a bare
    input with an unstyled label beside it. */
 .slider-row { display: flex; align-items: center; gap: .7rem; margin-bottom: .7rem;
@@ -880,7 +880,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
 
 <header class="masthead">
   <div class="runhead">
-    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 2</p>
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 3</p>
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>How Code Starts Running</h1>
@@ -1330,17 +1330,17 @@ bl   main</pre></button>
   <h2>So here is the next problem</h2>
   <p>Tock is running. It has the whole chip: every address, every peripheral, and nothing standing in the way &mdash; which is exactly where chapter 1 left off.</p>
   <p>The kernel is not one program, though. It is a core with drivers bolted on, and a driver is where most of the code, and most of the mistakes, live.</p>
-  <p>So the question chapter 3 asks is: when you add a driver, what should it be allowed to touch?</p>
+  <p>So the question chapter 4 asks is: when you add a driver, what should it be allowed to touch?</p>
 </section>
 
 <div class="col">
   <div class="next">
     <p class="next-eyebrow">Next</p>
-    <h3 style="margin-top:0"><a href="../ch03-what-a-driver-may-touch/">Chapter 3 &mdash; What a driver may touch</a></h3>
+    <h3 style="margin-top:0"><a href="../ch04-what-a-driver-may-touch/">Chapter 4 &mdash; What a driver may touch</a></h3>
     <p>Capsules, and the interfaces they are handed. A driver that cannot reach hardware it was not given &mdash; enforced by the type system rather than by the chip.</p>
-    <p>On the way: where the <code>unsafe</code> from chapter 1 lives, and why almost none of Tock needs it.</p>
+    <p>On the way: where the <code>unsafe</code> from chapter 2 lives, and why almost none of Tock needs it.</p>
     <nav class="pager" aria-label="Chapter navigation">
-      <a href="../ch01-everything-is-memory/">&larr;&nbsp;Chapter 1</a>
+      <a href="../ch02-not-a-variable/">&larr;&nbsp;Chapter 2</a>
       <a href="../">Contents</a>
     </nav>
   </div>

@@ -8,7 +8,7 @@
 
     python3 learning/tools/serve.py
 
-`mkbook.py` binds the nine pages into one document; this serves that document
+`mkbook.py` binds the ten pages into one document; this serves that document
 and rebuilds it on every request. A full build is about 0.15 seconds, which is
 under the time it takes a browser to ask, so there is no watcher here and no
 build product to go stale. Edit a chapter, press reload, and the page you get

@@ -25,7 +25,7 @@ Three things have to be reconciled to put nine standalone pages in one DOM:
     nine are byte-identical -- so one copy is hoisted. Everything after them is
     that page's own, and is scoped under its section, which is what lets the
     cover keep its typography while the chapters keep theirs.
-  * **Links point at directories.** `../ch04-what-a-process-is/` becomes
+  * **Links point at directories.** `../ch05-what-a-process-is/` becomes
     `#ch04`, which is also what makes a chapter deep-linkable.
 
     python3 learning/tools/mkbook.py /tmp/book.html
@@ -300,7 +300,7 @@ CHROME_JS = '''
 
 ROUTER = """
 /* ---- the book ----
-   Nine pages in one document, one of them shown. The hash is the page, so a
+   Ten pages in one document, one of them shown. The hash is the page, so a
    chapter is still a link somebody can send, and an id inside a chapter is
    still a link into it -- which is what keeps `#glossary` working.
 
@@ -313,7 +313,7 @@ ROUTER = """
   var OWNER = __OWNER__;
 
   /* Under the gate's DOM shim there is no window to route with. The pages all
-     stay visible there, which is what a test of nine coexisting chapters
+     stay visible there, which is what a test of ten coexisting chapters
      wants anyway. */
   if (typeof window === "undefined" || !window.addEventListener) { return; }
 
@@ -369,7 +369,7 @@ def main(argv):
             print("%s: colour tokens differ from the first page's" % key)
             return 1
 
-        # Directories become fragments before ids do, so that `../ch04-.../`
+        # Directories become fragments before ids do, so that `../ch05-.../`
         # is gone by the time anything looks at what is left.
         body = re.sub(r'href="(?:\.\./)?(ch[^"/]+)/"',
                       lambda m: 'href="#%s"' % where.get(m.group(1), m.group(1)), body)
@@ -462,7 +462,7 @@ def main(argv):
 <style>
 %s
 
-/* One body for nine pages. Each page keeps its own type and spacing, applied
+/* One body for ten pages. Each page keeps its own type and spacing, applied
    to its section rather than to the document. */
 body { margin: 0; background: var(--ground); color: var(--ink); }
 .page[hidden] { display: none; }

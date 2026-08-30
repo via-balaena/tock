@@ -11,8 +11,8 @@
 // than as prose, and a wrong edge there would be a wrong claim about the whole
 // series with nothing to catch it.
 
-var NEEDS = { 0: [], 1: [], 2: [1], 3: [1, 2], 4: [1], 5: [4], 6: [4, 5],
-              7: [3, 4, 6] };
+var NEEDS = { 0: [], 1: [], 2: [1], 3: [1], 4: [1, 3], 5: [1],
+              6: [5], 7: [5, 6], 8: [4, 5, 7] };
 
 function state(n) {
   var node = REG["nd-" + n], out = [];
@@ -39,7 +39,7 @@ function readAll(list) {
 // ---- What a reader with no JavaScript is shown ----
 // The caption is a bordered block with a minimum height, so shipping it empty
 // gave the front page an empty box under the map. The markup has to carry the
-// state the script boots into, which is the same guard chapters 0 and 5 grew.
+// state the script boots into, which is the same guard chapters 0 and 6 grew.
 (function () {
   function shipped(id) {
     var k;
@@ -62,7 +62,7 @@ function readAll(list) {
 // this pairs the third against the map the script actually draws.
 (function () {
   var n, i, needs, missingEdge = [];
-  for (n = 0; n <= 7; n++) {
+  for (n = 0; n <= 8; n++) {
     needs = NEEDS[n];
     for (i = 0; i < needs.length; i++) {
       if (!REG["eg-" + needs[i] + n]) { missingEdge.push(needs[i] + "->" + n); }
@@ -75,39 +75,40 @@ function readAll(list) {
 // ---- Nothing read ----
 readAll([]);
 chk("with nothing read, only the two that stand on nothing are open",
-    [state(0), state(1), state(2), state(3),
-     state(4), state(5), state(6), state(7)].join("|"),
-    "open|open||||||");
-chk("and the count says so", REG["mp-count"].textContent, "0 of 8 marked read");
+    [state(0), state(1), state(2), state(3), state(4),
+     state(5), state(6), state(7), state(8)].join("|"),
+    "open|open|||||||");
+chk("and the count says so", REG["mp-count"].textContent, "0 of 9 marked read");
 
 // ---- Reading chapter 1 opens exactly what stands on it ----
 readAll([1]);
 chk("chapter 1 read", state(1), "done");
-chk("which opens 2 and 4, and nothing else",
-    [state(2), state(3), state(4), state(5), state(6), state(7)].join("|"),
-    "open||open|||");
+chk("which opens 2, 3 and 5, and nothing else",
+    [state(2), state(3), state(4), state(5), state(6), state(7), state(8)].join("|"),
+    "open|open||open|||");
 chk("chapter 0 stays open, because it stands on nothing", state(0), "open");
 chk("the edges out of 1 are now met",
     REG["eg-12"].classList.contains("is-met")
+      && REG["eg-13"].classList.contains("is-met")
       && REG["eg-14"].classList.contains("is-met")
-      && REG["eg-13"].classList.contains("is-met"), true);
+      && REG["eg-15"].classList.contains("is-met"), true);
 chk("and an edge out of a chapter nobody has read is not",
-    REG["eg-45"].classList.contains("is-met"), false);
+    REG["eg-34"].classList.contains("is-met"), false);
 
 // ---- The chapter with three prerequisites ----
-readAll([1, 2, 3, 4]);
-chk("7 is still shut with 6 unread", state(7), "");
-readAll([1, 2, 3, 4, 5]);
-chk("still shut: 6 is the one missing", state(7), "");
-readAll([1, 2, 3, 4, 5, 6]);
-chk("and opens once all three are behind you", state(7), "open");
+readAll([1, 3, 4]);
+chk("8 is still shut with 5 and 7 unread", state(8), "");
+readAll([1, 3, 4, 5]);
+chk("still shut: 7 is the one missing", state(8), "");
+readAll([1, 3, 4, 5, 6, 7]);
+chk("and opens once all three are behind you", state(8), "open");
 
 // ---- The script's own copy of the graph ----
 // The dependency list is written three times: data-needs on each card, the
 // chips a reader sees, and NEEDS inside the page's script. index_checks pairs
 // the first two. Nothing pinned the third -- the edge check above reads this
 // file's copy, and the staged reads above only ever add prerequisites in one
-// order, so dropping chapter 5 out of what chapter 6 needs changed no
+// order, so dropping chapter 6 out of what chapter 7 needs changed no
 // assertion at all. Removing one prerequisite at a time is what catches it,
 // because it is the only arrangement where a missing entry has to show.
 (function () {
@@ -135,10 +136,10 @@ chk("and opens once all three are behind you", state(7), "open");
 // two and not that one -- which is the only way to see that it is listing what
 // is *missing* rather than reprinting the dependency list.
 readAll([1, 4]);
-REG["nd-7"].fire("click");
+REG["nd-8"].fire("click");
 chk("choosing a chapter you cannot start yet says so", saying(), "shut");
 chk("and names the ones still to read, in order",
-    REG["mp-needs"].textContent, " Still to read: 3, 6.");
+    REG["mp-needs"].textContent, " Still to read: 5, 7.");
 chk("a prerequisite already read is not listed as missing",
     REG["mp-needs"].textContent.indexOf("4") > -1, false);
 
@@ -204,11 +205,11 @@ chk("and the card follows that too",
 
 // ---- Hovering a card is the same relation the map draws ----
 readAll([]);
-REG["entry-6"].fire("mouseenter");
+REG["entry-7"].fire("mouseenter");
 chk("hovering a card chooses it", saying(), "shut");
 chk("and lights the cards it stands on",
-    REG["entry-4"].classList.contains("lit")
-      && REG["entry-5"].classList.contains("lit"), true);
+    REG["entry-5"].classList.contains("lit")
+      && REG["entry-6"].classList.contains("lit"), true);
 chk("and not one it does not",
     REG["entry-2"].classList.contains("lit"), false);
 

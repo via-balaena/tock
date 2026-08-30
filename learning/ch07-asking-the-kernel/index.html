@@ -440,7 +440,7 @@ dfn {
   letter-spacing: .02em;
   color: var(--accent);
 }
-/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
    flex item of every inline child, so an emphasis or a code span inside one
    of these lines came out with a half-rem gap on each side and the
    punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
@@ -474,7 +474,7 @@ dfn {
 /* A register name anywhere in a question. All three parts of a card are set
    in the body face, and this chapter's questions are mostly about r0 and r1,
    so leaving them in it would put the same name in two families on one card.
-   Chapter 5's questions name registers as words -- MPU_RBAR, HardFault -- and
+   Chapter 6's questions name registers as words -- MPU_RBAR, HardFault -- and
    its cards are left in the body face on purpose. */
 .q-ask b, .q-opt b, .q-answer b {
   font-family: var(--mono); font-weight: 500; text-transform: none;
@@ -770,7 +770,7 @@ dfn {
 .seq-src { font-family: var(--mono); font-size: .78rem; color: var(--ink-faint); }
 
 /* The panels Figure 6's numbered steps open. Named for the figure in
-   chapter 4 these rules were first written for, and kept because renaming a
+   chapter 5 these rules were first written for, and kept because renaming a
    class across markup, script and assertions buys nothing a comment cannot. */
 .dbgsay { display: flex; flex-direction: column; gap: .45rem; }
 .dbgp {
@@ -796,11 +796,11 @@ dfn {
 
 <header class="masthead">
   <div class="runhead">
-    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 6</p>
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 7</p>
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>Asking the Kernel</h1>
-  <p class="standfirst">Chapter 5 finished a wall. A process may reach its own code and its own memory, and the hardware refuses everything else &mdash; no pin, no timer, no neighbour. So a process cannot switch on a light. There is exactly one way to ask for anything, and it is one instruction wide.</p>
+  <p class="standfirst">Chapter 6 finished a wall. A process may reach its own code and its own memory, and the hardware refuses everything else &mdash; no pin, no timer, no neighbour. So a process cannot switch on a light. There is exactly one way to ask for anything, and it is one instruction wide.</p>
   <noscript>
     <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
@@ -819,7 +819,7 @@ dfn {
       <li>Read one request the way the kernel reads it: four registers, meaning four different things depending on the class.</li>
       <li>Follow one event from inside a driver to a function running inside a process, naming the queue it waited in.</li>
     </ul>
-    <p class="cost">Plan on forty-five minutes. Chapters 4 and 5 are assumed: what a process is, and the fence the hardware puts round it. Chapter 3 comes back at the far end, because the thing that answers a request is the capsule chapter 3 was about.</p>
+    <p class="cost">Plan on forty-five minutes. Chapters 5 and 6 are assumed: what a process is, and the fence the hardware puts round it. Chapter 4 comes back at the far end, because the thing that answers a request is the capsule chapter 4 was about.</p>
   </div>
 </section>
 
@@ -830,7 +830,7 @@ dfn {
 
 <div class="col">
   <dl class="glossary cast" id="words">
-    <dt><dfn>syscall</dfn></dt><dd>The one way a process may ask the kernel for anything at all. Chapter 4 named it; this chapter is the whole of it.</dd>
+    <dt><dfn>syscall</dfn></dt><dd>The one way a process may ask the kernel for anything at all. Chapter 5 named it; this chapter is the whole of it.</dd>
     <dt><dfn>syscall class</dfn></dt><dd>One of eight kinds of request. Which kind is being made is an eight-bit number, and it travels inside the instruction rather than in a register.</dd>
     <dt><dfn>svc</dfn></dt><dd>The Arm instruction that raises an exception deliberately. It carries a process into the kernel, and going the other way it carries the kernel into a process.</dd>
     <dt><dfn>word</dfn></dt><dd>Four bytes, the width this processor moves in one go. The list you are reading calls its entries words in the ordinary sense; everywhere else in this chapter, a word is four bytes.</dd>
@@ -840,13 +840,13 @@ dfn {
     <dt><dfn>subscribe</dfn></dt><dd>The class that leaves a function pointer with the kernel, for it to call when something happens. The driver never sees the pointer, and the kernel keeps it until the process hands over another.</dd>
     <dt><dfn>allowed buffer</dfn></dt><dd>A run of a process's own memory that the process has handed to the kernel to read or write, given as an address and a length.</dd>
     <dt><dfn>yield</dfn></dt><dd>The class that gives the processor back. A process that never calls it never receives anything.</dd>
-    <dt><dfn>upcall</dfn></dt><dd>A call in the other direction: the kernel arranging for one of a process's own functions to run. Chapter 4 found the queue they wait in.</dd>
+    <dt><dfn>upcall</dfn></dt><dd>A call in the other direction: the kernel arranging for one of a process's own functions to run. Chapter 5 found the queue they wait in.</dd>
   </dl>
 </div>
 
 <section class="col">
   <h2>The wall with no door in it</h2>
-  <p id="doorline">Chapter 5 left a process that can reach nothing but itself. That is the whole point of it, and it is also a problem, because a process that can touch only its own memory can compute and do nothing else. It cannot light the LED on the board in front of you. The register that lights it sits at an address the hardware now refuses.</p>
+  <p id="doorline">Chapter 6 left a process that can reach nothing but itself. That is the whole point of it, and it is also a problem, because a process that can touch only its own memory can compute and do nothing else. It cannot light the LED on the board in front of you. The register that lights it sits at an address the hardware now refuses.</p>
   <p id="notaddr">The way out cannot be a second gate in the fence. A gate would be an address the process is allowed to write, and any address a process is allowed to write is one a wrong pointer can reach by accident. What is wanted is an exit no pointer can find.</p>
   <p id="trapline">So the exit is not an address at all. It is an instruction, and its entire job is to stop the process and hand the processor to the kernel. On this chip that instruction is <b>svc</b>, and it is sixteen bits wide: eight of them say <em>svc</em>, and the low eight are a number the program chooses.</p>
   <p id="classline">That number is the syscall class. Not the driver, not the operation, not the argument &mdash; those go in registers. What the instruction itself carries is which of eight kinds of question is being asked.</p>
@@ -875,11 +875,11 @@ dfn {
       <p class="costp" id="svp-0">Class zero, <b>yield</b>, which gives the processor back. It is also the only class whose first register the decoder checks: three values are legal there, and anything else is treated as a broken request rather than a request for something missing.</p>
       <p class="costp is-on" id="svp-1">Class two, <b>command</b>. This is the class the LED request further down uses. It is one of only two classes that reach a driver's own code, and the one the rest of this chapter keeps coming back to.</p>
       <p class="costp" id="svp-2">Class four, the read-only kind of handing memory over. Classes three, four and seven are three flavours of the same idea, which is why the numbers on their own tell you so little.</p>
-      <p class="costp" id="svp-3">Nothing. The kernel converts eight-bit numbers into requests by matching zero through seven, and eight matches nothing, so the conversion returns nothing at all. A request that will not decode ends the process, which is the same ending chapter 5's forbidden store had.</p>
-      <p class="costp" id="svp-4">The kernel's own, going the other way. Tock enters a process by executing <b>svc 0xff</b>, and the comment beside that line says it does not matter which number is used, because nothing reads it. What sorts the two directions apart is a single bit of the link register, which is the same bit chapter 5's fault handler branched on.</p>
+      <p class="costp" id="svp-3">Nothing. The kernel converts eight-bit numbers into requests by matching zero through seven, and eight matches nothing, so the conversion returns nothing at all. A request that will not decode ends the process, which is the same ending chapter 6's forbidden store had.</p>
+      <p class="costp" id="svp-4">The kernel's own, going the other way. Tock enters a process by executing <b>svc 0xff</b>, and the comment beside that line says it does not matter which number is used, because nothing reads it. What sorts the two directions apart is a single bit of the link register, which is the same bit chapter 6's fault handler branched on.</p>
     </div>
   </div>
-  <div class="instrument-note" id="sv-note">Notice where the class number is not. It is not in a register: it is the low byte of an instruction sitting in the process's own flash, which chapter 5 fenced as readable and executable and never writable. A process can get the contents of a request wrong. It cannot corrupt which kind of request it is making.</div>
+  <div class="instrument-note" id="sv-note">Notice where the class number is not. It is not in a register: it is the low byte of an instruction sitting in the process's own flash, which chapter 6 fenced as readable and executable and never writable. A process can get the contents of a request wrong. It cannot corrupt which kind of request it is making.</div>
 </figure>
 
 <section class="col">
@@ -911,7 +911,7 @@ dfn {
       <p class="vtp" id="clp-2">Do something now. This is the class that reaches a driver's own code, and it does so in one line of the kernel: <b>d.command(subdriver_number, arg0, arg1, process.processid())</b>. Everything the driver may answer with is a value or an error.</p>
       <p class="vtp" id="clp-3">Hand over a run of the process's memory for the kernel to read and write. It names a driver, and again the driver never receives it. The kernel checks the address and length against the process's own bounds and files the result.</p>
       <p class="vtp" id="clp-4">The same, for memory the kernel will only read. One thing differs, and it matters: a read-only run may sit in the process's flash, where a read-write one may not. That is how a constant string gets printed.</p>
-      <p class="vtp" id="clp-5">Ask about, or move, the edges of the process's own memory, which the core kernel answers alone. Twelve operations numbered 0 to 11: two move the break chapter 4 named, five report where its own memory and flash begin and end, and the rest concern writeable flash and debugging.</p>
+      <p class="vtp" id="clp-5">Ask about, or move, the edges of the process's own memory, which the core kernel answers alone. Twelve operations numbered 0 to 11: two move the break chapter 5 named, five report where its own memory and flash begin and end, and the rest concern writeable flash and debugging.</p>
       <p class="vtp" id="clp-6">Stop, and the last of the three the core kernel answers by itself. Two variants, terminate and restart, with a completion code beside them. Anything other than those two variants comes back as an ordinary unsupported-operation error, which the process is still running to read.</p>
       <p class="vtp" id="clp-7">The third flavour of handing memory over, where the process keeps reading it while the kernel writes. This is the one other class that reaches a method on the driver, and exactly one capsule in the tree implements that method.</p>
     </div>
@@ -921,7 +921,7 @@ dfn {
 
 <section class="col">
   <h2>Turning on the light</h2>
-  <p id="ledline">Chapter 3 left a request half-finished on purpose. A process asks for its first LED to be turned on; chapter 3 picked the request up on the kernel's side, inside the capsule, and left the crossing for here. Here is the crossing, and on this board it is five instructions and a return.</p>
+  <p id="ledline">Chapter 4 left a request half-finished on purpose. A process asks for its first LED to be turned on; chapter 4 picked the request up on the kernel's side, inside the capsule, and left the crossing for here. Here is the crossing, and on this board it is five instructions and a return.</p>
   <p id="ledreq">The LED driver's number is <code>0x00002</code>. Command number 1 means turn one on, and the argument beside it says which one. So the request is four numbers in four registers, and then the instruction that sends them:</p>
   <pre class="asm" id="ledasm"><code>2002      movs r0, #2      <span class="asm-c">// driver number: the LED driver</span>
 2101      movs r1, #1      <span class="asm-c">// command number: on</span>
@@ -965,7 +965,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 <section class="col">
   <h2>What a driver is actually asked</h2>
   <p id="traitline">Five classes begin with a driver number, so it would be reasonable to expect a driver to have five things to implement. The trait every driver implements has three methods, and only two of them are requests.</p>
-  <p id="threemeth">One is <b>command</b>. One is the seventh class, the shared-buffer flavour, which exactly one capsule in the tree uses. The third is not a request at all: it is the kernel asking a capsule to set aside its per-process storage, which is chapter 7's subject and appears here only as the method's name.</p>
+  <p id="threemeth">One is <b>command</b>. One is the seventh class, the shared-buffer flavour, which exactly one capsule in the tree uses. The third is not a request at all: it is the kernel asking a capsule to set aside its per-process storage, which is chapter 8's subject and appears here only as the method's name.</p>
 </section>
 
 <figure class="instrument">
@@ -986,7 +986,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <p class="blkp" id="tmp-2">Not a request. The kernel calls it when a subscribe or an allow needs filing for a process that has never used this driver before. It has to ask, because only the capsule knows how large its own per-process storage is. It is the one method with no default, so a driver author cannot forget it silently.</p>
     </div>
   </div>
-  <div class="instrument-note" id="tm-note">Notice what is absent. There is no subscribe method and no read-write allow method, so a driver cannot see the function pointer a process registered and cannot be handed the buffer a process offered. The core kernel takes both, checks both, and files both. Chapter 3 said a capsule reaches only what it was handed; this is the same rule one level up, applied to what a process hands it.</div>
+  <div class="instrument-note" id="tm-note">Notice what is absent. There is no subscribe method and no read-write allow method, so a driver cannot see the function pointer a process registered and cannot be handed the buffer a process offered. The core kernel takes both, checks both, and files both. Chapter 4 said a capsule reaches only what it was handed; this is the same rule one level up, applied to what a process hands it.</div>
 </figure>
 
 <section class="col">
@@ -1030,7 +1030,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
   <h2>Things that do not finish</h2>
   <p id="splitline">Turning on an LED finishes inside the call. The pin is high before the process runs again, and Figure 5 showed what that comes back as: a success with nothing in it. Most of what a process wants is not like that. A byte from the console arrives when somebody types it, and no amount of waiting inside a driver will make that sooner.</p>
   <p id="twoparts">So a request that cannot finish is split in two. First <b>subscribe</b>, leaving a function pointer with the kernel. Then <b>command</b>, which starts the work and returns immediately, having promised nothing except that it started. Later the driver has something, and asks the kernel to run that function.</p>
-  <p id="queueline">The kernel cannot. The process is not running, and even if it were, interrupting it to run one of its own functions would land a callback in the middle of whatever else it was doing. So the kernel writes down an upcall instead: which function, which three values, and which subscription it answers. Chapter 4 found where those upcalls go: room for ten of them, a constant belonging to the process implementation rather than to any board. This is what fills it.</p>
+  <p id="queueline">The kernel cannot. The process is not running, and even if it were, interrupting it to run one of its own functions would land a callback in the middle of whatever else it was doing. So the kernel writes down an upcall instead: which function, which three values, and which subscription it answers. Chapter 5 found where those upcalls go: room for ten of them, a constant belonging to the process implementation rather than to any board. This is what fills it.</p>
 </section><div class="col">
   <div class="bet" id="bet-upcall">
     <p class="bet-q" id="bet-upcall-q">A driver has something for a process &mdash; a byte arrived. The process is running right now, in the middle of its own code. When does the process's callback run?</p>
@@ -1153,8 +1153,8 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 <section class="col">
   <h2>A buffer through the wall</h2>
   <p id="bufline">A command hands a driver two words of data and nothing more. A line of text to print is not two numbers, and neither is a reading to be filled in. For anything larger the process hands over a piece of its own memory: an address and a length, in a class made for it. What the kernel ends up holding is an allowed buffer, and the classes that make one are three of the eight.</p>
-  <p id="consentline">Which sounds like exactly what chapter 5's fence exists to prevent, and is not. The fence stops a process reaching out. This is a process letting the kernel reach in, and the kernel runs on the privileged side, where chapter 5's regions do not apply at all. It could read that memory unasked. What the class buys is not access. It is a record of consent, with the bounds checked.</p>
-  <p id="checkline">The check is software this time, in the process implementation rather than in the processor, and it lands on the same two addresses. The buffer must start at or after the start of the process's memory, and end at or before its break. Those are the two numbers chapter 5 wrote into a hardware register to build the region; here they are compared in Rust to answer a different question about the same span.</p>
+  <p id="consentline">Which sounds like exactly what chapter 6's fence exists to prevent, and is not. The fence stops a process reaching out. This is a process letting the kernel reach in, and the kernel runs on the privileged side, where chapter 6's regions do not apply at all. It could read that memory unasked. What the class buys is not access. It is a record of consent, with the bounds checked.</p>
+  <p id="checkline">The check is software this time, in the process implementation rather than in the processor, and it lands on the same two addresses. The buffer must start at or after the start of the process's memory, and end at or before its break. Those are the two numbers chapter 6 wrote into a hardware register to build the region; here they are compared in Rust to answer a different question about the same span.</p>
 </section><div class="col">
   <div class="bet" id="bet-mark">
     <p class="bet-q" id="bet-mark-q">A process hands the kernel a buffer near the top of its heap, then finishes with it and wants its heap space back. Can it move its break down past where that buffer was?</p>
@@ -1230,7 +1230,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <p class="abp" id="abp-flash">Accepted, and only because it is read-only. A read-write offer is checked against the process's memory alone; a read-only one is checked against its memory or its flash, and a constant string lives in flash. This is how printing a literal works without copying it into RAM first. The mark does not move, because nothing in flash is memory the break can be dragged over.</p>
       <p class="abp" id="abp-zero">Accepted with no comparison made at all, deliberately, whatever address it names. A length of zero is how a process takes a buffer back: it replaces whatever the driver held with something that cannot be read or written, so no address could make it unsafe.</p>
       <p class="abp" id="abp-rwflash">Refused. Flash is not memory the kernel will write, so a read-write offer is only ever checked against the process's RAM, and a flash address fails that floor before anything else is asked. Offer the same run as read-only and it is accepted.</p>
-      <p class="abp" id="abp-ceiling">Refused, with an invalid-argument error, and nothing about the fence in chapter 5 was involved. The comparison is arithmetic on two pointers, made before any handle exists, and the same comparison refuses a length so large that adding it wrapped around the end of the address space.</p>
+      <p class="abp" id="abp-ceiling">Refused, with an invalid-argument error, and nothing about the fence in chapter 6 was involved. The comparison is arithmetic on two pointers, made before any handle exists, and the same comparison refuses a length so large that adding it wrapped around the end of the address space.</p>
       <p class="abp" id="abp-floor">Refused, because the run starts below the floor. Both checks ask this first, and the address here is beneath the start of anything this process owns.</p>
     </div>
   </div>
@@ -1255,7 +1255,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <button type="button" id="rf-2" aria-pressed="false">command to driver 3</button>
     </div>
     <div class="blksay">
-      <p class="blkp is-on" id="rfp-0">There is no class 8. The step that turns four registers and a number into a request matches 0 through 7 and returns nothing for anything else, and the caller turns that nothing into a fault. The process is stopped, and the board's policy decides what stopping means, exactly as in chapter 5.</p>
+      <p class="blkp is-on" id="rfp-0">There is no class 8. The step that turns four registers and a number into a request matches 0 through 7 and returns nothing for anything else, and the caller turns that nothing into a fault. The process is stopped, and the board's policy decides what stopping means, exactly as in chapter 6.</p>
       <p class="blkp" id="rfp-1">The same ending, one step further in. Yield is the only class whose first register the decoder validates: 0, 1 and 2 are the three variants, and a 3 there makes the whole request undecodable rather than unsupported. The class was real, the argument was not, and the result is a stopped process either way.</p>
       <p class="blkp" id="rfp-2">An answer. The request decoded, the class exists, the board looked 3 up and had nothing there, so a no-such-device error goes back in <b>r1</b> and the process keeps running. Nothing is faulted, because nothing was malformed &mdash; the process asked a well-formed question about something absent.</p>
     </div>
@@ -1302,7 +1302,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
       <button type="button" class="q-opt" id="qd-1" aria-pressed="false">The buffer sits in flash, which a driver may not write</button>
       <button type="button" class="q-opt" id="qd-2" aria-pressed="false">A driver is never handed it &mdash; the core kernel checks it and files it</button>
     </div>
-    <p class="q-answer" id="qdn">The third. There is no method on the trait through which a read-write buffer could arrive, so the question of holding one does not come up. The first answer is the one to be careful with: the unit really does not refuse it, because a driver runs privileged and chapter 5's regions were never pointed at the kernel.</p>
+    <p class="q-answer" id="qdn">The third. There is no method on the trait through which a read-write buffer could arrive, so the question of holding one does not come up. The first answer is the one to be careful with: the unit really does not refuse it, because a driver runs privileged and chapter 6's regions were never pointed at the kernel.</p>
   </div>
 </div>
 
@@ -1315,17 +1315,17 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 
 <div class="col next">
   <p class="eyebrow forward">Next</p>
-  <h3 style="margin-top:0"><a href="../ch07-grants/">Chapter 7 &mdash; Grants</a></h3>
-  <p>Chapter 7 is entirely about that place. A driver keeps state for each process that uses it, inside that process's own memory, bounded, with nothing that can be asked for more. It is the last thing chapter 1 promised, and the reason this series needed seven chapters rather than five.</p>
+  <h3 style="margin-top:0"><a href="../ch08-grants/">Chapter 8 &mdash; Grants</a></h3>
+  <p>Chapter 8 is entirely about that place. A driver keeps state for each process that uses it, inside that process's own memory, bounded, with nothing that can be asked for more. It is the last thing chapter 2 promised, and the reason this series needed seven chapters rather than five.</p>
   <nav class="pager" aria-label="Chapter navigation">
-    <a href="../ch05-the-memory-protection-unit/">&larr;&nbsp;Chapter 5</a>
+    <a href="../ch06-the-memory-protection-unit/">&larr;&nbsp;Chapter 6</a>
     <a href="../">Contents</a>
   </nav>
 </div>
 
 <section class="col sources">
   <h3>Everything above, checked against source</h3>
-  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapters 3, 4 and 5 were pinned to. The instruction encodings in Figure 1 and in the listing were assembled rather than looked up, from <code>syscall-demo.s</code> beside this page.</p>
+  <p>Every claim on this page comes from the Tock tree at commit <code>83bad9388</code>, the same commit chapters 4, 5 and 6 were pinned to. The instruction encodings in Figure 1 and in the listing were assembled rather than looked up, from <code>syscall-demo.s</code> beside this page.</p>
   <ul>
     <li>The eight classes and their numbers &mdash; <code>SyscallClass</code>, <code>kernel/src/syscall.rs</code>:87&ndash;96, converted from a byte at :101&ndash;116</li>
     <li>The file's own opening line saying six, three lines before it describes a seventh &mdash; the same file, :9&ndash;22</li>
@@ -1337,7 +1337,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <li>The class number coming out of the instruction rather than a register &mdash; the same file, :478&ndash;497, stepping the program counter back one halfword and masking the low eight bits</li>
     <li>The arguments travelling in <b>r0</b> to <b>r3</b> and the class identifier travelling in the instruction &mdash; <code>doc/reference/trd104-syscalls.md</code>:103&ndash;108, where the row for the class identifier says <code>svc</code> rather than a register</li>
     <li>The kernel entering a process with the same instruction, and the number there meaning nothing &mdash; <code>arch/cortex-v7m/src/lib.rs</code>:293&ndash;298, "It doesn't matter which SVC number we use here as it is not used in the exception handler"</li>
-    <li>One bit of the link register sorting the two directions apart &mdash; the same file, :73&ndash;82, the same bit chapter 5's fault handler branched on</li>
+    <li>One bit of the link register sorting the two directions apart &mdash; the same file, :73&ndash;82, the same bit chapter 6's fault handler branched on</li>
     <li>That handler being this board's, so the bit above is the one this board branches on &mdash; <code>arch/cortex-m33/src/lib.rs</code>:47, where the Cortex-M33 takes the v7-M one</li>
     <li>The frame being eight words &mdash; <code>arch/cortex-m/src/syscall.rs</code>:195&ndash;196, "Space for 8 u32s: r0-r3, r12, lr, pc, and xPSR"</li>
     <li>Three classes a board's request filter is never shown &mdash; <code>kernel/src/kernel.rs</code>:761&ndash;771</li>
@@ -1354,7 +1354,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
     <li>The upcall's fourth argument being the word the process passed at subscribe time &mdash; <code>encode_upcall_trd104_ptr</code>, the same file, :649&ndash;663, and <code>argument3: self.appdata</code> at <code>kernel/src/upcall.rs</code>:188</li>
     <li>A driver scheduling a call by number, with three values &mdash; <code>schedule_upcall</code>, <code>kernel/src/grant.rs</code>:610&ndash;614</li>
     <li>The upcall being built and queued &mdash; <code>kernel/src/upcall.rs</code>:183&ndash;190, into <code>enqueue_task</code> at <code>kernel/src/process_standard.rs</code>:598, which returns out-of-memory on a full ring at :625&ndash;628</li>
-    <li>Ten slots &mdash; <code>CALLBACK_LEN</code>, the same file, :1729, the constant chapter 4 named</li>
+    <li>Ten slots &mdash; <code>CALLBACK_LEN</code>, the same file, :1729, the constant chapter 5 named</li>
     <li>Upcalls being delivered only to a process that has yielded &mdash; <code>kernel/src/kernel.rs</code>:602&ndash;628</li>
     <li>Exactly one upcall per yield, because delivering it puts the process back into the running state &mdash; <code>set_process_function</code>, <code>kernel/src/process_standard.rs</code>:1483&ndash;1515, setting <code>State::Running</code> at :1514</li>
     <li>The frame being edited so the process resumes at the function &mdash; <code>set_process_function</code>, <code>arch/cortex-m/src/syscall.rs</code>:364&ndash;418, with "In effect, this converts <code>svc</code> into <code>bl callback</code>" at :375 and the writes at :404&ndash;418</li>
@@ -1425,7 +1425,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 (function () {
   "use strict";
 
-  /* Same shape as chapters 3, 4 and 5: one group of buttons, one group of
+  /* Same shape as chapters 4, 5 and 6: one group of buttons, one group of
      panels, same index. The panel class differs between components only
      because each was styled for its own figure. */
   function group(btn, panel, n, cls, onCls, offCls, extra) {
@@ -1760,7 +1760,7 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
         }(i));
       }
     }
-    // Positions spread on purpose. Chapter 5's were 1, 2, 0, 1; repeating a
+    // Positions spread on purpose. Chapter 6's were 1, 2, 0, 1; repeating a
     // sequence across chapters is a pattern a reader can play rather than
     // think through, so these are 2, 1, 0, 2.
     quiz("qa-", 3, 2, "qan");

@@ -457,7 +457,7 @@ dfn {
   letter-spacing: .02em;
   color: var(--accent);
 }
-/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
    flex item of every inline child, so an emphasis or a code span inside one
    of these lines came out with a half-rem gap on each side and the
    punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
@@ -884,11 +884,11 @@ dfn {
 
 <header class="masthead">
   <div class="runhead">
-    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 3</p>
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter 4</p>
     <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
   </div>
   <h1>What a Driver May Touch</h1>
-  <p class="standfirst">Chapter 2 left the kernel running and holding the whole chip. Every address, every peripheral, nothing standing in the way. Then you add a driver. This chapter is about how much of that the driver gets, and the answer turns out to be one field.</p>
+  <p class="standfirst">Chapter 3 left the kernel running and holding the whole chip. Every address, every peripheral, nothing standing in the way. Then you add a driver. This chapter is about how much of that the driver gets, and the answer turns out to be one field.</p>
   <noscript>
     <style>.dothis, .ifjs { display: none; }</style>
     <p class="noscript-note">JavaScript appears to be off. Every explanation
@@ -908,7 +908,7 @@ dfn {
       <li>Say what a driver can still do to you anyway, and why the compiler has nothing to say about it.</li>
       <li>Say why a call that every layer honoured can still leave the pin exactly where it was.</li>
     </ul>
-    <p class="cost">Plan on forty minutes. Chapters 1 and 2 are assumed: what an address is, what a store does, and how the kernel got started. So is enough Rust to read a <dfn>struct</dfn> with a lifetime and a type parameter on it, which the Rust Book reaches in its chapter 10.</p>
+    <p class="cost">Plan on forty minutes. Chapters 1 and 3 are assumed: what an address is, what a store does, and how the kernel got started. So is enough Rust to read a <dfn>struct</dfn> with a lifetime and a type parameter on it, which the Rust Book reaches in its chapter 10.</p>
   </div>
 </section>
 
@@ -933,10 +933,10 @@ dfn {
 
 <section class="col">
   <h2>The kernel has everything. A driver should not.</h2>
-  <p>Chapter 2 ended with Tock running and holding the entire machine: every address, every peripheral, and nothing in the way &mdash; which is exactly where chapter 1 left off.</p>
+  <p>Chapter 3 ended with Tock running and holding the entire machine: every address, every peripheral, and nothing in the way &mdash; which is exactly where chapter 1 left off.</p>
   <p>That is defensible for the kernel. It is thirty-two thousand lines, and every one of them is read by people who work on Tock itself.</p>
   <p id="wordpair">Tock calls them capsules, and this chapter uses both words for the same thing: the crate is named one and the job is the other.</p>
-  <p>Drivers are a different proposition. There are eighty-eight thousand lines of them, they are written one board at a time, and they are what a newcomer writes first. So the question chapter 2 ended on: when you add a driver, what should it be <em>allowed to touch</em>?</p>
+  <p>Drivers are a different proposition. There are eighty-eight thousand lines of them, they are written one board at a time, and they are what a newcomer writes first. So the question chapter 3 ended on: when you add a driver, what should it be <em>allowed to touch</em>?</p>
   <p>The usual answer is a rule and a code review. Here is what you may do; please do not do the other thing. Tock's answer is different, and it is the subject of this chapter. A driver reaches less than the kernel not because it agreed to, but because there is no way to write down the thing it would reach.</p>
 </section>
 
@@ -1102,9 +1102,9 @@ dfn {
     </div>
     <div class="costsay">
       <p class="costp is-on" id="arp-0">Eighty-eight thousand lines of drivers, and the word appears five times &mdash; every one of them inside a comment. Five crates make up this directory, and all five open with <b>#![forbid(unsafe_code)]</b>.</p>
-      <p class="costp" id="arp-1">The scheduler, the syscall layer, and the code that starts and stops processes. Notice what is not in that list: there is no allocator. The kernel is <b>no_std</b> and never asks for memory it did not already have, which is the problem chapter 7 is about.</p>
+      <p class="costp" id="arp-1">The scheduler, the syscall layer, and the code that starts and stops processes. Notice what is not in that list: there is no allocator. The kernel is <b>no_std</b> and never asks for memory it did not already have, which is the problem chapter 8 is about.</p>
       <p class="costp" id="arp-2">Fourteen files describing one chip. Eighteen of the twenty-four are the same line with a different number in it, and Figure 5 is those eighteen.</p>
-      <p class="costp" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 2, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
+      <p class="costp" id="arp-3">Everything specific to a Cortex-M processor rather than to the RP2350: the vector table from chapter 3, the fault handlers, the register saving. Shared by every Arm board Tock supports.</p>
       <p class="costp" id="arp-4">Four, and all four are <b>unsafe fn</b> declarations rather than blocks: panic_fmt, get_peripherals, setup, and main. They are the entry points something outside Rust calls, plus the one this board offers to the Pico 2&nbsp;W crate that builds on it.</p>
     </div>
   </div>
@@ -1114,7 +1114,7 @@ dfn {
 <section class="col">
   <h2>The chain, end to end</h2>
   <p id="bridge">The answer is twelve lines, and Figure 5 is those twelve. They read better after seeing what stands on top of them, so take one call from the top and follow it all the way down.</p>
-  <p>A process asks for its first LED to be turned on. How that request crosses from the process into the kernel is chapter 6; pick it up on the kernel's side, in the capsule.</p>
+  <p>A process asks for its first LED to be turned on. How that request crosses from the process into the kernel is chapter 7; pick it up on the kernel's side, in the capsule.</p>
 </section>
 
 <figure class="instrument">
@@ -1431,7 +1431,7 @@ dfn {
 </section>
 
 <section class="col">
-  <p>Memory safety, then, and not good behaviour. That is the whole of what a type system was ever going to give, and it is why chapter 4 is about code the kernel does not compile at all.</p>
+  <p>Memory safety, then, and not good behaviour. That is the whole of what a type system was ever going to give, and it is why chapter 5 is about code the kernel does not compile at all.</p>
 </section>
 
 <section class="col">
@@ -1446,7 +1446,7 @@ dfn {
       <button type="button" class="q-opt" id="qa-1" aria-pressed="false">A different HIL trait, handed over by the board</button>
       <button type="button" class="q-opt" id="qa-2" aria-pressed="false">Permission from the kernel, checked at run time</button>
     </div>
-    <p class="q-answer" id="qan">A raw pointer, and the crate will not compile one. No HIL offers a raw register either, and the kernel is not asked at run time &mdash; the refusal happens at build time. Chapter 1 adds a second reason: that register is write-only, so even the chip layer is promised nothing by reading it.</p>
+    <p class="q-answer" id="qan">A raw pointer, and the crate will not compile one. No HIL offers a raw register either, and the kernel is not asked at run time &mdash; the refusal happens at build time. Chapter 2 adds a second reason: that register is write-only, so even the chip layer is promised nothing by reading it.</p>
   </div>
   <div class="q">
     <p class="q-ask">Which of the six steps in Figure 4 first knows the chip is an RP2350?</p>
@@ -1485,10 +1485,10 @@ dfn {
 
 <div class="col next">
   <p class="eyebrow forward">Next</p>
-  <h3 style="margin-top:0"><a href="../ch04-what-a-process-is/">Chapter 4 &mdash; What a process is</a></h3>
+  <h3 style="margin-top:0"><a href="../ch05-what-a-process-is/">Chapter 5 &mdash; What a process is</a></h3>
   <p>A capsule is compiled with the kernel and cannot reach past its own fields. A process is a separate binary that the kernel has never seen, written by somebody else, possibly hostile. On the way: what a process actually is in flash and in memory, and what the isolation costs to run.</p>
   <nav class="pager" aria-label="Chapter navigation">
-    <a href="../ch02-how-code-starts-running/">&larr;&nbsp;Chapter 2</a>
+    <a href="../ch03-how-code-starts-running/">&larr;&nbsp;Chapter 3</a>
     <a href="../">Contents</a>
   </nav>
 </div>

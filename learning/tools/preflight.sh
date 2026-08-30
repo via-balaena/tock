@@ -93,7 +93,7 @@ else
     bad "rustfmt --check"
 fi
 
-step "The book, which is nine pages sharing one DOM"
+step "The book, which is ten pages sharing one DOM"
 if BOOK_OUT="$(python3 learning/tools/mkbook.py "$(mktemp -t book).html" 2>&1)"; then
     ok "$(printf '%s' "$BOOK_OUT" | head -n 1 | sed 's/^ *//')"
 else

@@ -4,8 +4,8 @@
 //
 // Behavioural assertions for chapter 5, run by check.py under JavaScriptCore.
 
-// Same helpers as chapters 3 and 4: every figure here is one row of buttons and
-// one row of panels sharing an index, built by one function. That is a single
+// Same helpers as chapter 4: every figure here is one row of buttons and one
+// row of panels sharing an index, built by one function. That is a single
 // point of failure, so each figure is walked separately rather than once.
 function onlyOne(prefix, n, cls) {
   var i, lit = 0;
@@ -38,7 +38,7 @@ function walk(btn, panel, n, name) {
 // marked wrong rather than quietly corrected. Asserted per bet, and swept, so
 // a bet added later without an explanation is caught.
 (function () {
-  var BETS = [["bet-round", 4], ["bet-eight", 4]];
+  var BETS = [["bet-walk", 4], ["bet-args", 4]];
   function opts(name, n) {
     var i, out = [];
     for (i = 0; i < n; i++) { out.push(REG[name + "-o" + i]); }
@@ -109,879 +109,657 @@ function walk(btn, panel, n, name) {
   chk(name + ": with its own reasoning shown", shown(name, n), String(correct));
 }());
 
-// ---- What a reader with no JavaScript is shown ----
-// Every readout below ships a value in the markup and is overwritten by the
-// script at load. That makes the markup's copy invisible to every other
-// assertion here, and wrong for the only reader who ever sees it: the one with
-// scripting off. Figure 8 shipped exactly that defect -- a switch reading 0
-// over a sentence describing a 1 -- and nothing caught it.
-//
-// This runs before anything is clicked, so what the script has computed is
-// still the opening state, and comparing the two is the whole check.
-(function () {
-  // PAGE_TEXT is a raw global rather than one of the scoped proxies, so in the
-  // assembled book its keys carry a chNN-- prefix and a literal lookup finds
-  // nothing at all. Match on the suffix, and treat "not found" as a failure
-  // rather than as a pass.
-  function shipped(id) {
-    var k;
-    for (k in PAGE_TEXT) {
-      if (k === id || k.slice(-(id.length + 2)) === "--" + id) {
-        return PAGE_TEXT[k];
-      }
-    }
-    return null;
-  }
-  var LIVE = [
-    // figure 2, the register builder
-    "rb-hex", "rl-hex", "rb-base", "rb-sh", "rb-ap", "rb-xn",
-    "rl-limit", "rl-pxn", "rl-idx", "rl-en", "bench-size-badge",
-    "rb-decode", "rl-decode", "rg-decode",
-    // figure 3, the region and the probe
-    "brk-badge", "ro-grant", "ro-waste", "ro-last", "ro-rlar", "probe-badge",
-    // figure 1, the access
-    "ac-who",
-    // figure 5, the rack
-    "rk-count", "rw-2", "rw-7",
-    // figure 6, the two chips
-    "cmp-badge", "cmp-a8", "cmp-a7", "cmp-g8", "cmp-g7",
-    "cmp-s8", "cmp-s7", "cmp-l8", "cmp-l7",
-    // figure 7, the fault
-    "mx-who", "mx-mode", "mx-mmfar", "mx-flag", "fl-at",
-    // figure 8, the control bits
-    "ctrl-hex", "swv-en", "swv-priv", "swv-hf"
-  ];
-  var i, id, was, now, bad = [];
-  for (i = 0; i < LIVE.length; i++) {
-    id = LIVE[i];
-    was = shipped(id);
-    now = REG[id].textContent;
-    if (was === null) { bad.push(id + " (no markup text)"); continue; }
-    if (was !== now) { bad.push(id + ": markup " + was + ", script " + now); }
-  }
-  chk("every readout's markup value is the one the script computes at load",
-      bad.join(" | "), "");
-}());
-
 // ---- No figure may boot empty ----
 // Most readers never click, so a figure that opens on "choose something"
 // teaches nothing. Checked first, because everything below moves these.
-chk("figure 1 opens on when the check happens", REG["ck-0"].getAttribute("aria-pressed"), "true");
-chk("figure 2 opens on the base field", REG["rf-0"].getAttribute("aria-pressed"), "true");
-chk("figure 3 opens on a verb rather than on nothing", REG["vb-0"].getAttribute("aria-pressed"), "true");
-chk("figure 4 opens on the first permission", REG["pm-0"].getAttribute("aria-pressed"), "true");
-chk("figure 5 opens on region 0", REG["rn-0"].getAttribute("aria-pressed"), "true");
-chk("figure 6 opens on this board's chip", REG["tc-0"].getAttribute("aria-pressed"), "true");
-chk("figure 7 opens on the refused store", REG["fl-0"].getAttribute("aria-pressed"), "true");
-chk("figure 8 opens on the enable bit", REG["cb-0"].getAttribute("aria-pressed"), "true");
-chk("figure 9 opens on the kernel", REG["nt-0"].getAttribute("aria-pressed"), "true");
+chk("figure 1 opens on a question", REG["tw-0"].getAttribute("aria-pressed"), "true");
+chk("figure 2 opens on the version field", REG["hd-0"].getAttribute("aria-pressed"), "true");
+chk("figure 3 opens on the first step", REG["wk-0"].getAttribute("aria-pressed"), "true");
+chk("figure 4 opens on the bootloader", REG["rg-0"].getAttribute("aria-pressed"), "true");
+chk("figure 7 opens on the control block", REG["ks-0"].getAttribute("aria-pressed"), "true");
+chk("figure 8 opens on the first option", REG["pl-0"].getAttribute("aria-pressed"), "true");
+chk("figure 9 opens on argument 0", REG["ag-0"].getAttribute("aria-pressed"), "true");
+chk("figure 10 opens on Running", REG["ps-0"].getAttribute("aria-pressed"), "true");
+chk("figure 11 opens on the Pico 2", REG["fp-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
-    REG["ckp-0"].classList.contains("is-on")
-      && REG["rfp-0"].classList.contains("is-on")
-      && REG["vdp-0"].classList.contains("is-on")
-      && REG["pmp-0"].classList.contains("is-on")
-      && REG["rnp-0"].classList.contains("is-on")
-      && REG["tcp-0"].classList.contains("is-on")
-      && REG["flp-0"].classList.contains("is-on")
-      && REG["cbp-0"].classList.contains("is-on")
-      && REG["ntp-0"].classList.contains("is-on"), true);
+    REG["twp-0"].classList.contains("is-on")
+      && REG["hdp-0"].classList.contains("is-on")
+      && REG["wkp-0"].classList.contains("is-on")
+      && REG["rgp-0"].classList.contains("is-on")
+      && REG["ksp-0"].classList.contains("is-on")
+      && REG["plp-0"].classList.contains("is-on")
+      && REG["agp-0"].classList.contains("is-on")
+      && REG["psp-0"].classList.contains("is-on")
+      && REG["fpp-0"].classList.contains("is-on"), true);
 
-// ---- Figure 1: what the unit is asked ----
-// The one gesture the chapter turns on: nothing about the access changes, and
-// the answer does.
+// Figure 6 is the deliberate exception. Seven boundaries, and the one the
+// reader needs is the one the process itself can move, not the topmost.
+chk("figure 6 opens on app_break rather than the top",
+    REG["mm-2"].getAttribute("aria-pressed"), "true");
+chk("and not on the first line", REG["mm-0"].getAttribute("aria-pressed"), "false");
+chk("the app_break panel is the open one", REG["mmp-2"].classList.contains("is-on"), true);
+chk("and it is the one that gives the thirty-two",
+    REG["mmp-2"].textContent.indexOf("thirty-two bytes") > -1, true);
+
+// ---- Figure 1: capsule against process ----
+walk("tw-", "twp-", 5, "figure 1");
+// Every panel has to answer for both sides, or the figure is a list about
+// processes with a capsule mentioned. The imperative promises two answers.
 (function () {
-  chk("it opens with a process making the store", REG["ac-who"].textContent, "a process");
-  chk("and the store refused", REG["f1-no"].classList.contains("is-off"), false);
-  chk("with the out-of-range reason", REG["f1p-0"].classList.contains("is-off"), false);
+  var i, both = 0, text;
+  for (i = 0; i < 5; i++) {
+    text = REG["twp-" + i].textContent;
+    if (text.indexOf("Capsule:") > -1 && text.indexOf("Process:") > -1) { both++; }
+  }
+  chk("all five panels answer for a capsule and for a process", both, 5);
+}());
+chk("the language row is where C and assembly could go",
+    REG["twp-1"].textContent.indexOf("anything at all") > -1, true);
+chk("and the last row is the one chapter 4 ended on",
+    REG["twp-4"].textContent.indexOf("timeslice") > -1, true);
+REG["tw-0"].fire("click");
+chk("clicking back to the first releases the others",
+    onlyOne("twp-", 5, "is-on") + REG["tw-1"].getAttribute("aria-pressed"), "1false");
 
-  REG["who-kern"].fire("click");
-  chk("the same store by the kernel is allowed",
-      REG["f1-yes"].classList.contains("is-off"), false);
-  chk("and refused is put away", REG["f1-no"].classList.contains("is-off"), true);
-  chk("the who row is the only thing that moved", REG["ac-who"].textContent, "the kernel");
-  chk("and the reason names the map privileged code keeps",
-      REG["f1p-1"].textContent.indexOf("default memory map") > -1, true);
-  chk("the panel is marked allowed",
-      REG["f1-verdict"].classList.contains("is-allowed"), true);
+// ---- Figure 2: the sixteen bytes ----
+walk("hd-", "hdp-", 5, "figure 2");
+// The five offsets are the argument. Each field has to start where the one
+// before it ended, and the five together have to come to sixteen bytes -- the
+// number the prose, the heading and the parser's own floor all depend on.
+(function () {
+  var SPAN = [[0, 1], [2, 3], [4, 7], [8, 11], [12, 15]];
+  var i, at = 0, text, want;
+  for (i = 0; i < SPAN.length; i++) {
+    if (SPAN[i][0] !== at) {
+      throw new Error("field " + i + " starts at " + SPAN[i][0] +
+                      ", but the one before it ended at " + (at - 1));
+    }
+    want = SPAN[i][0] + "-" + SPAN[i][1];
+    text = REG["hd-" + i].textContent.replace("\u2013", "-");
+    if (text.indexOf(want) < 0) {
+      throw new Error("field " + i + " does not show the offsets " + want);
+    }
+    at = SPAN[i][1] + 1;
+  }
+  chk("the five fields cover sixteen bytes with no gap", at, 16);
+}());
+chk("the version panel is the one that ends the search",
+    REG["hdp-0"].textContent.indexOf("end of the list") > -1, true);
+chk("the total_size panel says it is believed before it is checked",
+    REG["hdp-2"].textContent.indexOf("we trust the value in flash") > -1, true);
+chk("and the checksum panel refuses to be mistaken for a signature",
+    REG["hdp-4"].textContent.indexOf("not a signature") > -1, true);
+REG["hd-0"].fire("click");
 
-  REG["who-proc"].fire("click");
-  chk("and back again it is refused", REG["f1-no"].classList.contains("is-off"), false);
-  chk("with the panel marked refused",
-      REG["f1-verdict"].classList.contains("is-refused"), true);
+// ---- Figure 3: the walk ----
+// ---- Figure 3: the walk, walked ----
+// Two things end this loop and they are not the same thing. Running off what
+// was written is ordinary. An entry whose version is wrong ends it in the
+// middle, and every application after that one is never looked at -- which the
+// kernel cannot tell apart from having finished. That is the assertion worth
+// having, because it is the chapter's sharpest claim.
+(function () {
+  function slots(a, b, c) {
+    REG["slot-0-" + a].fire("click");
+    REG["slot-1-" + b].fire("click");
+    REG["slot-2-" + c].fire("click");
+  }
+  function counts() {
+    return [REG["fw-found"].textContent, REG["fw-skip"].textContent,
+            REG["fw-unseen"].textContent].join("/");
+  }
+  function saying() {
+    var S = ["idle", "going", "end", "early"], i, on = [];
+    for (i = 0; i < S.length; i++) {
+      if (REG["ws-" + S[i]].classList.contains("is-on")) { on.push(S[i]); }
+    }
+    return on.join(",");
+  }
 
-  // Never both, never neither, however many times it is flipped.
+  slots("ok", "ok", "ok");
+  chk("nothing walked yet", saying(), "idle");
+  chk("and nothing found", counts(), "0/0/3");
+
+  REG["fw-run"].fire("click");
+  chk("three sound applications are all found", counts(), "3/0/0");
+  chk("and it ended by running off what was written", saying(), "end");
+
+  // The sharp one: erase the middle slot and the third is never looked at.
+  slots("ok", "erase", "ok");
+  REG["fw-run"].fire("click");
+  // The erased slot is reached -- reaching it is what ends the walk -- so it
+  // is not among the ones never looked at. What is lost is the one past it.
+  chk("erasing the middle one loses the third as well", counts(), "1/0/1");
+  chk("and the walk reports having finished early", saying(), "early");
+  chk("which the panel says is indistinguishable from the end",
+      REG["ws-early"].textContent.indexOf("indistinguishable") > -1, true);
+
+  // A header too small does not stop anything, because total_size is trusted
+  // on its own -- so the walk carries on past it.
+  slots("ok", "bad", "ok");
+  REG["fw-run"].fire("click");
+  chk("a header too small is skipped and the walk carries on", counts(), "2/1/0");
+  chk("ending the ordinary way", saying(), "end");
+
+  // Erasing the first slot means nothing is found at all.
+  slots("erase", "ok", "ok");
+  REG["fw-run"].fire("click");
+  chk("an erased first slot finds nothing, and hides the other two",
+      counts(), "0/0/2");
+
+  // Stepping matches running, one entry at a time.
+  slots("ok", "ok", "ok");
+  REG["fw-step"].fire("click");
+  chk("one step finds one", counts(), "1/0/2");
+  REG["fw-step"].fire("click");
+  REG["fw-step"].fire("click");
+  chk("and three steps find three", counts(), "3/0/0");
+  chk("with nothing left to step", REG["fw-step"].disabled, true);
+
+  // Changing a slot restarts, rather than leaving a stale walk on screen.
+  slots("ok", "ok", "erase");
+  chk("changing a slot starts the walk over", counts(), "0/0/3");
+  chk("and says so", saying(), "idle");
+
+  // One reading, in every arrangement of the three slots.
   (function () {
-    var i, bad = 0;
-    for (i = 0; i < 6; i++) {
-      REG[i % 2 ? "who-proc" : "who-kern"].fire("click");
-      if (REG["f1-yes"].classList.contains("is-off")
-          === REG["f1-no"].classList.contains("is-off")) { bad++; }
-      if (REG["f1p-0"].classList.contains("is-off")
-          === REG["f1p-1"].classList.contains("is-off")) { bad++; }
+    var K = ["ok", "bad", "erase"], a, b, c, bad = 0;
+    for (a = 0; a < 3; a++) {
+      for (b = 0; b < 3; b++) {
+        for (c = 0; c < 3; c++) {
+          slots(K[a], K[b], K[c]);
+          REG["fw-run"].fire("click");
+          if (saying().indexOf(",") > -1 || saying() === "") { bad++; }
+        }
+      }
     }
-    chk("exactly one verdict and one reason on every flip", bad, 0);
+    chk("one reading of how it ended, in all twenty-seven arrangements", bad, 0);
   }());
-  REG["who-proc"].fire("click");
+  slots("ok", "ok", "ok");
 }());
-walk("ck-", "ckp-", 5, "figure 1");
-REG["ck-1"].fire("click");
-chk("the second panel says which mode is being checked",
-    REG["ckp-1"].textContent.indexOf("unprivileged") > -1, true);
-chk("and hands the reader to the figure with that line in it",
-    REG["ckp-1"].textContent.indexOf("Figure 8") > -1, true);
-REG["ck-4"].fire("click");
-// The whole chapter rests on this one. If the unit saw values, everything
-// above could be a different mechanism; because it sees only addresses, every
-// guarantee in the series is a guarantee about addresses.
-chk("the last panel says the value is what it never sees",
-    REG["ckp-4"].textContent.indexOf("The value.") > -1, true);
-chk("and says what that costs, in the note",
-    REG["ck-0"].textContent.length > 0
-      && document.getElementById("ckp-4").textContent.indexOf("only where") > -1, true);
-REG["ck-0"].fire("click");
 
-// ---- Figure 2: the register builder ----
-// The figure computes RBAR and RLAR from a base, a size and a permission, so
-// what is worth checking is the arithmetic itself against mpu_v8m.rs rather
-// than which paragraph is open. Every expected value below was derived by
-// hand from the source formulas:
-//   RBAR = BASE(start >> 5) | SH(0) | AP | XN
-//   RLAR = LIMIT((end - 1) >> 5) | PXN(1) | ATTRINDX(0) | ENABLE(1)
-walk("rf-", "rfp-", 8, "figure 2");
-
-// The permission the markup opens on is what a process's RAM gets.
-chk("it opens on the pair a process's RAM is given",
-    REG["rb-hex"].textContent + " " + REG["rl-hex"].textContent,
-    "0x20008003 0x200087F1");
-chk("and the access field reads read-write", REG["rb-ap"].textContent, "01");
-// The chapter's second goal is reading a region back out of the pair, so the
-// figure has to do that arithmetic in the other direction too.
-chk("the pair decodes back to the addresses it was built from",
-    REG["rb-decode"].textContent + " " + REG["rl-decode"].textContent,
-    "0x20008000 0x200087FF");
-chk("with execute-never set", REG["rb-xn"].textContent, "1");
-
-// The four permissions, each against the AP and XN the source maps it to.
+// ---- Figure 6: the two lines that move ----
+// Five of the seven boundaries are fixed for the life of the process. Two move,
+// towards each other, out of one gap -- and when it is gone both sides start
+// failing, which is the chapter's point about a system with no allocator.
 (function () {
-  var WANT = [
-    ["0", "01", "0"],   // ReadWriteExecute: AP ReadWrite, XN Enable
-    ["1", "01", "1"],   // ReadWriteOnly
-    ["2", "11", "0"],   // ReadExecuteOnly
-    ["3", "11", "1"]    // ReadOnly
-  ];
-  var i;
-  for (i = 0; i < WANT.length; i++) {
-    REG["bp-" + WANT[i][0]].fire("click");
-    chk("permission " + WANT[i][0] + " sets AP", REG["rb-ap"].textContent, WANT[i][1]);
-    chk("permission " + WANT[i][0] + " sets XN", REG["rb-xn"].textContent, WANT[i][2]);
+  function gap() { return REG["al-gap"].textContent; }
+  function room() {
+    return REG["al-room"].classList.contains("is-on") ? "room" : "full";
   }
-}());
+  REG["al-grants"].value = 256;
+  REG["al-grants"].fire("input");
+  REG["al-heap"].value = 256;
+  REG["al-heap"].fire("input");
+  chk("the gap is what neither side has claimed", gap(), "1536");
+  chk("and there is room either way", room(), "room");
 
-// Only two bits of the sixty-four move. That is the note's claim, so it is
-// checked rather than asserted.
-(function () {
-  REG["bp-1"].fire("click");
-  var before = REG["rl-hex"].textContent + REG["rb-base"].textContent
-             + REG["rl-pxn"].textContent + REG["rl-idx"].textContent
-             + REG["rl-en"].textContent + REG["rb-sh"].textContent;
-  REG["bp-2"].fire("click");
-  var after = REG["rl-hex"].textContent + REG["rb-base"].textContent
-            + REG["rl-pxn"].textContent + REG["rl-idx"].textContent
-            + REG["rl-en"].textContent + REG["rb-sh"].textContent;
-  chk("changing the permission moves nothing but AP and XN", before, after);
-}());
+  REG["al-grants"].value = 1024;
+  REG["al-grants"].fire("input");
+  chk("grants growing down eat the gap", gap(), "768");
+  REG["al-heap"].value = 1024;
+  REG["al-heap"].fire("input");
+  chk("and the heap growing up finishes it", gap(), "0");
+  chk("at which point both sides start failing", room(), "full");
 
-// The size slider moves the limit and never the base.
-(function () {
-  REG["bp-1"].fire("click");
-  var base = REG["rb-hex"].textContent, i, moved = 0;
-  var SIZES = [1, 2, 17, 64, 100, 128];
-  var WANT = ["0x2000801F", "0x2000803F", "0x2000821F", "0x200087FF",
-              "0x20008C7F", "0x20008FFF"];
-  for (i = 0; i < SIZES.length; i++) {
-    REG["bench-size"].value = SIZES[i];
-    REG["bench-size"].fire("input");
-    chk("size " + SIZES[i] + " units reads " + (SIZES[i] * 32) + " bytes",
-        REG["bench-size-badge"].textContent, (SIZES[i] * 32) + " bytes");
-    // RLAR carries the inclusive last address plus the constant 0x11.
-    chk("and its limit is the last byte in, not the byte after",
-        REG["rl-hex"].textContent,
-        "0x" + (((parseInt(WANT[i].slice(2), 16) & ~31) | 0x11) >>> 0)
-                 .toString(16).toUpperCase());
-    if (REG["rb-hex"].textContent !== base) { moved++; }
-  }
-  chk("the base never moved across any of them", moved, 0);
-}());
-
-// A one-unit region: the smallest the hardware can describe, and the case
-// where the limit lands in the same 32-byte unit as the base.
-REG["bench-size"].value = 1;
-REG["bench-size"].fire("input");
-chk("the smallest region starts and ends in one unit",
-    REG["rb-base"].textContent, REG["rl-limit"].textContent);
-chk("and decodes back to a 32-byte range",
-    REG["rb-decode"].textContent + " " + REG["rl-decode"].textContent + " "
-      + REG["rg-decode"].textContent,
-    "0x20008000 0x2000801F 32 bytes");
-chk("and is 32 bytes", REG["bench-size-badge"].textContent, "32 bytes");
-
-// The constants Tock never varies stay put through everything above.
-chk("shareability is left at zero", REG["rb-sh"].textContent, "0");
-chk("the attribute index is left at slot 0", REG["rl-idx"].textContent, "0");
-chk("privileged-execute-never is always set", REG["rl-pxn"].textContent, "1");
-chk("and the region is always enabled", REG["rl-en"].textContent, "1");
-
-// The panels still carry the source's own wording.
-REG["rf-0"].fire("click");
-chk("the base panel gives the shift the kernel writes",
-    REG["rfp-0"].textContent.indexOf("logical_start >> 5") > -1, true);
-REG["rf-2"].fire("click");
-chk("the execute panel warns that the value names read backwards",
-    REG["rfp-2"].textContent.indexOf("XN::Disable") > -1, true);
-REG["rf-3"].fire("click");
-chk("the limit panel gives the other shift, minus one",
-    REG["rfp-3"].textContent.indexOf("(logical_end - 1) >> 5") > -1, true);
-REG["rf-4"].fire("click");
-chk("PXN's panel says where the spare 0x10 comes from",
-    REG["rfp-4"].textContent.indexOf("0x10") > -1, true);
-REG["rf-5"].fire("click");
-chk("shareability has a row of its own rather than a mention elsewhere",
-    REG["rfp-5"].textContent.length > 0, true);
-REG["bench-size"].value = 64;
-REG["bench-size"].fire("input");
-REG["bp-1"].fire("click");
-REG["rf-0"].fire("click");
-
-// ---- Figure 3: growth, and the edge ----
-// align32 rounds the end up and never down, so the granted size is always the
-// next multiple of 32 at or above what was asked for, and the difference is
-// memory the process did not request and is never told about.
-(function () {
-  var CASES = [
-    [1, 32, 31], [31, 32, 1], [32, 32, 0], [33, 64, 31],
-    [2048, 2048, 0], [2049, 2080, 31], [4095, 4096, 1], [4096, 4096, 0]
-  ];
-  var i;
-  for (i = 0; i < CASES.length; i++) {
-    REG["brk"].value = CASES[i][0];
-    REG["brk"].fire("input");
-    chk("asking for " + CASES[i][0] + " bytes grants " + CASES[i][1],
-        REG["ro-grant"].textContent, CASES[i][1] + " bytes");
-    chk("and hands over " + CASES[i][2] + " unasked",
-        REG["ro-waste"].textContent, CASES[i][2] + " bytes");
-  }
-}());
-
-// The rounding never goes the other way: granted is never below asked.
-(function () {
-  var i, short_by = 0;
-  for (i = 1; i <= 4096; i += 7) {
-    REG["brk"].value = i;
-    REG["brk"].fire("input");
-    if (parseInt(REG["ro-grant"].textContent, 10) < i) { short_by++; }
-  }
-  chk("no request anywhere in range is answered with less than it asked for",
-      short_by, 0);
-}());
-
-// The last address inside, and the register that carries it.
-REG["brk"].value = 2049;
-REG["brk"].fire("input");
-chk("the last address inside is one below the end",
-    REG["ro-last"].textContent, "0x2000881F");
-chk("and RLAR holds that address masked, plus PXN and enable",
-    REG["ro-rlar"].textContent, "0x20008811");
-
-// The verdict. Outside beats the verb, and the edge is where it turns over.
-(function () {
-  // 2080 bytes granted from 0x20008000, so the last address in is 0x2000881F.
-  // The probe slider counts from 0x20007FC0, so that address is 64 + 2079.
-  var LAST = 64 + 2079;
-  REG["vb-0"].fire("click");
-
-  // The head ships with one word already hidden, so a reader with no
-  // JavaScript sees "Allowed" alone rather than both run together.
-  chk("the markup opens with only one of the two verdict words showing",
-      REG["vd-no"].classList.contains("is-off"), true);
-
-  REG["probe"].value = LAST;
-  REG["probe"].fire("input");
-  chk("the last byte inside is allowed", REG["vd-yes"].classList.contains("is-off"), false);
-  chk("and the reason given is the one for a read inside",
-      REG["vdp-0"].classList.contains("is-on"), true);
-
-  REG["probe"].value = LAST + 1;
-  REG["probe"].fire("input");
-  chk("one byte further is refused", REG["vd-no"].classList.contains("is-off"), false);
-  chk("and the reason given is that it is past the limit",
-      REG["vdp-4"].classList.contains("is-on"), true);
-
-  REG["probe"].value = 63;
-  REG["probe"].fire("input");
-  chk("one byte below the base is refused too",
-      REG["vd-no"].classList.contains("is-off"), false);
-  chk("and names the other edge",
-      REG["vdp-3"].classList.contains("is-on"), true);
-
-  REG["probe"].value = 64;
-  REG["probe"].fire("input");
-  chk("the base itself is inside", REG["vd-yes"].classList.contains("is-off"), false);
-
-  // Execute is the verb a process's RAM refuses, and it refuses it inside the
-  // region -- which is the whole point of the execute-never bit.
-  REG["vb-2"].fire("click");
-  chk("executing inside the region is refused",
-      REG["vd-no"].classList.contains("is-off"), false);
-  chk("for the execute-never reason, not an out-of-range one",
-      REG["vdp-2"].classList.contains("is-on"), true);
-  REG["vb-1"].fire("click");
-  chk("but writing there is allowed", REG["vd-yes"].classList.contains("is-off"), false);
-
-  // An address outside is refused whatever verb is pressed.
+  // The gap never goes negative, and the two bands never overlap.
   (function () {
-    var v, allowed = 0;
-    for (v = 0; v < 3; v++) {
-      REG["vb-" + v].fire("click");
-      REG["probe"].value = 0;
-      REG["probe"].fire("input");
-      if (!REG["vd-yes"].classList.contains("is-off")) { allowed++; }
+    var g, h, bad = 0;
+    for (g = 0; g <= 2048; g += 293) {
+      for (h = 32; h <= 2048; h += 293) {
+        REG["al-grants"].value = g;
+        REG["al-grants"].fire("input");
+        REG["al-heap"].value = h;
+        REG["al-heap"].fire("input");
+        if (parseInt(gap(), 10) < 0) { bad++; }
+        if (parseInt(gap(), 10) !== Math.max(0, 2048 - g - h)) { bad++; }
+      }
     }
-    chk("no verb is allowed at an address outside every region", allowed, 0);
+    chk("the gap is the allocation less both sides, and never negative", bad, 0);
   }());
-  REG["vb-0"].fire("click");
-  REG["probe"].value = 64;
-  REG["probe"].fire("input");
+  REG["al-grants"].value = 256;
+  REG["al-grants"].fire("input");
+  REG["al-heap"].value = 256;
+  REG["al-heap"].fire("input");
 }());
 
-// Exactly one answer shows at a time, at every probe position tried.
+walk("wk-", "wkp-", 6, "figure 3");
+// Six steps, and every one carries the file and line it came from. A step with
+// no citation is the shape a made-up step would take.
 (function () {
-  var i, k, bad = 0, shown;
-  for (i = 0; i <= 4224; i += 97) {
-    REG["probe"].value = i;
-    REG["probe"].fire("input");
-    shown = 0;
-    for (k = 0; k < 5; k++) {
-      if (REG["vdp-" + k].classList.contains("is-on")) { shown++; }
-    }
-    if (shown !== 1) { bad++; }
+  var i, cited = 0;
+  for (i = 0; i < 6; i++) {
+    if (REG["wk-" + i].textContent.indexOf(".rs:") > -1) { cited++; }
   }
-  chk("one reason, and only one, at every position", bad, 0);
+  chk("all six steps cite a file and line", cited, 6);
 }());
+chk("the version step quotes the comment that explains the ending",
+    REG["wkp-2"].textContent.indexOf("signal the end of apps") > -1, true);
+chk("the skip step says the length is the link",
+    REG["wkp-4"].textContent.indexOf("the length is the link") > -1, true);
+chk("and the last step says what erased flash reads as",
+    REG["wkp-5"].textContent.indexOf("0xFF") > -1, true);
+REG["wk-0"].fire("click");
 
-// The head never says both things at once.
+// ---- Figure 4: the four regions ----
+// These are read off boards/raspberry_pi_pico_2/layout.ld, so they are
+// asserted rather than trusted -- and the arithmetic is asserted too, because
+// a start, a length and an end that do not agree is the defect this figure
+// would hide best.
 (function () {
-  var i, bad = 0;
-  for (i = 0; i <= 4224; i += 211) {
-    REG["probe"].value = i;
-    REG["probe"].fire("input");
-    if (REG["vd-yes"].classList.contains("is-off")
-        === REG["vd-no"].classList.contains("is-off")) { bad++; }
-  }
-  chk("allowed and refused are never both showing, or both hidden", bad, 0);
-}());
-REG["brk"].value = 2049;
-REG["brk"].fire("input");
-REG["probe"].value = 64;
-REG["probe"].fire("input");
-
-// ---- Figure 4: the five permission names ----
-walk("pm-", "pmp-", 5, "figure 4");
-REG["pm-2"].fire("click");
-chk("read-execute is named as what flash gets",
-    REG["pmp-2"].textContent.indexOf("flash") > -1, true);
-REG["pm-1"].fire("click");
-chk("and read-write as what RAM gets",
-    REG["pmp-1"].textContent.indexOf("RAM") > -1, true);
-REG["pm-4"].fire("click");
-// The odd one. It is the only variant whose name does not describe what
-// unprivileged code can do with it, and saying so is the point of including it.
-chk("execute-only is explained as run but not read",
-    REG["pmp-4"].textContent.indexOf("may not read them back") > -1, true);
-REG["pm-0"].fire("click");
-
-// ---- Figure 5: where the eight regions go ----
-// The rack hands out six and then refuses, and never offers region 0 however
-// many times it is asked. Both of those are the figure's whole claim.
-(function () {
-  var i;
-  chk("the rack starts with nothing handed out", REG["rk-count"].textContent, "0");
-  chk("and opens saying two are already gone",
-      REG["rk-0"].classList.contains("is-off"), false);
-
-  for (i = 1; i <= 6; i++) {
-    REG["rk-ask"].fire("click");
-    chk("request " + i + " is granted", REG["rk-count"].textContent, String(i));
-    chk("and the answer says so", REG["rk-1"].classList.contains("is-off"), false);
-  }
-
-  // The seventh, and every one after it.
-  for (i = 0; i < 3; i++) {
-    REG["rk-ask"].fire("click");
-    chk("the request after the sixth is refused",
-        REG["rk-2"].classList.contains("is-off"), false);
-    chk("and the count does not creep past six", REG["rk-count"].textContent, "6");
-  }
-
-  // Region 0 and region 1 are never in the pool.
-  chk("region 0 is never handed out",
-      REG["rs-0"].classList.contains("is-taken"), false);
-  chk("nor is region 1, which flash already took",
-      REG["rs-1"].classList.contains("is-taken"), false);
-  chk("and all six of the rest are",
-      REG["rs-2"].classList.contains("is-taken")
-        && REG["rs-3"].classList.contains("is-taken")
-        && REG["rs-4"].classList.contains("is-taken")
-        && REG["rs-5"].classList.contains("is-taken")
-        && REG["rs-6"].classList.contains("is-taken")
-        && REG["rs-7"].classList.contains("is-taken"), true);
-  chk("the last slot reads as given rather than free",
-      REG["rw-7"].textContent, "given");
-
-  REG["rk-reset"].fire("click");
-  chk("starting over empties the rack", REG["rk-count"].textContent, "0");
-  chk("and the slots read free again", REG["rw-2"].textContent, "free");
-  chk("and none of them is still marked taken",
-      REG["rs-2"].classList.contains("is-taken"), false);
-}());
-walk("rn-", "rnp-", 4, "figure 5");
-REG["rn-0"].fire("click");
-chk("region 0 is named as reserved by a constant",
-    REG["rnp-0"].textContent.indexOf("APP_MEMORY_REGION_MAX_NUM") > -1, true);
-REG["rn-3"].fire("click");
-// Two independent limits produce the same six. Nothing in the source ties them
-// together, which is the observation worth pinning.
-chk("the seventh request explains both limits",
-    REG["rnp-3"].textContent.indexOf("nothing in the source makes them agree") > -1, true);
-REG["rn-0"].fire("click");
-
-// ---- Figure 6: two chips ----
-chk("the two chips are the only two cards",
-    onlyOne("tc-", 2, "is-on"), 1);
-// The two size rules, computed rather than described. Each expected value is
-// the rule applied by hand: the newer unit rounds up to 32; the older one needs
-// a power-of-two region of at least 256 bytes, aligned to its own size, and
-// steps in eighths of it.
-(function () {
-  var CASES = [
-    // asked,  M33 space, M33 step, M0+ space, M0+ gets, M0+ step
-    [   32,       32,  32,    256,    32,   32],
-    [  100,      128,  32,    256,   128,   32],
-    [ 2048,     2048,  32,   2048,  2048,  256],
-    [ 2049,     2080,  32,   4096,  2560,  512],
-    [ 3072,     3072,  32,   4096,  3072,  512],
-    [ 8192,     8192,  32,   8192,  8192, 1024]
+  var CASE = [
+    ["bootloader",   "0x10000000", "1 kB",   "0x10000400", 1],
+    ["kernel",       "0x10000400", "255 kB", "0x10040000", 255],
+    ["applications", "0x10040000", "256 kB", "0x10080000", 256]
   ];
   var i, c;
-  for (i = 0; i < CASES.length; i++) {
-    c = CASES[i];
-    REG["cmp"].value = c[0];
-    REG["cmp"].fire("input");
-    chk(c[0] + ": the newer unit takes " + c[1],
-        REG["cmp-a8"].textContent, c[1] + " bytes");
-    chk(c[0] + ": and steps by " + c[2],
-        REG["cmp-s8"].textContent, c[2] + " bytes");
-    chk(c[0] + ": the older unit takes " + c[3],
-        REG["cmp-a7"].textContent, c[3] + " bytes");
-    chk(c[0] + ": and hands over " + c[4],
-        REG["cmp-g7"].textContent, c[4] + " bytes");
-    chk(c[0] + ": stepping by " + c[5],
-        REG["cmp-s7"].textContent, c[5] + " bytes");
-    // The older unit must start on a multiple of its whole region.
-    chk(c[0] + ": aligned to its own size",
-        REG["cmp-l7"].textContent, c[3] + " bytes");
-    chk(c[0] + ": while the newer one starts anywhere on 32",
-        REG["cmp-l8"].textContent, "32 bytes");
+  for (i = 0; i < CASE.length; i++) {
+    c = CASE[i];
+    REG["rg-" + i].fire("click");
+    chk(c[0] + " starts where the linker script says", REG["rg-lo"].textContent, c[1]);
+    chk(c[0] + " is the length the linker script gives", REG["rg-len"].textContent, c[2]);
+    chk(c[0] + " ends where the linker script says", REG["rg-hi"].textContent, c[3]);
+    chk("and " + c[0] + "'s three numbers agree with each other",
+        parseInt(c[1], 16) + c[4] * 1024, parseInt(c[3], 16));
+    chk("its panel is the open one", REG["rgp-" + i].classList.contains("is-on"), true);
   }
+  // The three flash regions are laid end to end with nothing between them.
+  chk("the kernel starts where the bootloader ends",
+      parseInt(CASE[0][3], 16), parseInt(CASE[1][1], 16));
+  chk("and the applications start where the kernel ends",
+      parseInt(CASE[1][3], 16), parseInt(CASE[2][1], 16));
 }());
+// The fourth region is the honest one: its start is not a number, because it
+// depends on how big the kernel's own data turned out to be.
+REG["rg-3"].fire("click");
+chk("application RAM has no fixed start", REG["rg-lo"].textContent.indexOf("0x"), -1);
+chk("and its panel says why", REG["rgp-3"].textContent.indexOf("not a round number") > -1, true);
+chk("its end is the last byte of the 520 kB this chip has",
+    parseInt(REG["rg-hi"].textContent, 16) - 520 * 1024, parseInt("0x20000000", 16));
+REG["rg-0"].fire("click");
 
-// The older unit never does better than the newer one on any of the three
-// numbers that matter. That is the figure's claim, so it is swept rather than
-// asserted at one point.
+// ---- Figure 6: seven boundaries ----
+walk("mm-", "mmp-", 7, "figure 6");
+chk("there are seven and not six or eight",
+    REG["mm-6"] !== undefined && REG["mm-7"] === undefined, true);
+// The left column is the whole point of the figure: two of the seven are the
+// kernel's and five are the process's, and the split is where the fence goes.
 (function () {
-  var i, better = 0, a8, a7, s8, s7;
-  for (i = 32; i <= 8192; i += 97) {
-    REG["cmp"].value = i;
-    REG["cmp"].fire("input");
-    a8 = parseInt(REG["cmp-a8"].textContent, 10);
-    a7 = parseInt(REG["cmp-a7"].textContent, 10);
-    s8 = parseInt(REG["cmp-s8"].textContent, 10);
-    s7 = parseInt(REG["cmp-s7"].textContent, 10);
-    if (a7 < a8 || s7 < s8) { better++; }
+  var i, kernel = 0, app = 0;
+  for (i = 0; i < 7; i++) {
+    if (REG["mm-" + i].textContent.indexOf("kernel") === 0) { kernel++; }
+    if (REG["mm-" + i].textContent.indexOf("app") === 0) { app++; }
   }
-  chk("the older unit is never tighter, at any size in range", better, 0);
+  chk("two boundaries are the kernel's", kernel, 2);
+  chk("and five are the process's", app, 5);
 }());
-REG["cmp"].value = 3072;
-REG["cmp"].fire("input");
-walk("tc-", "tcp-", 2, "figure 6");
-REG["tc-1"].fire("click");
-chk("the older chip's panel names the constraint",
-    REG["tcp-1"].textContent.indexOf("power of two") > -1, true);
-chk("and says what it does when the size is not one",
-    REG["tcp-1"].textContent.indexOf("subregions") > -1, true);
-REG["tc-0"].fire("click");
+chk("the top panel hands the reader on to figure 7",
+    REG["mmp-0"].textContent.indexOf("Figure 7") > -1, true);
+chk("the kernel's floor moves downward",
+    REG["mmp-1"].textContent.indexOf("downward") > -1, true);
+chk("the heap moves upward",
+    REG["mmp-3"].textContent.indexOf("upward") > -1, true);
+chk("and the bottom is the number the process is told",
+    REG["mmp-6"].textContent.indexOf("Figure 9") > -1, true);
+REG["mm-2"].fire("click");
 
-// ---- Figure 7: the fault path ----
-// The four readings are the figure now, so they are what is worth asserting.
-// MMFAR and the flag both turn over at step 5, which is the moment the fault
-// stops being something only the hardware knows about.
+// ---- Figure 7: what the kernel keeps inside your memory ----
+walk("ks-", "ksp-", 3, "figure 7");
+chk("the control block panel says the record is stored in what it records",
+    REG["ksp-0"].textContent.indexOf("stored in the process") > -1, true);
+chk("the upcall queue gives the number and the constant that holds it",
+    REG["ksp-1"].textContent.indexOf("CALLBACK_LEN") > -1, true);
+chk("and the grant pointers panel hands the mechanism to chapter 8",
+    REG["ksp-2"].textContent.indexOf("chapter 8") > -1, true);
+REG["ks-0"].fire("click");
+
+// ---- Figure 8: three ways to place a program ----
+walk("pl-", "plp-", 3, "figure 8");
+// Two of the three exist in the tree and one does not. If a later edit softens
+// the first panel, the figure stops making its point.
+chk("the first is the one this kernel never does",
+    REG["plp-0"].textContent.indexOf("never does") > -1, true);
+chk("the second is real and names its error",
+    REG["plp-1"].textContent.indexOf("MemoryAddressMismatch") > -1, true);
+chk("and the third is the default",
+    REG["plp-2"].textContent.indexOf("The default") === 0, true);
+REG["pl-0"].fire("click");
+
+// ---- Figure 9: the four arguments ----
+walk("ag-", "agp-", 4, "figure 9");
+chk("there are four and not three or five",
+    REG["ag-3"] !== undefined && REG["ag-4"] === undefined, true);
+chk("the first is not the start of the header",
+    REG["agp-0"].textContent.indexOf("Not the start of the header") === 0, true);
+chk("the third says the kernel's own structures are inside the length",
+    REG["agp-2"].textContent.indexOf("Figure 7 are inside this length") > -1, true);
+chk("and the fourth gives the same thirty-two as figure 6",
+    REG["agp-3"].textContent.indexOf("thirty-two bytes") > -1, true);
+REG["ag-0"].fire("click");
+
+// ---- Figure 10: the six states ----
+walk("ps-", "psp-", 6, "figure 10");
+(function () {
+  var NAMES = ["Running", "Yielded", "YieldedFor", "Stopped", "Faulted",
+               "Terminated"];
+  var i, wrong = 0;
+  for (i = 0; i < NAMES.length; i++) {
+    if (REG["ps-" + i].textContent.indexOf(NAMES[i]) < 0) { wrong++; }
+  }
+  chk("the six buttons carry the six names the kernel uses", wrong, 0);
+}());
+chk("Running is about willingness rather than about holding the processor",
+    REG["psp-0"].textContent.indexOf("may not be currently scheduled") > -1, true);
+chk("and Faulted says a process cannot simply be restarted",
+    REG["psp-4"].textContent.indexOf("terminated first") > -1, true);
+REG["ps-0"].fire("click");
+
+// ---- Figure 11: two boards, two policies ----
 (function () {
   var i;
-  chk("it opens on step 1 of 6", REG["fl-at"].textContent, "1");
-  chk("with the process still running", REG["mx-who"].textContent, "the process");
-  chk("unprivileged", REG["mx-mode"].textContent, "unprivileged");
-  chk("nothing recorded yet", REG["mx-mmfar"].textContent, "nothing yet");
-  chk("and the flag clear", REG["mx-flag"].textContent, "clear");
-  chk("back is disabled at the start", REG["fl-prev"].disabled, true);
-
-  // Walk it forward and watch for the turnover.
-  REG["fl-next"].fire("click");
-  REG["fl-next"].fire("click");
-  chk("step 3 is still the process's own fault to have", REG["fl-at"].textContent, "3");
-  chk("and nothing has been recorded", REG["mx-mmfar"].textContent, "nothing yet");
-
-  REG["fl-next"].fire("click");
-  chk("step 4 is where the handler is running", REG["mx-who"].textContent,
-      "the HardFault handler");
-  chk("in privileged mode", REG["mx-mode"].textContent, "privileged");
-  chk("but the address is still not saved", REG["mx-mmfar"].textContent, "nothing yet");
-
-  REG["fl-next"].fire("click");
-  chk("step 5 is where the refused address lands in MMFAR",
-      REG["mx-mmfar"].textContent, "0x20008820");
-  chk("and the flag the kernel reads is set", REG["mx-flag"].textContent, "set");
-  chk("both are marked as the readings that changed",
-      REG["mx-mmfar"].classList.contains("is-hot")
-        && REG["mx-flag"].classList.contains("is-hot"), true);
-
-  REG["fl-next"].fire("click");
-  chk("step 6 is back in the kernel", REG["mx-who"].textContent, "the kernel");
-  chk("and forward is disabled at the end", REG["fl-next"].disabled, true);
-  chk("the counter agrees", REG["fl-at"].textContent, "6");
-
-  // Stepping past either end does not move.
-  REG["fl-next"].fire("click");
-  chk("pressing forward at the end goes nowhere", REG["fl-at"].textContent, "6");
-  for (i = 0; i < 9; i++) { REG["fl-prev"].fire("click"); }
-  chk("and back stops at the first step", REG["fl-at"].textContent, "1");
-  chk("with the readings reset too", REG["mx-flag"].textContent, "clear");
-  chk("and no longer marked", REG["mx-mmfar"].classList.contains("is-hot"), false);
-
-  // The address the figure reports is the one past the region figure 3 builds.
-  chk("the refused address is one past figure 3's last byte in",
-      REG["mx-mmfar"].textContent, "nothing yet");
-}());
-walk("fl-", "flp-", 6, "figure 7");
-REG["fl-1"].fire("click");
-chk("step 2 quotes the datasheet rather than paraphrasing it",
-    REG["flp-1"].textContent.indexOf("invoke the MemManage handler") > -1, true);
-REG["fl-2"].fire("click");
-// The chapter's sharpest fact: the exception the documentation names is not
-// the one that runs, and the reason is a bit nobody ever writes.
-chk("step 3 says the enable bit resets to zero",
-    REG["flp-2"].textContent.indexOf("resets to zero") > -1, true);
-chk("and that escalation is what happens instead",
-    REG["flp-2"].textContent.indexOf("escalates") > -1, true);
-REG["fl-3"].fire("click");
-chk("step 4 gives the instruction that splits kernel from process",
-    REG["flp-3"].textContent.indexOf("tst lr, #4") > -1, true);
-REG["fl-4"].fire("click");
-chk("step 5 names the register holding the refused address",
-    REG["flp-4"].textContent.indexOf("MMFAR") > -1, true);
-REG["fl-0"].fire("click");
-
-// ---- Figure 8: the three control bits ----
-// The three switches, and MPU_CTRL as their sum. PRIVDEFENA is bit 2,
-// HFNMIENA bit 1, ENABLE bit 0, so Tock's setting is 0b101.
-(function () {
-  // With no JavaScript the sentence under each switch has to describe the
-  // value that switch is actually shipping. This was backwards for HFNMIENA:
-  // the switch read 0 and the sentence described a 1, which no behavioural
-  // check could see because the script fixes it on load.
-  (function () {
-    // PAGE_CLASS carries what the markup shipped, before the script ran. It is
-    // a global rather than one of the scoped proxies, so in the assembled book
-    // its keys carry the page prefix and a literal lookup finds nothing --
-    // which is a check that silently stops checking. Match on the suffix.
-    function shipped(id) {
-      var k;
-      for (k in PAGE_CLASS) {
-        if (k === id || k.slice(-(id.length + 2)) === "--" + id) {
-          return PAGE_CLASS[k] || "";
-        }
-      }
-      return null;
+  for (i = 0; i < 2; i++) {
+    REG["fp-" + i].fire("click");
+    if (!REG["fpp-" + i].classList.contains("is-on")) {
+      throw new Error("board " + i + " did not light its own panel");
     }
-    var N = ["en", "priv", "hf"], SET = [true, true, false], i, cls, bad = [];
-    for (i = 0; i < 3; i++) {
-      cls = shipped("cq-" + N[i] + "-a");
-      if (cls === null) { bad.push(N[i] + " (not found)"); continue; }
-      if ((cls.indexOf("is-off") > -1) === SET[i]) { bad.push(N[i]); }
-    }
-    chk("the markup's opening sentence matches each switch's own value",
-        bad.join(","), "");
-  }());
-  chk("it opens on what Tock actually writes", REG["ctrl-hex"].textContent, "0x00000005");
-  chk("and says so", REG["ctrl-tag"].classList.contains("is-off"), false);
-  chk("with the two set bits reading 1",
-      REG["swv-en"].textContent + REG["swv-priv"].textContent
-        + REG["swv-hf"].textContent, "110");
-
-  // Each switch, and the bit it owns.
-  REG["sw-en"].fire("click");
-  chk("clearing ENABLE leaves only PRIVDEFENA", REG["ctrl-hex"].textContent, "0x00000004");
-  chk("and the tag stops claiming this is Tock's setting",
-      REG["ctrl-tag"].classList.contains("is-off"), true);
-  chk("the consequence swaps to the inert one",
-      REG["cq-en-b"].classList.contains("is-off"), false);
-  chk("and the live one is put away",
-      REG["cq-en-a"].classList.contains("is-off"), true);
-  REG["sw-en"].fire("click");
-  chk("and flipping it back restores Tock's value",
-      REG["ctrl-hex"].textContent, "0x00000005");
-
-  REG["sw-priv"].fire("click");
-  chk("clearing PRIVDEFENA leaves only ENABLE", REG["ctrl-hex"].textContent, "0x00000001");
-  chk("and warns that the kernel is fenced too",
-      REG["cq-priv-b"].textContent.indexOf("fenced by the same eight regions") > -1
-        && REG["cq-priv-b"].classList.contains("is-off"), false);
-  REG["sw-priv"].fire("click");
-
-  REG["sw-hf"].fire("click");
-  chk("setting HFNMIENA adds bit 1", REG["ctrl-hex"].textContent, "0x00000007");
-  chk("and takes away what lets the handler read the process's stack",
-      REG["cq-hf-a"].classList.contains("is-off"), false);
-  REG["sw-hf"].fire("click");
-
-  // All off is the state the board boots into.
-  REG["sw-en"].fire("click");
-  REG["sw-priv"].fire("click");
-  chk("all three clear is the reset value", REG["ctrl-hex"].textContent, "0x00000000");
-  REG["sw-en"].fire("click");
-  REG["sw-priv"].fire("click");
-  chk("and it comes back to Tock's own setting",
-      REG["ctrl-hex"].textContent, "0x00000005");
-  chk("tagged as such again", REG["ctrl-tag"].classList.contains("is-off"), false);
-
-  // Exactly one of each consequence pair shows, whatever the combination.
-  (function () {
-    var N = ["en", "priv", "hf"], i, k, bad = 0;
-    for (i = 0; i < 8; i++) {
-      for (k = 0; k < 3; k++) {
-        if (!!(i & (1 << k)) !== (REG["swv-" + N[k]].textContent === "1")) {
-          REG["sw-" + N[k]].fire("click");
-        }
-      }
-      for (k = 0; k < 3; k++) {
-        if (REG["cq-" + N[k] + "-a"].classList.contains("is-off")
-            === REG["cq-" + N[k] + "-b"].classList.contains("is-off")) { bad++; }
-      }
-    }
-    chk("one consequence per switch, in all eight combinations", bad, 0);
-  }());
-  // Leave it on Tock's setting.
-  if (REG["swv-en"].textContent !== "1") { REG["sw-en"].fire("click"); }
-  if (REG["swv-priv"].textContent !== "1") { REG["sw-priv"].fire("click"); }
-  if (REG["swv-hf"].textContent !== "0") { REG["sw-hf"].fire("click"); }
-  chk("and the figure is left as the board really runs",
-      REG["ctrl-hex"].textContent, "0x00000005");
-}());
-walk("cb-", "cbp-", 3, "figure 8");
-REG["cb-1"].fire("click");
-chk("the second bit is the one that exempts the kernel",
-    REG["cbp-1"].textContent.indexOf("all unprotected memory") > -1, true);
-REG["cb-2"].fire("click");
-chk("and the third says the fence is off inside the handler",
-    REG["cbp-2"].textContent.indexOf("HardFault") > -1, true);
-REG["cb-0"].fire("click");
-
-// ---- Figure 9: what the fence is not ----
-walk("nt-", "ntp-", 3, "figure 9");
-REG["nt-2"].fire("click");
-chk("the third names the method nobody calls",
-    REG["ntp-2"].textContent.indexOf("MPU_TYPE") > -1, true);
-REG["nt-0"].fire("click");
-
-// ---- The goals are delivered by named figures ----
-// Chapter 3's third pass found a goal nothing on the page met. These read the
-// goal text off the page rather than restating it here, so rewording a goal
-// without moving the figure breaks the assertion.
-chk("goal 1, what the unit checks and does not, is delivered by figure 1",
-    REG["goalbox"].textContent.indexOf("the one thing it never sees") > -1
-      && REG["ckp-4"].textContent.length > 40, true);
-// 'real' came out of this goal in the first pass, because the worked example's
-// base is chosen rather than read. The description kept it for two passes.
-chk("goal 2, reading one region out of two registers, is delivered by figures 2 and 3",
-    REG["goalbox"].textContent.indexOf("two registers that describe it") > -1
-      && REG["goalbox"].textContent.indexOf("real region") < 0
-      && REG["rfp-0"].textContent.indexOf("logical_start >> 5") > -1, true);
-chk("goal 3, how many regions and what runs out, is delivered by figure 5",
-    REG["goalbox"].textContent.indexOf("which two are spoken for") > -1
-      && REG["goalbox"].textContent.indexOf("what runs out first") > -1
-      && REG["rnp-3"].textContent.length > 40, true);
-chk("goal 4, following one forbidden store, is delivered by figure 7",
-    REG["goalbox"].textContent.indexOf("forbidden store") > -1
-      && REG["flp-5"].textContent.length > 40, true);
-
-// ---- The self-check ----
-chk("the first answer starts hidden", REG["qan"].classList.contains("is-off"), true);
-chk("the second answer starts hidden", REG["qbn"].classList.contains("is-off"), true);
-chk("the third answer starts hidden", REG["qcn"].classList.contains("is-off"), true);
-chk("the fourth answer starts hidden", REG["qdn"].classList.contains("is-off"), true);
-REG["qa-0"].fire("click");
-chk("a wrong guess still reveals the answer", REG["qan"].classList.contains("is-off"), false);
-chk("and marks the guess wrong", REG["qa-0"].classList.contains("is-wrong"), true);
-chk("while marking the right one right", REG["qa-1"].classList.contains("is-right"), true);
-REG["qb-0"].fire("click");
-REG["qc-0"].fire("click");
-REG["qd-0"].fire("click");
-(function () {
-  // Which option is correct is a fact about the page, not about the script, so
-  // read the four right answers back rather than trusting the quiz() calls.
-  var i, out = "";
-  var groups = [["qa-", 3], ["qb-", 3], ["qc-", 3], ["qd-", 3]];
-  for (i = 0; i < groups.length; i++) {
-    var j, mark = "?";
-    for (j = 0; j < groups[i][1]; j++) {
-      if (REG[groups[i][0] + j].classList.contains("is-right")) { mark = "" + j; }
-    }
-    out += mark;
   }
-  chk("the four right answers are the ones the prose argues for", out, "1201");
+  chk("exactly one board is lit at a time", onlyOne("fpp-", 2, "is-on"), 1);
+}());
+REG["fp-0"].fire("click");
+chk("the two boards name different policies",
+    REG["fp-0"].textContent.indexOf("PanicFaultPolicy") > -1
+      && REG["fp-1"].textContent.indexOf("StopFaultPolicy") > -1, true);
+chk("the Pico 2 takes everything down with it",
+    REG["fpp-0"].textContent.indexOf("The whole board panics") > -1, true);
+chk("imix does not",
+    REG["fpp-1"].textContent.indexOf("Everything else carries on") > -1, true);
+chk("and the panel says how many policies there are to choose from",
+    REG["fpp-1"].textContent.indexOf("Seven of these policies") > -1, true);
+
+// ---- Check yourself ----
+// The answers live in the markup and start hidden; clicking any option reveals
+// the answer and marks which one was right. A wrong click must still reveal.
+(function () {
+  var CASE = [["qa-", 3, 0, "qan"], ["qb-", 3, 0, "qbn"],
+              ["qc-", 3, 1, "qcn"], ["qd-", 3, 1, "qdn"]];
+  var i, c, wrong;
+  for (i = 0; i < CASE.length; i++) {
+    c = CASE[i];
+    chk("question " + (i + 1) + " starts with its answer hidden",
+        REG[c[3]].classList.contains("is-off"), true);
+    wrong = c[2] === 0 ? 1 : 0;
+    REG[c[0] + wrong].fire("click");
+    chk("a wrong answer to question " + (i + 1) + " still reveals it",
+        REG[c[3]].classList.contains("is-off"), false);
+    chk("the wrong option is marked wrong",
+        REG[c[0] + wrong].classList.contains("is-wrong"), true);
+    chk("and the right one is marked right even though it was not clicked",
+        REG[c[0] + c[2]].classList.contains("is-right"), true);
+  }
+}());
+// The right answer must not be findable by shape alone. Chapter 4 shipped with
+// three of four answers as the structurally odd option, so this one spreads
+// them and checks the two that are easiest to make give themselves away.
+chk("the first question's three options all begin the same way",
+    REG["qa-0"].textContent.indexOf("The version is 2") === 0
+      && REG["qa-1"].textContent.indexOf("The version is 2") === 0
+      && REG["qa-2"].textContent.indexOf("The version is 2") === 0, true);
+// Read the positions back off the page rather than restating them: the
+// quiz loop above clicked a wrong option in each question, so the script has
+// marked the right one in all four by now.
+(function () {
+  var Q = ["qa-", "qb-", "qc-", "qd-"], i, j, at = "";
+  for (i = 0; i < Q.length; i++) {
+    for (j = 0; j < 3; j++) {
+      if (REG[Q[i] + j].classList.contains("is-right")) { at += j; }
+    }
+  }
+  chk("the right answer is not in the same position every time", at, "0011");
 }());
 
-// ---- The script does the hiding the markup does not ----
-// Every panel ships visible so a reader with no JavaScript meets all of them.
-// That makes "one panel open" a claim about the script, and worth asserting
-// on the figure with the most panels.
+// ---- What the chapter promised it would do ----
+// Four goals at the top, each tied to what on the page delivers it. A goal
+// nothing answers is the failure this catches.
+chk("goal 1, what a process is in flash and in RAM, is delivered by figures 4 and 6",
+    REG["rgp-2"].textContent.indexOf("flashed separately from the kernel") > -1
+      && REG["mmp-6"].textContent.indexOf("The bottom") === 0, true);
+chk("goal 2, why chapter 4's promise cannot be made, is delivered by figure 1",
+    REG["twp-0"].textContent.indexOf("it arrives as bytes") > -1, true);
+chk("goal 3, the search and what stops it, is delivered by figure 3",
+    REG["wkp-5"].textContent.indexOf("fails to be an entry") > -1, true);
+chk("goal 4, what a process is handed, is delivered by figure 9",
+    REG["agp-1"].textContent.indexOf("worked out from this one") > -1, true);
+
+// ---- The rule chapter 4's fifth pass established ----
+// Panels ship visible in the markup so a reader with no JavaScript meets all
+// of them, and the script is what puts the rest away. That inverts which side
+// has to be asserted: what matters is that the script did the hiding.
 (function () {
   var i, hidden = 0;
-  for (i = 0; i < 8; i++) {
-    if (REG["rfp-" + i].classList.contains("is-off")) { hidden++; }
+  for (i = 0; i < 5; i++) {
+    if (REG["twp-" + i].classList.contains("is-off")) { hidden++; }
   }
-  chk("the script closes the seven panels the markup leaves open", hidden, 7);
+  chk("the script closes the panels the markup leaves open", hidden, 4);
+}());
+(function () {
+  var i, hidden = 0;
+  for (i = 0; i < 7; i++) {
+    if (REG["mmp-" + i].classList.contains("is-off")) { hidden++; }
+  }
+  chk("and does it for the seven-panel figure too", hidden, 6);
 }());
 
-// ---- Facts the prose must carry, not only the sources list ----
-// Chapter 4's second pass found four sources bullets backing claims the page
-// never made. These pin the reverse: the load-bearing facts are on the page.
-chk("the chapter says where the register block is",
-    REG["whereregs"].textContent.indexOf("0xE000ED90") > -1, true);
-chk("and names the register that selects a region",
-    REG["whereregs"].textContent.indexOf("MPU_RNR") > -1, true);
-chk("the eight is attributed to the chip crate, not the hardware",
-    REG["eightline"].textContent.indexOf("MPU<8>") > -1, true);
-chk("and the datasheet's own count is quoted beside it",
-    REG["eightline"].textContent.indexOf("8 secure and 8 non-secure") > -1, true);
-chk("the worked example says which base it starts from",
-    REG["workline"].textContent.indexOf("0x20008000") > -1, true);
-chk("the chapter states the enforcement cannot be in the kernel",
-    REG["unitline"].textContent.indexOf("in the processor") > -1
-      && REG["unitline"].textContent.indexOf("not software") > -1, true);
-chk("and says why, in the sentence before it",
-    REG["gapline"].textContent.indexOf("a number in a struct") > -1, true);
-chk("the closing names the two regions a process starts with",
-    REG["closing"].textContent.indexOf("read-write and never executable") > -1
-      && REG["closing"].textContent.indexOf("read-execute and never writable") > -1, true);
+// ---- The edge of what this chapter buys ----
+// The chapter describes boundaries and enforces none of them. Saying so is the
+// finding chapter 4's first review pass turned up, applied before shipping.
+chk("the page says what holds the boundary and what only records it",
+    REG["pairs-enforce"].textContent.indexOf("what the kernel knows") > -1
+      && REG["pairs-enforce"].textContent.indexOf("what enforces it") > -1, true);
+chk("and names hardware as the half that is missing",
+    REG["pairs-enforce"].textContent.indexOf("hardware") > -1, true);
+
+// ---- The vocabulary the chapter leans on ----
+(function () {
+  var WORDS = ["process", "userspace", "TBF", "stack", "heap", "scheduler",
+               "timeslice", "fault", "panic", "syscall", "grant"];
+  var i, missing = 0;
+  for (i = 0; i < WORDS.length; i++) {
+    if (REG["words"].textContent.indexOf(WORDS[i]) < 0) { missing++; }
+  }
+  chk("all eleven of the words the heading promises are in the list", missing, 0);
+}());
 
 // ---- what the first review pass found ----
-// Two source bullets backed claims the page never made: the skip-if-unchanged
-// optimisation, and the older unit writing the identical three control fields.
-// Both are prose now, so both are assertable.
-chk("the chapter says which of the two writes is skipped",
-    REG["skipline"].textContent.indexOf("the eight pairs are left alone") > -1, true);
-chk("and that the three control fields are not the skipped one",
-    REG["sameline"].textContent.indexOf("written every time") > -1, true);
-chk("and what the comparison is against",
-    REG["skipline"].textContent.indexOf("dirty flag") > -1, true);
-chk("the older unit writing the same three fields is on the page",
-    REG["sameline"].textContent.indexOf("identical three") > -1, true);
-// 'region' is the word chapter 4 used for what a linker script cuts the chip
-// into. This chapter redefines it and now says so.
-chk("the collision with chapter 4's sense of the word is named",
-    REG["wordregion"].textContent.indexOf("linker script") > -1, true);
-// The one address in the chapter that was chosen rather than read.
-chk("the worked example admits its base is picked, not read off the board",
-    REG["workline"].textContent.indexOf("picked to make the arithmetic") > -1, true);
-// Three of the five permission names have no caller anywhere. The chapter said
-// so three different ways -- 'the loading path', 'this board', 'this tree'.
-// The three unused variants have no caller anywhere. Saying so in every panel
-// meant saying it four times; it is the note's job now, once.
-chk("the note carries the tree-wide claim about the unused three",
-    REG["pm-note"].textContent.indexOf("no caller anywhere in the tree") > -1, true);
-chk("and no panel repeats it",
-    REG["pmp-0"].textContent.indexOf("this tree") < 0
-      && REG["pmp-3"].textContent.indexOf("this tree") < 0
-      && REG["pmp-4"].textContent.indexOf("this tree") < 0, true);
-// The closing counted the same registers two ways in adjacent sentences.
-chk("the closing says two pairs confine a process, out of eight",
-    REG["closing"].textContent.indexOf("two pairs of registers") > -1
-      && REG["closing"].textContent.indexOf("holds eight pairs") > -1, true);
+// The checksum panel said "every four-byte word of the header". The loop skips
+// word three, which is the checksum field itself, so a reader working one out
+// by hand would have got a different number than the kernel does.
+chk("the checksum panel says which word is left out",
+    REG["hdp-4"].textContent.indexOf("except this one") > -1, true);
+chk("and no longer claims every word goes in",
+    REG["hdp-4"].textContent.indexOf("Every four-byte word of the header, exclusive"), -1);
+
+// The chapter never said the thing every mechanism in it is a consequence of.
+// Tock's threat model was on the page only inside a citation.
+chk("the chapter states its own premise in the prose",
+    REG["premise"].textContent.indexOf("untrusted") > -1, true);
+chk("and quotes the clause that says what replaces trust",
+    REG["premise"].textContent.indexOf("hardware memory protection") > -1, true);
+
+// Goal 2 promised to name what the kernel uses instead, and the name appeared
+// once on the whole page -- in the next chapter's heading.
+chk("the body names the fence rather than describing it",
+    REG["closing"].textContent.indexOf("memory protection unit") > -1, true);
+
+// Chapter 4's next card promised what the isolation costs to run, and the
+// chapter delivered the memory cost only.
+chk("the run-time cost is on the page too",
+    REG["runcost"].textContent.indexOf("every single visit to a process") > -1, true);
+chk("and it is counted rather than gestured at",
+    REG["runcost"].textContent.indexOf("Six operations") > -1, true);
+
+// ---- Figure 12: the limits section was prose only ----
+// Chapter 4's second pass found exactly this shape -- the section about what a
+// chapter does not buy, sitting on the skim path as a bare heading.
+chk("figure 12 opens on the first of the three",
+    REG["tb-0"].getAttribute("aria-pressed"), "true");
+walk("tb-", "tbp-", 3, "figure 12");
+REG["tb-0"].fire("click");
+chk("the header panel says total_size is believed outright",
+    REG["tbp-0"].textContent.indexOf("believed outright") > -1, true);
+chk("the app_break panel hands enforcement to chapter 6",
+    REG["tbp-1"].textContent.indexOf("chapter 6") > -1, true);
+chk("and the timeslice is named as the one already enforced",
+    REG["tbp-2"].textContent.indexOf("anything already enforces") > -1, true);
+
+// ---- The reader has this board on the desk ----
+// Nothing in chapters 1 to 4 was actionable. This one describes a thing with an
+// observable consequence, so it says how to cause it.
+chk("the two objcopy flags are both on the page",
+    REG["in-0"].textContent.indexOf("--set-section-flags") > -1
+      && REG["in-1"].textContent.indexOf("--update-section") > -1, true);
+chk("and the app lands where figure 3 starts looking",
+    REG["inp-1"].textContent.indexOf("0x10040000") > -1, true);
+
+// ---- Every glossary word is used again ----
+// The section promises "repeated in context below", and two of the eleven were
+// not: `userspace` and `TBF` appeared once each, in the list itself. The
+// general rule is a static check now; these are the two places that were fixed.
+chk("userspace is used where the line it names is drawn",
+    REG["userspaceline"].textContent.indexOf("userspace") > -1, true);
+chk("and TBF is used where the chapter is about a TBF header",
+    REG["trusts"].textContent.indexOf("TBF header") > -1, true);
+
+// ---- The self-check cannot be passed on length ----
+// Chapter 4 shipped with the right answer as the structurally odd option. The
+// fix there was parallel phrasing, which left length unguarded: here the right
+// answer was never longer than any distractor in any of the four questions.
+(function () {
+  var CASE = [["qa-", 0], ["qb-", 0], ["qc-", 1], ["qd-", 1]];
+  var i, j, len, right, uniqueShortest = 0;
+  for (i = 0; i < CASE.length; i++) {
+    len = [];
+    for (j = 0; j < 3; j++) {
+      len.push(REG[CASE[i][0] + j].textContent.split(/\s+/).length);
+    }
+    right = len[CASE[i][1]];
+    if (len.filter(function (n) { return n < right; }).length === 0
+        && len.filter(function (n) { return n === right; }).length === 1) {
+      uniqueShortest++;
+    }
+  }
+  chk("the right answer is never the one shortest option", uniqueShortest, 0);
+}());
 
 // ---- what the second review pass found ----
-// The glossary was the one part of the page neither earlier pass had aimed at,
-// and it held two errors. 'execute-never' called itself one bit while figure 2
-// had grown a second, and 'privileged' blamed the chip for a line Tock writes.
-chk("the glossary says there are two execute-never bits",
-    REG["words"].textContent.indexOf("There are two: one aimed at the process") > -1, true);
-chk("and that exempting the kernel is Tock's configuration, not the chip's",
-    REG["words"].textContent.indexOf("Tock configures the unit not to constrain it") > -1, true);
-// It also miscounted its own exception names: MemManage never fires here and
-// HardFault is the handler this board installs, so one of two, not two of three.
-chk("the count of exception names is two, one of which never fires",
-    REG["wordcount"].textContent.indexOf("Two of them are the names") > -1
-      && REG["wordcount"].textContent.indexOf("only one of the two ever fires") > -1, true);
-// Figure 2's note said ten bits had nowhere to go, in a figure whose rows now
-// account for all ten.
-chk("the note says the ten register positions carry fields",
-    REG["rf-note"].textContent.indexOf("carrying the fields in the rows above") > -1, true);
-// PXN's 0x10 is added to figure 3's limits, not visible inside them.
-chk("the PXN panel says the 0x10 is added, not present",
-    REG["rfp-4"].textContent.indexOf("adds to every limit") > -1, true);
-// ATTRINDX is three bits and its own row says so.
-chk("the three-bit field is named as three bits, because ATTRINDX is one",
-    REG["rfp-5"].textContent.indexOf("Three bits") > -1
-      && REG["rf-5"].textContent.indexOf("ATTRINDX") > -1, true);
+// Figure 4's last row and Figure 6 were the same memory at two scales, and
+// nothing joined them. `_sappmem` was cited in the sources and named nowhere on
+// the page, so a reader finishing Figure 6 could not say where memory_start
+// came from.
+chk("the pool and one slice out of it are joined",
+    REG["poolbridge"].textContent.indexOf("Figure 4's last row") > -1, true);
+
+// The chapter was singular end to end while two figures leaned on there being
+// more than one process. NUM_PROCS = 4 was cited and claimed nowhere.
+chk("the chapter says how many fit at a time",
+    REG["plural"].textContent.indexOf("four at a time") > -1, true);
+chk("and that they are handed memory in the order they were found",
+    REG["plural"].textContent.indexOf("in the order it found them") > -1, true);
+
+// Figures 6, 7 and 9 describe ProcessStandard. Pass 1 caught the CALLBACK_LEN
+// instance of stating an implementation's property as Tock's; this is the
+// general case, in a chapter whose method is "the board decides".
+chk("the chapter says whose implementation this is",
+    REG["whoseimpl"].textContent.indexOf("ProcessStandard") > -1, true);
+
+// Four sources bullets backed claims the page did not make. The one that was a
+// real loss: the kernel zeroes what a process can reach before it runs, which
+// is the only isolation guarantee here the kernel provides itself.
+chk("the zeroing is on the page, not only in the citations",
+    REG["mmp-6"].textContent.indexOf("written to zero first") > -1, true);
+chk("and it says what that prevents",
+    REG["mmp-6"].textContent.indexOf("the last process to hold this memory") > -1, true);
+chk("the timer is named and clocked rather than left as 'a hardware timer'",
+    REG["tbp-2"].textContent.indexOf("125") > -1, true);
+
+// The install section stopped one step short of being usable.
+chk("the reader is told where a .tbf comes from",
+    REG["installsrc"].textContent.indexOf("libtock-c") > -1, true);
+
+// Three panels opened with a deictic that has no referent once the script is
+// off and every panel is stacked.
+chk("the version panel names its field",
+    REG["hdp-0"].textContent.indexOf("The version must be 2") === 0, true);
+chk("the YieldedFor panel names its state",
+    REG["psp-2"].textContent.indexOf("YieldedFor") === 0, true);
+chk("and the imix panel names its board",
+    REG["fpp-1"].textContent.indexOf("On imix") === 0, true);
+
+// Figure 6's note counted three moving boundaries and then named the heap,
+// whose own boundary does not move.
+(function () {
+  var note = REG["mm-note"].textContent, i, named = 0;
+  var MOVERS = ["stack pointer", "app_break", "kernel_memory_break"];
+  for (i = 0; i < MOVERS.length; i++) {
+    if (note.indexOf(MOVERS[i]) > -1) { named++; }
+  }
+  chk("the note names the three boundaries that actually move", named, 3);
+}());
+
+// "Six operations" is right for this board and general as written; the hook
+// that would make it seven is now on the page.
+chk("the count is scoped to this board",
+    REG["runcost"].textContent.indexOf("on this board") > -1, true);
+chk("and the seventh has somewhere to go",
+    REG["runcost"].textContent.indexOf("hook") > -1, true);
 
 // ---- what the third review pass found ----
-// A lens over every absolute claim on the page -- never, only, nothing, always,
-// every, cannot. 103 sentences of 537 carry one, and four were wrong.
-// MAIR0 is written above the dirty check, so it goes in on every configure.
-// Mutation testing caught this assertion pointing at the wrong paragraph: the
-// sentence lives one <p> further down, so the check could never have failed.
-chk("the intro no longer says the attribute is set once",
-    REG["threeuses"].textContent.indexOf("sets once") < 0
-      && REG["threeuses"].textContent.indexOf("one line the kernel writes on every configure") > -1, true);
-chk("and figure 2 says on every configure",
-    REG["rfp-5"].textContent.indexOf("set on every configure") > -1, true);
-// Steps 1 and 2 both have no source line behind them, so the sentence counts
-// nothing now: it says why this step has none.
-chk("step 1 says why it has no source line rather than counting",
-    REG["flp-0"].textContent.indexOf("no software in it") > -1
-      && REG["flp-0"].textContent.indexOf("Only twice") < 0, true);
-// RLAR's five bits carry the other half of the size rule.
-chk("the base panel calls its five bits half the rule",
-    REG["rfp-0"].textContent.indexOf("half the size rule") > -1, true);
-chk("and points at the field carrying the other half",
-    REG["rfp-0"].textContent.indexOf("The limit field in the pair below") > -1, true);
-// A request that is already a multiple of 32 gets exactly what it asked for.
-chk("the rounding claim is scoped to requests that need rounding",
-    REG["mm-note"].textContent.indexOf("not already a multiple of 32") > -1, true);
+// "the fence" was used 7,300 characters before the memory protection unit was
+// named, and in the gap it also named a second thing -- Figure 12 called the
+// timeslice a fence, forty words before the closing said the chapter had
+// described a fence and not built one. The word is the MPU's now, and it is
+// first used where it is named.
+chk("the run-time cost paragraph does not use a metaphor it has not introduced",
+    REG["runcost"].textContent.indexOf("fence"), -1);
+chk("and figure 12 calls the timeslice a boundary rather than a fence",
+    REG["tbp-2"].textContent.indexOf("fence"), -1);
+chk("the closing names the fence in the same sentence it uses the word",
+    REG["closing"].textContent.indexOf("memory protection unit") > -1
+      && REG["closing"].textContent.indexOf("fence") > -1, true);
 
-// ---- what the fourth review pass found ----
-// Three paragraphs carried real claims behind ids no assertion ever read. An
-// anchor the suite ignores is the mirror of a control nothing wires up.
-chk("the chapter states the order: regions in, then the unit on",
-    REG["ctrlline"].textContent.indexOf("before a switch into a process") > -1
-      && REG["ctrlline"].textContent.indexOf("turned on immediately after") > -1, true);
-chk("and that two of the three control fields are about who is exempt",
-    REG["ctrlline"].textContent.indexOf("who is <em>not</em> being protected against") > -1
-      || REG["ctrlline"].textContent.indexOf("who is not being protected against") > -1, true);
-chk("the fault section opens on the access that starts it",
-    REG["instantline"].textContent.indexOf("one byte past the end of its region") > -1, true);
-chk("and says how many steps it takes to become a stopped process",
-    REG["instantline"].textContent.indexOf("six steps") > -1, true);
-chk("the two-chips section says the kernel asks for a region, not a register",
-    REG["twochips"].textContent.indexOf("It asks for a region of at least so many bytes") > -1, true);
-chk("and names where the answer is worked out",
-    REG["twochips"].textContent.indexOf("under") > -1
-      && REG["twochips"].textContent.indexOf("arch/") > -1, true);
+// `block` meant three things: chapter 3's boot structure, the process control
+// block, and twice a piece of hardware. Chapter 3's glossary pins the first.
+chk("hardware is no longer called a block",
+    REG["tbp-1"].textContent.indexOf("block") + REG["closing"].textContent.indexOf("block"), -2);
+
+// ---- Figure 5: the install section was a bare heading on the skim path ----
+// The same defect chapter 4's second pass named, reintroduced by the pass that
+// fixed it elsewhere. It also now answers the question a reader with this
+// board on the desk asks next.
+chk("figure 5 opens on the first flag", REG["in-0"].getAttribute("aria-pressed"), "true");
+walk("in-", "inp-", 3, "figure 5");
+REG["in-0"].fire("click");
+chk("the first flag panel ties back to figure 4's third row",
+    REG["inp-0"].textContent.indexOf("Figure 4's third row") > -1, true);
+chk("the second says nothing rewrites the file on the way in",
+    REG["inp-1"].textContent.indexOf("Nothing rewrites it") > -1, true);
+chk("and the third says which target suits which hardware",
+    REG["inp-2"].textContent.indexOf("program-openocd") > -1, true);
+chk("it warns that the default path is a Linux one",
+    REG["inp-2"].textContent.indexOf("Linux") > -1, true);
+chk("and the README's third target is in the note rather than lost",
+    REG["in-note"].textContent.indexOf("flash-app") > -1, true);
+
+// ---- which board the make target flashes ----
+// Figure 5 is the first instruction in the series aimed at hardware, so it has
+// to say what hardware. The crate is the plain Pico 2 and the tree has no
+// wireless one; nothing in this chapter turns on the difference, and the
+// sentence says so rather than leaving the reader to wonder.
+chk("the install section names the board the Makefile belongs to",
+    REG["inboard"].textContent.indexOf("plain Pico 2") > -1, true);
+chk("and says the tree has no wireless crate for it",
+    REG["inboard"].textContent.indexOf("raspberry_pi_pico_2_w") > -1, true);
+chk("it scopes the difference out of this chapter",
+    REG["inboard"].textContent.indexOf("does not turn") +
+      REG["inboard"].textContent.indexOf("turns on which one you own") > -2, true);
+chk("and hands the reader to the chapter it does matter in",
+    REG["inboard"].textContent.indexOf("chapter 4") > -1, true);

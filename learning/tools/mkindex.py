@@ -7,8 +7,8 @@
 """Emit the publishable copy of the series, with hosted links instead of paths.
 
 Every page here links the others by relative path: the cover opens
-`ch03-what-a-driver-may-touch/`, and a chapter reaches its neighbours at
-`../ch04-what-a-process-is/` and the cover at `../`. That is what a clone
+`ch04-what-a-driver-may-touch/`, and a chapter reaches its neighbours at
+`../ch05-what-a-process-is/` and the cover at `../`. That is what a clone
 wants, and what a static host wants -- on a real site this script has nothing
 to do, and the right build is `cp -r learning/ .`
 

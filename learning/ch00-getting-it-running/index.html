@@ -309,7 +309,7 @@ button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
 .note { font-size: .92rem; line-height: 1.55; color: var(--ink-soft); margin: 0 0 1rem; }
 
 /* ---------- the wiring bench ----------
-   Chapter 5's lesson applied to a physical task: the reader sets the thing up
+   Chapter 6's lesson applied to a physical task: the reader sets the thing up
    and the figure reports what the bench would do, rather than telling them
    what to do and hoping. Three leads, three choices each, and the symptom is
    the answer -- because on a real bench the symptom is all you get.
@@ -643,7 +643,7 @@ dfn {
   letter-spacing: .02em;
   color: var(--accent);
 }
-/* Not a flex row, which it was until chapter 6 rendered one. Flex makes a
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
    flex item of every inline child, so an emphasis or a code span inside one
    of these lines came out with a half-rem gap on each side and the
    punctuation after it adrift -- chapter 1's Figure 13 has shipped with an
@@ -1271,7 +1271,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
   <p>This branch has a <code>raspberry_pi_pico_2_w</code> crate. Use it: substitute its name for <code>raspberry_pi_pico_2</code> in the commands above and everything else here is unchanged. It is not in the Tock repository yet, so if you are reading against upstream rather than this branch, build the plain Pico&nbsp;2 crate and read on.</p>
   <p id="wpin">Two crates for one chip, and the whole difference is one pin. On a plain Pico 2 the user light is on pin&nbsp;25, and that is the pin its crate hands to the light driver. On a Pico 2&nbsp;W that pin is the radio's chip select, and the light is on the radio rather than on the chip. So the Pico 2&nbsp;W crate hands nothing to the light driver, and its panic handler prints where the other blinks.</p>
   <p id="wscope">Everything this chapter asks of the board works on either one: it builds, it flashes, it boots, and it talks. Nothing above needs that pin, and nothing above lights anything, because an idle kernel with no application loaded drives no light at all.</p>
-  <p>Where that shows is chapter 1, which follows one write all the way down to that pin, and chapter 3, which watches the panic handler blink it. Both say which of the two crates they mean.</p>
+  <p>Where that shows is chapter 1, which follows one write all the way down to that pin, and chapter 4, which watches the panic handler blink it. Both say which of the two crates they mean.</p>
   <p id="wtest">That is no longer a guess. This chapter was checked on a Pico 2&nbsp;W: the kernel flashed over the probe, booted, printed its line and took typed commands on that board. The chips are the same family and the W's extra parts simply go unclaimed, which is how it read from the source and is now what a board did.</p>
 </section>
 

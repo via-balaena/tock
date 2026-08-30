@@ -1,0 +1,2429 @@
+<!-- Licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright Jon Hillesheim 2026. -->
+
+<title>Everything Is Memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Lato:wght@400;700&family=Source+Sans+3:wght@500;600;700&display=swap">
+
+<style>
+:root {
+  --ground:      #F5F6F7;
+  --surface:     #FFFFFF;
+  --surface-sunk:#ECEEF1;
+  --ink:         #17191B;
+  --ink-soft:    #5A6068;
+  --ink-faint:   #5F656D;
+  --rule:        #D8DBDF;
+  --rule-strong: #7C838C;
+  --accent:      #1565C0;
+  --accent-soft: #E3F2FD;
+  --hot:         #A25904;
+  --hot-fill:    #D97705;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #FBEBD6;
+  --danger:      #B93A2B;
+  --danger-soft: #F7E4E1;
+  --shadow:      0 1px 2px rgba(19,26,29,.06), 0 8px 24px -12px rgba(19,26,29,.18);
+
+  --display: "Source Sans 3", "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+  --body: "Lato", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 34rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0F1216;
+    --surface:     #161A1F;
+    --surface-sunk:#0B0E11;
+    --ink:         #E5E8EB;
+    --ink-soft:    #98A0A8;
+    --ink-faint:   #7C848C;
+    --rule:        #262B31;
+    --rule-strong: #636B76;
+    --accent:      #2196F3;
+    --accent-soft: #0E2A44;
+    --hot:         #FFA733;
+    --hot-fill:    #FFA733;
+    --hot-ink:     #1A1206;
+    --hot-soft:    #33240E;
+    --danger:      #E8695C;
+    --danger-soft: #3A1B18;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0F1216;
+  --surface:     #161A1F;
+  --surface-sunk:#0B0E11;
+  --ink:         #E5E8EB;
+  --ink-soft:    #98A0A8;
+  --ink-faint:   #7C848C;
+  --rule:        #262B31;
+  --rule-strong: #636B76;
+  --accent:      #2196F3;
+  --accent-soft: #0E2A44;
+  --hot:         #FFA733;
+  --hot-fill:    #FFA733;
+  --hot-ink:     #1A1206;
+  --hot-soft:    #33240E;
+  --danger:      #E8695C;
+  --danger-soft: #3A1B18;
+  --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--wide); margin: 0 auto; }
+
+.col {
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+p { margin: 0; }
+strong { font-weight: 600; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 4.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.standfirst {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.noscript-note {
+  border-left: 3px solid var(--hot);
+  background: var(--hot-soft);
+  padding: .8rem 1rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- section headings ---------- */
+
+section { margin-top: 3.5rem; }
+
+h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .3rem;
+  text-wrap: balance;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: .01em;
+  margin: 1rem 0 0;
+}
+
+/* ---------- inline bits ---------- */
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: .08em .34em;
+  word-break: break-word;
+}
+
+.addr { color: var(--hot); font-weight: 500; }
+
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* ---------- instrument (figure) ---------- */
+
+.instrument {
+  margin: 2.25rem auto;
+  max-width: var(--wide);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.instrument-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+
+.instrument-label {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.instrument-title {
+  font-family: var(--display);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.instrument-body { padding: 1.35rem 1.1rem; }
+
+.instrument-note {
+  padding: .7rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-sunk);
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+button.primary:hover:not(:disabled) { filter: brightness(1.12); color: var(--surface); }
+
+.controls {
+  display: flex;
+  gap: .55rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ---------- ladder (reveal) ---------- */
+
+.ladder { display: flex; flex-direction: column; gap: 0; }
+
+.rung {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 1rem;
+  align-items: start;
+  padding: .85rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.rung:last-child { border-bottom: 0; }
+/* Keep the space so the page does not jump as layers are stripped, but let
+   the label through: the reader meets this figure showing one rung and four
+   blank rows otherwise, and the note below it talks about a bottom rung that
+   was not on screen. The label alone gives the shape; .rung-who is already
+   --ink-faint until its rung is on, so pending reads as pending. */
+.rung:not(.on) > :not(.rung-who) { visibility: hidden; }
+
+.rung-who {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-top: .28rem;
+}
+.rung.on .rung-who { color: var(--accent); }
+.rung:last-child.on .rung-who { color: var(--hot); }
+
+.rung-code {
+  font-family: var(--mono);
+  font-size: .9rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  white-space: pre;
+  padding-bottom: .15rem;
+}
+.rung-where {
+  font-family: var(--display);
+  font-size: .74rem;
+  color: var(--ink-faint);
+  letter-spacing: .02em;
+  margin-top: .25rem;
+  white-space: normal;
+}
+
+/* ---------- memory map ---------- */
+
+.map { display: flex; flex-direction: column; gap: 2px; }
+
+.map-row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr auto;
+  gap: .9rem;
+  align-items: center;
+  padding: .5rem .7rem;
+  background: var(--surface-sunk);
+  border-left: 3px solid var(--rule-strong);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  color: inherit;
+  border-top: 0; border-right: 0; border-bottom: 0;
+  border-radius: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: inherit;
+}
+.map-row:hover:not(:disabled) { background: var(--accent-soft); border-left-color: var(--accent); color: inherit; }
+.map-row[aria-pressed="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+.map-row.is-hot[aria-pressed="true"] { background: var(--hot-soft); border-left-color: var(--hot); }
+
+.map-addr {
+  font-family: var(--mono);
+  font-size: .84rem;
+  font-weight: 500;
+  color: var(--hot);
+  font-variant-numeric: tabular-nums;
+}
+.map-name {
+  font-family: var(--display);
+  font-size: .92rem;
+  font-weight: 600;
+}
+.map-size {
+  font-family: var(--mono);
+  font-size: .76rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A small muted aside: provenance lines, caveats, footnotes. */
+.note {
+  font-size: .92rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* An instrument whose content is a single code block, so the block can sit
+   flush against the frame instead of inside the usual padding. */
+.instrument-body.flush { padding: 0; }
+
+/* An instrument that should hold the reading column's width rather than
+   breaking out wide. */
+.instrument.narrow { max-width: var(--measure); }
+
+.compare { margin-top: 1.1rem; }
+
+.map-detail {
+  margin-top: 1.1rem;
+  padding: .85rem 1rem;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  font-size: .95rem;
+  line-height: 1.55;
+  min-height: 3.5rem;
+}
+.map-detail.hot { background: var(--hot-soft); border-left-color: var(--hot); }
+
+/* ---------- Figure 2: one layout, two bases ----------
+   The only figure in this chapter with nothing to drive. Its whole claim is
+   that the offset is the shared half and the base is the varying one, which is
+   a claim about two numbers moving independently -- so both are controls and
+   the address is computed rather than printed twice by hand. */
+.twohalf { display: flex; flex-direction: column; gap: .5rem; margin: .3rem 0 1rem; }
+.halfrow { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.halfrow-k { font-family: var(--display); font-size: .7rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 5.2rem; }
+/* Register names and addresses, so their case is the content. */
+.halfrow button { font-family: var(--mono); font-size: .8rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .3rem .5rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule); }
+.halfrow button[aria-pressed="true"] { border-color: var(--hot);
+  background: var(--hot-soft); color: var(--hot); }
+.moved { font-size: .93rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: .2rem 0 0; }
+.mv { display: none; }
+.mv.is-on { display: block; }
+
+/* ---------- doorbell compare ---------- */
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.panel {
+  border: 1px solid var(--rule);
+  background: var(--surface-sunk);
+  padding: .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+.panel h3 {
+  font-family: var(--display);
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--accent);
+}
+.panel.hot h3 { color: var(--hot); }
+.panel-line {
+  font-family: var(--mono);
+  font-size: .82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre;
+}
+.panel-line.prose {
+  white-space: normal;
+  font-family: var(--body);
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+/* ---------- race machine ---------- */
+
+.race-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: .85rem;
+  margin-bottom: 1.1rem;
+}
+
+.core {
+  border: 1px solid var(--rule);
+  background: var(--surface-sunk);
+  padding: .8rem .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  transition: border-color .18s, background .18s;
+}
+.core.active { border-color: var(--accent); background: var(--accent-soft); }
+.core.hw { border-style: solid; }
+.core.hw.active { border-color: var(--hot); background: var(--hot-soft); }
+
+.core-name {
+  font-family: var(--display);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.core.active .core-name { color: var(--accent); }
+.core.hw.active .core-name { color: var(--hot); }
+
+.core-val {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.core-sub {
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--ink-faint);
+  min-height: 1.1rem;
+}
+
+.steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 1.1rem; }
+.step {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: .7rem;
+  align-items: baseline;
+  padding: .42rem .5rem;
+  border-bottom: 1px solid var(--rule);
+  transition: color .2s, background .2s;
+  font-family: var(--mono);
+  font-size: .82rem;
+}
+.step:not(.done):not(.is-next),
+.step:not(.done):not(.is-next) .step-who { color: var(--ink-faint); }
+.step.done { color: var(--ink); }
+.step.is-next { color: var(--ink); background: var(--accent-soft); }
+.step-who {
+  font-family: var(--display);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.step-act { white-space: pre; overflow-x: auto; }
+
+.outcome {
+  padding: .8rem 1rem;
+  border-left: 3px solid var(--rule-strong);
+  background: var(--surface-sunk);
+  font-size: .95rem;
+  line-height: 1.55;
+  min-height: 3.2rem;
+}
+.outcome.bad { border-left-color: var(--danger); background: var(--danger-soft); }
+.outcome.good { border-left-color: var(--accent); background: var(--accent-soft); }
+
+.tabs { display: flex; gap: 0; margin-bottom: 1.1rem; border-bottom: 1px solid var(--rule); }
+.tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  border-radius: 0;
+  padding: .5rem .9rem;
+  color: var(--ink-faint);
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--hot); }
+.tab:hover:not(:disabled) { color: var(--ink); border-color: transparent; border-bottom-color: var(--rule-strong); }
+.tab[aria-selected="true"]:hover { border-bottom-color: var(--hot); }
+
+/* ---------- code block ---------- */
+
+pre {
+  font-family: var(--mono);
+  font-size: .84rem;
+  line-height: 1.6;
+  background: var(--surface-sunk);
+  border: 1px solid var(--rule);
+  padding: .9rem 1rem;
+  overflow-x: auto;
+  margin: 0;
+  border-radius: 2px;
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
+.tok-c { color: var(--ink-faint); font-style: italic; }
+.tok-k { color: var(--accent); }
+.tok-n { color: var(--hot); }
+
+/* ---------- aside ---------- */
+
+/* A verbatim quotation from a datasheet or specification. */
+.quote {
+  margin: 0;
+  padding: .1rem 0 .1rem 1rem;
+  border-left: 3px solid var(--rule-strong);
+  font-size: .97rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+/* ---------- closing ---------- */
+
+.next {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--ink);
+  max-width: var(--measure);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+/* ---------- the reading order ----------
+   Seven chapters that were seven islands. Until this, no page linked to any
+   other, and the cover was the only thing holding the order -- so a reader who
+   arrived at a chapter directly had no way on and no way back. The running
+   head carries the way back; the card at the foot carries the way on.
+
+   Every href here is relative, so a clone reads exactly as a static host does.
+   mkindex.py is what rewrites them for a host where neither path exists. */
+
+/* The eyebrow every chapter already had, and under it the way back to the
+   cover -- wrapped, so the two sit closer together than the masthead's own
+   1.1rem gap would put them. */
+.runhead {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.runback {
+  align-self: flex-start;
+  font-family: var(--display);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+.runback:hover, .runback:focus-visible {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* The next chapter's title, which was unlinked text for seven chapters. The
+   arrow is generated rather than typed, so it cannot be read out as a word. */
+.next h3 a { color: inherit; text-decoration: none; }
+/* A non-breaking space, not a plain one: at phone width the plain
+   space is a break opportunity, and the arrow wrapped onto a line of
+   its own under the title. */
+.next h3 a::after { content: "\00A0\2192"; color: var(--hot); }
+.next h3 a:hover, .next h3 a:focus-visible { color: var(--accent); }
+
+/* The two smaller moves, under the card: back one chapter, or out to the
+   cover. Exactly two items, placed by `space-between`, so the gap only
+   applies when they wrap. */
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: .3rem;
+  font-family: var(--display);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.pager a { color: var(--ink-soft); text-decoration: none; }
+.pager a:hover, .pager a:focus-visible { color: var(--accent); }
+.next ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .35rem; }
+.next li::marker { font-family: var(--mono); color: var(--hot); }
+
+.sources {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+  margin-inline: auto;
+  font-size: .84rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+
+/* License and attribution, set off from the citations above it. */
+.license {
+  padding-top: .9rem;
+  border-top: 1px solid var(--rule);
+}
+
+/* An eyebrow marking what comes next rather than what section this is. */
+.eyebrow.forward { color: var(--hot); }
+.eyebrow.forward::after { background: var(--rule); }
+.sources h3 { margin-bottom: .4rem; font-size: .95rem; color: var(--ink); }
+.sources ul { margin: 0; padding-left: 1.1rem; }
+.sources code { font-size: .8em; }
+
+@media (max-width: 30rem) {
+  .rung { grid-template-columns: 1fr; gap: .35rem; }
+  .rung-who { padding-top: 0; }
+  .map-row { grid-template-columns: 1fr auto; row-gap: .15rem; }
+  .map-row .map-addr { grid-column: 1 / -1; }
+  /* Stack, the way .rung and .map-row above do. The column was 1.6rem, which
+     is about a third of what "CORE 0" needs at .7rem uppercase with letter
+     spacing, so the label wrapped and the core number landed on the line below
+     its own action -- "COREread gpio_out" over an orphaned "0". The core
+     number is the whole argument of this figure. */
+  .step { grid-template-columns: 1fr; row-gap: .1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Beginner scaffolding. Everything below exists to lower reading cost:
+   a word defined where it is first used, a stated goal, an instruction above
+   each figure, a guess before each reveal, and a way to check yourself after.
+   --------------------------------------------------------------------------- */
+
+/* A word being defined, right where the reader meets it. */
+dfn {
+  font-style: normal;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+/* What the reader will be able to do. Stated before the work, not after. */
+.goals {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.goals h2 {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.goals ol { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+.goals .cost {
+  font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem;
+}
+
+/* An imperative naming the control, immediately above the figure it drives. */
+.dothis {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--accent);
+}
+/* Not a flex row, which it was until chapter 7 rendered one. Flex makes a
+   flex item of every inline child, so an emphasis or a code span inside one
+   of these lines came out with a half-rem gap on each side and the
+   punctuation after it adrift -- chapter 1's Figure 3 has shipped with an
+   orphaned full stop since it was published. Tag names are spelled out here
+   rather than written as markup, because the tag-balance check counts what a
+   stylesheet comment says too. The arrow carries its own spacing instead. */
+.dothis::before {
+  content: "\2192";
+  font-weight: 700;
+  margin-right: .5rem;
+}
+
+/* Guess first, then reveal. The guess is the point; the score is not. */
+.bet {
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  padding: 1.2rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+.bet-q {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt {
+  font: inherit;
+  /* These options begin "0x02000000 - the value you stored". `font: inherit`
+     carries the family but not the case, so the shared button rule was
+     uppercasing them into 0X02000000, two paragraphs under prose showing the
+     same address correctly. */
+  text-transform: none; letter-spacing: 0;
+  text-align: left;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: .6rem .8rem;
+  cursor: pointer;
+  line-height: 1.45;
+}
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why {
+  font-size: .97rem;
+  line-height: 1.55;
+  border-top: 1px solid var(--rule);
+  padding-top: .8rem;
+  color: var(--ink-soft);
+}
+.bet-why:empty { display: none; }
+
+/* Check yourself. Question visible, answer one click away. */
+.selfcheck { display: flex; flex-direction: column; gap: .6rem; }
+/* Figure 2 keeps one <details> inside a .selfcheck, so these rules are still
+   load-bearing even though the six questions below no longer use any. Deleting
+   them along with the questions stripped that reveal of its box, and only a
+   render showed it. */
+.selfcheck details {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .75rem .95rem;
+}
+.selfcheck summary { cursor: pointer; font-weight: 600; line-height: 1.5; }
+.selfcheck summary::marker { color: var(--accent); }
+.selfcheck .answer {
+  margin-top: .6rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+
+.q {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: .8rem .95rem;
+}
+.q-ask { font-weight: 600; line-height: 1.5; }
+.q-opts { display: flex; flex-direction: column; gap: .4rem; margin-top: .7rem; }
+
+/* Answer choices, not toggles: once one is taken the set is settled, so they
+   carry no aria-pressed and nothing is chosen before the reader chooses. */
+.q-opt {
+  font-family: var(--body); font-size: .97rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; line-height: 1.45;
+  text-align: left; padding: .5rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.q-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.q-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+
+/* Visible by default and hidden by the script, the way Figure 4's cases are,
+   so a reader with no scripting gets all six answers rather than none. */
+.q-answer {
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+.q-answer.is-off { display: none; }
+.q-yes, .q-no { display: none; font-weight: 600; }
+.q-yes.is-shown, .q-no.is-shown { display: inline; }
+.q-yes { color: var(--accent); }
+.q-no { color: var(--danger); }
+
+/* The words, collected. */
+.glossary {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: .55rem 1.1rem;
+  margin: 0;
+  font-size: .97rem;
+  line-height: 1.55;
+}
+.glossary dt {
+  font-family: var(--mono);
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: .12rem;
+}
+.glossary dd { margin: 0; color: var(--ink-soft); }
+
+/* Term against meaning, inline in the prose. Reuses the glossary's grid,
+   because that is the same shape and the reader meets it again at the end.
+   Three passages used to say this in sentences -- "X is A, meaning B. Y is C,
+   meaning D." -- which is a table asking to be held in the head. */
+.glossary.inline {
+  margin: .8rem 0;
+  grid-template-columns: minmax(6.5rem, auto) 1fr;
+  gap: .4rem 1rem;
+  font-size: .93rem;
+}
+/* The end-of-chapter glossary is a reference and is set quietly. These carry
+   the argument, so they read at the weight of the prose around them rather
+   than below it. */
+.glossary.inline dd { color: var(--ink); }
+
+/* A procedure, as steps. It was one 72-word sentence-chain. */
+.steps {
+  margin: .7rem 0; padding-left: 1.4rem;
+  font-size: .93rem; line-height: 1.6; color: var(--ink);
+}
+.steps li { margin: .2rem 0; }
+.steps li::marker { color: var(--accent); font-family: var(--display); font-weight: 700; }
+
+/* Eraser eyes: the lines you are meant to skip, visibly skipped. */
+.reveal-all {
+  font-family: var(--display);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--accent);
+  padding: 0 0 1px;
+  cursor: pointer;
+}
+
+/* Text only a screen reader reads. Not `display: none`, which would take it
+   out of the accessibility tree too. Needed because an `aria-label` on a
+   control whose *content is the answer* silently replaces that content: the
+   digit cells announced "the first digit, bits 31 down to 28" and never said
+   which digit was there, which is the whole point of the figure. Naming them
+   with `aria-labelledby` pointing at the live digit fixes that, and needs one
+   hidden span per cell to carry the part that is not on screen. */
+.vh {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Figure 5: a disassembly whose three working lines are controls. Built from
+   rows rather than one preformatted block, so each line can carry a run-order
+   badge in its own gutter without disturbing the alignment of the instruction
+   text. (Do not write that tag out here: the gate counts tags with a regex and
+   would see this comment as an unclosed one.) */
+.dis {
+  font-family: var(--mono); font-size: .84rem; line-height: 1.75;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .7rem .2rem; overflow-x: auto;
+}
+.disrow {
+  display: grid; grid-template-columns: 2.1rem 1fr;
+  align-items: baseline; width: 100%; text-align: left;
+  min-width: 30rem;
+}
+.dis-n {
+  font-family: var(--display); font-size: .68rem; font-weight: 700;
+  color: var(--ink-faint); text-align: center; letter-spacing: 0;
+}
+.dis-t { white-space: pre; color: var(--ink); }
+
+/* The three that are controls. */
+.disline {
+  background: none; border: 0; border-radius: 0;
+  padding: 0; margin: 0; cursor: pointer;
+  font-family: var(--mono); font-size: .84rem; line-height: 1.75;
+  text-transform: none; letter-spacing: 0;
+}
+.disline .dis-n {
+  color: var(--ink-faint); border: 1px solid var(--ink-faint);
+  border-radius: 2px; margin-right: .4rem;
+}
+.disline:hover:not(:disabled) .dis-t { color: var(--hot); }
+.disline:hover:not(:disabled) .dis-n { border-color: var(--hot); color: var(--hot); }
+.disline[aria-pressed="true"] .dis-t { color: var(--hot); font-weight: 600; }
+.disline[aria-pressed="true"] .dis-n {
+  background: var(--hot-fill); border-color: var(--hot-fill); color: var(--hot-ink);
+}
+
+/* Twelve lines of bookkeeping, hidden until asked for. */
+.dis .dis-skip { display: none; }
+.dis.dis-all .dis-skip { display: grid; }
+
+.dispanels { margin-top: 1.1rem; }
+.dispanel { display: none; }
+.dispanel.is-on { display: block; }
+.dispanel p { margin-bottom: .8rem; font-size: .97rem; line-height: 1.6; }
+.dispanel p:last-child { margin-bottom: 0; }
+.dispanel-h {
+  display: flex; align-items: center; gap: .45rem;
+  font-family: var(--display); font-size: .8rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--hot);
+  margin-bottom: .7rem;
+}
+.dispanel-h .dis-n {
+  background: var(--hot-fill); color: var(--hot-ink); border-radius: 2px;
+  min-width: 1.3rem;
+}
+.dispanel-h code {
+  font-size: .95rem; text-transform: none; letter-spacing: 0;
+  color: var(--hot);
+}
+/* The toggle's two labels live in the markup, like Figure 7's, so the script
+   holds no words. */
+#dis-toggle .tw-on { display: none; }
+#dis-toggle[aria-expanded="true"] .tw-off { display: none; }
+#dis-toggle[aria-expanded="true"] .tw-on { display: inline; }
+
+.disanswer {
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem;
+  color: var(--ink-soft);
+}
+
+/* Figure 7: the base, the offset, and the twins that set the stride. */
+.sum {
+  display: flex; flex-direction: column; gap: .25rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .75rem .9rem; margin-bottom: 1.15rem;
+}
+.sum-row { display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
+.sum-op {
+  font-family: var(--mono); font-size: 1.05rem; color: var(--ink-faint);
+  flex: none; width: 1ch;
+}
+.sum-v {
+  font-family: var(--mono); font-size: 1.05rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+  min-width: 11ch; text-align: right;
+}
+.sum-v.hot { color: var(--hot); }
+.sum-k {
+  font-family: var(--body); font-size: .88rem; color: var(--ink-soft);
+  font-variant-numeric: lining-nums;
+}
+.sum-row.is-total {
+  border-top: 1px solid var(--rule-strong);
+  padding-top: .4rem; margin-top: .25rem;
+}
+
+/* On a phone the point of Figure 4 is that there are eight digits, so all
+   eight have to be on screen at once rather than five and a scroll. */
+@media (max-width: 30rem) {
+  .hexline-0x { font-size: 1.1rem; padding-top: .38rem; }
+  .hexdigits { gap: .15rem; }
+  .hd { min-width: 2.15rem; padding: .35rem .16rem .3rem; }
+  .hd-d { font-size: 1.15rem; }
+  .hd-r { font-size: .53rem; }
+}
+/* Both scenarios ship their steps, and the script shows the tab's own list.
+   The intros, the endings and the four things a core card can say are markup
+   for the same reason: with no scripting the figure is still the figure. */
+.steplist { display: none; }
+.steplist.is-on { display: block; }
+.rint, .rend, .csub { display: none; }
+.rint.is-on, .rend.is-on { display: block; }
+.csub.is-on { display: inline; }
+/* Three answers behind one guess, none showing until a guess is made. */
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+/* Twelve lines behind four rows, one set showing. */
+.bhl { display: none; margin: 0; }
+.bhl.is-on { display: block; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bit, .digit, .trace-row { transition: background-color .18s ease, opacity .18s ease; }
+}
+
+/* The one sentence the chapter is built on. Used once. */
+.pull-quote {
+  font-family: var(--display);
+  font-size: 1.35rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--ink);
+  border-top: 2px solid var(--hot);
+  border-bottom: 2px solid var(--hot);
+  padding: 1rem 0;
+  text-wrap: balance;
+}
+
+/* Body-typeface running text inside a figure, where the default is mono. */
+.prose { font-family: var(--body); }
+
+/* Where the analogy stops working. Every row a specific wrong inference. */
+.breaks { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.breaks caption {
+  text-align: left;
+  font-family: var(--display);
+  font-weight: 600;
+  padding-bottom: .6rem;
+  color: var(--ink-soft);
+}
+.breaks th, .breaks td {
+  text-align: left;
+  vertical-align: top;
+  padding: .55rem .7rem;
+  border-bottom: 1px solid var(--rule);
+  line-height: 1.5;
+}
+.breaks th {
+  font-family: var(--display);
+  font-size: .78rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.breaks .yes { color: var(--accent); font-weight: 600; }
+.breaks .no { color: var(--danger); font-weight: 600; }
+
+/* The verdict column is the control: each row can be run, and pressing the
+   answer shows the operation that produced it. Written as a real button inside
+   the cell so the table keeps its caption, its header scope and its shape. */
+.brv {
+  width: 100%;
+  font-family: var(--display); font-size: .82rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: none;
+  text-align: left; padding: .25rem .45rem;
+  background: transparent; border: 1px solid transparent; border-radius: 2px;
+}
+.brv.yes { color: var(--accent); }
+.brv.no { color: var(--danger); }
+.brv:hover:not(:disabled) { border-color: var(--rule-strong); background: var(--surface-sunk); }
+.brv[aria-pressed="true"] { border-color: var(--rule-strong); background: var(--surface-sunk); }
+
+.brsay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1rem; }
+/* Visible by default and hidden at load, the way the six questions are, so a
+   reader with no scripting gets all seven rows explained instead of one. */
+.brp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .55rem .75rem; border-left: 2px solid var(--rule);
+}
+.brp.is-off { display: none; }
+.brp.is-on { display: block; color: var(--ink); background: var(--surface-sunk); }
+.brp.is-on.brp-no { border-left-color: var(--danger); }
+.brp.is-on.brp-yes { border-left-color: var(--accent); }
+.brp-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-top: .5rem;
+}
+.brp-k:first-child { margin-top: 0; }
+.brp code { font-size: .84em; }
+.brp-src { color: var(--ink-soft); font-size: .86rem; }
+.tablewrap { overflow-x: auto; }
+
+/* A control that is one of a set, where exactly one is current. */
+.seg {
+  display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem;
+}
+.seg button { font-size: .85rem; }
+.seg button[aria-pressed="true"] {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+}
+
+/* A short labelled readout strip. */
+.pickout {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .55rem .75rem; margin: .9rem 0;
+}
+.pickout-k {
+  font-family: var(--display); font-size: .68rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.pickout-v {
+  font-family: var(--mono); font-size: .98rem; font-weight: 500;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.pickout-v.hot { color: var(--hot); }
+
+/* ---------- Figure 4: what the optimizer does ---------- */
+
+/* Cases are visible by default and hidden by script, so a reader with no
+   JavaScript meets all four rather than none. */
+.optcase.is-off { display: none; }
+.optcols {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: .9rem;
+}
+.optcol {
+  display: flex; flex-direction: column; gap: .5rem;
+  border: 1px solid var(--rule); border-top-width: 3px;
+  padding: .8rem .85rem; background: var(--surface); min-width: 0;
+}
+/* Only the border and the heading carry the verdict colour. Tinting the
+   background would put the body text on a ground nothing has validated. */
+.optcol.bad  { border-top-color: var(--danger); }
+.optcol.good { border-top-color: var(--accent); }
+.optcol-h {
+  font-family: var(--display); font-size: .78rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.optcol.bad  .optcol-h { color: var(--danger); }
+.optcol.good .optcol-h { color: var(--accent); }
+.optcol-k {
+  font-family: var(--display); font-size: .66rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.optcol pre { font-size: .78rem; }
+.optsay { font-size: .92rem; line-height: 1.5; color: var(--ink); }
+.optwhy {
+  margin-top: .9rem; font-size: .92rem; line-height: 1.55;
+  color: var(--ink-soft); border-left: 2px solid var(--rule);
+  padding-left: .7rem;
+}
+
+/* ---------- Figure 7: the same store, sent somewhere else ---------- */
+
+.straycode {
+  font-family: var(--mono); font-size: .82rem; line-height: 1.7;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  padding: .7rem .85rem; margin: 0 0 1rem; overflow-x: auto;
+}
+.straycode .tok-c { color: var(--ink-faint); }
+
+/* These buttons are addresses, so the shared button rule's uppercasing would
+   turn 0xD0000018 into 0XD0000018. */
+.stray-seg button {
+  font-family: var(--mono); font-size: .84rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+}
+
+/* The point of the figure is that these two never move, so they are markup and
+   the script never touches them. */
+.strayfixed {
+  display: flex; flex-wrap: wrap; gap: .3rem 1.4rem;
+  align-items: baseline; margin: .9rem 0 0;
+  border-left: 2px solid var(--rule-strong); padding-left: .75rem;
+}
+.strayfixed-k {
+  font-family: var(--display); font-size: .68rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.strayfixed-v {
+  font-family: var(--mono); font-size: .95rem; font-weight: 500;
+  color: var(--ink);
+}
+
+.straysay { display: flex; flex-direction: column; gap: .45rem; margin-top: 1.1rem; }
+.strayp {
+  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
+  padding: .5rem .7rem; border-left: 2px solid var(--rule);
+}
+.strayp.is-on {
+  color: var(--ink); border-left-color: var(--hot); background: var(--hot-soft);
+}
+.strayp.is-on.strayp-fault {
+  border-left-color: var(--danger); background: var(--danger-soft);
+}
+.strayp b { font-family: var(--mono); font-weight: 500; }
+
+/* ---------- reachable with a thumb ----------
+   A control 28 px tall is fine with a mouse and a coin-toss with a thumb.
+   Both platform guidelines ask for 44, which is 2.75rem here. Scoped to
+   coarse pointers, so nothing about the desktop layout moves: this is the
+   one rule in the file that exists for the reader holding a phone. */
+@media (pointer: coarse) {
+  .instrument button, .bet-opt, .q-opt { min-height: 2.75rem; }
+  .instrument input[type="range"] { height: 2.75rem; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="runhead">
+    <p class="eyebrow">Learning Tock from the ground up &middot; Chapter&nbsp;2</p>
+    <a class="runback" href="../">&lsaquo;&nbsp;Contents</a>
+  </div>
+  <h1>Why It Is Not a Variable</h1>
+  <p class="standfirst">Chapter 1 got a number to a wire. Everything about that store looked like assigning to a variable, and almost none of it was. This chapter is where the difference shows: what a read gives back, what the compiler does to a loop that polls, and what the other processor does to your value while you hold it.</p>
+  <noscript>
+    <style>.dothis, .ifjs { display: none; }</style>
+    <p class="noscript-note">JavaScript appears to be off. Every explanation
+    this chapter relies on is in the prose and the drawn diagrams, and the
+    lines telling you to click things are hidden rather than left pointing at
+    nothing.</p>
+  </noscript>
+</header>
+
+<section class="col">
+  <div class="goals">
+    <h2>What you'll be able to do at the end</h2>
+    <ol>
+      <li>Meet an unfamiliar line in a datasheet and predict what reading that location gives back &mdash; or say honestly that nothing promises you anything.</li>
+      <li>Say what an optimizing compiler does to a loop that reads a register, and name the one word that stops it.</li>
+      <li>Explain why <code>x |= 1</code> is a real bug on a chip with two processors, and what the hardware offers instead.</li>
+    </ol>
+    <p class="cost">Plan on forty minutes. Chapter 1 is the prerequisite and the only one; there is still nothing to install and no hardware needed.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>The trap: reading back is a separate decision</h2>
+  <p>Everything so far has been about writing. The three questions are answered and the light is on. Now try the obvious next thing and read that address back.</p>
+  <p>Commit to a guess before you look. Guessing wrong here is the point &mdash; this is the one place where ordinary programming instincts actively mislead.</p>
+</section>
+
+<div class="col">
+  <div class="bet" id="bet1">
+    <p class="bet-q" id="bet1-q">You stored <code class="addr">0x02000000</code> to <code class="addr">0xD0000018</code> and the light came on. You now read that same address. What comes back?</p>
+    <div class="bet-opts" role="group" aria-labelledby="bet1-q" id="bet1-opts"><button type="button" class="bet-opt" id="bet-0" data-ok="false">0x02000000 &mdash; the value you stored</button><button type="button" class="bet-opt" id="bet-1" data-ok="false">0x00000000 &mdash; nothing, it was consumed</button><button type="button" class="bet-opt" id="bet-2" data-ok="true">No promise either way</button></div>
+    <div class="bet-why" aria-live="polite" id="bet1-why"><p class="betwhy" id="betwhy-0">That is the answer for ordinary memory, and the instinct this chapter exists to correct. gpio_out_set never held your value in the first place.</p><p class="betwhy" id="betwhy-1">Reasonable, and closer. But &ldquo;it returns zero&rdquo; would still be a promise, and no promise was made.</p><p class="betwhy" id="betwhy-2">Right. The datasheet types this register WO &mdash; write-only. Reading it is simply outside what the hardware agreed to do, so the honest answer is that nothing is guaranteed. Worth noting: Tock's crate declares it ReadWrite, which is looser than the hardware contract. Nothing breaks today because the kernel only ever writes it.</p></div>
+  </div>
+</div>
+
+<section class="col">
+  <p><code>gpio_out_set</code> was never storage. Look at what its description says &mdash; not what it is called, but what it does:</p>
+  <blockquote class="quote">Perform an atomic bit-set on GPIO_OUT, i.e. <code>GPIO_OUT |= wdata</code></blockquote>
+  <p class="note">Three pieces of notation in that one line.</p>
+  <dl id="pairs-notation" class="glossary inline">
+    <dt>GPIO_OUT</dt><dd>the register's name, in the datasheet's capitals</dd>
+    <dt>gpio_out</dt><dd>the same register, in the Rust code's lower case</dd>
+    <dt>wdata</dt><dd>the data you wrote</dd>
+  </dl>
+  <p class="note">So the line reads: <em>OR the value you wrote into gpio_out</em>.</p>
+  <p>That is an instruction to the hardware, written as an operation on a <em>different</em> register. The number you store is not kept anywhere. It is used as an argument and thrown away.</p>
+  <p>Which explains a detail that would otherwise be baffling: storing a value with no bits set does nothing whatsoever. No real storage location on earth silently discards a write like that.</p>
+  <p>All three of that group are written the same way &mdash; an operation on <code>gpio_out</code>, with your value as the argument.</p>
+  <dl id="pairs-family" class="glossary inline">
+    <dt>gpio_out_set</dt><dd><code>GPIO_OUT |= wdata</code> &mdash; turn these bits on</dd>
+    <dt>gpio_out_clr</dt><dd><code>GPIO_OUT &amp;= ~wdata</code> &mdash; turn these bits off</dd>
+    <dt>gpio_out_xor</dt><dd><code>GPIO_OUT ^= wdata</code> &mdash; flip these bits</dd>
+  </dl>
+  <p>Meanwhile <code>gpio_out</code> itself, eight bytes earlier, <em>is</em> genuine storage, and the datasheet says so in a sentence that also warns you off the obvious misreading:</p>
+  <blockquote class="quote">Set output level (1/0 &rarr; high/low) for GPIO0&hellip;31. Reading back gives the last value written, NOT the input value from the pins.</blockquote>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 1</span>
+    <span class="instrument-title">Four addresses, four different bargains</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click each of the four and compare the two panels. They are not the same shape.</p>
+    <div class="map" id="beh"><button type="button" class="map-row is-hot" id="bh-sram" aria-pressed="false"><span class="map-addr">0x20000100</span><span class="map-name">SRAM</span><span class="map-size">ordinary memory</span></button><button type="button" class="map-row is-hot" id="bh-out" aria-pressed="false"><span class="map-addr">0xD0000010</span><span class="map-name">gpio_out</span><span class="map-size">storage and effect</span></button><button type="button" class="map-row is-hot" id="bh-set" aria-pressed="true"><span class="map-addr">0xD0000018</span><span class="map-name">gpio_out_set</span><span class="map-size">an instruction, not a slot</span></button><button type="button" class="map-row is-hot" id="bh-in" aria-pressed="false"><span class="map-addr">0xD0000004</span><span class="map-name">gpio_in</span><span class="map-size">the outside world</span></button></div>
+    <div class="compare">
+      <div class="panel">
+        <h3>Storing there does</h3>
+        <div class="panel-line prose" id="beh-w"><p class="bhl" id="bhw-sram">Keeps your value. Nothing else happens.</p><p class="bhl" id="bhw-out">Keeps your value, and moves every pin in the bank to match it.</p><p class="bhl is-on" id="bhw-set">Turns on the bits you set and leaves the rest alone. The hardware performs gpio_out |= value, then discards your value.</p><p class="bhl" id="bhw-in">Nothing. It is not yours to set.</p></div>
+      </div>
+      <div class="panel hot">
+        <h3>Reading it gives</h3>
+        <div class="panel-line prose" id="beh-r"><p class="bhl" id="bhr-sram">Exactly what you stored.</p><p class="bhl" id="bhr-out">The last value stored &mdash; not what the pins are actually doing.</p><p class="bhl is-on" id="bhr-set">Not promised. The datasheet types it write-only.</p><p class="bhl" id="bhr-in">The voltage actually present on the pins, right now.</p></div>
+      </div>
+    </div>
+    <div class="map-detail prose" id="beh-d"><p class="bhl" id="bhd-sram">The only one of the four that behaves like a variable. Store it, come back an hour later, read the same thing.</p><p class="bhl" id="bhd-out">Genuine storage that also acts. The datasheet is careful here: <q>Reading back gives the last value written, NOT the input value from the pins.</q> So a read tells you your own intent, not the world.</p><p class="bhl is-on" id="bhd-set">Its whole description is an operation on a different register: GPIO_OUT |= wdata. Store a value with no bits set and nothing happens at all &mdash; which no storage location would ever do.</p><p class="bhl" id="bhd-in">Typed read-only. Read it twice with no code in between and you can get two different answers, because a button was pressed. Figure 4 is about what a compiler does to code that reads an address like this one.</p></div>
+  </div>
+  <div class="instrument-note">Notice that only the first behaves the way a variable does. One address in four. The other three are ordinary programming instincts quietly failing.</div>
+</figure>
+
+<section class="col">
+  <p>So the useful conclusion is not a slogan about doorbells. It is this: <strong>what an address does when you write it, and what it does when you read it, are two independent decisions that a human being made for that one register.</strong> The address itself carries no hint. You cannot deduce it. You look it up.</p>
+</section>
+
+<div class="col">
+  <div class="tablewrap">
+    <table class="breaks">
+      <caption>The "addresses are house numbers on a street" picture, checked line by line.<span class="ifjs"> Press any verdict to run that row.</span></caption>
+      <thead>
+        <tr><th scope="col">On a street</th><th scope="col">In this chip</th><th scope="col">Holds?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Each house has one number</td><td>Each location has one address</td><td><button type="button" class="brv yes" id="br-0" aria-pressed="true"><span class="vh">Each house has one number: </span>Yes</button></td></tr>
+        <tr><td>Numbers run in order down the street</td><td>Addresses run in order, one per byte</td><td><button type="button" class="brv yes" id="br-1" aria-pressed="false"><span class="vh">Numbers run in order down the street: </span>Yes</button></td></tr>
+        <tr><td>The number tells you nothing about the house</td><td>Mostly true &mdash; except the first digit, which tells you the district</td><td><button type="button" class="brv yes" id="br-2" aria-pressed="false"><span class="vh">The number tells you nothing about the house: </span>Mostly</button></td></tr>
+        <tr><td>Whatever you put in a house stays there</td><td><code>gpio_out_set</code> keeps nothing at all</td><td><button type="button" class="brv no" id="br-3" aria-pressed="false"><span class="vh">Whatever you put in a house stays there: </span>No</button></td></tr>
+        <tr><td>Looking inside a house changes nothing</td><td>On some peripherals a read is itself an action</td><td><button type="button" class="brv no" id="br-4" aria-pressed="false"><span class="vh">Looking inside a house changes nothing: </span>No</button></td></tr>
+        <tr><td>What you find is what you left</td><td><code>gpio_in</code> reports the outside world, which you did not put there</td><td><button type="button" class="brv no" id="br-5" aria-pressed="false"><span class="vh">What you find is what you left: </span>No</button></td></tr>
+        <tr><td>Every number on the street is a house</td><td>Most addresses are nothing, and touching them faults</td><td><button type="button" class="brv no" id="br-6" aria-pressed="false"><span class="vh">Every number on the street is a house: </span>No</button></td></tr>
+      </tbody>
+    </table>
+    <div class="brsay">
+      <p class="brp brp-yes is-on" id="brp-0"><span class="brp-k">run it</span>store <code>7</code> at <code class="addr">0x20000100</code>, then read <code class="addr">0x20000100</code><span class="brp-k">what comes back</span><code>7</code>. One address named one location, and it was the same location both times. <span class="brp-src">Checked against the segment table, which puts SRAM at <code>0x2</code> &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8.</span></p>
+      <p class="brp brp-yes" id="brp-1"><span class="brp-k">run it</span>read the offsets of <code>gpio_out</code>, <code>gpio_hi_out</code> and <code>gpio_out_set</code><span class="brp-k">what comes back</span><code>0x010</code>, <code>0x014</code>, <code>0x018</code> &mdash; four apart, because a register is four bytes and addresses count bytes. <span class="brp-src">Checked against <code>chips/rp2350/src/gpio.rs</code>:88&ndash;108.</span></p>
+      <p class="brp brp-yes" id="brp-2"><span class="brp-k">run it</span>put <code class="addr">0x20000100</code> and <code class="addr">0xD0000018</code> side by side<span class="brp-k">what comes back</span>The first digit has already decided who answers: <code>2</code> is memory, <code>D</code> is SIO. The other seven tell you nothing until that one has been read, which is why this row is only mostly true. <span class="brp-src">Checked against RP2350 datasheet &sect;2.2, Table&nbsp;8.</span></p>
+      <p class="brp brp-no" id="brp-3"><span class="brp-k">run it</span>store <code class="addr">0x02000000</code> to <code class="addr">0xD0000018</code>, then read <code class="addr">0xD0000018</code><span class="brp-k">what comes back</span>No promise of anything. The datasheet types that register write-only: your value was used as an argument to an OR and discarded, and nothing was kept for you to come back to. <span class="brp-src">Checked against RP2350 datasheet &sect;3.1 register tables.</span></p>
+      <p class="brp brp-no" id="brp-4"><span class="brp-k">run it</span>read UART0's data register at <code class="addr">0x40070000</code><span class="brp-k">what comes back</span>A byte &mdash; and the read is what removes it. Arriving data waits in the port's receive queue, the datasheet says, <q>until read out by the CPU</q>, so the next read hands you the next byte rather than that one again. Looking did not observe the house; it took something out of it. <span class="brp-src">Checked against RP2350 datasheet &sect;12.1.2.5.</span></p>
+      <p class="brp brp-no" id="brp-5"><span class="brp-k">run it</span>read <code>gpio_in</code> at <code class="addr">0xD0000004</code><span class="brp-k">what comes back</span>The voltage on the pins at this instant, put there by the outside world. Nothing you wrote is in it, and the datasheet types the register read-only. <span class="brp-src">Checked against RP2350 datasheet, Table&nbsp;19.</span></p>
+      <p class="brp brp-no" id="brp-6"><span class="brp-k">run it</span>store <code>1</code> to <code class="addr">0x60000000</code><span class="brp-k">what comes back</span>A fault. Nothing is wired to that range, so no block claims the store, and the bus that carries it raises an error rather than quietly accepting it. <span class="brp-src">Checked against RP2350 datasheet &sect;2.2: <q>Unmapped address ranges raise a bus error when accessed.</q></span></p>
+    </div>
+  </div>
+</div>
+
+<section class="col">
+  <p>Four of seven rows fail. That is why the street picture gets you to the end of question 1 and then quietly starts lying.</p>
+  <p>That serial port register the table just used is worth looking at properly, because the shape matters more than the example. Its data register sits at offset <code>0x000</code>, and here is its entire description of the low eight bits:</p>
+  <blockquote class="quote">DATA: Receive (read) data character. Transmit (write) data character.</blockquote>
+  <p>One address. Read it and you get a byte that arrived from outside the chip. Write it and a byte leaves the chip. Not one operation with two directions &mdash; two unrelated operations that happen to share a number.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 2</span>
+    <span class="instrument-title">Same layout, two different bases</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Change the port, then change the register. Each control moves one half of the address and leaves the other exactly where it was &mdash; which is the whole reason one driver serves both.</p>
+    <div class="twohalf">
+      <div class="halfrow" role="group" aria-label="Which of the two identical serial ports">
+        <span class="halfrow-k">port</span>
+        <button type="button" id="up-0" aria-pressed="true">UART0</button>
+        <button type="button" id="up-1" aria-pressed="false">UART1</button>
+      </div>
+      <div class="halfrow" role="group" aria-label="Which register inside it">
+        <span class="halfrow-k">register</span>
+        <button type="button" id="ur-0" aria-pressed="true">uartdr</button>
+        <button type="button" id="ur-1" aria-pressed="false">uartfr</button>
+        <button type="button" id="ur-2" aria-pressed="false">uartibrd</button>
+        <button type="button" id="ur-3" aria-pressed="false">uartcr</button>
+      </div>
+    </div>
+    <div class="sum" aria-live="polite">
+      <span class="sum-row">
+        <span class="sum-op">&nbsp;</span>
+        <span class="sum-v" id="uo-base">0x40070000</span>
+        <span class="sum-k">the port's base &mdash; the half the port picks</span>
+      </span>
+      <span class="sum-row">
+        <span class="sum-op">+</span>
+        <span class="sum-v" id="uo-off">0x000</span>
+        <span class="sum-k">the register's offset &mdash; the half the register picks</span>
+      </span>
+      <span class="sum-row is-total">
+        <span class="sum-op">=</span>
+        <span class="sum-v hot" id="uo-addr">0x40070000</span>
+        <span class="sum-k" id="uo-name">uartdr</span>
+      </span>
+    </div>
+    <p class="moved" aria-live="polite">
+      <span class="mv is-on" id="mv-start">Change one of the two and watch which line moves.</span>
+      <span class="mv" id="mv-base">Only the base moved. The offset is a fact about the register, and both ports have the same registers in the same places, because they are one block of hardware built twice.</span>
+      <span class="mv" id="mv-off">Only the offset moved. The base is a fact about which port, and it does not care which register you asked for.</span>
+    </p>
+    <div class="selfcheck" style="margin-top:1rem">
+      <details>
+        <summary>Why does a driver not have to be written twice?</summary>
+        <div class="answer">The offsets. <code>0x000</code> is the data register on both, <code>0x030</code> the control register on both, because both are the same block of hardware built twice. Only the base differs. That is why a driver is written once, handed a base address, and then works for either &mdash; and it is why register listings are written as offsets rather than finished addresses.</div>
+      </details>
+    </div>
+  </div>
+  <div class="instrument-note">This is the pattern behind every peripheral on the chip, and behind the way Tock's chip crates are organised. Learn the shape once and every new peripheral is just a new base and a new table of offsets.</div>
+</figure>
+
+<section class="col">
+  <h2>Why bother with four registers?</h2>
+  <p>Here is a fair objection. <code>gpio_out</code> is ordinary storage that holds the output state. So turning on pin 25 should just be:</p>
+</section>
+
+<div class="instrument narrow">
+  <div class="instrument-body flush">
+<pre><code>gpio_out |= 1 &lt;&lt; 25;   <span class="tok-c">// "or bit 25 into whatever is already there"</span></code></pre>
+  </div>
+</div>
+
+<section class="col">
+  <p>That works. It is the obvious thing to write, it is what most code on most chips does, and it needs no extra registers at all. So why did the designers spend silicon on three more?</p>
+  <p>Because that line is not one operation. It is three.</p>
+  <ol>
+    <li><strong>Read</strong> the current 32 bits out of <code>gpio_out</code>.</li>
+    <li><strong>Change</strong> the copy you now hold, turning on bit 25.</li>
+    <li><strong>Write</strong> all 32 bits back.</li>
+  </ol>
+  <p>Between step 1 and step 3 there is a gap. In that gap, the value you are holding is a photograph of the past.</p>
+  <p>Two things on this chip can act inside that gap. One is an <dfn>interrupt</dfn>: hardware pausing your code mid-flow to run something else, then resuming you. The other is the second <dfn>core</dfn>. This chip has two complete processors running at the same time, and while each keeps its own scratch slots, they share the memory and every peripheral.</p>
+  <p>Do not take my word for the consequence. Run it.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 3</span>
+    <span class="instrument-title">Two cores, one register</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Step <em>the obvious way</em> to the end, then try <em>the hardware's way</em>.</p>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tab-rmw" role="tab" aria-selected="true" aria-controls="race-panel" tabindex="0">The obvious way</button>
+      <button class="tab" id="tab-atomic" role="tab" aria-selected="false" aria-controls="race-panel" tabindex="-1">The hardware's way</button>
+    </div>
+    <div id="race-panel" role="tabpanel" aria-labelledby="tab-rmw">
+      <div class="note" style="margin-bottom:1rem" id="race-intro"><p class="rint is-on" id="rint-rmw">Both cores run gpio_out |= 1 &lt;&lt; n. Each reads the register, changes its own copy, and stores all 32 bits back. Watch what the last store does.</p><p class="rint" id="rint-atomic">Both cores store to gpio_out_set instead. The OR happens inside the hardware, so neither core ever holds a copy of anything.</p></div>
+      <div class="race-grid">
+        <div class="core" id="core0">
+          <span class="core-name">Core 0 &mdash; wants pin 25 on</span>
+          <span class="core-val" id="core0-val">&mdash;</span>
+          <span class="core-sub" id="core0-sub"><span class="csub is-on" id="c0sub-idle">idle</span><span class="csub" id="c0sub-holds">holds 0x00000000</span><span class="csub" id="c0sub-copy">pin 25 set in its copy</span><span class="csub" id="c0sub-stored">stored</span></span>
+        </div>
+        <div class="core" id="core1">
+          <span class="core-name">Core 1 &mdash; wants pin 10 on</span>
+          <span class="core-val" id="core1-val">&mdash;</span>
+          <span class="core-sub" id="core1-sub"><span class="csub is-on" id="c1sub-idle">idle</span><span class="csub" id="c1sub-holds">holds 0x00000000</span><span class="csub" id="c1sub-copy">pin 10 set in its copy</span><span class="csub" id="c1sub-stored">stored</span></span>
+        </div>
+        <div class="core hw" id="corehw" aria-live="polite">
+          <span class="core-name">The real gpio_out</span>
+          <span class="core-val" id="corehw-val">0x00000000</span>
+          <span class="core-sub" id="corehw-sub"><span id="corehw-pins">no pins</span> high</span>
+        </div>
+      </div>
+      <div class="steps" id="race-steps"><div class="steplist is-on" id="steps-rmw"><div class="step" id="rs-0"><span class="step-who">Core 0</span><span class="step-act">read  gpio_out</span></div><div class="step" id="rs-1"><span class="step-who">Core 1</span><span class="step-act">read  gpio_out</span></div><div class="step" id="rs-2"><span class="step-who">Core 0</span><span class="step-act">or    0x02000000</span></div><div class="step" id="rs-3"><span class="step-who">Core 0</span><span class="step-act">write gpio_out = 0x02000000</span></div><div class="step" id="rs-4"><span class="step-who">Core 1</span><span class="step-act">or    0x00000400</span></div><div class="step" id="rs-5"><span class="step-who">Core 1</span><span class="step-act">write gpio_out = 0x00000400</span></div></div><div class="steplist" id="steps-atomic"><div class="step" id="ra-0"><span class="step-who">Core 0</span><span class="step-act">write gpio_out_set = 0x02000000</span></div><div class="step" id="ra-1"><span class="step-who">Core 1</span><span class="step-act">write gpio_out_set = 0x00000400</span></div></div></div>
+      <div class="controls" style="margin-bottom:1.1rem">
+        <button class="primary" id="race-step">Step</button>
+        <button id="race-all">Run all</button>
+        <button id="race-reset">Reset</button>
+      </div>
+      <div class="outcome prose" id="race-outcome"><p class="rend is-on" id="rend-idle">Press <strong>Step</strong> to advance one instruction at a time.</p><p class="rend" id="rend-rmw">Pin 25 never turned on. Core 1's store carried a copy of the register taken before core 0 touched it, so it put pin 25 back to off on its way past. Nothing crashed and nothing reported an error. The light just does not come on, sometimes, under timing you cannot reproduce on demand.</p><p class="rend" id="rend-atomic">Both pins are on. Two steps instead of six, no copies held anywhere, and no gap for anything to happen in. No lock, no disabled interrupts, no agreement between the cores &mdash; the hardware did the OR itself.</p></div>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that nothing here is exotic. Both cores are running correct, ordinary code. Then run the second tab and count the steps: the fix is not a smarter algorithm, it is a shorter one.</div>
+</figure>
+
+<section class="col">
+  <p>Nobody wrote a bug. Both cores ran reasonable code, and a pin that was asked to turn on stayed off.</p>
+  <p>The chip designers did think about two cores hitting one register at once, and the datasheet makes a firm promise:</p>
+  <blockquote class="quote">If core 0 and core 1 both write to GPIO_OUT simultaneously (or to a SET/CLR/XOR alias), the result is as though the write from core 0 took place first, and the write from core 1 was then applied to that intermediate result.</blockquote>
+  <p>Read that carefully, because it sounds like a rescue and is not one.</p>
+  <p>It is a promise about <em>writes</em>. Two simultaneous writes are cleanly ordered, with a defined result. But the failure you just watched was not caused by the write. It was caused by the <em>read</em>, several steps earlier, returning a value that went stale while it sat in a processor register.</p>
+  <p>Which is what <code>gpio_out_set</code> is for. Storing to it is a single write, and the OR happens inside the hardware where no gap exists. That property has a name: the operation is <dfn>atomic</dfn>, meaning nothing can observe or interrupt it halfway.</p>
+  <p>No lock. No disabled interrupts. No agreement between the cores. One store.</p>
+</section>
+
+<section class="col">
+  <h2>The compiler does not know any of this</h2>
+  <p>One thing still stands between your Rust and the silicon, and it is on your side normally.</p>
+  <p>A <dfn>compiler</dfn> turns your source into machine instructions, and a good one does not translate line by line. It works out what your code <em>means</em>, then emits the cheapest instructions with that meaning. The part doing that is the <dfn>optimizer</dfn>.</p>
+  <p>Suppose you want to wait until the serial port has room for another byte, so you read its flag register in a loop until the "transmit buffer full" bit clears. It is one ordinary-looking line, and what the chip runs is not what you wrote.</p>
+  <p class="note">Not invented for the example. <code>uartfr</code> is a real register on this chip, <code>TXFF</code> is its bit 5, and Tock's own serial driver asks exactly this question at <code>chips/rp2350/src/uart.rs</code>:438&ndash;440.</p>
+  <p>The right-hand column of each pair adds one word, <dfn>volatile</dfn>, which tells the compiler this address is not a variable. Read the left column first, because that is the one you would have written.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 4</span>
+    <span class="instrument-title">What the optimizer does to your code</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Pick a case. Compare the two columns line for line.</p>
+    <div class="seg" role="group" aria-label="Which case to show">
+      <button id="opt-wait" aria-pressed="true">Wait for the port</button>
+      <button id="opt-flip" aria-pressed="false">Flip a pin twice</button>
+      <button id="opt-order" aria-pressed="false">Two stores, in order</button>
+      <button id="opt-once" aria-pressed="false">Store once and walk away</button>
+      <button id="opt-peek" aria-pressed="false">Read one and ignore it</button>
+    </div>
+    <div class="optcase" id="case-wait">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code><span class="tok-c">// wait for room in the transmit buffer</span>
+<span class="tok-k">while</span> (*uartfr &amp; TXFF) != 0 {}</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
+<span class="tok-n">ldrb  r0, [r0]</span>        <span class="tok-c">; read once, out here</span>
+lsls  r0, r0, #26     <span class="tok-c">; bit 5 -&gt; sign bit</span>
+it    pl
+poppl {r7, pc}        <span class="tok-c">; clear? return</span>
+<span class="tok-n">.LBB8_1:</span>
+<span class="tok-n">b     .LBB8_1</span>         <span class="tok-c">; set? spin for ever</span></code></pre>
+          <p class="optsay">The read happens once, before the loop. If the port was busy at that instant, this spins on that last line for ever and never looks again.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code><span class="tok-c">// the same loop, with the promise</span>
+<span class="tok-k">while</span> (read_volatile(uartfr) &amp; TXFF) != 0 {}</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movt  r0, #16391
+<span class="tok-n">.LBB9_1:</span>
+<span class="tok-n">ldr   r1, [r0]</span>        <span class="tok-c">; read it again</span>
+lsls  r1, r1, #26
+it    pl
+poppl {r7, pc}        <span class="tok-c">; clear? return</span>
+...                   <span class="tok-c">; unrolled; each reads</span>
+bmi   .LBB9_1         <span class="tok-c">; still set? go round</span></code></pre>
+          <p class="optsay">The read is inside the loop, so the loop sees the port change and ends.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> Nothing in the program writes to that address, so the optimizer concluded the value could not change and lifted the read out. Every step of that reasoning is correct for a variable.</p>
+    </div>
+    <div class="optcase" id="case-flip">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code>*gpio_out_xor = 1 &lt;&lt; 25;
+*gpio_out_xor = 1 &lt;&lt; 25;</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #40
+mov.w r1, #33554432   <span class="tok-c">; 0x02000000, bit 25</span>
+movt  r0, #53248      <span class="tok-c">; r0 = 0xD0000028</span>
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; one store</span></code></pre>
+          <p class="optsay">Two flips became one. The pin ends up in the opposite state to the one you asked for.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code>write_volatile(gpio_out_xor, 1 &lt;&lt; 25);
+write_volatile(gpio_out_xor, 1 &lt;&lt; 25);</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #40
+mov.w r1, #33554432
+movt  r0, #53248
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; one</span>
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; two</span></code></pre>
+          <p class="optsay">Both stores survive, so the pin flips twice and ends where it started.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> Storing the same value twice to a variable is the same as storing it once, so the first was dropped. On this register a store is a flip, and two flips are not one.</p>
+    </div>
+    <div class="optcase" id="case-order">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code>*gpio_out_set = 1;    <span class="tok-c">// first</span>
+*gpio_out_xor = 2;    <span class="tok-c">// second</span></code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movs  r1, #2
+movt  r0, #53248      <span class="tok-c">; r0 = 0xD0000018</span>
+<span class="tok-n">str   r1, [r0, #16]</span>   <span class="tok-c">; the xor - your 2nd</span>
+movs  r1, #1
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; the set - your 1st</span></code></pre>
+          <p class="optsay">The two stores came out in the opposite order to the one you wrote.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code>write_volatile(gpio_out_set, 1);
+write_volatile(gpio_out_xor, 2);</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movs  r1, #1
+movt  r0, #53248
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; the set, first</span>
+movs  r1, #2
+<span class="tok-n">str   r1, [r0, #16]</span>   <span class="tok-c">; the xor, second</span></code></pre>
+          <p class="optsay">Your order is kept.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> The two addresses are unrelated as far as the optimizer can tell, so it was free to pick an order. Hardware often is not free.</p>
+    </div>
+    <div class="optcase" id="case-once">
+      <div class="optcols">
+        <div class="optcol good">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code>*gpio_out_set = 1 &lt;&lt; 25;</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+mov.w r1, #33554432   <span class="tok-c">; 0x02000000, bit 25</span>
+movt  r0, #53248      <span class="tok-c">; r0 = 0xD0000018</span>
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; the store</span></code></pre>
+          <p class="optsay">Nothing was removed. The compiler cannot prove that no one else is watching this address, so it keeps the store.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code>write_volatile(gpio_out_set, 1 &lt;&lt; 25);</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+mov.w r1, #33554432   <span class="tok-c">; 0x02000000, bit 25</span>
+movt  r0, #53248      <span class="tok-c">; r0 = 0xD0000018</span>
+<span class="tok-n">str   r1, [r0]</span>        <span class="tok-c">; the store</span></code></pre>
+          <p class="optsay">Identical, instruction for instruction.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> This is the case an earlier draft of this chapter got wrong. It said a store you never read back is dead code and gets deleted. It is not. Repeated stores, reordered stores and ignored reads go missing; a single store stays.</p>
+    </div>
+    <div class="optcase" id="case-peek">
+      <div class="optcols">
+        <div class="optcol bad">
+          <span class="optcol-h">As you would write it</span>
+          <pre><code><span class="tok-k">let</span> _ = *uartfr;</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code><span class="tok-c">; nothing at all - the body is empty</span></code></pre>
+          <p class="optsay">The read vanished completely. Reading the serial port's data register is how a byte gets received at all, so a read the compiler deletes is a byte that never arrives.</p>
+        </div>
+        <div class="optcol good">
+          <span class="optcol-h">With volatile</span>
+          <pre><code><span class="tok-k">let</span> _ = read_volatile(uartfr);</code></pre>
+          <span class="optcol-k">what the chip runs</span>
+          <pre><code>movs  r0, #24
+movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
+<span class="tok-n">ldr   r0, [r0]</span>        <span class="tok-c">; the read happens</span></code></pre>
+          <p class="optsay">The read happens.</p>
+        </div>
+      </div>
+      <p class="optwhy"><strong>What the optimizer was thinking.</strong> A load whose result you ignore changes nothing about a variable, so it was deleted outright. The street-analogy table earlier said it: on some peripherals a read is itself an action.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Every instruction here is real output rather than a description of what a compiler might do. It came from <code>rustc --target thumbv8m.main-none-eabi -O --emit asm</code> on the nightly this tree pins, against the addresses this chapter has been using. Function entry and exit are cut from each listing, and the volatile loop is shortened: the jump into it, and the copies the compiler made of its body, are left out. Everything shown is otherwise exactly what came back, in the order it came back. The source is <code>optimizer-demo.rs</code>, beside this page. The Rust in each pair is the code that file compiles, with a short comment added here to say what to compare.</div>
+</figure>
+
+<section class="col">
+  <p>Every step of the optimizer's reasoning is valid for a variable. Applied to a register it produces a program that either returns immediately or hangs for ever, depending on what the flag happened to be the first time.</p>
+  <p>Which one you get is decided before the loop starts. The program fails with no warning, only at higher optimization levels, and usually not on the machine where you tested.</p>
+  <p class="note">The fourth case is a correction. An earlier draft of this chapter claimed a store you never read back is deleted as dead code. Compiling it showed otherwise: the two columns come out identical.</p>
+  <p>So the fix is not to outsmart the optimizer. It is to tell it the truth, and volatile is how you say it. Every access happens, as many times as written, in the order written. None may be invented, removed, or moved past another.</p>
+  <p>In Tock you do not have to remember this, because it is welded into the register types:</p>
+</section>
+
+<div class="instrument narrow">
+  <div class="instrument-body flush">
+<pre><code><span class="tok-c">// impl&lt;T, R&gt; Writeable for ReadWrite&lt;T, R&gt;</span>
+<span class="tok-k">fn</span> set(&amp;<span class="tok-k">self</span>, value: T) {
+    <span class="tok-k">unsafe</span> { ::core::ptr::<span class="tok-n">write_volatile</span>(<span class="tok-k">self</span>.value.get(), value) }
+}</code></pre>
+  </div>
+  <div class="instrument-note"><code>tock-registers 0.10.0</code>, <code>src/registers.rs:63</code>. This is the bottom of every write to a <code>ReadWrite</code> register. Three near-identical siblings at lines 119, 164 and 208 cover the <code>WriteOnly</code>, <code>Aliased</code> and <code>InMemoryRegister</code> types.</div>
+</div>
+
+<section class="col">
+  <h3>What that <code>unsafe</code> is doing there</h3>
+  <p>If you have worked through the Rust Book but not reached its <em>Advanced Features</em> chapter, this is the thing to know. Here <code>unsafe</code> is not a confession that the code is risky.</p>
+  <p>It is a claim: <em>I have checked the thing the compiler cannot check.</em></p>
+  <p>Following a raw <dfn>pointer</dfn> would be catastrophic if the address were wrong, and nothing in Rust's type system can verify that <code class="addr">0xD0000018</code> is a real register. So a human asserts it, inside a block small enough for a reviewer to check by eye.</p>
+  <p>That move &mdash; a tiny audited core wrapped in an API nobody can misuse &mdash; is the most characteristic thing in the whole Tock kernel. You will see it everywhere. Here it means every <code>pin.set()</code> in the codebase is safe in Rust's sense, and the trust for all of them sits in four three-line functions.</p>
+</section>
+
+<section class="col">
+  <h2>Receipts</h2>
+  <p>Everything above is a claim about what the machine really does, so here is the machine.</p>
+  <p>A <dfn>disassembler</dfn> reads a compiled program and prints the instructions back out in readable form. Point one at a Tock kernel built from this repository, find the function that sets a pin, and this is what comes out.</p>
+  <p>You are meant to ignore most of it. Three lines matter, and by now you can read all three.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 5</span>
+    <span class="instrument-title">The three lines that do the work</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Click a numbered line. The numbers are the order these three run in, which is not the order they are printed in.</p>
+    <div class="dis" id="dis">
+      <span class="disrow"><span class="dis-n"></span><span class="dis-t"><span class="tok-c">; &lt;RPGpioPin as kernel::hil::gpio::Output&gt;::set</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">push  {r4, r6, r7, lr}</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">add   r7, sp, #0x8</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">mov   r4, r0</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bl    &lt;RPGpioPin::get_mode&gt;  <span class="tok-c">; check it was configured as an output</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">uxtb  r0, r0</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">cmp   r0, #0x1</span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bls   0x1000b680  <span class="tok-c">; not an output? skip the store</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bl    &lt;OUTLINED_FUNCTION_8&gt;  <span class="tok-c">; works out r0 and r1, below</span></span></span>
+      <button type="button" class="disrow disline" id="dl-str" aria-pressed="false">
+        <span class="dis-n">3</span>
+        <span class="dis-t">str   r1, [r0, #0x18]  <span class="tok-c">; &lt;-- this is digitalWrite</span></span>
+      </button>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">pop   {r4, r6, r7, pc}</span></span>
+      <span class="disrow"><span class="dis-n"></span><span class="dis-t">&nbsp;</span></span>
+      <span class="disrow"><span class="dis-n"></span><span class="dis-t"><span class="tok-c">; &lt;OUTLINED_FUNCTION_8&gt;</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">ldrd  r0, r1, [r4, #8]  <span class="tok-c">; r0 = SIO's base, r1 = the pin number</span></span></span>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">movs  r2, #0x1</span></span>
+      <button type="button" class="disrow disline" id="dl-and" aria-pressed="true">
+        <span class="dis-n">1</span>
+        <span class="dis-t">and   r1, r1, #0x1f  <span class="tok-c">; keep the pin number in range</span></span>
+      </button>
+      <button type="button" class="disrow disline" id="dl-lsl" aria-pressed="false">
+        <span class="dis-n">2</span>
+        <span class="dis-t">lsl.w r1, r2, r1  <span class="tok-c">; r1 = 1 &lt;&lt; pin</span></span>
+      </button>
+      <span class="disrow dis-skip"><span class="dis-n"></span><span class="dis-t">bx    lr</span></span>
+    </div>
+    <div class="dispanels">
+      <div class="dispanel is-on" id="dp-and">
+        <span class="dispanel-h"><span class="dis-n">1</span><code>and r1, r1, #0x1f</code> &mdash; keeping the pin in range</span>
+        <p>A <dfn>mask</dfn> is an operation that keeps some bits of a number and forces the rest to zero. This one keeps the bottom five bits, which can only express 0 to 31.</p>
+        <p>Why mask at all? Because <code>self.pin</code> is an ordinary number, and nothing in its type stops it being 40. A 32-bit value has only 32 shift positions, so the compiler has to decide what an impossible shift means rather than leave it to chance.</p>
+        <p>Rust decides it twice, depending on how you build. With overflow checks on, shifting by 32 or more panics outright: <em>attempt to shift left with overflow</em>. With them off, which is how a kernel ships, the shift amount is masked to its bottom five bits instead &mdash; and this <code>and</code> is that masking.</p>
+        <p>So this instruction is one of two lowerings of the same source line, and which one you get is a build setting rather than a fact about the chip.</p>
+        <p class="disanswer"><strong>Which question does it answer?</strong> None of them. It is a safety net, and belongs to neither the address nor the value.</p>
+      </div>
+      <div class="dispanel" id="dp-lsl">
+        <span class="dispanel-h"><span class="dis-n">2</span><code>lsl.w r1, r2, r1</code> &mdash; the shift</span>
+        <p><code>r2</code> holds 1 and <code>r1</code> holds the pin number, so the result is <code>1 &lt;&lt; pin</code>. The whole of question 3, as one instruction.</p>
+        <p>Nothing here knows which pin it is. The number was put in that register by one of the lines this listing hides, and the shift treats 25 and 3 exactly alike.</p>
+        <p class="disanswer"><strong>Which question does it answer?</strong> Question 3 &mdash; which pin, of the thirty.</p>
+      </div>
+      <div class="dispanel" id="dp-str">
+        <span class="dispanel-h"><span class="dis-n">3</span><code>str r1, [r0, #0x18]</code> &mdash; the store</span>
+        <p>Look at the shape of the address. It is not one number. It is <strong>a base held in a processor register plus an offset built into the instruction</strong>: <code>r0</code> holds <code class="addr">0xD0000000</code> and <code>0x18</code> is the offset of <code>gpio_out_set</code>.</p>
+        <p>That is why register blocks are written as a base plus a table of offsets, the way chapter 1's Figure&nbsp;7 showed them. It is the shape the processor was built to address, so it costs nothing extra.</p>
+        <p>This is the instruction. Everything else on this page is arranging for it.</p>
+        <p class="disanswer"><strong>Which question does it answer?</strong> Questions 1 and 2, in the two halves of one addressing mode.</p>
+      </div>
+    </div>
+  </div>
+  <div class="instrument-note">
+    <button class="reveal-all" id="dis-toggle" aria-expanded="false" aria-controls="dis">
+      <span class="tw-off">Show the 12 lines I'm skipping</span>
+      <span class="tw-on">Hide them again</span>
+    </button>
+    &mdash; they are function bookkeeping, plus the check that you configured the pin as an output. That check is not free, incidentally: <code>get_mode</code> reads two more peripheral registers to answer it. Everything in this chapter applies to those reads too.
+  </div>
+</figure>
+
+<section class="col">
+  <p class="note">Reproduce it yourself, if you have the toolchain:</p>
+  <ol class="steps">
+    <li>build <code>boards/raspberry_pi_pico_2</code></li>
+    <li>run <code>llvm-objdump -d --demangle</code> on the resulting binary</li>
+    <li>search for <code>Output&gt;::set</code></li>
+  </ol>
+  <p class="note">Ask for demangling rather than guessing at the raw symbol name: how Rust encodes names into symbols depends on compiler settings this board does not pin down. Addresses shift between builds. If you have not set up a cross-compiler yet, skip this &mdash; nothing later depends on it.</p>
+</section>
+
+<section class="col">
+  <h2>Where that store sits in Tock</h2>
+  <p>That one instruction is the bottom of a stack. Each layer above it exists for a reason, and none of them is how the pin turns on.</p>
+  <p>Now that the bottom rung means something, the rest is worth seeing.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 6</span>
+    <span class="instrument-title">Strip the layers off <code>digitalWrite</code></span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Peel one layer at a time and read what each one is for.</p>
+    <div class="controls" style="margin-bottom:1.1rem">
+      <button class="primary" id="ladder-next">Strip a layer</button>
+      <button id="ladder-reset">Reset</button>
+      <span class="instrument-title" id="ladder-count">1 of 5 shown</span>
+    </div>
+    <div class="ladder" id="ladder"><div class="rung on" id="rung-0"><div class="rung-who">Arduino</div><div><div class="rung-code">digitalWrite(25, HIGH);</div><div class="rung-where">the friendly layer &mdash; hides everything below it</div></div></div><div class="rung on" id="rung-1"><div class="rung-who">Tock&#x27;s interface</div><div><div class="rung-code">pin.set();</div><div class="rung-where">kernel/src/hil/gpio.rs:154 &mdash; the same call on every chip Tock supports</div></div></div><div class="rung on" id="rung-2"><div class="rung-who">Chip driver</div><div><div class="rung-code">self.sio_registers.gpio_out_set.set(1 &lt;&lt; self.pin);</div><div class="rung-where">chips/rp2350/src/gpio.rs:1519 &mdash; the first layer that knows this is an RP2350</div></div></div><div class="rung on" id="rung-3"><div class="rung-who">Register types</div><div><div class="rung-code">write_volatile(self.value.get(), value)</div><div class="rung-where">tock-registers 0.10.0, src/registers.rs:63 &mdash; where volatile is enforced for everyone</div></div></div><div class="rung on" id="rung-4"><div class="rung-who">The machine</div><div><div class="rung-code">and   r1, r1, #0x1f
+lsl.w r1, r2, r1
+str   r1, [r0, #0x18]</div><div class="rung-where">the real instructions from your own build &mdash; Figure 5</div></div></div></div>
+  </div>
+  <div class="instrument-note">Notice that the layers add safety and portability, not capability. The bottom rung is the only one that changes anything physical; everything above it exists so that thousands of lines of driver code can share one audited way of doing it.</div>
+</figure>
+
+<section class="col">
+  <h2>So here is the problem</h2>
+  <p>Add up what is now true.</p>
+  <p>Peripherals are addresses. Storing numbers at them moves physical things in the world. And on a bare microcontroller, <strong>any instruction anywhere on the chip can store to any address at any moment.</strong></p>
+  <p>There is nothing to ask. No permission is checked. A store to <code class="addr">0xD0000018</code> is exactly as allowed as a store to a variable of your own, and costs the same.</p>
+  <p>A pointer is a number a variable happens to be holding. Give it the wrong number and the same instruction stores somewhere else, with nothing else about the program changed.</p>
+</section>
+
+<figure class="instrument">
+  <div class="instrument-head">
+    <span class="instrument-label">Figure 7</span>
+    <span class="instrument-title">The same store, sent somewhere else</span>
+  </div>
+  <div class="instrument-body">
+    <p class="dothis">Send it somewhere it was never meant to go. Watch <em>instructions run</em> and <em>permission checked</em> while you do.</p>
+
+    <pre class="straycode">let mut reading: u32 = 0;         <span class="tok-c">// a sensor value, in SRAM</span>
+let p = &amp;mut reading as *mut u32;  <span class="tok-c">// p holds 0x20000100</span>
+unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
+
+    <div class="seg stray-seg" role="group" aria-label="What the pointer is holding">
+      <button type="button" id="st-0" aria-pressed="true" data-moved="your own variable, and nothing else">0x20000100</button>
+      <button type="button" id="st-1" aria-pressed="false" data-moved="a pin, and whatever is wired to it">0xD0000018</button>
+      <button type="button" id="st-2" aria-pressed="false" data-moved="a byte out of the console, mid-sentence">0x40070000</button>
+      <button type="button" id="st-3" aria-pressed="false" data-moved="hardware that was running">0x40020000</button>
+      <button type="button" id="st-4" aria-pressed="false" data-moved="nothing &mdash; the chip faulted">0x60000000</button>
+    </div>
+
+    <div class="pickout" aria-live="polite">
+      <span class="pickout-k">what moved</span>
+      <span class="pickout-v hot" id="stray-moved">your own variable, and nothing else</span>
+    </div>
+
+    <div class="strayfixed">
+      <span class="strayfixed-k">instructions run</span>
+      <span class="strayfixed-v">1</span>
+      <span class="strayfixed-k">permission checked</span>
+      <span class="strayfixed-v">none</span>
+    </div>
+
+    <div class="straysay">
+      <p class="strayp is-on" id="stp-0">Where the code meant to go. The number is kept, nothing else in the machine notices, and this is the only one of the five anybody intended.</p>
+      <p class="strayp" id="stp-1"><b>gpio_out_set</b>, the address this whole chapter has been building. A pin goes high. Whatever is wired to that pin moves &mdash; a light, a motor, the relay holding a door shut.</p>
+      <p class="strayp" id="stp-2"><b>UART0</b>'s data register. A byte leaves the chip. Tock's console is on this port, so it arrives in the middle of a sentence the kernel was printing.</p>
+      <p class="strayp" id="stp-3"><b>RESETS</b>, the block that holds other blocks switched off. Most of the chip stays dead until its bit here is cleared, so a wrong value here can switch off hardware that was working.</p>
+      <p class="strayp strayp-fault" id="stp-4">Nobody owns this range, so the chip raises a fault. This is the one of the five that stops, and it is worth being exact about why: it stopped because the address is unowned, not because you lacked permission to use it.</p>
+    </div>
+  </div>
+  <div class="instrument-note">Notice that <em>instructions run</em> and <em>permission checked</em> never move. Every one of these is one instruction, and not one of them asks permission. The machine has no opinion about which of the five you meant.</div>
+</figure>
+
+<section class="col">
+  <p>That is not a flaw in somebody's program. It is the default condition of the machine.</p>
+  <p class="pull-quote">Every single thing Tock does is an answer to one sentence: any code can write any address.</p>
+  <p>Its drivers run without the privilege to touch hardware they were not given. Its applications run behind a hardware barrier the kernel programs before letting them start. Its memory for those applications is handed out in bounded pieces rather than shared.</p>
+  <p>Those three mechanisms have names &mdash; capsules, the memory protection unit, and grants &mdash; and each one gets its own chapter. You do not need them yet. You need the sentence above, because it is the question all three of them are answering.</p>
+</section>
+
+<section class="col">
+  <h2>Check yourself</h2>
+  <p>Reading this again will not make it stick. Neither will highlighting it &mdash; that is one of the few study habits the research is actually rude about.</p>
+  <p>What does work is producing the answer before you look at one. Three questions, three choices each: commit to one and the reasoning opens underneath it. Getting one wrong is useful information, not a problem &mdash; it is the whole reason to answer before reading.</p>
+</section>
+<div class="col">
+  <div class="selfcheck">
+    <div class="q">
+      <p class="q-ask">1. You store <code class="addr">0x00000000</code> to <code>gpio_out_set</code>. What happens?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 1">
+        <button type="button" class="q-opt" id="qo-1-0">Every pin in the bank goes low</button>
+        <button type="button" class="q-opt" id="qo-1-1">The register is cleared to zero</button>
+        <button type="button" class="q-opt" id="qo-1-2" data-ok="1">Nothing at all</button>
+      </div>
+      <p class="q-answer" id="qa-1"><span class="q-yes" id="qy-1">Right. </span><span class="q-no" id="qn-1">Not quite. </span>Nothing at all. Its description is <code>GPIO_OUT |= wdata</code>, and OR-ing in a value with no bits set changes nothing. This is the clearest single sign that the address is not storage: no real storage location silently discards a write.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">2. Both cores run <code>gpio_out |= 1 &lt;&lt; n</code> with different <code>n</code>, and a pin stays off. Where exactly did it go wrong?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 2">
+        <button type="button" class="q-opt" id="qo-2-0" data-ok="1">At the read</button>
+        <button type="button" class="q-opt" id="qo-2-1">At the write</button>
+        <button type="button" class="q-opt" id="qo-2-2">The two writes arrived at the same instant and collided</button>
+      </div>
+      <p class="q-answer" id="qa-2"><span class="q-yes" id="qy-2">Right. </span><span class="q-no" id="qn-2">Not quite. </span>At the read, not the write. Each core read all 32 bits, changed its own copy, and wrote all 32 back &mdash; so the second write carried a value that predated the first. The datasheet's promise that simultaneous writes are cleanly ordered is true and does not help, because the stale data was already in hand.</p>
+    </div>
+    <div class="q">
+      <p class="q-ask">3. Why can't the compiler be trusted with these addresses?</p>
+      <div class="q-opts" role="group" aria-label="Answers to question 3">
+        <button type="button" class="q-opt" id="qo-3-0">It has a bug where hardware is concerned</button>
+        <button type="button" class="q-opt" id="qo-3-1" data-ok="1">Its reasoning is correct for variables and wrong here</button>
+        <button type="button" class="q-opt" id="qo-3-2">It does not know how wide these registers are</button>
+      </div>
+      <p class="q-answer" id="qa-3"><span class="q-yes" id="qy-3">Right. </span><span class="q-no" id="qn-3">Not quite. </span>Because its reasoning is correct for variables and wrong here. It will collapse two stores into one, reorder independent stores, cache a value nothing appears to modify, and delete a read whose result you ignore. A lone store it keeps, as Figure&nbsp;4 shows. On a peripheral, the store <em>is</em> the effect and the value can change with no code involved. <code>volatile</code> is how you say so.</p>
+    </div>
+  </div>
+</div>
+<div class="col">
+  <div class="next">
+  <p class="eyebrow forward">Next</p>
+  <h3 style="margin-top:0"><a href="../ch03-how-code-starts-running/">Chapter 3 &mdash; How code starts running</a></h3>
+  <p>Before anything can store to a register, something has to be executing. Chapter 3 follows the chip from the instant power arrives to the first line of Tock's <code>main()</code>.</p>
+  <p>On the way: where the processor looks for its very first instruction, and what the built-in boot program is hunting for in the kilobyte reserved ahead of the kernel.</p>
+  <p>Then the strangest part &mdash; what "set up memory" means, when memory currently holds whatever happened to be there when the power came on.</p>
+  <p class="note">Worth carrying forward from this chapter:</p>
+  <ol>
+    <li>What an address does on a read and on a write are two separate decisions. Look them up; never infer them.</li>
+    <li>Read, change, write is three operations, and something can act in the gaps.</li>
+    <li><code>volatile</code> stops the optimizer from helpfully destroying your driver.</li>
+    <li id="carry-tock">Nothing yet asks whether code is allowed to touch an address. That is what Tock is for.</li>
+  </ol>
+  <nav class="pager" aria-label="Chapter navigation">
+    <a href="../ch01-everything-is-memory/">&larr;&nbsp;Chapter 1</a>
+    <a href="../">Contents</a>
+  </nav>
+  </div>
+</div>
+
+<section class="col" id="glossary">
+  <h2>Every word, collected</h2>
+  <dl class="glossary">
+    <dt>atomic</dt><dd>An operation nothing can observe or interrupt halfway. A single store to <code>gpio_out_set</code> is atomic; read-change-write is not.</dd>
+    <dt>compiler</dt><dd>The program that turns your source into machine instructions, deciding for itself which ones to emit.</dd>
+    <dt>core</dt><dd>One complete processor. This chip has two, running at the same time on the same memory.</dd>
+    <dt>disassembler</dt><dd>A tool that reads a compiled program and prints its instructions back in readable form.</dd>
+    <dt>interrupt</dt><dd>Hardware pausing your code to run something else, then resuming you.</dd>
+    <dt>mask</dt><dd>An operation keeping some bits of a number and forcing the rest to zero.</dd>
+    <dt>optimizer</dt><dd>The part of a compiler that rewrites your code into cheaper instructions with the same meaning &mdash; which is why <code>volatile</code> has to exist.</dd>
+    <dt>pointer</dt><dd>A number, held like any other, that is meant to be used as an address. Following it means storing to or reading from wherever it points.</dd>
+    <dt>volatile</dt><dd>A promise extracted from the compiler: perform every access, as written, in order, and invent none.</dd>
+  </dl>
+</section>
+
+
+
+<div class="sources">
+  <h3>Everything above, checked against source</h3>
+  <p class="note">Every claim on this page comes from one of two documents: the Tock tree at commit <code>83bad9388</code>, and the RP2350 and Pico&nbsp;2 datasheets. Nothing here was written from memory. One number has moved in the tree since that commit &mdash; the Pico&nbsp;2's declared RAM size &mdash; and Figure&nbsp;6 reports the correction rather than the pin.</p>
+  <ul>
+    <li>Address decode on bits 31:28, the segment table, and unmapped ranges raising a bus error &mdash; RP2350 datasheet &sect;2.2, Table&nbsp;8</li>
+    <li>A store to SIO costing no more than a store to a variable &mdash; RP2350 datasheet &sect;2.2.6: SIO &quot;contains registers which need single-cycle access from both cores concurrently, such as the GPIO registers. Access is always zero-wait-state&quot;, against &sect;1.1 on the memory a variable would live in: &quot;All SRAM supports single-cycle access&quot;</li>
+    <li>SIO base <code class="addr">0xD0000000</code>, IO_BANK0 <code class="addr">0x40028000</code>, PADS <code class="addr">0x40038000</code> &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/gpio.rs">chips/rp2350/src/gpio.rs</a>:1164&ndash;1169</li>
+    <li>The eight output registers at offsets <code>0x010</code>&ndash;<code>0x02C</code>, including the <code>gpio_hi_</code> siblings &mdash; <code>chips/rp2350/src/gpio.rs</code>:88&ndash;108</li>
+    <li>Pins defined as <code>GPIO0</code>&ndash;<code>GPIO29</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1245&ndash;1250</li>
+    <li><code>gpio_out_set.set(1 &lt;&lt; self.pin)</code> &mdash; <code>chips/rp2350/src/gpio.rs</code>:1519</li>
+    <li>30 GPIOs on QFN-60 (RP2350A) versus 48 on QFN-80 (RP2350B), their four and eight analogue inputs, the 7&nbsp;&times;&nbsp;7&nbsp;mm and 10&nbsp;&times;&nbsp;10&nbsp;mm packages, and GPIOs 30&ndash;47 being QFN-80 only &mdash; RP2350 datasheet Table&nbsp;1, the sentence introducing it, and the note under the pin-function table</li>
+    <li><code>GPIO_OUT</code> read-back wording, the <code>|=</code> / <code>&amp;= ~</code> / <code>^=</code> semantics, the <code>WO</code> type of <code>GPIO_OUT_SET</code>, and how simultaneous writes from both cores resolve &mdash; RP2350 datasheet &sect;3.1 and its register tables at offsets <code>0x010</code>&ndash;<code>0x028</code></li>
+    <li><code>GPIO_IN</code> typed <code>RO</code> &mdash; RP2350 datasheet, Table&nbsp;19</li>
+    <li>UART0 base <code class="addr">0x40070000</code> and UART1 base <code class="addr">0x40078000</code>, sharing one register layout &mdash; <a href="https://github.com/tock/tock/blob/master/chips/rp2350/src/uart.rs">chips/rp2350/src/uart.rs</a>:343&ndash;347 and 20&ndash;60</li>
+    <li><code>uartfr</code>'s <code>TXFF</code> bit, and Tock asking exactly the question in the <code>volatile</code> example &mdash; <code>chips/rp2350/src/uart.rs</code>:103&ndash;104 and 438&ndash;440</li>
+    <li><code>UARTDR</code> bits 7:0, "Receive (read) data character. Transmit (write) data character.", typed <code>RWF</code> &mdash; RP2350 datasheet, Table&nbsp;1029</li>
+    <li>A read of that register removing the byte rather than copying it, which is the street table's <q>looking inside a house changes nothing</q> row &mdash; RP2350 datasheet &sect;12.1.2.5: received data is <q>stored in the receive FIFO by the receive logic until read out by the CPU</q></li>
+    <li>A pin's high level being the IOVDD rail, and all GPIOs sharing it &mdash; RP2350 datasheet &sect;6.1.1. That rail is 3.3&nbsp;V on a Pico&nbsp;2: <em>"3V3 is the main 3.3&nbsp;V supply to RP2350 and its I/O"</em> &mdash; Pico&nbsp;2 datasheet</li>
+    <li>Default drive strength of 4&nbsp;mA &mdash; RP2350 datasheet, <code>PADS_BANK0: GPIOx</code>, field <code>DRIVE</code>, reset <code>0x1</code></li>
+    <li>GPIO&nbsp;25 as the user LED, and 23, 24, 25 and 29 being used by the board &mdash; Pico&nbsp;2 datasheet, "A few RP2350 GPIO pins are used for internal board functions"</li>
+    <li>GPIO&nbsp;25 as the radio chip-select on wireless boards, and the LED being pin 0 of the radio &mdash; Pico&nbsp;2&nbsp;W datasheet &sect;3.1: <em>"GPIO25 &mdash; OP wireless SPI CS"</em>, <em>"GPIO23 &mdash; OP wireless power on signal"</em>, <em>"GPIO24 &mdash; OP/IP wireless SPI data/IRQ"</em>, <em>"GPIO29 &mdash; OP/IP wireless SPI CLK/ADC mode (ADC3) to measure VSYS/3"</em>, and <em>"WL_GPIO0 &mdash; OP connected to user LED"</em>. Raspberry Pi's <code>pico-sdk/src/boards/include/boards/pico2_w.h</code> agrees. Tock has no Pico&nbsp;2&nbsp;W board yet, so no claim here rests on the kernel tree</li>
+    <li>Figure&nbsp;2's forty holes, and the seven the datasheet groups apart from the GPIO and ground pins (<code>VBUS</code>&nbsp;40, <code>VSYS</code>&nbsp;39, <code>3V3_EN</code>&nbsp;37, <code>3V3</code>&nbsp;36, <code>ADC_VREF</code>&nbsp;35, <code>AGND</code>&nbsp;33, <code>RUN</code>&nbsp;30) &mdash; Pico&nbsp;2 datasheet &sect;3.1 and its pinout figure. The figure counts <code>AGND</code> with the grounds instead, which is what it is electrically, so it shows eight of those and five power pins. The Pico&nbsp;2&nbsp;W datasheet lists the same seven at the same numbers, which is why one drawing serves both</li>
+    <li>The board being 51&nbsp;&#215;&nbsp;21&nbsp;&#215;&nbsp;1&nbsp;mm with its forty pins on a 2.54&nbsp;mm pitch, which is what makes Figure&nbsp;2 drawable to scale &mdash; Pico&nbsp;2 datasheet &sect;3: <em>"a single sided 51&#215;21 mm 1 mm thick PCB"</em>, <em>"the 40 main user pins on a 2.54 mm (0.1&#8243;) pitch grid"</em></li>
+    <li><code>Output::set</code> as the portable interface every chip implements &mdash; <a href="https://github.com/tock/tock/blob/master/kernel/src/hil/gpio.rs">kernel/src/hil/gpio.rs</a>:151&ndash;154</li>
+    <li>Flash, kernel, application and RAM origins &mdash; <code>boards/raspberry_pi_pico_2/layout.ld</code>. Its RAM length read <code>264K</code> at the pinned commit; it was corrected to <code>520K</code> by <a href="https://github.com/tock/tock/pull/5086">PR&nbsp;5086</a>, merged 20&nbsp;August&nbsp;2026</li>
+    <li>Boot block contents: a 28-byte <code>METADATA_BLOCK</code> and a 256-byte <code>FLASH_BOOTLOADER</code> &mdash; <code>boards/raspberry_pi_pico_2/src/flash_bootloader.rs</code></li>
+    <li><code>write_volatile</code> at the bottom of every register write &mdash; <a href="https://docs.rs/tock-registers/0.10.0/src/tock_registers/registers.rs.html">tock-registers 0.10.0</a>, <code>src/registers.rs</code>:63</li>
+    <li>Figure&nbsp;4's listings &mdash; built from <code>learning/ch01-everything-is-memory/optimizer-demo.rs</code> in this repository with <code>rustc --target thumbv8m.main-none-eabi --crate-type lib -O --emit asm</code>, on the nightly this tree pins in <code>rust-toolchain.toml</code>, against <code class="addr">0x40070018</code> (<code>uartfr</code>), <code class="addr">0xD0000018</code> (<code>gpio_out_set</code>) and <code class="addr">0xD0000028</code> (<code>gpio_out_xor</code>). A lone plain store compiles to the same instruction as a volatile one, which is why this chapter no longer claims a store you never read back is deleted</li>
+    <li>Figure&nbsp;5's disassembly &mdash; <code>llvm-objdump -d</code> on <code>raspberry_pi_pico_2.elf</code>, built from this tree</li>
+  </ul>
+  <p class="note">The datasheets are linked from <a href="https://www.raspberrypi.com/documentation/microcontrollers/silicon.html">Raspberry Pi's silicon documentation page</a>. They are licensed no-derivatives, so this page quotes them briefly with attribution rather than reproducing them.</p>
+  <p>One earlier draft of this chapter said SIO was reached by a route separate from the peripheral fabric. That was wrong. The datasheet says it is accessed via the AHB Fabric, with a dedicated bus interface per core. The mistake came from recalling the RP2040, where SIO does sit on a single-cycle port off the processor. Different chip, different answer, and it is recorded here rather than quietly fixed.</p>
+  <p class="license">Text, diagrams and interactive figures &copy;&nbsp;Jon&nbsp;Hillesheim&nbsp;2026, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC&nbsp;BY-SA&nbsp;4.0</a> &mdash; share and adapt freely with credit, under the same license. Tock source excerpts quoted above remain under their own Apache-2.0&nbsp;OR&nbsp;MIT license and are not relicensed here, and so does <code>optimizer-demo.rs</code>, the file Figure&nbsp;4 is built from &mdash; it is code, so you may reuse it without the ShareAlike condition.</p>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+
+  function hex32(v) {
+    return "0x" + ((v >>> 0).toString(16).toUpperCase().padStart(8, "0"));
+  }
+
+  /* ---------------- The bet, before Figure 1 ----------------
+     Three answers and three explanations, all of them markup, because with no
+     scripting this was a question with no options under it and a blank line
+     where the reasoning goes. The script marks the guess and shows one. */
+  (function () {
+    var N = 3, done = false;
+    function el(id) { return document.getElementById(id); }
+    function wire(i) {
+      el("bet-" + i).addEventListener("click", function () {
+        if (done) { return; }
+        done = true;
+        var k, right;
+        for (k = 0; k < N; k++) {
+          right = el("bet-" + k).getAttribute("data-ok") === "true";
+          if (right) { el("bet-" + k).classList.add("is-right"); }
+          el("betwhy-" + k).classList.toggle("is-on", k === i);
+        }
+        el("bet-" + i).classList.add(
+          el("bet-" + i).getAttribute("data-ok") === "true" ? "is-right" : "is-wrong");
+      });
+    }
+    var i;
+    for (i = 0; i < N; i++) { wire(i); }
+  }());
+
+  /* ---------------- Figure 1: four behaviours ----------------
+     Four rows and twelve paragraphs, all markup. The two panels are the point
+     of the figure -- storing and reading are independent decisions -- and with
+     no scripting both of them were blank. */
+  (function () {
+    var K = ["sram", "out", "set", "in"];
+    function pick(k) {
+      var i, j, kk, WHERE = ["bhw-", "bhr-", "bhd-"];
+      for (i = 0; i < K.length; i++) {
+        kk = K[i];
+        document.getElementById("bh-" + kk)
+          .setAttribute("aria-pressed", kk === k ? "true" : "false");
+        for (j = 0; j < WHERE.length; j++) {
+          document.getElementById(WHERE[j] + kk)
+            .classList.toggle("is-on", kk === k);
+        }
+      }
+    }
+    function wire(k) {
+      document.getElementById("bh-" + k)
+        .addEventListener("click", function () { pick(k); });
+    }
+    var i;
+    for (i = 0; i < K.length; i++) { wire(K[i]); }
+    pick("set");
+  }());
+
+  /* ---------------- Figure 2: one layout, two bases ----------------
+     Bases and offsets are read off chips/rp2350/src/uart.rs: the two ports at
+     :343 and :347, and the register offsets from the block at :20-60. Both
+     halves are numbers here because the figure's whole claim is that they move
+     independently; every sentence it says is in the markup. */
+  (function () {
+    var PORTS = [0x40070000, 0x40078000];
+    var REGS = [[0x000, "uartdr"], [0x018, "uartfr"],
+                [0x024, "uartibrd"], [0x030, "uartcr"]];
+    var port = 0, reg = 0, moved = "start";
+
+    function hex(v, width) {
+      var t = v.toString(16).toUpperCase();
+      while (t.length < width) { t = "0" + t; }
+      return "0x" + t;
+    }
+    function draw() {
+      var i;
+      for (i = 0; i < PORTS.length; i++) {
+        document.getElementById("up-" + i)
+          .setAttribute("aria-pressed", i === port ? "true" : "false");
+      }
+      for (i = 0; i < REGS.length; i++) {
+        document.getElementById("ur-" + i)
+          .setAttribute("aria-pressed", i === reg ? "true" : "false");
+      }
+      document.getElementById("uo-base").textContent = hex(PORTS[port], 8);
+      document.getElementById("uo-off").textContent = hex(REGS[reg][0], 3);
+      document.getElementById("uo-addr").textContent =
+        hex(PORTS[port] + REGS[reg][0], 8);
+      document.getElementById("uo-name").textContent = REGS[reg][1];
+      document.getElementById("mv-start").classList.toggle("is-on", moved === "start");
+      document.getElementById("mv-base").classList.toggle("is-on", moved === "base");
+      document.getElementById("mv-off").classList.toggle("is-on", moved === "off");
+    }
+    function wirePort(i) {
+      document.getElementById("up-" + i).addEventListener("click", function () {
+        if (i !== port) { moved = "base"; }
+        port = i;
+        draw();
+      });
+    }
+    function wireReg(i) {
+      document.getElementById("ur-" + i).addEventListener("click", function () {
+        if (i !== reg) { moved = "off"; }
+        reg = i;
+        draw();
+      });
+    }
+    var i;
+    for (i = 0; i < PORTS.length; i++) { wirePort(i); }
+    for (i = 0; i < REGS.length; i++) { wireReg(i); }
+    draw();
+  }());
+
+  /* ---------------- Figure 3: two cores, one register ----------------
+     Both scenarios, all eight steps, both intros, both endings and every line
+     a core card can say are in the markup. What is left here is arithmetic:
+     which step is next, what each core is holding, and what the register
+     actually contains after the store. */
+  (function () {
+    /* who, which sub line it leaves the actor on, and what it does */
+    var RMW = [
+      ["core0", "holds",  function (s) { s.c0 = 0; }],
+      ["core1", "holds",  function (s) { s.c1 = 0; }],
+      ["core0", "copy",   function (s) { s.c0 = 0x02000000; }],
+      ["core0", "stored", function (s) { s.hw = 0x02000000; }],
+      ["core1", "copy",   function (s) { s.c1 = 0x00000400; }],
+      ["core1", "stored", function (s) { s.hw = 0x00000400; }]
+    ];
+    var ATOM = [
+      ["core0", "stored", function (s) { s.hw |= 0x02000000; }],
+      ["core1", "stored", function (s) { s.hw |= 0x00000400; }]
+    ];
+    var PLAN = { rmw: { steps: RMW, pre: "rs", cls: "bad" },
+                 atomic: { steps: ATOM, pre: "ra", cls: "good" } };
+    var SUBS = ["idle", "holds", "copy", "stored"];
+    var mode = "rmw", state, at;
+
+    function el(id) { return document.getElementById(id); }
+
+    function pinsOf(v) {
+      var out = [], i;
+      for (i = 0; i < 32; i++) { if (v & (1 << i)) { out.push(i); } }
+      if (!out.length) { return "no pins"; }
+      return (out.length > 1 ? "pins " : "pin ") + out.join(", ");
+    }
+
+    function sub(core, key) {
+      var i, c = core === "core0" ? "0" : "1";
+      for (i = 0; i < SUBS.length; i++) {
+        el("c" + c + "sub-" + SUBS[i]).classList.toggle("is-on", SUBS[i] === key);
+      }
+    }
+
+    function draw() {
+      var plan = PLAN[mode], steps = plan.steps, i, k, cur;
+
+      el("steps-rmw").classList.toggle("is-on", mode === "rmw");
+      el("steps-atomic").classList.toggle("is-on", mode === "atomic");
+      for (k in PLAN) {
+        if (!PLAN.hasOwnProperty(k)) { continue; }
+        for (i = 0; i < PLAN[k].steps.length; i++) {
+          el(PLAN[k].pre + "-" + i).classList.toggle("done",
+            k === mode && i < at);
+          el(PLAN[k].pre + "-" + i).classList.toggle("is-next",
+            k === mode && i === at);
+        }
+        el("rint-" + k).classList.toggle("is-on", k === mode);
+      }
+
+      el("core0-val").textContent = state.c0 === null ? "\u2014" : hex32(state.c0);
+      el("core1-val").textContent = state.c1 === null ? "\u2014" : hex32(state.c1);
+      el("corehw-val").textContent = hex32(state.hw);
+      el("corehw-pins").textContent = pinsOf(state.hw);
+      sub("core0", state.c0sub);
+      sub("core1", state.c1sub);
+
+      cur = at < steps.length ? steps[at][0] : null;
+      el("core0").classList.toggle("active", cur === "core0");
+      el("core1").classList.toggle("active", cur === "core1");
+      el("corehw").classList.toggle("active",
+        at > 0 && steps[at - 1][1] === "stored");
+    }
+
+    function ending(k) {
+      var names = ["idle", "rmw", "atomic"], i;
+      for (i = 0; i < names.length; i++) {
+        el("rend-" + names[i]).classList.toggle("is-on", names[i] === k);
+      }
+    }
+
+    function resetRace() {
+      state = { c0: null, c1: null, hw: 0, c0sub: "idle", c1sub: "idle" };
+      at = 0;
+      el("race-outcome").className = "outcome prose";
+      ending("idle");
+      el("race-step").disabled = false;
+      el("race-all").disabled = false;
+      draw();
+    }
+
+    function stepRace() {
+      var steps = PLAN[mode].steps;
+      if (at >= steps.length) { return; }
+      // A step leaves its actor saying one thing, and the register holding
+      // whatever the step did to it. Both come out of the table above.
+      steps[at][2](state);
+      if (steps[at][0] === "core0") { state.c0sub = steps[at][1]; }
+      else { state.c1sub = steps[at][1]; }
+      at++;
+      draw();
+      if (at >= steps.length) {
+        el("race-outcome").className = "outcome prose " + PLAN[mode].cls;
+        ending(mode);
+        el("race-step").disabled = true;
+        el("race-all").disabled = true;
+      }
+    }
+
+    el("race-step").addEventListener("click", stepRace);
+    el("race-all").addEventListener("click", function () {
+      while (at < PLAN[mode].steps.length) { stepRace(); }
+    });
+    el("race-reset").addEventListener("click", resetRace);
+
+    var TABS = { rmw: "tab-rmw", atomic: "tab-atomic" };
+    var ORDER = ["rmw", "atomic"];
+
+    function selectTab(which) {
+      mode = which;
+      ORDER.forEach(function (k) {
+        var b = el(TABS[k]);
+        var on = k === which;
+        b.setAttribute("aria-selected", on ? "true" : "false");
+        b.setAttribute("tabindex", on ? "0" : "-1");
+        b.classList.toggle("on", on);
+      });
+      el("race-panel").setAttribute("aria-labelledby", TABS[which]);
+      resetRace();
+    }
+
+    ORDER.forEach(function (k, i) {
+      var tab = el(TABS[k]);
+      tab.addEventListener("click", function () { selectTab(k); });
+      tab.addEventListener("keydown", function (e) {
+        var next = null;
+        if (e.key === "ArrowRight") { next = (i + 1) % ORDER.length; }
+        else if (e.key === "ArrowLeft") { next = (i - 1 + ORDER.length) % ORDER.length; }
+        else if (e.key === "Home") { next = 0; }
+        else if (e.key === "End") { next = ORDER.length - 1; }
+        if (next === null) { return; }
+        if (e.preventDefault) { e.preventDefault(); }
+        selectTab(ORDER[next]);
+        var moved = el(TABS[ORDER[next]]);
+        if (moved.focus) { moved.focus(); }
+      });
+    });
+    selectTab("rmw");
+  }());
+
+  /* ---------------- Figure 5: show the skipped lines ---------------- */
+
+  var disToggle = document.getElementById("dis-toggle");
+  var disPre = document.getElementById("dis");
+  disToggle.addEventListener("click", function () {
+    var open = disPre.classList.toggle("dis-all");
+    disToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  /* ---------------- Figure 6: the ladder ----------------
+     Five rungs in the markup, all of them marked on, because with no
+     scripting the whole ladder is what a reader should get. The script does
+     the hiding: it puts four away and hands them back one at a time. */
+  (function () {
+    var N = 5, shown = 1;
+    var count = document.getElementById("ladder-count");
+    var next = document.getElementById("ladder-next");
+    function draw() {
+      var i;
+      for (i = 0; i < N; i++) {
+        document.getElementById("rung-" + i).classList.toggle("on", i < shown);
+      }
+      count.textContent = shown + " of " + N + " shown";
+      next.disabled = shown >= N;
+    }
+    next.addEventListener("click", function () {
+      if (shown < N) { shown++; draw(); }
+    });
+    document.getElementById("ladder-reset").addEventListener("click", function () {
+      shown = 1; draw();
+    });
+    draw();
+  }());
+
+  /* ---------------- Figure 4: what the optimizer does ---------------- */
+  // Four cases, each a pair of real compiler listings. The markup carries every
+  // sentence; this only decides which case is on screen.
+
+  var OPTCASES = ["wait", "flip", "order", "once", "peek"];
+
+  function pickOpt(which) {
+    OPTCASES.forEach(function (k) {
+      var on = k === which;
+      document.getElementById("case-" + k).classList.toggle("is-off", !on);
+      document.getElementById("opt-" + k)
+        .setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  OPTCASES.forEach(function (k) {
+    document.getElementById("opt-" + k)
+      .addEventListener("click", function () { pickOpt(k); });
+  });
+  // Opens on the loop, which is the case the prose above just set up.
+  pickOpt("wait");
+
+  /* ---------------- Figure 5: the three lines, one at a time ---------------- */
+
+  /* Same architecture as Figures 4 and 7: every sentence is in the markup and
+     this only moves the highlight, so the figure still reads with no JS. */
+
+  var DISLINES = ["and", "lsl", "str"];
+
+  function pickDis(which) {
+    DISLINES.forEach(function (k) {
+      var on = k === which;
+      document.getElementById("dl-" + k)
+        .setAttribute("aria-pressed", on ? "true" : "false");
+      document.getElementById("dp-" + k).classList.toggle("is-on", on);
+    });
+  }
+
+  DISLINES.forEach(function (k) {
+    document.getElementById("dl-" + k)
+      .addEventListener("click", function () { pickDis(k); });
+  });
+  /* Opens on the mask, which is the first of the three to run. */
+  pickDis("and");
+
+  /* ---------------- Check yourself: three predictions ---------------- */
+
+  /* Every answer and both verdict words are in the markup. The answers start
+     visible so that with no scripting the reader gets all three; the script hides
+     them at load and gives one back when its question is answered. */
+  (function () {
+    var n, m;
+    function answer(q, chosen) {
+      var i, opt, correct = -1;
+      for (i = 0; i < 3; i++) {
+        opt = document.getElementById("qo-" + q + "-" + i);
+        if (opt.getAttribute("data-ok") === "1") { correct = i; }
+        opt.setAttribute("aria-disabled", "true");
+      }
+      document.getElementById("qo-" + q + "-" + correct).classList.add("is-right");
+      if (chosen !== correct) {
+        document.getElementById("qo-" + q + "-" + chosen).classList.add("is-wrong");
+      }
+      document.getElementById(chosen === correct ? "qy-" + q : "qn-" + q)
+        .classList.add("is-shown");
+      document.getElementById("qa-" + q).classList.remove("is-off");
+    }
+    for (n = 1; n <= 3; n++) {
+      document.getElementById("qa-" + n).classList.add("is-off");
+      for (m = 0; m < 3; m++) {
+        (function (q, choice) {
+          var el = document.getElementById("qo-" + q + "-" + choice);
+          el.addEventListener("click", function () {
+            if (el.getAttribute("aria-disabled") === "true") { return; }
+            answer(q, choice);
+          });
+        }(n, m));
+      }
+    }
+  }());
+
+  /* ---------------- The street analogy, row by row ---------------- */
+
+  /* Seven rows, seven panels, all written out in the markup. The script only
+     moves the class and the pressed state. */
+  (function () {
+    var n;
+    function pickRow(k) {
+      var i, panel;
+      for (i = 0; i < 7; i++) {
+        document.getElementById("br-" + i)
+          .setAttribute("aria-pressed", i === k ? "true" : "false");
+        panel = document.getElementById("brp-" + i);
+        panel.classList.toggle("is-on", i === k);
+        panel.classList.toggle("is-off", i !== k);
+      }
+    }
+    for (n = 0; n < 7; n++) {
+      (function (k) {
+        document.getElementById("br-" + k)
+          .addEventListener("click", function () { pickRow(k); });
+      }(n));
+    }
+    /* Opens on the first row that holds, so what "running a row" means is
+       established on an easy one before the four that fail. */
+    pickRow(0);
+  }());
+
+  /* ---------------- Figure 7: the same store, sent somewhere else ---------------- */
+
+  /* Every word this figure says is in the markup: the five panels are written
+     out, and each button carries its own readout line in data-moved. The
+     script moves a class and copies one string it did not author. */
+  (function () {
+    var strayMoved = document.getElementById("stray-moved");
+
+    function pickStray(n) {
+      var i;
+      for (i = 0; i < 5; i++) {
+        document.getElementById("st-" + i)
+          .setAttribute("aria-pressed", i === n ? "true" : "false");
+        document.getElementById("stp-" + i).classList.toggle("is-on", i === n);
+      }
+      strayMoved.textContent =
+        document.getElementById("st-" + n).getAttribute("data-moved");
+    }
+
+    [0, 1, 2, 3, 4].forEach(function (n) {
+      document.getElementById("st-" + n)
+        .addEventListener("click", function () { pickStray(n); });
+    });
+    /* Opens on the address the code meant, so the reader starts where the
+       program is correct and walks out of it. */
+    pickStray(0);
+  }());
+
+}());
+</script>
