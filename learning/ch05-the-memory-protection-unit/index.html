@@ -197,6 +197,29 @@ code {
 
 /* ---------- instrument (figure) ---------- */
 
+/* ---------- Predict before the reveal ----------
+   Chapter 1's component, unchanged, because a reader who has met it once
+   should not have to work out what it is again. The rule it enforces is the
+   point: you cannot see the reasoning until you have committed to an answer,
+   and a wrong guess is marked wrong rather than quietly corrected. */
+.bet { border: 1px solid var(--rule-strong); background: var(--surface);
+  padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .9rem;
+  margin: 1.6rem 0; }
+.bet-q { font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  line-height: 1.4; margin: 0; }
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt { font: inherit; text-transform: none; letter-spacing: 0;
+  text-align: left; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 2px; padding: .6rem .8rem;
+  cursor: pointer; line-height: 1.45; }
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why { font-size: .97rem; line-height: 1.55; border-top: 1px solid var(--rule);
+  padding-top: .8rem; color: var(--ink-soft); }
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+
 .instrument {
   margin: 2.25rem auto;
   max-width: var(--wide);
@@ -1294,7 +1317,14 @@ dfn {
 
 <section class="col">
   <h2>Build a region yourself</h2>
-  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. The figure below is that process. Drag how much it asks for, then drag a probe across the edge and see where the answer changes. One caveat on that base: it is picked to make the arithmetic easy to follow, not read off this board like every other address in this series. Where a process's memory really starts depends on how much RAM the kernel's own data took.</p>
+  <p id="workline">That is enough to do the arithmetic yourself. Take a process whose memory the kernel has placed at <code class="addr">0x20008000</code>, with read and write permission and no execute &mdash; the permission every process's RAM gets. Chapter 4 said the accessible part starts at 32 bytes and grows when the process asks. The figure below is that process. Drag how much it asks for, then drag a probe across the edge and see where the answer changes. One caveat on that base: it is picked to make the arithmetic easy to follow, not read off this board like every other address in this series. Where a process's memory really starts depends on how much RAM the kernel's own data took.<div class="col">
+  <div class="bet" id="bet-round">
+    <p class="bet-q">A process asks the kernel for <strong>100 bytes</strong>. The unit hands it a region. How much can the process actually reach?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-round-o0" data-ok="false">100 bytes &mdash; exactly what it asked for</button><button type="button" class="bet-opt" id="bet-round-o1" data-ok="true">128 bytes &mdash; rounded up to the next multiple of 32</button><button type="button" class="bet-opt" id="bet-round-o2" data-ok="false">256 bytes &mdash; rounded up to a power of two</button><button type="button" class="bet-opt" id="bet-round-o3" data-ok="false">It is refused &mdash; 100 is not a legal region size</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-round-w0">That is what the process is told, and it is not what it gets. The limit field records a boundary in units of 32 bytes, so it has nowhere to put the number 100.</p><p class="betwhy" id="bet-round-w1">Right, and the process is never told. <b>align32</b> rounds the far edge up because the limit field cannot record a finer boundary, so the process quietly finds it can reach twenty-eight bytes further than it asked to. The rounding always goes the process's way.</p><p class="betwhy" id="bet-round-w2">That is the answer for the older unit, and it is the instinct this chapter exists to correct. On Armv7-M a region really did have to be a power of two, aligned to its own size, and the waste could be enormous. This chip has the newer unit: a base and a limit, in units of 32 bytes, and no power-of-two rule anywhere.</p><p class="betwhy" id="bet-round-w3">Nothing refuses it. There is no table of legal sizes to fail against. The only constraint is that both edges land on a 32-byte boundary, and the kernel arranges that by moving the far edge rather than by saying no.</p></div>
+  </div>
+</div>
+</p>
 </section>
 
 <figure class="instrument">
@@ -1413,7 +1443,14 @@ dfn {
 <section class="col">
   <h2>You get eight regions. Two are gone before you start.</h2>
   <p id="eightline">The datasheet says the unit "supports 16 memory regions: 8 secure and 8 non-secure" &mdash; two separate sets of eight rather than sixteen in one pool. Tock asks for eight, in one line of the chip crate: <b>cortexm33::mpu::MPU&lt;8&gt;</b>.</p>
-  <p>By the time a process runs its first instruction, two of those eight are already taken. One of the two was never on offer in the first place.</p>
+  <p>By the time a process runs its first instruction, two of those eight are already taken. One of the two was never on offer in the first place.<div class="col">
+  <div class="bet" id="bet-eight">
+    <p class="bet-q">Tock's Cortex-M33 code works with <strong>eight</strong> memory regions. Where did the number eight come from?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-eight-o0" data-ok="false">The hardware reports it, and the kernel reads it at boot</button><button type="button" class="bet-opt" id="bet-eight-o1" data-ok="true">It is written by hand in the source</button><button type="button" class="bet-opt" id="bet-eight-o2" data-ok="false">The Armv8-M specification fixes it at eight for every chip</button><button type="button" class="bet-opt" id="bet-eight-o3" data-ok="false">It is a build-time setting each board chooses</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-eight-w0">The hardware does report it, and the trait offers a method that asks. Four architectures implement that method. No line in this tree calls it.</p><p class="betwhy" id="bet-eight-w1">Right, and that is worth sitting with. The number is a constant in Tock's own code. A chip with sixteen regions would have eight of them ignored, and a chip with four would be a bug nothing detects at compile time.</p><p class="betwhy" id="bet-eight-w2">It does not. The specification allows a range, and implementations differ. That is exactly why the trait has a method to ask.</p><p class="betwhy" id="bet-eight-w3">There is no such setting. The boards in this tree do not get a say, which is the point of the note under the figure.</p></div>
+  </div>
+</div>
+</p>
 </section>
 
 <figure class="instrument">
@@ -1714,6 +1751,42 @@ dfn {
 </div>
 
 <script>
+  /* ---------------- Predict before the reveal ----------------
+     Every option and every explanation is in the markup; this only marks the
+     guess and shows the one that goes with it. A bet answers once, because
+     the value is in having been wrong and a second go erases that. */
+  (function () {
+    var BETS = [["bet-round", 4], ["bet-eight", 4]];
+    function wire(name, n) {
+      var done = false, i;
+      function press(k) {
+        return function () {
+          if (done) { return; }
+          done = true;
+          var j, right;
+          for (j = 0; j < n; j++) {
+            right = document.getElementById(name + "-o" + j)
+              .getAttribute("data-ok") === "true";
+            if (right) {
+              document.getElementById(name + "-o" + j).classList.add("is-right");
+            }
+            document.getElementById(name + "-w" + j).classList.toggle("is-on", j === k);
+          }
+          if (document.getElementById(name + "-o" + k)
+                .getAttribute("data-ok") !== "true") {
+            document.getElementById(name + "-o" + k).classList.add("is-wrong");
+          }
+        };
+      }
+      for (i = 0; i < n; i++) {
+        document.getElementById(name + "-o" + i)
+          .addEventListener("click", press(i));
+      }
+    }
+    var b;
+    for (b = 0; b < BETS.length; b++) { wire(BETS[b][0], BETS[b][1]); }
+  }());
+
 (function () {
   "use strict";
 

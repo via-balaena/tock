@@ -195,6 +195,29 @@ code {
 
 /* ---------- instrument (figure) ---------- */
 
+/* ---------- Predict before the reveal ----------
+   Chapter 1's component, unchanged, because a reader who has met it once
+   should not have to work out what it is again. The rule it enforces is the
+   point: you cannot see the reasoning until you have committed to an answer,
+   and a wrong guess is marked wrong rather than quietly corrected. */
+.bet { border: 1px solid var(--rule-strong); background: var(--surface);
+  padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .9rem;
+  margin: 1.6rem 0; }
+.bet-q { font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  line-height: 1.4; margin: 0; }
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt { font: inherit; text-transform: none; letter-spacing: 0;
+  text-align: left; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 2px; padding: .6rem .8rem;
+  cursor: pointer; line-height: 1.45; }
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why { font-size: .97rem; line-height: 1.55; border-top: 1px solid var(--rule);
+  padding-top: .8rem; color: var(--ink-soft); }
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+
 .instrument {
   margin: 2.25rem auto;
   max-width: var(--wide);
@@ -998,7 +1021,14 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
   <p id="splitline">Turning on an LED finishes inside the call. The pin is high before the process runs again, and Figure 5 showed what that comes back as: a success with nothing in it. Most of what a process wants is not like that. A byte from the console arrives when somebody types it, and no amount of waiting inside a driver will make that sooner.</p>
   <p id="twoparts">So a request that cannot finish is split in two. First <b>subscribe</b>, leaving a function pointer with the kernel. Then <b>command</b>, which starts the work and returns immediately, having promised nothing except that it started. Later the driver has something, and asks the kernel to run that function.</p>
   <p id="queueline">The kernel cannot. The process is not running, and even if it were, interrupting it to run one of its own functions would land a callback in the middle of whatever else it was doing. So the kernel writes down an upcall instead: which function, which three values, and which subscription it answers. Chapter 4 found where those upcalls go: room for ten of them, a constant belonging to the process implementation rather than to any board. This is what fills it.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-upcall">
+    <p class="bet-q">A driver has something for a process &mdash; a byte arrived. The process is running right now, in the middle of its own code. When does the process's callback run?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-upcall-o0" data-ok="false">Immediately &mdash; the kernel interrupts the process and calls it</button><button type="button" class="bet-opt" id="bet-upcall-o1" data-ok="true">Not until the process asks for it</button><button type="button" class="bet-opt" id="bet-upcall-o2" data-ok="false">At the end of the process's timeslice</button><button type="button" class="bet-opt" id="bet-upcall-o3" data-ok="false">When the driver's interrupt handler returns</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-upcall-w0">That is what the word upcall suggests to anyone who has met an interrupt on a larger machine, and it is wrong here. There is no thread to interrupt with and nothing that stops a running process to hand it anything.</p><p class="betwhy" id="bet-upcall-w1">Right. The upcall goes on the end of a queue and nothing drains it. The process keeps running, none the wiser, until it calls <b>yield</b> &mdash; and delivery happens at that moment or not at all.</p><p class="betwhy" id="bet-upcall-w2">A timeslice ending puts the process back on the scheduler's queue. It does not deliver anything, and a process that never yields never receives an upcall however many timeslices it burns through.</p><p class="betwhy" id="bet-upcall-w3">The handler runs in the kernel and finishes long before any of this. What it leaves behind is an entry in a queue belonging to the process.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1115,7 +1145,14 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
   <p id="bufline">A command hands a driver two words of data and nothing more. A line of text to print is not two numbers, and neither is a reading to be filled in. For anything larger the process hands over a piece of its own memory: an address and a length, in a class made for it. What the kernel ends up holding is an allowed buffer, and the classes that make one are three of the eight.</p>
   <p id="consentline">Which sounds like exactly what chapter 5's fence exists to prevent, and is not. The fence stops a process reaching out. This is a process letting the kernel reach in, and the kernel runs on the privileged side, where chapter 5's regions do not apply at all. It could read that memory unasked. What the class buys is not access. It is a record of consent, with the bounds checked.</p>
   <p id="checkline">The check is software this time, in the process implementation rather than in the processor, and it lands on the same two addresses. The buffer must start at or after the start of the process's memory, and end at or before its break. Those are the two numbers chapter 5 wrote into a hardware register to build the region; here they are compared in Rust to answer a different question about the same span.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-mark">
+    <p class="bet-q">A process hands the kernel a buffer near the top of its heap, then finishes with it and wants its heap space back. Can it move its break down past where that buffer was?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-mark-o0" data-ok="false">Yes, once the driver has finished with the buffer</button><button type="button" class="bet-opt" id="bet-mark-o1" data-ok="false">Yes, by allowing a buffer of length zero first</button><button type="button" class="bet-opt" id="bet-mark-o2" data-ok="true">No &mdash; not for as long as it keeps running</button><button type="button" class="bet-opt" id="bet-mark-o3" data-ok="false">No, and the attempt faults the process</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-mark-w0">The kernel has no way to know a driver has finished. There is no call that says so, and nothing tracks it, so it assumes none of them ever has.</p><p class="betwhy" id="bet-mark-w1">A zero-length allow does take the buffer back from the driver, and the kernel accepts it without checking any address at all. It does not lower the mark.</p><p class="betwhy" id="bet-mark-w2">Right. Offering a buffer raises a mark to its far end, and nothing a running process can do lowers that line. The cost is permanent for the life of the process, and the only refund is not being that process any more: the restart variant of exit rebuilds its memory from the start.</p><p class="betwhy" id="bet-mark-w3">Nothing faults. The request comes back having moved the break somewhere legal, or not moved it; a memop that cannot be satisfied is an error value, not a fault.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1339,6 +1376,42 @@ df02      svc 2            <span class="asm-c">// class 2: command</span>
 </div>
 
 <script>
+  /* ---------------- Predict before the reveal ----------------
+     Every option and every explanation is in the markup; this only marks the
+     guess and shows the one that goes with it. A bet answers once, because
+     the value is in having been wrong and a second go erases that. */
+  (function () {
+    var BETS = [["bet-upcall", 4], ["bet-mark", 4]];
+    function wire(name, n) {
+      var done = false, i;
+      function press(k) {
+        return function () {
+          if (done) { return; }
+          done = true;
+          var j, right;
+          for (j = 0; j < n; j++) {
+            right = document.getElementById(name + "-o" + j)
+              .getAttribute("data-ok") === "true";
+            if (right) {
+              document.getElementById(name + "-o" + j).classList.add("is-right");
+            }
+            document.getElementById(name + "-w" + j).classList.toggle("is-on", j === k);
+          }
+          if (document.getElementById(name + "-o" + k)
+                .getAttribute("data-ok") !== "true") {
+            document.getElementById(name + "-o" + k).classList.add("is-wrong");
+          }
+        };
+      }
+      for (i = 0; i < n; i++) {
+        document.getElementById(name + "-o" + i)
+          .addEventListener("click", press(i));
+      }
+    }
+    var b;
+    for (b = 0; b < BETS.length; b++) { wire(BETS[b][0], BETS[b][1]); }
+  }());
+
 (function () {
   "use strict";
 

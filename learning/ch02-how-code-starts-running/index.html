@@ -197,6 +197,29 @@ code {
 
 /* ---------- instrument (figure) ---------- */
 
+/* ---------- Predict before the reveal ----------
+   Chapter 1's component, unchanged, because a reader who has met it once
+   should not have to work out what it is again. The rule it enforces is the
+   point: you cannot see the reasoning until you have committed to an answer,
+   and a wrong guess is marked wrong rather than quietly corrected. */
+.bet { border: 1px solid var(--rule-strong); background: var(--surface);
+  padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .9rem;
+  margin: 1.6rem 0; }
+.bet-q { font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  line-height: 1.4; margin: 0; }
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt { font: inherit; text-transform: none; letter-spacing: 0;
+  text-align: left; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 2px; padding: .6rem .8rem;
+  cursor: pointer; line-height: 1.45; }
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why { font-size: .97rem; line-height: 1.55; border-top: 1px solid var(--rule);
+  padding-top: .8rem; color: var(--ink-soft); }
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+
 .instrument {
   margin: 2.25rem auto;
   max-width: var(--wide);
@@ -1101,7 +1124,14 @@ bl   main</pre></button>
 
 <section class="col">
   <p>Which loop a variable belongs to is decided by one thing: what it starts as. The consequence is not the one people expect, and it is easier to drag than to read.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-cost">
+    <p class="bet-q">Two declarations in your program: a <strong>4 kB buffer of zeroes</strong>, and a <strong>100-byte table of constants</strong>. Which one takes more room in flash?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-cost-o0" data-ok="false">The 4 kB buffer &mdash; it is forty times bigger</button><button type="button" class="bet-opt" id="bet-cost-o1" data-ok="true">The 100-byte table</button><button type="button" class="bet-opt" id="bet-cost-o2" data-ok="false">Neither &mdash; both live in RAM, not flash</button><button type="button" class="bet-opt" id="bet-cost-o3" data-ok="false">The same, since flash is allocated in whole pages</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-cost-w0">Bigger in RAM, and free in flash. Nothing needs storing, because the value is zero and there is already a loop that writes zeroes over a range.</p><p class="betwhy" id="bet-cost-w1">Right, and it is the opposite of the instinct. Asking for more memory can cost nothing; asking for a particular value costs flash, one byte per byte. Those hundred bytes have to be written down somewhere and copied in before your code runs.</p><p class="betwhy" id="bet-cost-w2">Both end up in RAM. Only one of them has to be carried in flash to get there, and it is the one whose contents somebody chose.</p><p class="betwhy" id="bet-cost-w3">There is no page rounding in this accounting. The image carries exactly the bytes whose values were specified, and a range of zeroes specifies nothing.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1158,7 +1188,14 @@ bl   main</pre></button>
 <section class="col">
   <h2>The whole thing, in order</h2>
   <p>Every step above, as one list. Nothing here is new, but walking it end to end is where the shape shows: how much of starting a program is the chip looking for it.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-handover">
+    <p class="bet-q">Eight moments between power reaching the chip and your kernel running. At which of the eight does code you compiled first execute?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-handover-o0" data-ok="false">The first &mdash; the chip jumps straight to your image</button><button type="button" class="bet-opt" id="bet-handover-o1" data-ok="false">The third</button><button type="button" class="bet-opt" id="bet-handover-o2" data-ok="true">The seventh</button><button type="button" class="bet-opt" id="bet-handover-o3" data-ok="false">The eighth, and only after the kernel has finished booting</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-handover-w0">It jumps straight to something, and that something is not yours. Address zero is ROM burned in at the factory, and it is where both processors start looking.</p><p class="betwhy" id="bet-handover-w1">Still not yours. Five of the eight are the chip looking for your program: reading ROM, finding flash, reading a header, checking it, setting flash up so code can run out of it.</p><p class="betwhy" id="bet-handover-w2">Right, and it is further in than almost anyone guesses. Five of the eight are the chip hunting for your program, one is the loader it found, and only the last two are your program running.</p><p class="betwhy" id="bet-handover-w3">By the eighth the kernel is already running. The handover is one step earlier, and what happens at the eighth is your own code continuing.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1342,6 +1379,42 @@ bl   main</pre></button>
 </div>
 
 <script>
+  /* ---------------- Predict before the reveal ----------------
+     Every option and every explanation is in the markup; this only marks the
+     guess and shows the one that goes with it. A bet answers once, because
+     the value is in having been wrong and a second go erases that. */
+  (function () {
+    var BETS = [["bet-cost", 4], ["bet-handover", 4]];
+    function wire(name, n) {
+      var done = false, i;
+      function press(k) {
+        return function () {
+          if (done) { return; }
+          done = true;
+          var j, right;
+          for (j = 0; j < n; j++) {
+            right = document.getElementById(name + "-o" + j)
+              .getAttribute("data-ok") === "true";
+            if (right) {
+              document.getElementById(name + "-o" + j).classList.add("is-right");
+            }
+            document.getElementById(name + "-w" + j).classList.toggle("is-on", j === k);
+          }
+          if (document.getElementById(name + "-o" + k)
+                .getAttribute("data-ok") !== "true") {
+            document.getElementById(name + "-o" + k).classList.add("is-wrong");
+          }
+        };
+      }
+      for (i = 0; i < n; i++) {
+        document.getElementById(name + "-o" + i)
+          .addEventListener("click", press(i));
+      }
+    }
+    var b;
+    for (b = 0; b < BETS.length; b++) { wire(BETS[b][0], BETS[b][1]); }
+  }());
+
 (function () {
   "use strict";
 

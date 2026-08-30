@@ -32,6 +32,83 @@ function walk(btn, panel, n, name) {
   }
 }
 
+// ---- Predict before the reveal ----
+// The device only works if it cannot be skimmed: nothing explains itself until
+// a guess is committed, exactly one option is right, and a wrong guess is
+// marked wrong rather than quietly corrected. Asserted per bet, and swept, so
+// a bet added later without an explanation is caught.
+(function () {
+  var BETS = [["bet-upcall", 4], ["bet-mark", 4]];
+  function opts(name, n) {
+    var i, out = [];
+    for (i = 0; i < n; i++) { out.push(REG[name + "-o" + i]); }
+    return out;
+  }
+  function shown(name, n) {
+    var i, on = [];
+    for (i = 0; i < n; i++) {
+      if (REG[name + "-w" + i].classList.contains("is-on")) { on.push(i); }
+    }
+    return on.join("+");
+  }
+  var b, name, n, i, right, o;
+
+  for (b = 0; b < BETS.length; b++) {
+    name = BETS[b][0]; n = BETS[b][1];
+    o = opts(name, n);
+    right = [];
+    for (i = 0; i < n; i++) {
+      if (o[i].getAttribute("data-ok") === "true") { right.push(i); }
+      if (REG[name + "-w" + i].textContent.length < 40) {
+        throw new Error(name + " option " + i + " has no reasoning behind it");
+      }
+    }
+    chk(name + " has exactly one right answer", right.length, 1);
+    chk(name + " gives nothing away before a guess", shown(name, n), "");
+    chk(name + " marks nothing before a guess", (function () {
+      var k, m = 0;
+      for (k = 0; k < n; k++) {
+        if (o[k].className.indexOf("is-") > -1) { m++; }
+      }
+      return m;
+    }()), 0);
+  }
+
+  // Guess wrong on the first bet: the wrong one is marked wrong, the right one
+  // is revealed beside it, and the reasoning shown is the one for the guess.
+  name = BETS[0][0]; n = BETS[0][1]; o = opts(name, n);
+  var wrong = o[0].getAttribute("data-ok") === "true" ? 1 : 0;
+  var correct = o[0].getAttribute("data-ok") === "true" ? 0 : null;
+  for (i = 0; i < n && correct === null; i++) {
+    if (o[i].getAttribute("data-ok") === "true") { correct = i; }
+  }
+  REG[name + "-o" + wrong].fire("click");
+  chk(name + ": a wrong guess is marked wrong",
+      o[wrong].classList.contains("is-wrong"), true);
+  chk(name + ": and the right answer is revealed beside it",
+      o[correct].classList.contains("is-right"), true);
+  chk(name + ": with the reasoning for the guess that was made",
+      shown(name, n), String(wrong));
+  REG[name + "-o" + correct].fire("click");
+  chk(name + ": and it cannot be answered twice", shown(name, n), String(wrong));
+
+  // Guess right on the second: right is marked right and nothing is wrong.
+  name = BETS[1][0]; n = BETS[1][1]; o = opts(name, n);
+  correct = null;
+  for (i = 0; i < n; i++) {
+    if (o[i].getAttribute("data-ok") === "true") { correct = i; }
+  }
+  REG[name + "-o" + correct].fire("click");
+  chk(name + ": a right guess is marked right",
+      o[correct].classList.contains("is-right"), true);
+  chk(name + ": and nothing is marked wrong", (function () {
+    var k, m = 0;
+    for (k = 0; k < n; k++) { if (o[k].classList.contains("is-wrong")) { m++; } }
+    return m;
+  }()), 0);
+  chk(name + ": with its own reasoning shown", shown(name, n), String(correct));
+}());
+
 // ---- No figure may boot empty ----
 // Most readers never click, so a figure that opens on "choose something"
 // teaches nothing. Checked first, because everything below moves these.

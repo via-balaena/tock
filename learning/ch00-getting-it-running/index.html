@@ -209,6 +209,29 @@ pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
 
 /* ---------- instrument (figure) ---------- */
 
+/* ---------- Predict before the reveal ----------
+   Chapter 1's component, unchanged, because a reader who has met it once
+   should not have to work out what it is again. The rule it enforces is the
+   point: you cannot see the reasoning until you have committed to an answer,
+   and a wrong guess is marked wrong rather than quietly corrected. */
+.bet { border: 1px solid var(--rule-strong); background: var(--surface);
+  padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .9rem;
+  margin: 1.6rem 0; }
+.bet-q { font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  line-height: 1.4; margin: 0; }
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt { font: inherit; text-transform: none; letter-spacing: 0;
+  text-align: left; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 2px; padding: .6rem .8rem;
+  cursor: pointer; line-height: 1.45; }
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why { font-size: .97rem; line-height: 1.55; border-top: 1px solid var(--rule);
+  padding-top: .8rem; color: var(--ink-soft); }
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+
 .instrument {
   margin: 2.25rem auto;
   max-width: var(--wide);
@@ -812,7 +835,14 @@ dfn {
   <p>Everything after this reads source. That works from an armchair, and for five of the seven chapters that follow you never have to touch anything.</p>
   <p>But the last chapter closes by telling you to stop reading and run a command, and until now the series never said how to get to the point where that command works. This chapter is that gap, filled in.</p>
   <p>It is worth doing for its own sake as well. A claim about a kernel you have watched boot is a different kind of claim from one you have only read about. You notice which kind you are holding the first time something goes wrong.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-probe">
+    <p class="bet-q">You have the board and a USB cable. You skip the debug probe to save the money. What does that cost you?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-probe-o0" data-ok="true">Nothing much &mdash; the board takes a USB cable</button><button type="button" class="bet-opt" id="bet-probe-o1" data-ok="false">You cannot flash the board at all</button><button type="button" class="bet-opt" id="bet-probe-o2" data-ok="false">You cannot see the kernel's output</button><button type="button" class="bet-opt" id="bet-probe-o3" data-ok="false">The board will not run Tock without one</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-probe-w0">It does, and that is exactly why people skip it. What it costs is not capability, it is the loop: four steps and two hands for every edit, and no console coming back the other way, so a kernel that dies mid-boot dies silently.</p><p class="betwhy" id="bet-probe-w1">You can. Hold the button down while replugging and it comes up as a drive you can copy a file onto. It works; it is just four steps and two hands, every time.</p><p class="betwhy" id="bet-probe-w2">The output is a separate matter from flashing, and there is more than one way to get it. What the probe changes is that both arrive on the same three wires you already have connected.</p><p class="betwhy" id="bet-probe-w3">Nothing about Tock needs a probe. The probe is about the loop you run for every edit, which is the thing you will do a few hundred times.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -947,7 +977,14 @@ $ ls /dev/ttyACM*      # Linux
 
 # then open whichever name appeared
 $ picocom -b 115200 /dev/ttyACM0</pre>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-cross">
+    <p class="bet-q">The probe has a lead labelled <strong>TX</strong>. The board has a pin labelled <strong>TX</strong>. Where does the probe's TX go?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-cross-o0" data-ok="false">To the board's TX &mdash; like to like</button><button type="button" class="bet-opt" id="bet-cross-o1" data-ok="true">To the board's RX</button><button type="button" class="bet-opt" id="bet-cross-o2" data-ok="false">Either way &mdash; the probe works it out</button><button type="button" class="bet-opt" id="bet-cross-o3" data-ok="false">To the board's ground, with RX carrying both directions</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-cross-w0">Two devices both transmitting on the wire they each call transmit are shouting at each other and listening to nobody. Nothing reports it; the console is simply blank.</p><p class="betwhy" id="bet-cross-w1">Right. Every serial connector is labelled from the point of view of the thing it is attached to, so one end's transmit is the other end's receive, and the pair has to cross.</p><p class="betwhy" id="bet-cross-w2">Nothing works it out. These are two wires and a voltage; there is no negotiation on this link and no error when it is wrong.</p><p class="betwhy" id="bet-cross-w3">Ground is a third wire and carries no data. Each direction has its own wire, which is why there are three.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1323,6 +1360,42 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
 </div>
 
 <script>
+  /* ---------------- Predict before the reveal ----------------
+     Every option and every explanation is in the markup; this only marks the
+     guess and shows the one that goes with it. A bet answers once, because
+     the value is in having been wrong and a second go erases that. */
+  (function () {
+    var BETS = [["bet-probe", 4], ["bet-cross", 4]];
+    function wire(name, n) {
+      var done = false, i;
+      function press(k) {
+        return function () {
+          if (done) { return; }
+          done = true;
+          var j, right;
+          for (j = 0; j < n; j++) {
+            right = document.getElementById(name + "-o" + j)
+              .getAttribute("data-ok") === "true";
+            if (right) {
+              document.getElementById(name + "-o" + j).classList.add("is-right");
+            }
+            document.getElementById(name + "-w" + j).classList.toggle("is-on", j === k);
+          }
+          if (document.getElementById(name + "-o" + k)
+                .getAttribute("data-ok") !== "true") {
+            document.getElementById(name + "-o" + k).classList.add("is-wrong");
+          }
+        };
+      }
+      for (i = 0; i < n; i++) {
+        document.getElementById(name + "-o" + i)
+          .addEventListener("click", press(i));
+      }
+    }
+    var b;
+    for (b = 0; b < BETS.length; b++) { wire(BETS[b][0], BETS[b][1]); }
+  }());
+
 (function () {
   "use strict";
 

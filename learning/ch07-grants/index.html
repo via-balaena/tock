@@ -195,6 +195,29 @@ code {
 
 /* ---------- instrument (figure) ---------- */
 
+/* ---------- Predict before the reveal ----------
+   Chapter 1's component, unchanged, because a reader who has met it once
+   should not have to work out what it is again. The rule it enforces is the
+   point: you cannot see the reasoning until you have committed to an answer,
+   and a wrong guess is marked wrong rather than quietly corrected. */
+.bet { border: 1px solid var(--rule-strong); background: var(--surface);
+  padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .9rem;
+  margin: 1.6rem 0; }
+.bet-q { font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  line-height: 1.4; margin: 0; }
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt { font: inherit; text-transform: none; letter-spacing: 0;
+  text-align: left; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 2px; padding: .6rem .8rem;
+  cursor: pointer; line-height: 1.45; }
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why { font-size: .97rem; line-height: 1.55; border-top: 1px solid var(--rule);
+  padding-top: .8rem; color: var(--ink-soft); }
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+
 .instrument {
   margin: 2.25rem auto;
   max-width: var(--wide);
@@ -820,7 +843,14 @@ dfn {
 &gt;,</code></pre>
   <p id="custom">A capsule that needs more than its fixed size can cut extra memory from the same region, which is rare and comes out of the same place as everything else here.</p>
   <p id="constgen">Those three counts are constants in the type, not values in a variable. How many function pointers the console can hold for one process is fixed when the kernel is compiled, and a capsule that wants one more has to be recompiled to get it.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-bookkeeping">
+    <p class="bet-q">The console's grant costs one process <strong>76 bytes</strong>. How much of that is the console's own state &mdash; the fields the driver actually wrote?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-bookkeeping-o0" data-ok="false">All 76 &mdash; that is what a grant is</button><button type="button" class="bet-opt" id="bet-bookkeeping-o1" data-ok="false">60 of the 76</button><button type="button" class="bet-opt" id="bet-bookkeeping-o2" data-ok="true">16 of the 76</button><button type="button" class="bet-opt" id="bet-bookkeeping-o3" data-ok="false">32 of the 76, split evenly</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-bookkeeping-w0">A grant is the driver's state plus whatever the kernel needs to find it again. The driver's own struct is the smaller half by a long way.</p><p class="betwhy" id="bet-bookkeeping-w1">That is the other way round. Sixty is what the kernel's own bookkeeping takes, and it is the part no driver author ever writes.</p><p class="betwhy" id="bet-bookkeeping-w2">Right, and the ratio is the point. Four fields: three words and a flag. The other sixty bytes are a counters word plus seven slots at eight bytes each, held open whether the process ever uses them or not.</p><p class="betwhy" id="bet-bookkeeping-w3">Nothing here is split evenly. The slot count comes from the driver's own declaration and the state size from its struct, and the two have no relation.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -925,7 +955,14 @@ dfn {
 <section class="col">
   <h2>A grant's whole life</h2>
   <p id="lifeline">A driver holds its grant from the moment the board boots, and that object contains no memory at all. It is two numbers: which driver this is, and which index in every process's table belongs to it. Everything else happens later, per process, and only if that process asks.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-unused">
+    <p class="bet-q">A board installs twelve drivers. One process runs and calls exactly one of them. What do the other eleven cost that process?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-unused-o0" data-ok="false">Nothing &mdash; a driver it never calls is not its problem</button><button type="button" class="bet-opt" id="bet-unused-o1" data-ok="true">Eight bytes each, and not one more</button><button type="button" class="bet-opt" id="bet-unused-o2" data-ok="false">Their full grant size each, allocated when the process starts</button><button type="button" class="bet-opt" id="bet-unused-o3" data-ok="false">Nothing until the board runs out of memory</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-unused-w0">Almost. There is one cost, and it is small and unavoidable. The table that lets the kernel find a grant has one entry per driver the board installed, and every process pays for all of them the moment it starts.</p><p class="betwhy" id="bet-unused-w1">Right. The table at the top is eager and the grants under it are lazy. Eleven pointers, eight bytes apiece, all of them null &mdash; and the grant itself, the seventy-six bytes the console's costs, is not allocated until the first syscall that needs it.</p><p class="betwhy" id="bet-unused-w2">That would be the eager design, and it is the one Tock deliberately does not use. A driver installed and never called allocates nothing.</p><p class="betwhy" id="bet-unused-w3">There is no such deferral. What each process pays is decided at its own first call, one driver at a time.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1188,6 +1225,42 @@ dfn {
 </div>
 
 <script>
+  /* ---------------- Predict before the reveal ----------------
+     Every option and every explanation is in the markup; this only marks the
+     guess and shows the one that goes with it. A bet answers once, because
+     the value is in having been wrong and a second go erases that. */
+  (function () {
+    var BETS = [["bet-unused", 4], ["bet-bookkeeping", 4]];
+    function wire(name, n) {
+      var done = false, i;
+      function press(k) {
+        return function () {
+          if (done) { return; }
+          done = true;
+          var j, right;
+          for (j = 0; j < n; j++) {
+            right = document.getElementById(name + "-o" + j)
+              .getAttribute("data-ok") === "true";
+            if (right) {
+              document.getElementById(name + "-o" + j).classList.add("is-right");
+            }
+            document.getElementById(name + "-w" + j).classList.toggle("is-on", j === k);
+          }
+          if (document.getElementById(name + "-o" + k)
+                .getAttribute("data-ok") !== "true") {
+            document.getElementById(name + "-o" + k).classList.add("is-wrong");
+          }
+        };
+      }
+      for (i = 0; i < n; i++) {
+        document.getElementById(name + "-o" + i)
+          .addEventListener("click", press(i));
+      }
+    }
+    var b;
+    for (b = 0; b < BETS.length; b++) { wire(BETS[b][0], BETS[b][1]); }
+  }());
+
 (function () {
   "use strict";
 

@@ -197,6 +197,29 @@ code {
 
 /* ---------- instrument (figure) ---------- */
 
+/* ---------- Predict before the reveal ----------
+   Chapter 1's component, unchanged, because a reader who has met it once
+   should not have to work out what it is again. The rule it enforces is the
+   point: you cannot see the reasoning until you have committed to an answer,
+   and a wrong guess is marked wrong rather than quietly corrected. */
+.bet { border: 1px solid var(--rule-strong); background: var(--surface);
+  padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .9rem;
+  margin: 1.6rem 0; }
+.bet-q { font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  line-height: 1.4; margin: 0; }
+.bet-opts { display: flex; flex-direction: column; gap: .5rem; }
+.bet-opt { font: inherit; text-transform: none; letter-spacing: 0;
+  text-align: left; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 2px; padding: .6rem .8rem;
+  cursor: pointer; line-height: 1.45; }
+.bet-opt:hover:not(:disabled) { border-color: var(--rule-strong); color: var(--ink); }
+.bet-opt.is-right { border-color: var(--accent); border-width: 2px; }
+.bet-opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bet-why { font-size: .97rem; line-height: 1.55; border-top: 1px solid var(--rule);
+  padding-top: .8rem; color: var(--ink-soft); }
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
+
 .instrument {
   margin: 2.25rem auto;
   max-width: var(--wide);
@@ -1039,7 +1062,14 @@ dfn {
 <section class="col">
   <h2>How much of Tock is unchecked</h2>
   <p>Somewhere, something has to turn a number from the datasheet into a thing a program can use. Rust cannot check that step, because nothing in the language knows what is at <code class="addr">0xD0000000</code>. The question is only how much code that step is allowed to contaminate.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-unsafe">
+    <p class="bet-q">Tock's drivers are about <strong>88,000 lines</strong> of Rust. How many times does the word <code>unsafe</code> appear in them?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-unsafe-o0" data-ok="false">None &mdash; the crates forbid it outright</button><button type="button" class="bet-opt" id="bet-unsafe-o1" data-ok="true">Five, and every one is inside a comment</button><button type="button" class="bet-opt" id="bet-unsafe-o2" data-ok="false">A few dozen, in the places that touch hardware</button><button type="button" class="bet-opt" id="bet-unsafe-o3" data-ok="false">Several hundred &mdash; drivers are the low-level part</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-unsafe-w0">Close, and the reason is right: all five driver crates open with <b>#![forbid(unsafe_code)]</b>, which is an error that code further down cannot turn back off. The word does appear, though, and where it appears is the interesting part.</p><p class="betwhy" id="bet-unsafe-w1">Right. Five occurrences in eighty-eight thousand lines, none of them code. A capsule containing that word is not something a reviewer has to catch: it does not build.</p><p class="betwhy" id="bet-unsafe-w2">No driver in this tree touches hardware directly. Reaching the machine is what its fields are for, and the fields were handed to it by a board.</p><p class="betwhy" id="bet-unsafe-w3">That is the instinct from other kernels, where a driver is the part that pokes registers. Here the driver is the part that cannot: the chip crate holds every address, and drivers are handed types instead.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1240,7 +1270,14 @@ dfn {
 <section class="col">
   <h2>One capsule, any chip</h2>
   <p>Figure 1 said the driver knows only that its type implements a trait. That is what <dfn>generic</dfn> means in practice, and it is what makes the next comparison possible: there is no second copy of this driver for the second board.</p>
-</section>
+</section><div class="col">
+  <div class="bet" id="bet-portable">
+    <p class="bet-q">The same LED driver runs on this board and on a different one &mdash; different architecture, different number of LEDs, and an LED wired the opposite way round. How much of <code>capsules/core/src/led.rs</code> differs between the two?</p>
+    <div class="bet-opts"><button type="button" class="bet-opt" id="bet-portable-o0" data-ok="true">Nothing &mdash; it is the same file, byte for byte</button><button type="button" class="bet-opt" id="bet-portable-o1" data-ok="false">A handful of lines behind a conditional</button><button type="button" class="bet-opt" id="bet-portable-o2" data-ok="false">The polarity has to be handled, so at least that</button><button type="button" class="bet-opt" id="bet-portable-o3" data-ok="false">A second copy of the file exists for the other board</button></div>
+    <div class="bet-why"><p class="betwhy" id="bet-portable-w0">Right, and nothing about that is luck. Everything that differs between the two boards is in the type the board hands over, so the driver never learns which chip it is on and has nothing to say about it.</p><p class="betwhy" id="bet-portable-w1">There is no conditional. Nothing in the file names a chip, an architecture or a pin, so there is nothing for a conditional to switch on.</p><p class="betwhy" id="bet-portable-w2">Polarity is handled, and not here. The board wraps its pin in a type that knows which way round the LED is, and the driver calls the same method either way.</p><p class="betwhy" id="bet-portable-w3">That is the arrangement this design exists to avoid, and it is what makes one driver serve every board Tock runs on.</p></div>
+  </div>
+</div>
+
 
 <figure class="instrument">
   <div class="instrument-head">
@@ -1482,6 +1519,42 @@ dfn {
 </div>
 
 <script>
+  /* ---------------- Predict before the reveal ----------------
+     Every option and every explanation is in the markup; this only marks the
+     guess and shows the one that goes with it. A bet answers once, because
+     the value is in having been wrong and a second go erases that. */
+  (function () {
+    var BETS = [["bet-unsafe", 4], ["bet-portable", 4]];
+    function wire(name, n) {
+      var done = false, i;
+      function press(k) {
+        return function () {
+          if (done) { return; }
+          done = true;
+          var j, right;
+          for (j = 0; j < n; j++) {
+            right = document.getElementById(name + "-o" + j)
+              .getAttribute("data-ok") === "true";
+            if (right) {
+              document.getElementById(name + "-o" + j).classList.add("is-right");
+            }
+            document.getElementById(name + "-w" + j).classList.toggle("is-on", j === k);
+          }
+          if (document.getElementById(name + "-o" + k)
+                .getAttribute("data-ok") !== "true") {
+            document.getElementById(name + "-o" + k).classList.add("is-wrong");
+          }
+        };
+      }
+      for (i = 0; i < n; i++) {
+        document.getElementById(name + "-o" + i)
+          .addEventListener("click", press(i));
+      }
+    }
+    var b;
+    for (b = 0; b < BETS.length; b++) { wire(BETS[b][0], BETS[b][1]); }
+  }());
+
 (function () {
   "use strict";
 
