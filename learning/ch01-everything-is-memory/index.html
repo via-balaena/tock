@@ -1402,6 +1402,17 @@ dfn {
 /* Eighteen stripe details, one showing. Markup, so the map still reads with
    no scripting; the script only chooses which paragraph is up. */
 .mdet { display: none; margin: 0; }
+/* Both scenarios ship their steps, and the script shows the tab's own list.
+   The intros, the endings and the four things a core card can say are markup
+   for the same reason: with no scripting the figure is still the figure. */
+.steplist { display: none; }
+.steplist.is-on { display: block; }
+.rint, .rend, .csub { display: none; }
+.rint.is-on, .rend.is-on { display: block; }
+.csub.is-on { display: inline; }
+/* Three answers behind one guess, none showing until a guess is made. */
+.betwhy { display: none; margin: 0; }
+.betwhy.is-on { display: block; }
 /* Twelve lines behind four rows, one set showing. */
 .bhl { display: none; margin: 0; }
 .bhl.is-on { display: block; }
@@ -2954,7 +2965,7 @@ dfn {
       <input type="range" id="trace-scrub" min="0" max="7" value="0" aria-label="Step through the store, moment by moment">
       <span class="instrument-title" id="trace-at">1 of 8</span>
     </div>
-    <div class="trace" id="trace"></div>
+    <div class="trace" id="trace"><div class="trace-row now" id="tr-0"><span class="trace-n">1</span><span class="trace-what"><b>The processor &mdash; </b><span>Runs one instruction: str r1, [r0, #0x18]. It adds the offset 0x18 to the base sitting in r0, and gets the address 0xD0000018.</span></span></div><div class="trace-row" id="tr-1"><span class="trace-n">2</span><span class="trace-what"><b>The processor &mdash; </b><span>Puts that address, and the 32-bit value 0x02000000, onto the bus that connects it to the rest of the chip.</span></span></div><div class="trace-row" id="tr-2"><span class="trace-n">3</span><span class="trace-what"><b>The bus fabric &mdash; </b><span>Looks at the top four bits of the address and sees 0xD. That single digit is the whole routing decision.</span></span></div><div class="trace-row" id="tr-3"><span class="trace-n">4</span><span class="trace-what"><b>Every other block &mdash; </b><span>Ignores it. Flash, memory, the timers, the serial ports &mdash; none of them owns 0xD, so none of them responds. SIO alone answers.</span></span></div><div class="trace-row" id="tr-4"><span class="trace-n">5</span><span class="trace-what"><b>Inside SIO &mdash; </b><span>The offset 0x018 names gpio_out_set, whose entire job is one operation: OR the arriving value into gpio_out.</span></span></div><div class="trace-row" id="tr-5"><span class="trace-n">6</span><span class="trace-what"><b>Inside SIO &mdash; </b><span>Bit 25 of gpio_out changes from 0 to 1. The other 31 bits are untouched, because the value carried no other bits.</span></span></div><div class="trace-row" id="tr-6"><span class="trace-n">7</span><span class="trace-what"><b>The pad &mdash; </b><span>GPIO 25's driver follows that bit and connects the pin to the chip's I/O supply rail, which is 3.3 volts on a Pico 2.</span></span></div><div class="trace-row" id="tr-7"><span class="trace-n">8</span><span class="trace-what"><b>The world &mdash; </b><span>Current flows out of the pin, through the light, to ground. It glows. Nothing else on the chip noticed.</span></span></div></div>
   </div>
   <div class="instrument-note">Every step is on screen at once on purpose: the whole shape of the journey is the thing worth seeing, and the highlight is only where you are in it. Steps 3 and 4 are the part almost every explanation skips, and they are the reason an address can do anything at all.</div>
 </figure>
@@ -3052,8 +3063,8 @@ dfn {
 <div class="col">
   <div class="bet" id="bet1">
     <p class="bet-q">You stored <code class="addr">0x02000000</code> to <code class="addr">0xD0000018</code> and the light came on. You now read that same address. What comes back?</p>
-    <div class="bet-opts" id="bet1-opts"></div>
-    <p class="bet-why" id="bet1-why"></p>
+    <div class="bet-opts" id="bet1-opts"><button type="button" class="bet-opt" id="bet-0" data-ok="false">0x02000000 &mdash; the value you stored</button><button type="button" class="bet-opt" id="bet-1" data-ok="false">0x00000000 &mdash; nothing, it was consumed</button><button type="button" class="bet-opt" id="bet-2" data-ok="true">No promise either way</button></div>
+    <div class="bet-why" id="bet1-why"><p class="betwhy" id="betwhy-0">That is the answer for ordinary memory, and the instinct this chapter exists to correct. gpio_out_set never held your value in the first place.</p><p class="betwhy" id="betwhy-1">Reasonable, and closer. But &ldquo;it returns zero&rdquo; would still be a promise, and no promise was made.</p><p class="betwhy" id="betwhy-2">Right. The datasheet types this register WO &mdash; write-only. Reading it is simply outside what the hardware agreed to do, so the honest answer is that nothing is guaranteed. Worth noting: Tock's crate declares it ReadWrite, which is looser than the hardware contract. Nothing breaks today because the kernel only ever writes it.</p></div>
   </div>
 </div>
 
@@ -3231,31 +3242,31 @@ dfn {
       <button class="tab" id="tab-atomic" role="tab" aria-selected="false" aria-controls="race-panel" tabindex="-1">The hardware's way</button>
     </div>
     <div id="race-panel" role="tabpanel" aria-labelledby="tab-rmw">
-      <p class="note" style="margin-bottom:1rem" id="race-intro"></p>
+      <div class="note" style="margin-bottom:1rem" id="race-intro"><p class="rint is-on" id="rint-rmw">Both cores run gpio_out |= 1 &lt;&lt; n. Each reads the register, changes its own copy, and stores all 32 bits back. Watch what the last store does.</p><p class="rint" id="rint-atomic">Both cores store to gpio_out_set instead. The OR happens inside the hardware, so neither core ever holds a copy of anything.</p></div>
       <div class="race-grid">
         <div class="core" id="core0">
           <span class="core-name">Core 0 &mdash; wants pin 25 on</span>
           <span class="core-val" id="core0-val">&mdash;</span>
-          <span class="core-sub" id="core0-sub">idle</span>
+          <span class="core-sub" id="core0-sub"><span class="csub is-on" id="c0sub-idle">idle</span><span class="csub" id="c0sub-holds">holds 0x00000000</span><span class="csub" id="c0sub-copy">pin 25 set in its copy</span><span class="csub" id="c0sub-stored">stored</span></span>
         </div>
         <div class="core" id="core1">
           <span class="core-name">Core 1 &mdash; wants pin 10 on</span>
           <span class="core-val" id="core1-val">&mdash;</span>
-          <span class="core-sub" id="core1-sub">idle</span>
+          <span class="core-sub" id="core1-sub"><span class="csub is-on" id="c1sub-idle">idle</span><span class="csub" id="c1sub-holds">holds 0x00000000</span><span class="csub" id="c1sub-copy">pin 10 set in its copy</span><span class="csub" id="c1sub-stored">stored</span></span>
         </div>
         <div class="core hw" id="corehw" aria-live="polite">
           <span class="core-name">The real gpio_out</span>
           <span class="core-val" id="corehw-val">0x00000000</span>
-          <span class="core-sub" id="corehw-sub">no pins high</span>
+          <span class="core-sub" id="corehw-sub"><span id="corehw-pins">no pins</span> high</span>
         </div>
       </div>
-      <div class="steps" id="race-steps"></div>
+      <div class="steps" id="race-steps"><div class="steplist is-on" id="steps-rmw"><div class="step" id="rs-0"><span class="step-who">Core 0</span><span class="step-act">read  gpio_out</span></div><div class="step" id="rs-1"><span class="step-who">Core 1</span><span class="step-act">read  gpio_out</span></div><div class="step" id="rs-2"><span class="step-who">Core 0</span><span class="step-act">or    0x02000000</span></div><div class="step" id="rs-3"><span class="step-who">Core 0</span><span class="step-act">write gpio_out = 0x02000000</span></div><div class="step" id="rs-4"><span class="step-who">Core 1</span><span class="step-act">or    0x00000400</span></div><div class="step" id="rs-5"><span class="step-who">Core 1</span><span class="step-act">write gpio_out = 0x00000400</span></div></div><div class="steplist" id="steps-atomic"><div class="step" id="ra-0"><span class="step-who">Core 0</span><span class="step-act">write gpio_out_set = 0x02000000</span></div><div class="step" id="ra-1"><span class="step-who">Core 1</span><span class="step-act">write gpio_out_set = 0x00000400</span></div></div></div>
       <div class="controls" style="margin-bottom:1.1rem">
         <button class="primary" id="race-step">Step</button>
         <button id="race-all">Run all</button>
         <button id="race-reset">Reset</button>
       </div>
-      <div class="outcome prose" id="race-outcome">Press <strong>Step</strong> to advance one instruction at a time.</div>
+      <div class="outcome prose" id="race-outcome"><p class="rend is-on" id="rend-idle">Press <strong>Step</strong> to advance one instruction at a time.</p><p class="rend" id="rend-rmw">Pin 25 never turned on. Core 1's store carried a copy of the register taken before core 0 touched it, so it put pin 25 back to off on its way past. Nothing crashed and nothing reported an error. The light just does not come on, sometimes, under timing you cannot reproduce on demand.</p><p class="rend" id="rend-atomic">Both pins are on. Two steps instead of six, no copies held anywhere, and no gap for anything to happen in. No lock, no disabled interrupts, no agreement between the cores &mdash; the hardware did the OR itself.</p></div>
     </div>
   </div>
   <div class="instrument-note">Notice that nothing here is exotic. Both cores are running correct, ordinary code. Then run the second tab and count the steps: the fix is not a smarter algorithm, it is a shorter one.</div>
@@ -3569,7 +3580,9 @@ movt  r0, #16391      <span class="tok-c">; r0 = 0x40070018</span>
       <button id="ladder-reset">Reset</button>
       <span class="instrument-title" id="ladder-count">1 of 5 shown</span>
     </div>
-    <div class="ladder" id="ladder"></div>
+    <div class="ladder" id="ladder"><div class="rung on" id="rung-0"><div class="rung-who">Arduino</div><div><div class="rung-code">digitalWrite(25, HIGH);</div><div class="rung-where">the friendly layer &mdash; hides everything below it</div></div></div><div class="rung on" id="rung-1"><div class="rung-who">Tock&#x27;s interface</div><div><div class="rung-code">pin.set();</div><div class="rung-where">kernel/src/hil/gpio.rs:154 &mdash; the same call on every chip Tock supports</div></div></div><div class="rung on" id="rung-2"><div class="rung-who">Chip driver</div><div><div class="rung-code">self.sio_registers.gpio_out_set.set(1 &lt;&lt; self.pin);</div><div class="rung-where">chips/rp2350/src/gpio.rs:1519 &mdash; the first layer that knows this is an RP2350</div></div></div><div class="rung on" id="rung-3"><div class="rung-who">Register types</div><div><div class="rung-code">write_volatile(self.value.get(), value)</div><div class="rung-where">tock-registers 0.10.0, src/registers.rs:63 &mdash; where volatile is enforced for everyone</div></div></div><div class="rung on" id="rung-4"><div class="rung-who">The machine</div><div><div class="rung-code">and   r1, r1, #0x1f
+lsl.w r1, r2, r1
+str   r1, [r0, #0x18]</div><div class="rung-where">the real instructions from your own build &mdash; Figure 15</div></div></div></div>
   </div>
   <div class="instrument-note">Notice that the layers add safety and portability, not capability. The bottom rung is the only one that changes anything physical; everything above it exists so that thousands of lines of driver code can share one audited way of doing it.</div>
 </figure>
@@ -3859,36 +3872,30 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 
   /* ---------------- The bet, before Figure 11 ---------------- */
 
-  var BET = [
-    { t: "0x02000000 \u2014 the value you stored", ok: false,
-      why: "That is the answer for ordinary memory, and the instinct this chapter exists to correct. gpio_out_set never held your value in the first place." },
-    { t: "0x00000000 \u2014 nothing, it was consumed", ok: false,
-      why: "Reasonable, and closer. But \u201Cit returns zero\u201D would still be a promise, and no promise was made." },
-    { t: "No promise either way", ok: true,
-      why: "Right. The datasheet types this register WO \u2014 write-only. Reading it is simply outside what the hardware agreed to do, so the honest answer is that nothing is guaranteed. Worth noting: Tock's crate declares it ReadWrite, which is looser than the hardware contract. Nothing breaks today because the kernel only ever writes it." }
-  ];
-
-  var betOpts = document.getElementById("bet1-opts");
-  var betWhy = document.getElementById("bet1-why");
-  var betDone = false;
-
-  BET.forEach(function (opt) {
-    var b = document.createElement("button");
-    b.className = "bet-opt";
-    b.type = "button";
-    b.textContent = opt.t;
-    b.addEventListener("click", function () {
-      if (betDone) return;
-      betDone = true;
-      var all = betOpts.querySelectorAll(".bet-opt");
-      for (var i = 0; i < all.length; i++) {
-        if (BET[i].ok) { all[i].classList.add("is-right"); }
-      }
-      b.classList.add(opt.ok ? "is-right" : "is-wrong");
-      betWhy.textContent = opt.why;
-    });
-    betOpts.appendChild(b);
-  });
+  /* ---------------- The bet, before Figure 11 ----------------
+     Three answers and three explanations, all of them markup, because with no
+     scripting this was a question with no options under it and a blank line
+     where the reasoning goes. The script marks the guess and shows one. */
+  (function () {
+    var N = 3, done = false;
+    function el(id) { return document.getElementById(id); }
+    function wire(i) {
+      el("bet-" + i).addEventListener("click", function () {
+        if (done) { return; }
+        done = true;
+        var k, right;
+        for (k = 0; k < N; k++) {
+          right = el("bet-" + k).getAttribute("data-ok") === "true";
+          if (right) { el("bet-" + k).classList.add("is-right"); }
+          el("betwhy-" + k).classList.toggle("is-on", k === i);
+        }
+        el("bet-" + i).classList.add(
+          el("bet-" + i).getAttribute("data-ok") === "true" ? "is-right" : "is-wrong");
+      });
+    }
+    var i;
+    for (i = 0; i < N; i++) { wire(i); }
+  }());
 
   /* ---------------- Figure 11: four behaviors ---------------- */
 
@@ -3966,60 +3973,26 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 
   /* ---------------- Figure 9: one store, moment by moment ---------------- */
 
-  var TRACE = [
-    { at: "The processor",
-      what: "Runs one instruction: str r1, [r0, #0x18]. It adds the offset 0x18 to the base sitting in r0, and gets the address 0xD0000018." },
-    { at: "The processor",
-      what: "Puts that address, and the 32-bit value 0x02000000, onto the bus that connects it to the rest of the chip." },
-    { at: "The bus fabric",
-      what: "Looks at the top four bits of the address and sees 0xD. That single digit is the whole routing decision." },
-    { at: "Every other block",
-      what: "Ignores it. Flash, memory, the timers, the serial ports \u2014 none of them owns 0xD, so none of them responds. SIO alone answers." },
-    { at: "Inside SIO",
-      what: "The offset 0x018 names gpio_out_set, whose entire job is one operation: OR the arriving value into gpio_out." },
-    { at: "Inside SIO",
-      what: "Bit 25 of gpio_out changes from 0 to 1. The other 31 bits are untouched, because the value carried no other bits." },
-    { at: "The pad",
-      what: "GPIO 25's driver follows that bit and connects the pin to the chip's I/O supply rail, which is 3.3 volts on a Pico 2." },
-    { at: "The world",
-      what: "Current flows out of the pin, through the light, to ground. It glows. Nothing else on the chip noticed." }
-  ];
-
-  var traceEl = document.getElementById("trace");
-  var traceAt = document.getElementById("trace-at");
-  var traceScrub = document.getElementById("trace-scrub");
-  var traceRows = [];
-
-  TRACE.forEach(function (t, i) {
-    var row = document.createElement("div");
-    row.className = "trace-row";
-    var n = document.createElement("span");
-    n.className = "trace-n";
-    n.textContent = (i + 1);
-    var w = document.createElement("span");
-    w.className = "trace-what";
-    var b = document.createElement("b");
-    b.textContent = t.at + " \u2014 ";
-    var rest = document.createElement("span");
-    rest.textContent = t.what;
-    w.appendChild(b);
-    w.appendChild(rest);
-    row.appendChild(n);
-    row.appendChild(w);
-    traceRows.push(row);
-    traceEl.appendChild(row);
-  });
-
-  function drawTrace() {
-    var at = parseInt(traceScrub.value, 10);
-    for (var i = 0; i < traceRows.length; i++) {
-      traceRows[i].classList.toggle("now", i === at);
-      traceRows[i].classList.toggle("seen", i < at);
+  /* ---------------- Figure 9: the trace ----------------
+     Eight steps, in the markup. The figure's note says every step is on screen
+     at once on purpose, which was true only with scripting on -- without it
+     the box was empty and the whole shape of the journey was the thing not
+     seen. The scrubber moves the highlight and nothing else. */
+  (function () {
+    var N = 8;
+    var at = document.getElementById("trace-at");
+    var scrub = document.getElementById("trace-scrub");
+    function draw() {
+      var k = parseInt(scrub.value, 10), i;
+      for (i = 0; i < N; i++) {
+        document.getElementById("tr-" + i).classList.toggle("now", i === k);
+        document.getElementById("tr-" + i).classList.toggle("seen", i < k);
+      }
+      at.textContent = (k + 1) + " of " + N;
     }
-    traceAt.textContent = (at + 1) + " of " + TRACE.length;
-  }
-  traceScrub.addEventListener("input", drawTrace);
-  drawTrace();
+    scrub.addEventListener("input", draw);
+    draw();
+  }());
 
   /* ---------------- Figure 10: work one out ---------------- */
 
@@ -4115,148 +4088,151 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 
   /* ---------------- Figure 13: two cores, one register ---------------- */
 
-  var SCENARIOS = {
-    rmw: {
-      intro: "Both cores run gpio_out |= 1 << n. Each reads the register, changes its own copy, " +
-             "and stores all 32 bits back. Watch what the last store does.",
-      steps: [
-        { who: "Core 0", act: "read  gpio_out", sub: "holds 0x00000000", set: function (s) { s.c0 = 0; s.c0sub = "holds 0x00000000"; } },
-        { who: "Core 1", act: "read  gpio_out", sub: "holds 0x00000000", set: function (s) { s.c1 = 0; s.c1sub = "holds 0x00000000"; } },
-        { who: "Core 0", act: "or    0x02000000", sub: "pin 25 set in its copy", set: function (s) { s.c0 = 0x02000000; s.c0sub = "pin 25 set in its copy"; } },
-        { who: "Core 0", act: "write gpio_out = 0x02000000", sub: "stored", set: function (s) { s.hw = 0x02000000; s.c0sub = "stored"; } },
-        { who: "Core 1", act: "or    0x00000400", sub: "pin 10 set in its copy", set: function (s) { s.c1 = 0x00000400; s.c1sub = "pin 10 set in its copy"; } },
-        { who: "Core 1", act: "write gpio_out = 0x00000400", sub: "stored", set: function (s) { s.hw = 0x00000400; s.c1sub = "stored"; } }
-      ],
-      cls: "bad",
-      end: "Pin 25 never turned on. Core 1's store carried a copy of the register taken " +
-           "before core 0 touched it, so it put pin 25 back to off on its way past. " +
-           "Nothing crashed and nothing reported an error. The light just does not come on, " +
-           "sometimes, under timing you cannot reproduce on demand."
-    },
-    atomic: {
-      intro: "Both cores store to gpio_out_set instead. The OR happens inside the hardware, " +
-             "so neither core ever holds a copy of anything.",
-      steps: [
-        { who: "Core 0", act: "write gpio_out_set = 0x02000000", sub: "stored", set: function (s) { s.hw |= 0x02000000; s.c0sub = "stored"; } },
-        { who: "Core 1", act: "write gpio_out_set = 0x00000400", sub: "stored", set: function (s) { s.hw |= 0x00000400; s.c1sub = "stored"; } }
-      ],
-      cls: "good",
-      end: "Both pins are on. Two steps instead of six, no copies held anywhere, and " +
-           "no gap for anything to happen in. No lock, no disabled interrupts, no agreement " +
-           "between the cores \u2014 the hardware did the OR itself."
+  /* ---------------- Figure 13: two cores, one register ----------------
+     Both scenarios, all eight steps, both intros, both endings and every line
+     a core card can say are in the markup. What is left here is arithmetic:
+     which step is next, what each core is holding, and what the register
+     actually contains after the store. */
+  (function () {
+    /* who, which sub line it leaves the actor on, and what it does */
+    var RMW = [
+      ["core0", "holds",  function (s) { s.c0 = 0; }],
+      ["core1", "holds",  function (s) { s.c1 = 0; }],
+      ["core0", "copy",   function (s) { s.c0 = 0x02000000; }],
+      ["core0", "stored", function (s) { s.hw = 0x02000000; }],
+      ["core1", "copy",   function (s) { s.c1 = 0x00000400; }],
+      ["core1", "stored", function (s) { s.hw = 0x00000400; }]
+    ];
+    var ATOM = [
+      ["core0", "stored", function (s) { s.hw |= 0x02000000; }],
+      ["core1", "stored", function (s) { s.hw |= 0x00000400; }]
+    ];
+    var PLAN = { rmw: { steps: RMW, pre: "rs", cls: "bad" },
+                 atomic: { steps: ATOM, pre: "ra", cls: "good" } };
+    var SUBS = ["idle", "holds", "copy", "stored"];
+    var mode = "rmw", state, at;
+
+    function el(id) { return document.getElementById(id); }
+
+    function pinsOf(v) {
+      var out = [], i;
+      for (i = 0; i < 32; i++) { if (v & (1 << i)) { out.push(i); } }
+      if (!out.length) { return "no pins"; }
+      return (out.length > 1 ? "pins " : "pin ") + out.join(", ");
     }
-  };
 
-  var mode = "rmw";
-  var stepsEl = document.getElementById("race-steps");
-  var outcomeEl = document.getElementById("race-outcome");
-  // The idle line is the markup's, kept so no sentence lives in this script.
-  var raceIdle = outcomeEl.innerHTML;
-  var introEl = document.getElementById("race-intro");
-  var state, at;
-
-  function resetRace() {
-    state = { c0: null, c1: null, hw: 0, c0sub: "idle", c1sub: "idle" };
-    at = 0;
-    introEl.textContent = SCENARIOS[mode].intro;
-    outcomeEl.className = "outcome prose";
-    outcomeEl.innerHTML = raceIdle;
-    document.getElementById("race-step").disabled = false;
-    document.getElementById("race-all").disabled = false;
-    drawRace();
-  }
-
-  function pinsOf(v) {
-    var out = [], i;
-    for (i = 0; i < 32; i++) if (v & (1 << i)) out.push(i);
-    if (!out.length) return "no pins high";
-    return "pin" + (out.length > 1 ? "s " : " ") + out.join(", ") + " high";
-  }
-
-  function drawRace() {
-    var steps = SCENARIOS[mode].steps;
-    stepsEl.innerHTML = "";
-    steps.forEach(function (s, i) {
-      var row = document.createElement("div");
-      row.className = "step" + (i < at ? " done" : "") + (i === at ? " is-next" : "");
-      var who = document.createElement("span");
-      who.className = "step-who";
-      who.textContent = s.who;
-      var act = document.createElement("span");
-      act.className = "step-act";
-      act.textContent = s.act;
-      row.appendChild(who);
-      row.appendChild(act);
-      stepsEl.appendChild(row);
-    });
-
-    document.getElementById("core0-val").textContent = state.c0 === null ? "\u2014" : hex32(state.c0);
-    document.getElementById("core1-val").textContent = state.c1 === null ? "\u2014" : hex32(state.c1);
-    document.getElementById("corehw-val").textContent = hex32(state.hw);
-    document.getElementById("core0-sub").textContent = state.c0sub;
-    document.getElementById("core1-sub").textContent = state.c1sub;
-    document.getElementById("corehw-sub").textContent = pinsOf(state.hw);
-
-    var cur = at < steps.length ? steps[at].who : null;
-    document.getElementById("core0").classList.toggle("active", cur === "Core 0");
-    document.getElementById("core1").classList.toggle("active", cur === "Core 1");
-    document.getElementById("corehw").classList.toggle("active",
-      at > 0 && steps[at - 1].act.indexOf("write") === 0);
-  }
-
-  function stepRace() {
-    var steps = SCENARIOS[mode].steps;
-    if (at >= steps.length) return;
-    steps[at].set(state);
-    at++;
-    drawRace();
-    if (at >= steps.length) {
-      outcomeEl.className = "outcome prose " + SCENARIOS[mode].cls;
-      outcomeEl.textContent = SCENARIOS[mode].end;
-      document.getElementById("race-step").disabled = true;
-      document.getElementById("race-all").disabled = true;
+    function sub(core, key) {
+      var i, c = core === "core0" ? "0" : "1";
+      for (i = 0; i < SUBS.length; i++) {
+        el("c" + c + "sub-" + SUBS[i]).classList.toggle("is-on", SUBS[i] === key);
+      }
     }
-  }
 
-  document.getElementById("race-step").addEventListener("click", stepRace);
-  document.getElementById("race-all").addEventListener("click", function () {
-    while (at < SCENARIOS[mode].steps.length) stepRace();
-  });
-  document.getElementById("race-reset").addEventListener("click", resetRace);
+    function draw() {
+      var plan = PLAN[mode], steps = plan.steps, i, k, cur;
 
-  var TABS = { rmw: "tab-rmw", atomic: "tab-atomic" };
-  var ORDER = ["rmw", "atomic"];
+      el("steps-rmw").classList.toggle("is-on", mode === "rmw");
+      el("steps-atomic").classList.toggle("is-on", mode === "atomic");
+      for (k in PLAN) {
+        if (!PLAN.hasOwnProperty(k)) { continue; }
+        for (i = 0; i < PLAN[k].steps.length; i++) {
+          el(PLAN[k].pre + "-" + i).classList.toggle("done",
+            k === mode && i < at);
+          el(PLAN[k].pre + "-" + i).classList.toggle("is-next",
+            k === mode && i === at);
+        }
+        el("rint-" + k).classList.toggle("is-on", k === mode);
+      }
 
-  function selectTab(which) {
-    mode = which;
-    ORDER.forEach(function (k) {
-      var el = document.getElementById(TABS[k]);
-      var on = k === which;
-      el.setAttribute("aria-selected", on ? "true" : "false");
-      el.setAttribute("tabindex", on ? "0" : "-1");
-      el.classList.toggle("on", on);
+      el("core0-val").textContent = state.c0 === null ? "\u2014" : hex32(state.c0);
+      el("core1-val").textContent = state.c1 === null ? "\u2014" : hex32(state.c1);
+      el("corehw-val").textContent = hex32(state.hw);
+      el("corehw-pins").textContent = pinsOf(state.hw);
+      sub("core0", state.c0sub);
+      sub("core1", state.c1sub);
+
+      cur = at < steps.length ? steps[at][0] : null;
+      el("core0").classList.toggle("active", cur === "core0");
+      el("core1").classList.toggle("active", cur === "core1");
+      el("corehw").classList.toggle("active",
+        at > 0 && steps[at - 1][1] === "stored");
+    }
+
+    function ending(k) {
+      var names = ["idle", "rmw", "atomic"], i;
+      for (i = 0; i < names.length; i++) {
+        el("rend-" + names[i]).classList.toggle("is-on", names[i] === k);
+      }
+    }
+
+    function resetRace() {
+      state = { c0: null, c1: null, hw: 0, c0sub: "idle", c1sub: "idle" };
+      at = 0;
+      el("race-outcome").className = "outcome prose";
+      ending("idle");
+      el("race-step").disabled = false;
+      el("race-all").disabled = false;
+      draw();
+    }
+
+    function stepRace() {
+      var steps = PLAN[mode].steps;
+      if (at >= steps.length) { return; }
+      // A step leaves its actor saying one thing, and the register holding
+      // whatever the step did to it. Both come out of the table above.
+      steps[at][2](state);
+      if (steps[at][0] === "core0") { state.c0sub = steps[at][1]; }
+      else { state.c1sub = steps[at][1]; }
+      at++;
+      draw();
+      if (at >= steps.length) {
+        el("race-outcome").className = "outcome prose " + PLAN[mode].cls;
+        ending(mode);
+        el("race-step").disabled = true;
+        el("race-all").disabled = true;
+      }
+    }
+
+    el("race-step").addEventListener("click", stepRace);
+    el("race-all").addEventListener("click", function () {
+      while (at < PLAN[mode].steps.length) { stepRace(); }
     });
-    document.getElementById("race-panel").setAttribute("aria-labelledby", TABS[which]);
-    resetRace();
-  }
+    el("race-reset").addEventListener("click", resetRace);
 
-  ORDER.forEach(function (k, i) {
-    var el = document.getElementById(TABS[k]);
-    el.addEventListener("click", function () { selectTab(k); });
-    el.addEventListener("keydown", function (e) {
-      var next = null;
-      if (e.key === "ArrowRight") next = (i + 1) % ORDER.length;
-      else if (e.key === "ArrowLeft") next = (i - 1 + ORDER.length) % ORDER.length;
-      else if (e.key === "Home") next = 0;
-      else if (e.key === "End") next = ORDER.length - 1;
-      if (next === null) return;
-      if (e.preventDefault) e.preventDefault();
-      selectTab(ORDER[next]);
-      var moved = document.getElementById(TABS[ORDER[next]]);
-      if (moved.focus) moved.focus();
+    var TABS = { rmw: "tab-rmw", atomic: "tab-atomic" };
+    var ORDER = ["rmw", "atomic"];
+
+    function selectTab(which) {
+      mode = which;
+      ORDER.forEach(function (k) {
+        var b = el(TABS[k]);
+        var on = k === which;
+        b.setAttribute("aria-selected", on ? "true" : "false");
+        b.setAttribute("tabindex", on ? "0" : "-1");
+        b.classList.toggle("on", on);
+      });
+      el("race-panel").setAttribute("aria-labelledby", TABS[which]);
+      resetRace();
+    }
+
+    ORDER.forEach(function (k, i) {
+      var tab = el(TABS[k]);
+      tab.addEventListener("click", function () { selectTab(k); });
+      tab.addEventListener("keydown", function (e) {
+        var next = null;
+        if (e.key === "ArrowRight") { next = (i + 1) % ORDER.length; }
+        else if (e.key === "ArrowLeft") { next = (i - 1 + ORDER.length) % ORDER.length; }
+        else if (e.key === "Home") { next = 0; }
+        else if (e.key === "End") { next = ORDER.length - 1; }
+        if (next === null) { return; }
+        if (e.preventDefault) { e.preventDefault(); }
+        selectTab(ORDER[next]);
+        var moved = el(TABS[ORDER[next]]);
+        if (moved.focus) { moved.focus(); }
+      });
     });
-  });
-  selectTab("rmw");
+    selectTab("rmw");
+  }());
 
   /* ---------------- Figure 15: show the skipped lines ---------------- */
 
@@ -4269,60 +4245,30 @@ unsafe { *p = 1; }                <span class="tok-c">// one store</span></pre>
 
   /* ---------------- Figure 16: the ladder ---------------- */
 
-  var RUNGS = [
-    { who: "Arduino", code: "digitalWrite(25, HIGH);",
-      where: "the friendly layer \u2014 hides everything below it" },
-    { who: "Tock's interface", code: "pin.set();",
-      where: "kernel/src/hil/gpio.rs:154 \u2014 the same call on every chip Tock supports" },
-    { who: "Chip driver", code: "self.sio_registers.gpio_out_set.set(1 << self.pin);",
-      where: "chips/rp2350/src/gpio.rs:1519 \u2014 the first layer that knows this is an RP2350" },
-    { who: "Register types", code: "write_volatile(self.value.get(), value)",
-      where: "tock-registers 0.10.0, src/registers.rs:63 \u2014 where volatile is enforced for everyone" },
-    { who: "The machine", code: "and   r1, r1, #0x1f\nlsl.w r1, r2, r1\nstr   r1, [r0, #0x18]",
-      where: "the real instructions from your own build \u2014 Figure 15" }
-  ];
-
-  var ladder = document.getElementById("ladder");
-  var ladderCount = document.getElementById("ladder-count");
-  var shown = 1;
-
-  RUNGS.forEach(function (r) {
-    var row = document.createElement("div");
-    row.className = "rung";
-    var who = document.createElement("div");
-    who.className = "rung-who";
-    who.textContent = r.who;
-    var body = document.createElement("div");
-    var code = document.createElement("div");
-    code.className = "rung-code";
-    code.textContent = r.code;
-    var where = document.createElement("div");
-    where.className = "rung-where";
-    where.textContent = r.where;
-    body.appendChild(code);
-    body.appendChild(where);
-    row.appendChild(who);
-    row.appendChild(body);
-    ladder.appendChild(row);
-  });
-
-  function drawLadder() {
-    var rows = ladder.children;
-    for (var i = 0; i < rows.length; i++) {
-      rows[i].classList.toggle("on", i < shown);
+  /* ---------------- Figure 16: the ladder ----------------
+     Five rungs in the markup, all of them marked on, because with no
+     scripting the whole ladder is what a reader should get. The script does
+     the hiding: it puts four away and hands them back one at a time. */
+  (function () {
+    var N = 5, shown = 1;
+    var count = document.getElementById("ladder-count");
+    var next = document.getElementById("ladder-next");
+    function draw() {
+      var i;
+      for (i = 0; i < N; i++) {
+        document.getElementById("rung-" + i).classList.toggle("on", i < shown);
+      }
+      count.textContent = shown + " of " + N + " shown";
+      next.disabled = shown >= N;
     }
-    ladderCount.textContent = shown + " of " + RUNGS.length + " shown";
-    document.getElementById("ladder-next").disabled = shown >= RUNGS.length;
-  }
-
-  document.getElementById("ladder-next").addEventListener("click", function () {
-    if (shown < RUNGS.length) { shown++; drawLadder(); }
-  });
-  document.getElementById("ladder-reset").addEventListener("click", function () {
-    shown = 1; drawLadder();
-  });
-  drawLadder();
-
+    next.addEventListener("click", function () {
+      if (shown < N) { shown++; draw(); }
+    });
+    document.getElementById("ladder-reset").addEventListener("click", function () {
+      shown = 1; draw();
+    });
+    draw();
+  }());
 
   /* ---------------- Figure 1: the nine words ---------------- */
   // Every sentence this figure says lives in the markup. The script only moves

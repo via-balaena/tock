@@ -64,6 +64,14 @@ chk("and the badge agrees", REG["pin-badge"].textContent, "25");
 
 REG["pin"].value = "25"; REG["pin"].fire("input");
 
+function betwhy() {
+  var i, on = [];
+  for (i = 0; i < 3; i++) {
+    if (REG["betwhy-" + i].classList.contains("is-on")) { on.push(String(i)); }
+  }
+  return on.join("+");
+}
+
 var BHK = ["sram", "out", "set", "in"];
 function bhopen() {
   var i, on = [];
@@ -95,6 +103,56 @@ function mpressed() {
   }
   return on.join("+");
 }
+
+// ---- What a reader with no JavaScript is left with ----
+// Eight of this chapter's figures used to build their contents out of script
+// strings, so with scripting off they were empty boxes. They are markup now,
+// and the only thing that can check that is the markup's own classes: the
+// script sets these on load either way, so asserting the live DOM would pass
+// whatever the page shipped. PAGE_CLASS is the markup as written.
+(function () {
+  function shipped(id) {
+    // The book prefixes every id with chNN--, so match by suffix and treat a
+    // miss as a failure rather than as an absent key that quietly passes.
+    var k;
+    for (k in PAGE_CLASS) {
+      if (PAGE_CLASS.hasOwnProperty(k)
+          && (k === id || k.slice(-(id.length + 1)) === "-" + id)) {
+        return PAGE_CLASS[k];
+      }
+    }
+    return "\u0000 no such id in the markup: " + id;
+  }
+  function has(id, token) {
+    return (" " + shipped(id) + " ").indexOf(" " + token + " ") > -1;
+  }
+  function on(id) { return has(id, "is-on"); }
+
+  chk("the digit the decoder opens on is chosen in the markup",
+      has("digit-D", "on"), true);
+  chk("and its answer is the one the markup shows", on("dsay-D"), true);
+  chk("with the other fifteen answers put away by the script, not absent",
+      on("dsay-0") || on("dsay-2") || on("dsay-F"), false);
+  chk("the map opens on SIO in the markup", on("mdet-sio"), true);
+  chk("the four bargains open on the write-only one",
+      on("bhw-set") && on("bhr-set") && on("bhd-set"), true);
+  chk("the trace opens on its first moment", has("tr-0", "now"), true);
+  chk("the race ships its steps rather than an empty list",
+      on("steps-rmw"), true);
+  chk("with the intro and the prompt that go with them",
+      on("rint-rmw") && on("rend-idle"), true);
+  chk("and no verdict showing before anything has run",
+      on("rend-rmw") || on("rend-atomic"), false);
+  // The ladder is the inverted case: the markup ships every rung visible and
+  // the script is what puts four of them away.
+  chk("the ladder ships all five rungs on", (function () {
+    var i, n = 0;
+    for (i = 0; i < 5; i++) { if (has("rung-" + i, "on")) { n++; } }
+    return n;
+  }()), 5);
+  chk("the bet ships three answers with none of the reasoning given away",
+      on("betwhy-0") || on("betwhy-1") || on("betwhy-2"), false);
+}());
 
 // ---- No figure may boot into an empty state ----
 // A reader who never clicks must still be shown the instructive case.
@@ -129,8 +187,28 @@ chk("bit 29 is flagged as a real pin",
 // ---- Instrument 1: the layer ladder ----
 
 chk("ladder starts with one rung", REG["ladder-count"].textContent, "1 of 5 shown");
+// The markup ships all five on, and the script is what puts four away -- so
+// with no scripting the reader gets the whole ladder rather than four blanks.
+(function () {
+  var i, on = 0;
+  for (i = 0; i < 5; i++) {
+    if (REG["rung-" + i].classList.contains("on")) { on++; }
+  }
+  chk("and the script is what closed the other four", on, 1);
+}());
+chk("the bottom rung is the instructions, and is on the page either way",
+    REG["rung-4"].textContent.indexOf("str") > -1, true);
+chk("the top one is the friendly call the chapter is peeling",
+    REG["rung-0"].textContent.indexOf("digitalWrite") > -1, true);
 for (var i = 0; i < 10; i++) { REG["ladder-next"].fire("click"); }
 chk("ladder stops at the last rung", REG["ladder-count"].textContent, "5 of 5 shown");
+(function () {
+  var i, on = 0;
+  for (i = 0; i < 5; i++) {
+    if (REG["rung-" + i].classList.contains("on")) { on++; }
+  }
+  chk("with every rung back on screen", on, 5);
+}());
 chk("ladder button disables at the end", REG["ladder-next"].disabled, true);
 REG["ladder-reset"].fire("click");
 chk("ladder resets", REG["ladder-count"].textContent, "1 of 5 shown");
@@ -195,12 +273,35 @@ chk("GPIO_OUT_SET is described as an OR operation",
 REG["bh-set"].fire("click");
 
 // ---- Figure 13: the race. This is the chapter's central claim. ----
+// Both scenarios, both endings and every core-card line ship in the markup
+// now, so textContent on a container returns all of them at once. What each
+// of these asks is which one the script has chosen.
+function rend() {
+  var K = ["idle", "rmw", "atomic"], i, on = [];
+  for (i = 0; i < K.length; i++) {
+    if (REG["rend-" + K[i]].classList.contains("is-on")) { on.push(K[i]); }
+  }
+  return on.join("+");
+}
+function rsteps() {
+  var pre = REG["steps-rmw"].classList.contains("is-on") ? "rs" : "ra";
+  var n = pre === "rs" ? 6 : 2, i, out = [];
+  for (i = 0; i < n; i++) { out.push(REG[pre + "-" + i]); }
+  return out;
+}
+function marked(kind) {
+  var rows = rsteps(), i, out = [];
+  for (i = 0; i < rows.length; i++) {
+    if (rows[i].classList.contains(kind)) { out.push(i); }
+  }
+  return out.join(",");
+}
 
 // Read-modify-write: core 1 reads a stale value and erases core 0's write.
 REG["tab-rmw"].fire("click");
 REG["race-all"].fire("click");
 chk("RMW loses core 0's write", REG["corehw-val"].textContent, "0x00000400");
-chk("RMW leaves only pin 10 high", REG["corehw-sub"].textContent, "pin 10 high");
+chk("RMW leaves only pin 10 high", REG["corehw-pins"].textContent, "pin 10");
 chk("RMW outcome is marked bad", REG["race-outcome"].className.indexOf("bad") > -1, true);
 chk("RMW disables stepping at the end", REG["race-step"].disabled, true);
 
@@ -210,7 +311,7 @@ chk("switching scenario resets the hardware register",
     REG["corehw-val"].textContent, "0x00000000");
 REG["race-all"].fire("click");
 chk("atomic keeps both writes", REG["corehw-val"].textContent, "0x02000400");
-chk("atomic leaves both pins high", REG["corehw-sub"].textContent, "pins 10, 25 high");
+chk("atomic leaves both pins high", REG["corehw-pins"].textContent, "pins 10, 25");
 chk("atomic outcome is marked good", REG["race-outcome"].className.indexOf("good") > -1, true);
 
 // Stepping one instruction at a time must reach the same state as running all.
@@ -290,12 +391,16 @@ t("same tab clicked repeatedly resets cleanly", function(){
 
 t("steps list does not grow when re-rendered", function(){
   REG["tab-rmw"].fire("click");
-  var n1=REG["race-steps"].children.length;
+  if(REG["race-steps"].children.length!==0) throw new Error("steps are script-built again");
+  var n1=rsteps().length;
   REG["race-step"].fire("click"); REG["race-step"].fire("click");
   REG["race-reset"].fire("click");
-  var n2=REG["race-steps"].children.length;
-  if(n1!==n2) throw new Error("steps leaked: "+n1+" -> "+n2);
+  if(rsteps().length!==n1) throw new Error("steps leaked");
   if(n1!==6) throw new Error("expected 6 RMW steps, got "+n1);
+  // The other scenario's rows exist too, and are put away rather than absent.
+  if(!REG["ra-0"]||!REG["ra-1"]) throw new Error("the atomic steps are not in the markup");
+
+  if(REG["steps-atomic"].classList.contains("is-on")) throw new Error("both lists shown");
 });
 
 t("clicking a map row does not add one", function(){
@@ -348,7 +453,10 @@ t("ladder reset after over-clicking still shows one rung", function(){
 });
 
 t("ladder rows not duplicated", function(){
-  if(REG["ladder"].children.length!==5) throw new Error("ladder has "+REG["ladder"].children.length+" rungs");
+  var i, n=0;
+  for(i=0;i<5;i++) if(REG["rung-"+i]) n++;
+  if(n!==5) throw new Error("ladder has "+n+" rungs");
+  if(REG["ladder"].children.length!==0) throw new Error("ladder is built by script again");
 });
 
 // ---- Figure 5: the first hex digit decides who answers ----
@@ -429,20 +537,34 @@ t("ladder rows not duplicated", function(){
 
 // ---- The bet: guess before the reveal ----
 
-chk("the bet offers three answers", REG["bet1-opts"].children.length, 3);
-chk("no reason is shown before a guess is made", REG["bet1-why"].textContent, "");
+(function () {
+  var i, n = 0;
+  for (i = 0; i < 3; i++) { if (REG["bet-" + i] && REG["betwhy-" + i]) { n++; } }
+  chk("the bet offers three answers, each with its reasoning", n, 3);
+}());
+chk("and all of it is markup", REG["bet1-opts"].children.length, 0);
+chk("no reason is shown before a guess is made", betwhy(), "");
+chk("exactly one of the three is the right answer", (function () {
+  var i, n = 0;
+  for (i = 0; i < 3; i++) {
+    if (REG["bet-" + i].getAttribute("data-ok") === "true") { n++; }
+  }
+  return n;
+}()), 1);
 
-REG["bet1-opts"].children[0].fire("click");
+REG["bet-0"].fire("click");
 chk("a wrong guess is marked wrong",
-    REG["bet1-opts"].children[0].classList.contains("is-wrong"), true);
+    REG["bet-0"].classList.contains("is-wrong"), true);
 chk("the right answer is revealed alongside it",
-    REG["bet1-opts"].children[2].classList.contains("is-right"), true);
+    REG["bet-2"].classList.contains("is-right"), true);
 chk("and the reason explains rather than scores",
-    REG["bet1-why"].textContent.indexOf("ordinary memory") > -1, true);
+    REG["betwhy-0"].textContent.indexOf("ordinary memory") > -1, true);
+chk("the reason shown is the one for the guess made", betwhy(), "0");
 
-REG["bet1-opts"].children[1].fire("click");
+REG["bet-1"].fire("click");
 chk("the bet cannot be re-answered once committed",
-    REG["bet1-opts"].children[1].classList.contains("is-wrong"), false);
+    REG["bet-1"].classList.contains("is-wrong"), false);
+chk("and the reasoning does not move either", betwhy(), "0");
 
 // ---- Figure 10: work one out yourself ----
 
@@ -504,36 +626,59 @@ chk("and the label goes back with it",
 // deliberate (a disappearing animation would have to be held in memory), so
 // the test asserts the whole trace is present at every position.
 
-chk("all eight moments are rendered at once", REG["trace"].children.length, 8);
+(function () {
+  var i, n = 0;
+  for (i = 0; i < 8; i++) { if (REG["tr-" + i]) { n++; } }
+  chk("all eight moments are rendered at once", n, 8);
+}());
+chk("and they are markup, not built on demand", REG["trace"].children.length, 0);
 chk("the trace opens on the first moment", REG["trace-at"].textContent, "1 of 8");
 chk("and the first moment is the highlighted one",
-    REG["trace"].children[0].classList.contains("now"), true);
+    REG["tr-0"].classList.contains("now"), true);
 chk("nothing is marked already-seen at the start",
-    REG["trace"].children[0].classList.contains("seen"), false);
+    REG["tr-0"].classList.contains("seen"), false);
+// The eighth step is where the light comes on, and it is the payoff of the
+// chapter -- a reader with no scripting was seeing an empty box instead.
+chk("the last moment is the one where the light comes on",
+    REG["tr-7"].textContent.indexOf("It glows") > -1, true);
+chk("and the third is the routing decision the chapter is built on",
+    REG["tr-2"].textContent.indexOf("whole routing decision") > -1, true);
 
 REG["trace-scrub"].value = "4";
 REG["trace-scrub"].fire("input");
-chk("scrubbing moves the highlight", REG["trace"].children[4].classList.contains("now"), true);
+chk("scrubbing moves the highlight", REG["tr-4"].classList.contains("now"), true);
 chk("and clears it from where it was",
-    REG["trace"].children[0].classList.contains("now"), false);
+    REG["tr-0"].classList.contains("now"), false);
 chk("earlier moments read as already passed",
-    REG["trace"].children[0].classList.contains("seen"), true);
-chk("later moments do not", REG["trace"].children[7].classList.contains("seen"), false);
+    REG["tr-0"].classList.contains("seen"), true);
+chk("later moments do not", REG["tr-7"].classList.contains("seen"), false);
 chk("the counter follows", REG["trace-at"].textContent, "5 of 8");
 
 REG["trace-scrub"].value = "7";
 REG["trace-scrub"].fire("input");
 chk("the last moment is reachable", REG["trace-at"].textContent, "8 of 8");
-chk("exactly one moment is ever highlighted", (function () {
-  var n = 0, c = REG["trace"].children;
-  for (var i = 0; i < c.length; i++) if (c[i].classList.contains("now")) n++;
-  return n;
-}()), 1);
+// Swept end to end: one highlight, and the seen marks exactly the ones before.
+(function () {
+  var k, i, bad = 0, now, seen;
+  for (k = 0; k < 8; k++) {
+    REG["trace-scrub"].value = String(k);
+    REG["trace-scrub"].fire("input");
+    now = 0; seen = 0;
+    for (i = 0; i < 8; i++) {
+      if (REG["tr-" + i].classList.contains("now")) { now++; }
+      if (REG["tr-" + i].classList.contains("seen") !== (i < k)) { seen++; }
+    }
+    if (now !== 1 || seen !== 0) { bad++; }
+    if (REG["trace-at"].textContent !== (k + 1) + " of 8") { bad++; }
+  }
+  chk("at every one of the eight, one is highlighted and the rest read right",
+      bad, 0);
+}());
 
 REG["trace-scrub"].value = "0";
 REG["trace-scrub"].fire("input");
 chk("scrubbing backwards clears the seen marks",
-    REG["trace"].children[3].classList.contains("seen"), false);
+    REG["tr-3"].classList.contains("seen"), false);
 
 // ---- Figure 1: the nine words ----
 
@@ -842,18 +987,16 @@ t("switching board back and forth does not disturb the chosen hole", function ()
 t("the step about to run is marked, and it moves with Step", function () {
   REG["tab-rmw"].fire("click");
   REG["race-reset"].fire("click");
-  var rows = REG["race-steps"].children;
-  if (rows.length < 3) { throw new Error("no steps rendered"); }
-  if (rows[0].className.split(" ").indexOf("is-next") === -1) {
-    throw new Error("first step not marked next: " + rows[0].className);
+  if (rsteps().length < 3) { throw new Error("no steps rendered"); }
+  if (marked("is-next") !== "0") {
+    throw new Error("first step not marked next: " + marked("is-next"));
   }
   REG["race-step"].fire("click");
-  rows = REG["race-steps"].children;
-  if (rows[0].className.split(" ").indexOf("done") === -1) {
-    throw new Error("first step not marked done: " + rows[0].className);
+  if (marked("done") !== "0") {
+    throw new Error("first step not marked done: " + marked("done"));
   }
-  if (rows[1].className.split(" ").indexOf("is-next") === -1) {
-    throw new Error("marker did not advance: " + rows[1].className);
+  if (marked("is-next") !== "1") {
+    throw new Error("marker did not advance: " + marked("is-next"));
   }
 });
 
@@ -861,11 +1004,9 @@ t("exactly one step is ever marked next", function () {
   REG["tab-rmw"].fire("click");
   REG["race-reset"].fire("click");
   for (var press = 0; press < 4; press++) {
-    var rows = REG["race-steps"].children, n = 0;
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].className.split(" ").indexOf("is-next") > -1) { n++; }
+    if (marked("is-next").indexOf(",") > -1) {
+      throw new Error("several steps marked next after " + press + " presses");
     }
-    if (n > 1) { throw new Error(n + " steps marked next after " + press + " presses"); }
     REG["race-step"].fire("click");
   }
 });
@@ -877,8 +1018,8 @@ t("no step carries the bare `next` token", function () {
   REG["tab-rmw"].fire("click");
   REG["race-reset"].fire("click");
   for (var press = 0; press < 3; press++) {
-    var rows = REG["race-steps"].children;
-    for (var i = 0; i < rows.length; i++) {
+    var rows = rsteps(), i;
+    for (i = 0; i < rows.length; i++) {
       if (rows[i].className.split(" ").indexOf("next") > -1) {
         throw new Error("step " + i + " collides with the .next panel");
       }
@@ -926,18 +1067,18 @@ chk("and it is the only one on screen",
 // Its handler called classList.add("") on the first option, which a browser
 // refuses. Nothing downstream ran, so clicking revealed nothing at all.
 t("committing to a guess reveals the answer", function () {
-  var opts = REG["bet1-opts"].children;
-  if (opts.length < 3) { throw new Error("no options rendered"); }
-  opts[0].fire("click");                       // the first option is a wrong one
-  if (!opts[0].classList.contains("is-wrong")) {
+  // Already committed above; what this guards is that committing did all
+  // three things, not just the one the handler happened to reach.
+  if (!REG["bet-0"].classList.contains("is-wrong")) {
     throw new Error("the option picked was not marked wrong");
   }
-  if (!opts[2].classList.contains("is-right")) {
+  if (!REG["bet-2"].classList.contains("is-right")) {
     throw new Error("the correct option was not revealed");
   }
-  if (REG["bet1-why"].textContent.length < 20) {
-    throw new Error("no explanation shown: " + REG["bet1-why"].textContent);
+  if (REG["betwhy-0"].textContent.length < 20) {
+    throw new Error("no explanation shown: " + REG["betwhy-0"].textContent);
   }
+  if (betwhy() !== "0") { throw new Error("showing " + betwhy()); }
 });
 
 // ---- The race figure's verdict text, which nothing had ever asserted ----
@@ -946,16 +1087,26 @@ t("committing to a guess reveals the answer", function () {
 // until the shim stopped dropping non-empty innerHTML.
 REG["tab-rmw"].fire("click");
 REG["race-reset"].fire("click");
-chk("resetting restores the prompt to step through",
-    REG["race-outcome"].textContent.indexOf("Press Step") > -1, true);
+chk("resetting restores the prompt to step through", rend(), "idle");
+chk("which is the prompt and not a verdict",
+    REG["rend-idle"].textContent.indexOf("Press") > -1, true);
 REG["race-all"].fire("click");
 chk("and running the read-modify-write to the end reports the lost pin",
-    REG["race-outcome"].textContent.indexOf("Pin 25 never turned on") > -1, true);
+    rend(), "rmw");
+chk("in the words the chapter's argument turns on",
+    REG["rend-rmw"].textContent.indexOf("Pin 25 never turned on") > -1, true);
 chk("and marks that outcome bad",
     REG["race-outcome"].className.indexOf("bad") > -1, true);
 REG["race-reset"].fire("click");
 chk("resetting again clears the verdict rather than leaving it stale",
-    REG["race-outcome"].textContent.indexOf("Pin 25 never turned on"), -1);
+    rend(), "idle");
+// Both endings are on the page either way; only one is ever showing.
+REG["tab-atomic"].fire("click");
+REG["race-all"].fire("click");
+chk("the other scenario reaches its own ending", rend(), "atomic");
+chk("which is the one that says the hardware did it",
+    REG["rend-atomic"].textContent.indexOf("the hardware did the OR itself") > -1, true);
+REG["tab-rmw"].fire("click");
 
 
 

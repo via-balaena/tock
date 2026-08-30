@@ -29,8 +29,10 @@ got wrong, every time somebody rendered something:
                  the race figure only makes its point once it has been run to
                  the end.
   --click-nth    click the Nth child of a container. Script-built controls carry
-      ID:N       no id -- the address map's rows, the first-digit buttons and
-                 the four bargains are all generated -- so nothing else reaches
+      ID:N       no id, so nothing else reaches them. Chapter 1's map rows,
+                 first-digit buttons and four bargains used to be the examples
+                 here; they carry ids now, so --click reaches them and this is
+                 for whatever is still generated,
                  them.
   --set ID=V     set a value and fire input, for the two range sliders and the
                  four answer boxes, which no click can drive.
@@ -303,11 +305,10 @@ def main():
                         help="fire a click on this id first; repeatable")
     parser.add_argument("--click-nth", action=Ordered,
                         metavar="ID:N", dest="click_nth",
-                        help="click the Nth child of this container, zero-based."
-                             " Generated controls carry no id -- the map rows,"
-                             " the first-digit buttons and the four bargains are"
-                             " all built by script -- so this is the only way to"
-                             " reach them; repeatable, ordered with --click and"
+                        help="click the Nth child of this container,"
+                             " zero-based. For a control the script builds,"
+                             " which carries no id of its own, this is the only"
+                             " way in; repeatable, ordered with --click and"
                              " --set by the order given on the command line")
     parser.add_argument("--set", action=Ordered, metavar="ID=VALUE",
                         dest="set_value",
