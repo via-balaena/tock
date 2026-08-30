@@ -411,7 +411,7 @@ pre {
   <p class="standfirst">Microcontrollers and the Tock kernel from first principles, written from the position of someone actually learning them rather than someone who already knows.</p>
 
   <div class="premise">
-    <p>Chapter&nbsp;2 asks one question: <em>any code can write any address, so what stops it?</em> Every chapter after it answers part of that, and the last one lands on grants, which is the final mechanism chapter&nbsp;2 names. The arc closes where that chapter said it would.</p>
+    <p>The opening two chapters end on one sentence: <em>any code can write any address, so what stops it?</em> Everything after them answers part of it, and the last chapter arrives at grants &mdash; the final mechanism chapter&nbsp;2 names. The arc closes where that chapter said it would.</p>
   </div>
 </header>
 
@@ -491,11 +491,11 @@ pre {
       </svg>
     </div>
     <p class="mapsay" aria-live="polite">
-      <span class="mp is-on" id="mp-none">Nothing chosen. Click a chapter above, or start at 1 &mdash; it is the only one that stands on nothing.</span>
+      <span class="mp is-on" id="mp-none">Nothing chosen. Click a chapter above, or start at 1 &mdash; it stands on nothing, which is why it is already outlined.</span>
       <span class="mp" id="mp-open">Ready to read: everything it stands on is behind you.</span>
       <span class="mp" id="mp-shut">Not yet. It stands on chapters you have not marked read.</span>
       <span class="mp" id="mp-done">You have marked this one read.</span>
-      <span class="mp" id="mp-free">Optional, and it stands on nothing. It is the only chapter here you can read at any point.</span>
+      <span class="mp" id="mp-free">Optional, and it stands on nothing either. It is the one chapter you can read at any point, and the only one that needs hardware.</span>
       <span class="map-needs" id="mp-needs"></span>
     </p>
     <figcaption class="mapfoot"><span id="mp-count">0 of 9 marked read</span> &middot; kept in this browser only, and cleared by clearing site data.</figcaption>
@@ -517,7 +517,7 @@ pre {
       <div class="ord">1</div>
       <div>
         <h3><a href="ch01-everything-is-memory/">Everything Is Memory</a></h3>
-        <p class="hook">One <code>str</code> instruction, and the 3.3&nbsp;volts it puts on a pin at the other end &mdash; and why, before any of the protections the later chapters describe, a write can land anywhere at all.</p>
+        <p class="hook">One <code>str</code> instruction, and the 3.3&nbsp;volts it puts on a pin at the other end: which block of hardware answers an address, which control inside it, and which of thirty pins a single bit picks out.</p>
         <p class="needs"><b>Needs nothing</b></p>
       </div>
       <button class="mark" type="button" id="mark-1" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
@@ -526,7 +526,7 @@ pre {
       <div class="ord">2</div>
       <div>
         <h3><a href="ch02-registers-are-not-variables/">Registers Are Not Variables</a></h3>
-        <p class="hook">A register is not a variable, and four things go wrong when you treat it as one: what a read gives back, what the compiler does to a loop that polls, and what the second processor does to your value while you are holding it.</p>
+        <p class="hook">A register is not a variable, and three things go wrong when you treat it as one: what a read gives back, what the compiler does to a loop that polls, and what the second processor does to your value while you are holding it.</p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
       </div>
       <button class="mark" type="button" id="mark-2" data-mark="2" aria-label="Mark chapter 2 as read" aria-pressed="false"></button>
@@ -609,7 +609,9 @@ pre {
     <p>Every chapter cites <code>boards/raspberry_pi_pico_2</code>, a real port in this tree, so a reader with a Pico&nbsp;2 and a debug probe can run what they have just read about.</p>
     <div class="warnbox">
       <h3>If your board is a Pico 2 W</h3>
-      <p>This branch has a <code>raspberry_pi_pico_2_w</code> crate, so use that one. It is the same chip and the same chapters; what differs is a single pin. GPIO&nbsp;25 is the radio's chip select on a W rather than the LED, so that crate hands nothing to the LED driver and prints on a panic where the plain one blinks. Two crates over one chip, one pin apart, is a sharper look at what a board crate is <em>for</em> than either would be alone, and the chapters use it that way. The radio works too, over a state machine in the chip's PIO block, though nothing in these chapters needs it.</p>
+      <p>This branch has a <code>raspberry_pi_pico_2_w</code> crate, so use that one. Same chip, same chapters; what differs is a single pin.</p>
+  <p>GPIO&nbsp;25 is the radio's chip select on a W rather than the LED. So that crate hands nothing to the LED driver, and prints on a panic where the plain one blinks.</p>
+  <p>Two crates over one chip, one pin apart, is a sharper look at what a board crate is for than either would be alone, and the chapters use it that way. The radio works too, over a state machine in the chip's PIO block, though nothing in these chapters needs it.</p>
     </div>
   </section>
 
