@@ -113,8 +113,6 @@ function walk(btn, panel, n, name) {
 }());
 
 // ---- No figure may boot empty ----
-chk("figure 1 opens on the way this kernel takes", REG["wy-3"].getAttribute("aria-pressed"), "true");
-chk("and not on one of the three it rules out", REG["wy-0"].getAttribute("aria-pressed"), "false");
 chk("figure 2 opens on the table at the top", REG["bd-0"].getAttribute("aria-pressed"), "true");
 chk("figure 3 opens on the console's own alignment", REG["gs-a4"].getAttribute("aria-pressed"), "true");
 chk("figure 4 opens on the first unused slot", REG["ws-0"].getAttribute("aria-pressed"), "true");
@@ -124,8 +122,7 @@ chk("figure 7 opens on the refusal that stops the board", REG["rf-0"].getAttribu
 chk("figure 8 opens with nothing asked for yet", REG["gap-line"].textContent, "neither");
 chk("figure 9 opens on chapter 1", REG["ar-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
-    REG["wyp-3"].classList.contains("is-on")
-      && REG["bdp-0"].classList.contains("is-on")
+    REG["bdp-0"].classList.contains("is-on")
       && REG["gsp-console"].classList.contains("is-on")
       && REG["wsp-0"].classList.contains("is-on")
       && REG["lfp-0"].classList.contains("is-on")
@@ -134,16 +131,83 @@ chk("and every one of those has its panel open",
       && REG["gapp-idle"].classList.contains("is-on")
       && REG["arp-0"].classList.contains("is-on"), true);
 
-// ---- Figure 1: four ways to keep per-process state ----
-walk("wy-", "wyp-", 4, "figure 1");
-REG["wy-1"].fire("click");
-chk("the heap is ruled out because there is nothing to ask",
-    REG["wyp-1"].textContent.indexOf("nothing to ask") > -1, true);
-REG["wy-3"].fire("click");
-chk("the chosen one charges the process that caused the need",
-    REG["wyp-3"].textContent.indexOf("Take the memory out of the process that caused the need") > -1, true);
-chk("and the note says what that does to the accounting",
-    REG["wy-note"].textContent.indexOf("charged rather than estimated") > -1, true);
+// ---- Figure 1: four designs, priced ----
+// Four paragraphs became a calculator because the fourth design's claim is
+// arithmetic: it usually costs the most bytes of the three that can be built,
+// and what it buys is whose memory they are and who is charged for them.
+(function () {
+  function set(procs, users, state) {
+    REG["way-procs"].value = String(procs); REG["way-procs"].fire("input");
+    REG["way-state"].value = String(state === undefined ? 16 : state);
+    REG["way-state"].fire("input");
+    REG["way-users"].value = String(users); REG["way-users"].fire("input");
+  }
+  function n(id) { return parseInt(REG[id].textContent, 10); }
+  function open_() {
+    var S = ["more", "less", "none", "refused"], i, on = [];
+    for (i = 0; i < S.length; i++) {
+      if (REG["wayp-" + S[i]].classList.contains("is-on")) { on.push(S[i]); }
+    }
+    return on.join("+");
+  }
+
+  // This board's own shape: room for four, one of them calling the console.
+  set(4, 1);
+  chk("an array for the worst case is four processes of state", n("way-b0"), 64);
+  chk("one copy is one process of state, whatever else moves", n("way-b2"), 16);
+  chk("and the grant is four table slots plus one grant", n("way-b3"), 4 * 8 + 76);
+  chk("where a grant is the state plus sixty of bookkeeping",
+      REG["way-grant-c"].textContent, "76 bytes");
+  chk("which is more than the array, in the ordinary case", n("way-b3") > n("way-b0"), true);
+  chk("and the figure says so rather than selling it as cheaper", open_(), "more");
+  chk("the heap has no number at all", REG["way-b1"].textContent, "\u2014");
+
+  // Nobody calling: the two on the kernel's side still pay full price.
+  set(4, 0);
+  chk("with no callers the array still costs the same", n("way-b0"), 64);
+  chk("and one copy still costs the same", n("way-b2"), 16);
+  chk("while the grant costs the table and nothing else", n("way-b3"), 4 * 8);
+  chk("which is the accounting the figure is about", open_(), "none");
+
+  // Room for many, few callers: the case the design is for.
+  // Room for many, few callers, and a driver with real state to keep. This
+  // is the shape the design is for, and with sixteen bytes of state it never
+  // arrives -- the grant is dearer at every setting, which is worth knowing.
+  set(8, 1, 64);
+  chk("a driver with more of its own state changes the answer",
+      n("way-b0"), 8 * 64);
+  chk("and now the grant is the cheaper of the two", n("way-b3") < n("way-b0"), true);
+  chk("which the figure also says", open_(), "less");
+  set(8, 1, 16);
+  chk("while at sixteen bytes of state it is still dearer",
+      n("way-b3") > n("way-b0"), true);
+
+  // The third design stops being a design past one caller.
+  set(4, 3);
+  chk("one copy refuses everybody after the first",
+      REG["way-s2"].textContent.indexOf("refuses 2") > -1, true);
+  chk("while the grant serves them all", REG["way-s3"].textContent, "all 3");
+  set(4, 1);
+  chk("and reads naturally when there is only one",
+      REG["way-s3"].textContent, "the one caller");
+  chk("and the panel says what refusing costs", open_(), "refused");
+
+  // Users can never exceed the room the board made.
+  (function () {
+    var p, u, bad = 0;
+    for (p = 1; p <= 8; p++) {
+      for (u = 0; u <= 8; u++) {
+        set(p, u);
+        if (parseInt(REG["way-users-v"].textContent, 10) > p) { bad++; }
+        if (n("way-b3") !== p * 8 + Math.min(u, p) * 76) { bad++; }
+        if (n("way-b0") !== p * 16) { bad++; }
+        if (open_().indexOf("+") > -1 || open_() === "") { bad++; }
+      }
+    }
+    chk("no more processes use it than the board made room for", bad, 0);
+  }());
+  set(4, 1);
+}());
 
 // ---- Figure 2: the bands of one process's memory ----
 walk("bd-", "bdp-", 6, "figure 2");
@@ -665,9 +729,8 @@ chk("the closing figure opens on addresses rather than on which code runs",
 // Figure 1 sold the design on "never pays for it" and figures 2 and 5 spend
 // their length correcting that. The three have to agree now.
 (function () {
-  REG["wy-3"].fire("click");
   chk("figure 1 admits the fixed cost rather than denying it",
-      REG["wyp-3"].textContent.indexOf("small fixed cost per driver") > -1, true);
+      REG["wayp-none"].textContent.indexOf("table slots") > -1, true);
   chk("figure 2's note is where it is priced",
       REG["bd-note"].textContent.indexOf("pays for a table entry per driver") > -1, true);
   chk("and figure 5's note gives the number",

@@ -728,6 +728,42 @@ dfn {
   .instrument button, .bet-opt, .q-opt { min-height: 2.75rem; }
   .instrument input[type="range"] { height: 2.75rem; }
 }
+
+/* ---------- Figure 1: four designs, priced ----------
+   The four were four paragraphs, and the fourth said it was the strangest. The
+   thing that makes it strange is arithmetic: it costs more bytes in total than
+   the array does, and takes them from a different pocket, and only from the
+   processes that asked. None of that is visible without the numbers moving. */
+.wayrow { display: flex; align-items: center; gap: .7rem; margin-bottom: .5rem;
+  flex-wrap: wrap; }
+.wayrow label { font-family: var(--display); font-size: .72rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+  flex: 0 0 11rem; }
+.wayrow .waygrow { flex: 1 1 9rem; min-width: 7rem; display: block; }
+.wayrow input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block; }
+.wayval { font-family: var(--mono); font-size: .82rem; font-weight: 600;
+  color: var(--hot-ink); background: var(--hot-fill); border-radius: 2px;
+  padding: .12rem .45rem; flex: 0 0 auto; min-width: 3.2rem; text-align: center; }
+
+.waytab { width: 100%; border-collapse: collapse; margin: .7rem 0 .3rem;
+  font-size: .86rem; }
+.waytab th, .waytab td { border: 1px solid var(--rule); padding: .4rem .55rem;
+  text-align: left; }
+.waytab thead th { font-family: var(--display); font-size: .6rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  background: var(--surface-sunk); }
+.waytab th[scope="row"] { font-family: var(--body); font-weight: 400;
+  text-transform: none; letter-spacing: 0; color: var(--ink);
+  background: var(--surface); }
+.waytab td { font-family: var(--mono); font-size: .82rem; color: var(--ink-soft); }
+.waytab td.cost { font-weight: 600; color: var(--ink); }
+.waytab tr.is-tock th[scope="row"], .waytab tr.is-tock td { background: var(--hot-soft); }
+.waytab tr.is-tock td.cost { color: var(--hot); }
+.waytab td.none { color: var(--ink-faint); }
+.waysay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: .5rem 0 1rem; }
+.wayp { display: none; }
+.wayp.is-on { display: block; }
 </style>
 
 <div class="wrap">
@@ -792,18 +828,51 @@ dfn {
     <span class="instrument-title">Four ways to keep state for each process, and what each costs</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each. The last is the one this kernel takes, and it is the strangest.</p>
-    <div class="blk" role="group" aria-label="Four ways a driver could keep per-process state">
-      <button type="button" id="wy-0" aria-pressed="false">an array sized for the worst case</button>
-      <button type="button" id="wy-1" aria-pressed="false">a heap</button>
-      <button type="button" id="wy-2" aria-pressed="false">one copy in the driver</button>
-      <button type="button" id="wy-3" aria-pressed="true">take it from the process</button>
+    <p class="dothis">Move the sliders and read down the bytes column. One design's cost does not move at all, one cannot be built here, and the one this kernel takes is not the cheapest &mdash; find what it buys instead.</p>
+
+    <div class="wayrow">
+      <label for="way-procs">room for processes</label>
+      <span class="waygrow"><input type="range" id="way-procs" min="1" max="8" step="1" value="4" aria-label="how many processes the board makes room for"></span>
+      <span class="wayval" id="way-procs-v">4</span>
     </div>
-    <div class="blksay">
-      <p class="blkp" id="wyp-0">Give the driver an array with a slot for every process the board could ever run. It works, and it is paid for in flash and RAM whether the processes exist or not. Every driver pays for every process, and the board's maximum has to be decided at compile time by somebody who does not know what will be installed.</p>
-      <p class="blkp" id="wyp-1">Ask for the memory when the driver needs it. This is what a larger operating system does, and it is not available here: there is nothing to ask. A heap also brings the failure this kernel is built to avoid, where one driver's appetite becomes another's crash at an unpredictable moment.</p>
-      <p class="blkp" id="wyp-2">Keep one process's worth of state and refuse the second caller. Some drivers really do this, and a driver for a single sensor may only make sense one process at a time anyway. But it turns a shared peripheral into a private one, and the console cannot work that way.</p>
-      <p class="blkp is-on" id="wyp-3">Take the memory out of the process that caused the need. The process is already holding an allocation the kernel gave it. If a driver needs eighty bytes because of what this process asked for, take eighty bytes from this process. Nothing is shared and nothing is global, and what a process pays is decided almost entirely by which drivers it actually calls. Almost: there is a small fixed cost per driver as well, and Figure 2 is where it shows up.</p>
+    <div class="wayrow">
+      <label for="way-state">its own state, per process</label>
+      <span class="waygrow"><input type="range" id="way-state" min="4" max="96" step="4" value="16" aria-label="how many bytes of state the driver keeps for each process"></span>
+      <span class="wayval" id="way-state-v">16 B</span>
+    </div>
+    <div class="wayrow">
+      <label for="way-users">of those, using this driver</label>
+      <span class="waygrow"><input type="range" id="way-users" min="0" max="8" step="1" value="1" aria-label="how many of those processes call this driver"></span>
+      <span class="wayval" id="way-users-v">1</span>
+    </div>
+
+    <table class="waytab" id="way-table">
+      <thead>
+        <tr><th>the design</th><th>bytes</th><th>out of</th><th>serves</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">an array sized for the worst case</th>
+            <td class="cost" id="way-b0">64</td><td id="way-w0">the kernel's own RAM</td><td id="way-s0">all of them</td></tr>
+        <tr><th scope="row">a heap</th>
+            <td class="cost none" id="way-b1">&mdash;</td><td class="none" id="way-w1">there is no allocator</td><td class="none" id="way-s1">&mdash;</td></tr>
+        <tr><th scope="row">one copy in the driver</th>
+            <td class="cost" id="way-b2">16</td><td id="way-w2">the kernel's own RAM</td><td id="way-s2">the first caller</td></tr>
+        <tr class="is-tock"><th scope="row">take it from the process</th>
+            <td class="cost" id="way-b3">108</td><td id="way-w3">each process's own memory</td><td id="way-s3">all of them</td></tr>
+      </tbody>
+    </table>
+
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">the driver's own state</span><span class="costcell-v" id="way-state-c">16 bytes</span></div>
+      <div class="costcell"><span class="costcell-k">its grant, with bookkeeping</span><span class="costcell-v" id="way-grant-c">76 bytes</span></div>
+      <div class="costcell"><span class="costcell-k">a table slot, per process</span><span class="costcell-v">8 bytes</span></div>
+    </div>
+
+    <div class="waysay">
+      <p class="wayp is-on" id="wayp-more">The one this kernel takes is costing more bytes than the array right now, and that is the ordinary case rather than a corner of it. What it buys is in the other two columns: the bytes come out of the processes rather than the kernel, and a process that never calls the driver pays only its eight-byte table slot.</p>
+      <p class="wayp" id="wayp-less">Here it is cheaper outright, because most of the room the board makes is going unused. The array pays for every process the board could ever run; the grant pays for the ones that turned up and called.</p>
+      <p class="wayp" id="wayp-none">Nobody is using the driver, and the two on the kernel's side are still paying full price. That is the accounting the fourth design changes: with no callers it costs the table slots and nothing else.</p>
+      <p class="wayp" id="wayp-refused">Past the first caller the third design stops being a design. It does not cost more, it refuses &mdash; and a driver that serves one process is not a driver for a board that runs several.</p>
     </div>
   </div>
   <div class="instrument-note" id="wy-note">Notice what the fourth one does to the accounting. The cost of a driver stops being a property of the driver and becomes a property of the process using it, which means it can be charged rather than estimated. It also means a process's memory is no longer only the process's, and the rest of this chapter is about the care that takes.</div>
@@ -1311,7 +1380,63 @@ dfn {
      Opens on the fourth, which is the one this kernel takes. The first three
      are the alternatives it has ruled out, and leading with a ruled-out one
      would be teaching the wrong thing first. */
-  group("wy-", "wyp-", 4, "", "is-on", "is-off");
+  /* ---------------- Figure 1: four designs, priced ----------------
+     The console's own numbers, which the probe beside chapter 8 compiles:
+     sixteen bytes of driver state, a seventy-six byte grant once bookkeeping
+     is counted, and eight bytes for one table slot.
+
+       array         procs * state          kernel RAM, whether used or not
+       heap          -                      no allocator exists here
+       one copy      state                  kernel RAM, first caller only
+       from the      procs * slot           every process, whether it calls
+       process       + users * grant        only the ones that do
+
+     The fourth is usually the largest of the three that can be built, which
+     is the thing four paragraphs could not say. What it buys is whose memory
+     it is, and that a process which never calls pays a slot and no more. */
+  (function () {
+    /* The kernel's half of a grant, fixed: a counters word plus the
+       console's seven slots at eight bytes each. The driver's own state is
+       what the third slider moves, and it is the only part the array design
+       would have to hold too. */
+    var BOOK = 60, SLOT = 8;
+
+    function el(id) { return document.getElementById(id); }
+    function num(id) { return parseInt(el(id).value, 10); }
+
+    function draw() {
+      var procs = num("way-procs");
+      var users = Math.min(num("way-users"), procs);
+      var state = num("way-state");
+      var array = procs * state;
+      var one = state;
+      var grants = procs * SLOT + users * (state + BOOK);
+      var k;
+
+      el("way-procs-v").textContent = String(procs);
+      el("way-users-v").textContent = String(users);
+      el("way-state-v").textContent = state + " B";
+      el("way-state-c").textContent = state + " bytes";
+      el("way-grant-c").textContent = (state + BOOK) + " bytes";
+      el("way-b0").textContent = String(array);
+      el("way-b2").textContent = String(one);
+      el("way-b3").textContent = String(grants);
+      el("way-s2").textContent = users > 1 ? "the first caller, and refuses "
+        + (users - 1) : (users === 1 ? "the one caller" : "nobody yet");
+      el("way-s3").textContent = users === 0 ? "nobody yet"
+        : (users === 1 ? "the one caller" : "all " + users);
+
+      var SAY = ["more", "less", "none", "refused"];
+      var open = users === 0 ? "none"
+        : (users > 1 ? "refused" : (grants > array ? "more" : "less"));
+      for (k = 0; k < SAY.length; k++) {
+        el("wayp-" + SAY[k]).classList.toggle("is-on", SAY[k] === open);
+      }
+    }
+    el("way-procs").addEventListener("input", draw);
+    el("way-users").addEventListener("input", draw);
+    draw();
+  }());
 
   /* ---------------- Figure 2: the bands of process memory ---------------- */
   group("bd-", "bdp-", 6, "", "is-on", "is-off");
