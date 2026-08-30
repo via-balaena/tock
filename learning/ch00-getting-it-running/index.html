@@ -376,6 +376,100 @@ button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
 /* The one reading that is an error rather than a silence. */
 .diag-v.is-loud { color: var(--danger); }
 
+/* ---------- four routes, and the machine you are on ----------
+   The verdicts were painted into the markup, which made "two of them are
+   quiet about failing" a thing the page asserted rather than a thing a reader
+   could watch happen. They move now, because which of the four work is a fact
+   about your machine and not about the Makefile. */
+.osrow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  margin: .2rem 0 1rem; }
+.osrow .lead-k { flex: 0 0 auto; }
+.osrow button {
+  font-family: var(--body); font-size: .85rem; font-weight: 500;
+  text-transform: none; letter-spacing: 0;
+  padding: .35rem .7rem;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.osrow button[aria-pressed="true"] {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+}
+/* A third verdict beside works and silent: the copy routes on a machine where
+   the folder might be there, which is a real answer and not a hedge. */
+.osp { display: none; }
+.osp.is-on { display: inline; }
+.verdict.maybe { color: var(--ink); background: var(--surface-sunk);
+  box-shadow: inset 0 0 0 1px var(--rule-strong); }
+
+/* ---------- a session, driven ----------
+   The four things the console says were four buttons naming themselves. They
+   are the transcript now, and the transcript is the control: run the board and
+   the lines arrive in the order a real session produces them, and clicking one
+   says what it proves. The panels underneath are unchanged, because what they
+   say was checked on hardware.
+
+   Everything ships visible, so with no scripting the figure is a session that
+   already happened and four explanations of it. */
+.term { font-family: var(--mono); font-size: .84rem; line-height: 1.7;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .6rem .3rem; margin: .3rem 0 .9rem;
+  overflow-x: auto; }
+.term-line { display: block; width: 100%; text-align: left;
+  font-family: var(--mono); font-size: .84rem; line-height: 1.7;
+  font-weight: 400; text-transform: none; letter-spacing: 0;
+  background: none; border: 0; border-left: 2px solid transparent;
+  border-radius: 0; padding: 0 .6rem; color: var(--ink); white-space: pre; }
+.term-line:hover:not(:disabled) { color: var(--hot); border-left-color: var(--rule-strong); }
+.term-line[aria-pressed="true"] { color: var(--hot); border-left-color: var(--hot);
+  background: var(--hot-soft); }
+.term-line.is-off { display: none; }
+.t-cmd { font-family: var(--mono); text-transform: none; }
+.term-run { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .3rem; }
+
+/* What the session has proved so far, which is the asymmetry the figure is
+   about: everything before you type arrives on one wire. */
+.proved { font-size: .9rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding: .3rem 0 .3rem .7rem;
+  margin: 0 0 1rem; }
+.pv { display: none; }
+.pv.is-on { display: block; }
+
+/* ---------- the path, as a path ----------
+   A path is read left to right, so its parts belong where the path is rather
+   than in a list beside it. Each segment is a control in place; the slashes
+   between them are not. The whole thing wraps and scrolls rather than
+   widening the page, because it is long and phones are not. */
+.pathline { font-family: var(--mono); font-size: .9rem; line-height: 2.1;
+  margin: .3rem 0 1rem; overflow-x: auto; white-space: nowrap;
+  padding-bottom: .3rem; }
+.pathline .sep { color: var(--ink-faint); }
+.seg {
+  font-family: var(--mono); font-size: .9rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0;
+  padding: .2rem .3rem; border-radius: 2px;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+}
+.seg[aria-pressed="true"] { border-color: var(--hot); background: var(--hot-soft); color: var(--hot); }
+
+/* ---------- what a part costs you, per change ----------
+   Figure 1's note says the obvious shopping list is wrong in one direction:
+   people buy the board and skip the probe. That is an argument about the loop
+   you run hundreds of times, so it is shown as the loop rather than asserted. */
+.loop-cmp { margin: .2rem 0 1rem; }
+.loop-cmp ol { margin: .4rem 0 0; padding-left: 1.3rem;
+  font-size: .93rem; line-height: 1.6; color: var(--ink); }
+.loop-cmp li { margin: .15rem 0; }
+.loop-cmp li::marker { font-family: var(--mono); color: var(--hot); }
+.lc { display: none; }
+.lc.is-on { display: block; }
+.lc-count { font-family: var(--display); font-size: .78rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint);
+  display: block; margin-top: .5rem; }
+
+/* Which machine a step belongs to, when there are two. */
+.mach { font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent); }
+
 /* ---------- closing ---------- */
 
 .next {
@@ -691,7 +785,7 @@ dfn {
 </section>
 
 <section class="col">
-  <h2>Thirteen words, before we start</h2>
+  <h2>Thirteen words this chapter needs</h2>
   <p>Each is one sentence now and used in context below. None is hard, and several are ordinary words being used narrowly.</p>
 </section>
 
@@ -717,7 +811,7 @@ dfn {
   <h2>Why this chapter exists</h2>
   <p>Everything after this reads source. That works from an armchair, and for five of the seven chapters that follow you never have to touch anything.</p>
   <p>But the last chapter closes by telling you to stop reading and run a command, and until now the series never said how to get to the point where that command works. This chapter is that gap, filled in.</p>
-  <p>It is also worth doing for its own sake. A claim about a kernel you have watched boot is a different kind of claim from one you have only read about, and the difference shows up the first time something does not work.</p>
+  <p>It is worth doing for its own sake as well. A claim about a kernel you have watched boot is a different kind of claim from one you have only read about. You notice which kind you are holding the first time something goes wrong.</p>
 </section>
 
 <figure class="instrument">
@@ -726,7 +820,29 @@ dfn {
     <span class="instrument-title">What sits between your editor and the chip</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each part. The second is the one you could skip, and the one that pays for itself on the second flash.</p>
+    <p class="dothis">Take the probe out of the list and put it back. Everything else on the bench is unchanged; what changes is the loop you run for every edit, for the rest of the chapter. Then click a part to read what it is.</p>
+    <div class="osrow" role="group" aria-label="Whether the bench has a debug probe on it">
+      <span class="lead-k">with</span>
+      <button type="button" id="lc-with" class="is-on" aria-pressed="true">a probe</button>
+      <button type="button" id="lc-without">no probe</button>
+    </div>
+    <div class="loop-cmp">
+      <div class="lc is-on" id="lc-p-with">
+        <ol>
+          <li><code>make flash-openocd</code></li>
+        </ol>
+        <span class="lc-count">one command, and nothing to touch</span>
+      </div>
+      <div class="lc" id="lc-p-without">
+        <ol>
+          <li>hold the board's button down and replug it, so it comes up as a drive</li>
+          <li>run a separate tool to turn the ELF into a UF2</li>
+          <li>copy that file onto the drive</li>
+          <li>the board reboots and the drive disappears, which is how you know</li>
+        </ol>
+        <span class="lc-count">four steps and two hands, for every edit</span>
+      </div>
+    </div>
     <div class="blk" role="group" aria-label="The parts this chapter uses">
       <button type="button" id="pt-0" aria-pressed="true">the board</button>
       <button type="button" id="pt-1" aria-pressed="false">the probe</button>
@@ -764,12 +880,9 @@ $ make
     <span class="instrument-title">Where the file lands, one piece at a time</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each part of the path. The second is the only part that is about the chip rather than about your machine.</p>
-    <div class="vt" role="group" aria-label="The parts of the output path">
-      <button type="button" id="pa-0" aria-pressed="true"><span class="vt-at">target/</span><span>everything built</span></button>
-      <button type="button" id="pa-1" aria-pressed="false"><span class="vt-at">thumbv8m&hellip;</span><span>the target triple</span></button>
-      <button type="button" id="pa-2" aria-pressed="false"><span class="vt-at">release/</span><span>optimised</span></button>
-      <button type="button" id="pa-3" aria-pressed="false"><span class="vt-at">&hellip;.elf</span><span>the kernel itself</span></button>
+    <p class="dothis">Click a part of the path itself. Only one of the four is about the chip; the other three are about the build, and none of them is about your machine.</p>
+    <div class="pathline" role="group" aria-label="The parts of the output path">
+      <button type="button" class="seg" id="pa-0" aria-pressed="true">target</button><span class="sep">/</span><button type="button" class="seg" id="pa-1" aria-pressed="false">thumbv8m.main-none-eabi</button><span class="sep">/</span><button type="button" class="seg" id="pa-2" aria-pressed="false">release</button><span class="sep">/</span><button type="button" class="seg" id="pa-3" aria-pressed="false">raspberry_pi_pico_2.elf</button>
     </div>
     <div class="vtsay">
       <p class="vtp is-on" id="pap-0">One directory at the top of the tree holds everything every build produces, for every board. Deleting it costs you nothing but the time to build again.</p>
@@ -784,22 +897,33 @@ $ make
 <section class="col">
   <h2>Four ways to flash, and two of them are quiet about failing</h2>
   <p>This board's Makefile offers four routes onto the chip. They are not four flavours of one thing: two drive the probe, two produce a UF2 and copy it to a drive that the board pretends to be when you hold its button down.</p>
-  <p>The split that matters is not which is more modern. It is that the two copying routes check for a folder, and when that folder is not there they print a suggestion and exit successfully. On a Mac that folder is never there.</p>
+  <p>The difference that matters is not which route is more modern. It is that the two copying routes check for a folder, and when that folder is not there they print a suggestion and exit successfully. Where that folder is depends on the machine you are building on, which is what the next figure is for.</p>
 </section>
 
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 3</span>
-    <span class="instrument-title">The four targets, and what each does on a Mac</span>
+    <span class="instrument-title">The four routes, and which of them work on your machine</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each target. The first is the one this chapter uses; the two marked in red are the ones that will appear to work.</p>
-    <div class="vt" role="group" aria-label="The four flashing targets in this board's Makefile">
-      <button type="button" id="tg-0" aria-pressed="true"><span class="vt-at">:23</span><span>flash-openocd <span class="verdict yes">works</span></span></button>
-      <button type="button" id="tg-1" aria-pressed="false"><span class="vt-at">:27</span><span>flash <span class="verdict no">silent</span></span></button>
-      <button type="button" id="tg-2" aria-pressed="false"><span class="vt-at">:32</span><span>program <span class="verdict no">silent</span></span></button>
-      <button type="button" id="tg-3" aria-pressed="false"><span class="vt-at">:42</span><span>program-openocd <span class="verdict yes">works</span></span></button>
+    <p class="dothis">Pick the machine in front of you, then click a route. Two of the four change their answer and two never do &mdash; and the two that change are the two that fail without saying so.</p>
+    <div class="osrow" role="group" aria-label="Which machine you are building on">
+      <span class="lead-k">building on</span>
+      <button type="button" id="os-mac" class="is-on" aria-pressed="true">a Mac</button>
+      <button type="button" id="os-linux">Linux</button>
+      <button type="button" id="os-set">either, with BOOTSEL_FOLDER set</button>
     </div>
+    <div class="vt" role="group" aria-label="The four flashing targets in this board's Makefile">
+      <button type="button" id="tg-0" aria-pressed="true"><span class="vt-at">:23</span><span>flash-openocd <span class="verdict yes" id="tv-0">works</span></span></button>
+      <button type="button" id="tg-1" aria-pressed="false"><span class="vt-at">:27</span><span>flash <span class="verdict no" id="tv-1">silent</span></span></button>
+      <button type="button" id="tg-2" aria-pressed="false"><span class="vt-at">:32</span><span>program <span class="verdict no" id="tv-2">silent</span></span></button>
+      <button type="button" id="tg-3" aria-pressed="false"><span class="vt-at">:42</span><span>program-openocd <span class="verdict yes" id="tv-3">works</span></span></button>
+    </div>
+    <p class="note" id="os-why">
+      <span class="osp is-on" id="osp-mac">The two copy routes test for a folder under <code>/run/media</code>, which is a Linux path. A Mac mounts removable drives under <code>/Volumes</code>, so that folder is never there and the copy never happens.</span>
+      <span class="osp" id="osp-linux">The folder the Makefile tests for is <code>/run/media/$(USER)/RP2350</code>, and this board's README gives the default as <code>/media/$(USER)/RP2350</code>. Those are different paths, and which one your desktop uses is a fact about your distribution rather than about Tock, so the two copy routes may or may not find the drive.</span>
+      <span class="osp" id="osp-set">Told where the drive actually mounted, both copy routes do what they say. This is the fix, and it is one variable &mdash; but you have to know to look for it, because nothing about the failure suggests it.</span>
+    </p>
     <div class="vtsay">
       <p class="vtp is-on" id="tgp-0">Kernel only, down the probe. It hands the ELF straight to OpenOCD, which writes it, reads it back to check, resets the board and exits. No button, no drive, no converter. OpenOCD is the one thing you fetch, and nothing you install after that is specific to this board.</p>
       <p class="vtp" id="tgp-1">Kernel only, as a UF2 copied to the drive. It needs a separate tool to make the UF2 first. Then it tests whether a folder exists and, if it does not, prints <b>Please edit the BOOTSEL_FOLDER variable</b> and stops &mdash; with a success status, so nothing downstream notices.</p>
@@ -807,14 +931,14 @@ $ make
       <p class="vtp" id="tgp-3">Kernel plus an application, down the probe. This is the one the last chapter of this series sends you to, and it is the right one. It needs a compiled application to hand it, and the toolchain's <b>arm-none-eabi-objcopy</b> to put the two together, which is a later problem than this.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice what the quiet failure costs. The folder it looks for is under <code>/run/media</code>, which is a Linux path; a Mac mounts under <code>/Volumes</code>. So on a Mac the copy never happens, the command reports success, and the board keeps running whatever it held before. That reads exactly like a kernel that built fine and does nothing.</div>
+  <div class="instrument-note" id="tg-note">Notice what the quiet failure costs. The folder it looks for is under <code>/run/media</code>, which is a Linux path; a Mac mounts under <code>/Volumes</code>. So on a Mac the copy never happens, the command reports success, and the board keeps running whatever it held before. That reads exactly like a kernel that built fine and does nothing.</div>
 </figure>
 
 <section class="col">
-  <h2>Wiring it, before you flash it</h2>
-  <p>Wire the console before you flash, not after. The command in the next section resets the board as it finishes, and the line you are waiting for goes out at that moment. If nothing is listening yet you miss it, and a missed line looks exactly like a board that never started.</p>
+  <h2>Wire the console before you flash, not after</h2>
+  <p>The command in the next section resets the board as it finishes, and the one line you are waiting for goes out at that moment. If nothing is listening yet, you miss it &mdash; and a missed line looks exactly like a board that never started. So wire first.</p>
   <p>The kernel prints to a serial line on two pins, and the probe has a second connector for exactly this.</p>
-  <p>Which pins is not a convention to look up, it is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
+  <p>Which pins is not a convention to look up. It is a line in this board's own source: pin&nbsp;0 transmits and pin&nbsp;1 receives, at 115200&nbsp;baud. Those two pins are handed to the console and are not available for anything else.</p>
   <p id="term">Anything that speaks to a serial port will read it. A Mac has <code>screen</code> already; Debian and its relatives usually want <code>picocom</code> installed first. The probe presents itself as a serial device when plugged in, and the surest way to learn its name is to look before and after doing so.</p>
   <p id="unchecked">Every command in this section has been run. The name the probe takes was read off a Raspberry Pi, where it is <code>/dev/ttyACM0</code>; the listing above is how to find it on a machine that calls it something else. That is why this gives you a method rather than a name to copy.</p>
   <pre># find it: list before and after plugging the probe in
@@ -939,13 +1063,25 @@ tock$</pre>
     <span class="instrument-title">What comes back, and what each piece of it proves</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each. The first is the one you are waiting for; the last is what to type once you have it.</p>
-    <div class="blk" role="group" aria-label="What the console prompt offers">
-      <button type="button" id="bo-0" aria-pressed="true">the banner</button>
-      <button type="button" id="bo-1" aria-pressed="false">the prompt</button>
-      <button type="button" id="bo-2" aria-pressed="false">the other banner</button>
-      <button type="button" id="bo-3" aria-pressed="false">list</button>
+    <p class="dothis">Reset the board, then type into it. Click any line the console prints to see what that line proves &mdash; and watch how long it takes before anything proves the wire going <em>into</em> the board.</p>
+    <div class="term-run">
+      <button type="button" id="cn-reset">Reset the board</button>
+      <button type="button" id="cn-type">Type <span class="t-cmd">list</span></button>
+      <button type="button" id="cn-fail">Reset, with processes failing</button>
+      <button type="button" id="cn-clear">Start over</button>
     </div>
+    <div class="term" role="group" aria-label="What the console prints">
+      <button type="button" class="term-line" id="bo-0" aria-pressed="true">Initialization complete. Enter main loop</button>
+      <button type="button" class="term-line" id="bo-2">Error loading processes!</button>
+      <button type="button" class="term-line" id="bo-1">tock$</button>
+      <button type="button" class="term-line" id="bo-3">tock$ list
+ PID    Name    Quanta  Syscalls  Restarts  Grants  State</button>
+    </div>
+    <p class="proved" aria-live="polite">
+      <span class="pv" id="pv-none">Nothing yet. Reset the board and watch what arrives.</span>
+      <span class="pv" id="pv-out">Three things proved, all by one line: the kernel built, it landed on the chip, and the wire out of the board is carrying. Nothing yet says anything about the wire going the other way.</span>
+      <span class="pv is-on" id="pv-both">And now the other direction. A reply is the only thing that could have proved it, which is why typing is the last step rather than the first.</span>
+    </p>
     <div class="blksay">
       <p class="blkp is-on" id="bop-0">Printed once, at the end of setting up. Seeing it proves three separate things at once: the kernel built, it landed on the chip, and the wire out of the board is carrying. That is a lot of evidence from one line, and it is still silent about the wire going the other way.</p>
       <p class="blkp" id="bop-1">A prompt from a piece of the kernel that exists to be talked to. Its arrival proves nothing the banner did not, because it is printed outbound on the very same wire. What tests the other direction is typing something and getting an answer.</p>
@@ -953,12 +1089,12 @@ tock$</pre>
       <p class="blkp" id="bop-3">Type it and the console prints a header &mdash; name, state and a few counters &mdash; and then one row for each application. After this chapter there are no rows, because you flashed a kernel and nothing else. That is the right answer, and getting any answer at all is the point: a reply is what proves the wire into the board.</p>
     </div>
   </div>
-  <div class="instrument-note">Notice which of these you get for free. The banner and the prompt both arrive on one wire, the one carrying out of the board, so neither of them says anything about the wire going the other way. Only typing does, which is why the last entry is the one to try.</div>
+  <div class="instrument-note" id="bo-note">Notice which of these you get for free. The banner and the prompt both arrive on one wire, the one carrying out of the board, so neither of them says anything about the wire going the other way. Only typing does, which is why the last entry is the one to try.</div>
 </figure>
 
 
 <section class="col">
-  <h2>One machine, or two</h2>
+  <h2>Splitting the bench across two machines</h2>
   <p>Everything above assumed one machine doing both jobs, so that the computer which compiled the kernel is the one with the probe in it. That is the simplest arrangement and nothing is wrong with it.</p>
   <p>It is not the only one. The two jobs have almost nothing to do with each other, and you may not want unfamiliar hardware plugged into the machine your work lives on.</p>
   <p>What makes splitting them cheap is how little has to cross. The far machine needs no copy of this repository and no Rust at all. It needs OpenOCD, something that reads a serial port, and a way to receive one file.</p>
@@ -971,12 +1107,17 @@ tock$</pre>
     <span class="instrument-title">Four steps, and which machine each one belongs to</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each step. The third is the only one whose command changes when the two machines are not the same.</p>
+    <p class="dothis">Split the bench across two machines and watch which steps move. Three of the four stay where they were; only one changes its command, and nothing changes about the wiring.</p>
+    <div class="osrow" role="group" aria-label="How many machines the bench is split across">
+      <span class="lead-k">running on</span>
+      <button type="button" id="sp-one" class="is-on" aria-pressed="true">one machine</button>
+      <button type="button" id="sp-two">two machines</button>
+    </div>
     <div class="vt" role="group" aria-label="Which machine each step runs on">
-      <button type="button" id="sp-0" aria-pressed="true"><span class="vt-at">build</span><span>the machine with Rust</span></button>
-      <button type="button" id="sp-1" aria-pressed="false"><span class="vt-at">the file</span><span>what crosses between them</span></button>
-      <button type="button" id="sp-2" aria-pressed="false"><span class="vt-at">flash</span><span>wherever the probe is</span></button>
-      <button type="button" id="sp-3" aria-pressed="false"><span class="vt-at">console</span><span>wherever the probe is</span></button>
+      <button type="button" id="sp-0" aria-pressed="true"><span class="vt-at">build</span><span>where Rust is <span class="mach" id="mb-0">here</span></span></button>
+      <button type="button" id="sp-1" aria-pressed="false"><span class="vt-at">the file</span><span>what crosses between them <span class="mach" id="mb-1">nowhere</span></span></button>
+      <button type="button" id="sp-2" aria-pressed="false"><span class="vt-at">flash</span><span>where the probe is <span class="mach" id="mb-2">here</span></span></button>
+      <button type="button" id="sp-3" aria-pressed="false"><span class="vt-at">console</span><span>where the probe is <span class="mach" id="mb-3">here</span></span></button>
     </div>
     <div class="vtsay">
       <p class="vtp is-on" id="spp-0">Always the machine with Rust on it, and it never needs the probe or the board attached to it. This is the step you repeat most often, and the one timed earlier at 7.2 seconds.</p>
@@ -1003,8 +1144,8 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
 </section>
 
 <section class="col">
-  <h2>When nothing happens</h2>
-  <p>The hard part of this chapter is not any single step. It is that several different failures produce the same nothing, and without a way to separate them you end up changing two things at once and learning nothing from either.</p>
+  <h2>When nothing happens, and how to tell the silences apart</h2>
+  <p>No single step here is hard. What is hard is that several different failures produce the same nothing, so without a way to separate them you end up changing two things at once and learning nothing from either. The figure below is that separation, run backwards: break the bench yourself and see which silence you get.</p>
 </section>
 
 <figure class="instrument">
@@ -1215,14 +1356,79 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     pick(opening);
   }
 
-  /* ---------------- Figure 1: the parts ---------------- */
-  group("pt-", "ptp-", 5, "", "is-on", "is-off");
+  /* ---------------- Figure 1: the parts, and the loop one of them buys ----
+     The note's argument is about the edit loop rather than about the bench, so
+     the loop is the thing that moves. */
+  (function () {
+    var HAS = ["with", "without"];
+    function pick(k) {
+      var i;
+      for (i = 0; i < HAS.length; i++) {
+        document.getElementById("lc-" + HAS[i])
+          .setAttribute("aria-pressed", HAS[i] === k ? "true" : "false");
+        document.getElementById("lc-" + HAS[i])
+          .classList.toggle("is-on", HAS[i] === k);
+        document.getElementById("lc-p-" + HAS[i])
+          .classList.toggle("is-on", HAS[i] === k);
+      }
+    }
+    var i;
+    for (i = 0; i < HAS.length; i++) {
+      (function (k) {
+        document.getElementById("lc-" + k)
+          .addEventListener("click", function () { pick(k); });
+      }(HAS[i]));
+    }
+    pick("with");
+    group("pt-", "ptp-", 5, "", "is-on", "is-off");
+  }());
 
   /* ---------------- Figure 2: the output path ---------------- */
   group("pa-", "pap-", 4, "", "is-on", "is-off");
 
-  /* ---------------- Figure 3: the four targets ---------------- */
-  group("tg-", "tgp-", 4, "", "is-on", "is-off");
+  /* ---------------- Figure 3: the four routes ----------------
+     The two probe routes do not care what you are building on. The two copy
+     routes test for a mounted drive, and where a drive mounts is a fact about
+     the machine -- so their verdict moves and the other two do not, which is
+     the whole figure. */
+  (function () {
+    var OS = ["mac", "linux", "set"];
+    /* Per route, per machine: the word and the class it is painted in. Both
+       probe routes are the same on all three, which is the point. */
+    var SAYS = {
+      mac:   [["works", "yes"], ["silent", "no"], ["silent", "no"], ["works", "yes"]],
+      linux: [["works", "yes"], ["maybe", "maybe"], ["maybe", "maybe"], ["works", "yes"]],
+      set:   [["works", "yes"], ["works", "yes"], ["works", "yes"], ["works", "yes"]]
+    };
+    var here = "mac";
+
+    function draw() {
+      var i, badge;
+      for (i = 0; i < OS.length; i++) {
+        document.getElementById("os-" + OS[i])
+          .setAttribute("aria-pressed", OS[i] === here ? "true" : "false");
+        document.getElementById("os-" + OS[i])
+          .classList.toggle("is-on", OS[i] === here);
+        document.getElementById("osp-" + OS[i])
+          .classList.toggle("is-on", OS[i] === here);
+      }
+      for (i = 0; i < 4; i++) {
+        badge = document.getElementById("tv-" + i);
+        badge.textContent = SAYS[here][i][0];
+        badge.classList.toggle("yes", SAYS[here][i][1] === "yes");
+        badge.classList.toggle("no", SAYS[here][i][1] === "no");
+        badge.classList.toggle("maybe", SAYS[here][i][1] === "maybe");
+      }
+    }
+    function wire(k) {
+      document.getElementById("os-" + k)
+        .addEventListener("click", function () { here = k; draw(); });
+    }
+    var i;
+    for (i = 0; i < OS.length; i++) { wire(OS[i]); }
+    draw();
+    group("tg-", "tgp-", 4, "", "is-on", "is-off");
+  }());
 
   /* ---------------- Figure 4: the wiring bench ----------------
      Three leads, four places each could go, and the outcome is decided by
@@ -1302,11 +1508,80 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     draw();
   }());
 
-  /* ---------------- Figure 5: the console ---------------- */
-  group("bo-", "bop-", 4, "", "is-on", "is-off");
+  /* ---------------- Figure 5: a session, driven ----------------
+     The four lines are the transcript and the control at once. Resetting
+     prints the banner and the prompt; typing adds the reply. What the readout
+     tracks is not which line is showing but which *direction* has been proved,
+     because that is the asymmetry the figure exists for: everything the board
+     says arrives on one wire, and only a reply tests the other. */
+  (function () {
+    var LINES = ["bo-0", "bo-2", "bo-1", "bo-3"];
+    var shown = { "bo-0": true, "bo-2": false, "bo-1": true, "bo-3": false };
 
-  /* ---------------- Figure 6: which machine each step is on ---------------- */
-  group("sp-", "spp-", 4, "", "is-on", "is-off");
+    function draw() {
+      var i, proved;
+      for (i = 0; i < LINES.length; i++) {
+        document.getElementById(LINES[i])
+          .classList.toggle("is-off", !shown[LINES[i]]);
+      }
+      proved = shown["bo-3"] ? "both" : (shown["bo-0"] ? "out" : "none");
+      document.getElementById("pv-none").classList.toggle("is-on", proved === "none");
+      document.getElementById("pv-out").classList.toggle("is-on", proved === "out");
+      document.getElementById("pv-both").classList.toggle("is-on", proved === "both");
+    }
+
+    function run(banner, fail, typed) {
+      return function () {
+        shown["bo-0"] = banner;
+        shown["bo-1"] = banner;
+        shown["bo-2"] = fail;
+        shown["bo-3"] = typed;
+        draw();
+      };
+    }
+    document.getElementById("cn-reset").addEventListener("click", run(true, false, false));
+    document.getElementById("cn-fail").addEventListener("click", run(true, true, false));
+    document.getElementById("cn-clear").addEventListener("click", run(false, false, false));
+    /* Typing only reaches a board that is up, so this adds the reply rather
+       than replacing the session. */
+    document.getElementById("cn-type").addEventListener("click", function () {
+      if (!shown["bo-0"]) { return; }
+      shown["bo-3"] = true;
+      draw();
+    });
+    draw();
+    group("bo-", "bop-", 4, "", "is-on", "is-off");
+  }());
+
+  /* ---------------- Figure 6: one machine, or two ----------------
+     Splitting the bench moves two of the four steps and gives the file
+     something to do. The badges are the whole of what changes, which is the
+     figure's point: the wiring, the line to wait for and every silence in
+     Figure 7 are the same either way. */
+  (function () {
+    var WHERE = {
+      one: ["here", "nowhere", "here", "here"],
+      two: ["the build machine", "scp", "the probe machine", "the probe machine"]
+    };
+    function pick(k) {
+      var i;
+      document.getElementById("sp-one")
+        .setAttribute("aria-pressed", k === "one" ? "true" : "false");
+      document.getElementById("sp-one").classList.toggle("is-on", k === "one");
+      document.getElementById("sp-two")
+        .setAttribute("aria-pressed", k === "two" ? "true" : "false");
+      document.getElementById("sp-two").classList.toggle("is-on", k === "two");
+      for (i = 0; i < 4; i++) {
+        document.getElementById("mb-" + i).textContent = WHERE[k][i];
+      }
+    }
+    document.getElementById("sp-one")
+      .addEventListener("click", function () { pick("one"); });
+    document.getElementById("sp-two")
+      .addEventListener("click", function () { pick("two"); });
+    pick("one");
+    group("sp-", "spp-", 4, "", "is-on", "is-off");
+  }());
 
   /* ---------------- Figure 7: the whole bench ----------------
      Four faults, and the two readouts a reader actually has. The order below

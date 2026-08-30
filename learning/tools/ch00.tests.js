@@ -32,6 +32,34 @@ function walk(btn, panel, n, name) {
   }
 }
 
+// ---- What a reader with no JavaScript is shown ----
+// The house rule is that the markup ships everything and the script puts parts
+// away, so the markup's own opening state is the one nobody else ever checks
+// and the only one a reader with scripting off will see. Chapter 5 shipped a
+// switch reading 0 over a sentence describing a 1; this is the same guard,
+// applied where this chapter has the same shape.
+(function () {
+  function shipped(id) {
+    var k;
+    for (k in PAGE_CLASS) {
+      if (k === id || k.slice(-(id.length + 2)) === "--" + id) {
+        return PAGE_CLASS[k] || "";
+      }
+    }
+    return null;
+  }
+  var cls = shipped("pv-both");
+  chk("the summary the markup ships is the one for a whole session",
+      cls === null ? "pv-both not found" : String(cls.indexOf("is-on") > -1),
+      "true");
+  // ...and the transcript it sits under really is a whole session.
+  var i, hidden = [], LINES = ["bo-0", "bo-1", "bo-2", "bo-3"];
+  for (i = 0; i < LINES.length; i++) {
+    if ((shipped(LINES[i]) || "").indexOf("is-off") > -1) { hidden.push(LINES[i]); }
+  }
+  chk("with every line of it visible", hidden.join(","), "");
+}());
+
 // ---- No figure may boot empty ----
 // Most readers never click, so a figure that opens on "choose something"
 // teaches nothing. Checked first, because everything below moves these.
@@ -95,6 +123,57 @@ chk("and both carry the verdict that they work",
 chk("the two copying routes are marked silent rather than broken",
     REG["tg-1"].textContent.indexOf("silent") > -1
       && REG["tg-2"].textContent.indexOf("silent") > -1, true);
+
+// The verdicts move with the machine, and that movement is the figure. Two of
+// the four never change, because they go down the probe and a probe does not
+// care where your desktop mounts a drive.
+(function () {
+  function badges() {
+    return [REG["tv-0"].textContent, REG["tv-1"].textContent,
+            REG["tv-2"].textContent, REG["tv-3"].textContent].join(" ");
+  }
+  chk("on a Mac the two copy routes are silent",
+      badges(), "works silent silent works");
+  chk("and the reason names the two paths",
+      REG["osp-mac"].textContent.indexOf("/Volumes") > -1, true);
+
+  REG["os-linux"].fire("click");
+  chk("on Linux they become a maybe rather than a no",
+      badges(), "works maybe maybe works");
+  // The Makefile and the README give different defaults, which is why this is
+  // a maybe and not a yes.
+  chk("and the reason is that the two documents disagree",
+      REG["osp-linux"].textContent.indexOf("/run/media/$(USER)/RP2350") > -1
+        && REG["osp-linux"].textContent.indexOf("/media/$(USER)/RP2350") > -1, true);
+
+  REG["os-set"].fire("click");
+  chk("told where the drive is, all four work",
+      badges(), "works works works works");
+
+  (function () {
+    var M = ["mac", "linux", "set"], i, moved = 0;
+    for (i = 0; i < M.length; i++) {
+      REG["os-" + M[i]].fire("click");
+      if (REG["tv-0"].textContent !== "works") { moved++; }
+      if (REG["tv-3"].textContent !== "works") { moved++; }
+    }
+    chk("the two probe routes never change their answer", moved, 0);
+  }());
+
+  (function () {
+    var M = ["mac", "linux", "set"], i, k, bad = 0, on;
+    for (i = 0; i < M.length; i++) {
+      REG["os-" + M[i]].fire("click");
+      on = 0;
+      for (k = 0; k < M.length; k++) {
+        if (REG["osp-" + M[k]].classList.contains("is-on")) { on++; }
+      }
+      if (on !== 1) { bad++; }
+    }
+    chk("one reason, and only one, for each machine", bad, 0);
+  }());
+  REG["os-mac"].fire("click");
+}());
 REG["tg-1"].fire("click");
 chk("the copy panel quotes the message it prints instead of flashing",
     REG["tgp-1"].textContent.indexOf("Please edit the BOOTSEL_FOLDER variable") > -1, true);
@@ -202,6 +281,60 @@ chk("and names OpenOCD as the one thing you do fetch",
 }());
 
 // ---- Figure 5: what the console offers ----
+// The transcript is the control, and what it tracks is which direction has
+// been proved. Everything the board says arrives on one wire, so nothing
+// before the reply can say anything about the other.
+(function () {
+  function proved() {
+    var P = ["none", "out", "both"], i, on = [];
+    for (i = 0; i < P.length; i++) {
+      if (REG["pv-" + P[i]].classList.contains("is-on")) { on.push(P[i]); }
+    }
+    return on.join(",");
+  }
+  function showing(id) { return !REG[id].classList.contains("is-off"); }
+
+  REG["cn-clear"].fire("click");
+  chk("an unreset board has proved nothing", proved(), "none");
+  chk("and the console is empty", showing("bo-0"), false);
+
+  REG["cn-reset"].fire("click");
+  chk("the banner arrives on a reset", showing("bo-0"), true);
+  chk("and the prompt with it", showing("bo-1"), true);
+  chk("which proves the outbound wire and no more", proved(), "out");
+  chk("the failure line is not printed unless it happened",
+      showing("bo-2"), false);
+
+  REG["cn-type"].fire("click");
+  chk("a reply is what proves the other direction", proved(), "both");
+  chk("and it is the reply that appears", showing("bo-3"), true);
+
+  // Typing at a board that has not booted reaches nothing, so the figure does
+  // not pretend it produced a reply.
+  REG["cn-clear"].fire("click");
+  REG["cn-type"].fire("click");
+  chk("typing at an unreset board prints nothing", showing("bo-3"), false);
+  chk("and proves nothing", proved(), "none");
+
+  // The second banner comes after the first, not instead of it.
+  REG["cn-fail"].fire("click");
+  chk("the load failure follows the banner rather than replacing it",
+      showing("bo-0") && showing("bo-2"), true);
+  chk("and the outbound wire is still all that is proved", proved(), "out");
+
+  // Exactly one reading, in every state the controls can reach.
+  (function () {
+    var STEPS = ["cn-clear", "cn-reset", "cn-type", "cn-fail", "cn-type",
+                 "cn-clear", "cn-reset"];
+    var i, bad = 0;
+    for (i = 0; i < STEPS.length; i++) {
+      REG[STEPS[i]].fire("click");
+      if (proved().indexOf(",") > -1 || proved() === "") { bad++; }
+    }
+    chk("one reading of what is proved, at every step", bad, 0);
+  }());
+  REG["cn-reset"].fire("click");
+}());
 walk("bo-", "bop-", 4, "figure 5");
 REG["bo-0"].fire("click");
 // The banner is the chapter's success signal, and it is worth more than it
