@@ -115,24 +115,20 @@ function walk(btn, panel, n, name) {
 // ---- No figure may boot empty ----
 // Most readers never click, so a figure that opens on "choose something"
 // teaches nothing. Checked first, because everything below moves these.
-chk("figure 1 opens on a question", REG["tw-0"].getAttribute("aria-pressed"), "true");
 chk("figure 2 opens on the version field", REG["hd-0"].getAttribute("aria-pressed"), "true");
 chk("figure 3 opens on the first step", REG["wk-0"].getAttribute("aria-pressed"), "true");
 chk("figure 4 opens on the bootloader", REG["rg-0"].getAttribute("aria-pressed"), "true");
 chk("figure 7 opens on the control block", REG["ks-0"].getAttribute("aria-pressed"), "true");
 chk("figure 8 opens on the first option", REG["pl-0"].getAttribute("aria-pressed"), "true");
 chk("figure 9 opens on argument 0", REG["ag-0"].getAttribute("aria-pressed"), "true");
-chk("figure 10 opens on Running", REG["ps-0"].getAttribute("aria-pressed"), "true");
 chk("figure 11 opens on the Pico 2", REG["fp-0"].getAttribute("aria-pressed"), "true");
 chk("and every one of those has its panel open",
-    REG["twp-0"].classList.contains("is-on")
-      && REG["hdp-0"].classList.contains("is-on")
+    REG["hdp-0"].classList.contains("is-on")
       && REG["wkp-0"].classList.contains("is-on")
       && REG["rgp-0"].classList.contains("is-on")
       && REG["ksp-0"].classList.contains("is-on")
       && REG["plp-0"].classList.contains("is-on")
       && REG["agp-0"].classList.contains("is-on")
-      && REG["psp-0"].classList.contains("is-on")
       && REG["fpp-0"].classList.contains("is-on"), true);
 
 // Figure 6 is the deliberate exception. Seven boundaries, and the one the
@@ -145,24 +141,26 @@ chk("and it is the one that gives the thirty-two",
     REG["mmp-2"].textContent.indexOf("thirty-two bytes") > -1, true);
 
 // ---- Figure 1: capsule against process ----
-walk("tw-", "twp-", 5, "figure 1");
-// Every panel has to answer for both sides, or the figure is a list about
-// processes with a capsule mentioned. The imperative promises two answers.
+// ---- Figure 1: capsule against process ----
+// Five buttons opening one paragraph each became a table, because the figure
+// is a comparison and the reader has to see both columns to make it. What is
+// left to check is that all five rows are there and each answers twice.
 (function () {
-  var i, both = 0, text;
-  for (i = 0; i < 5; i++) {
-    text = REG["twp-" + i].textContent;
-    if (text.indexOf("Capsule:") > -1 && text.indexOf("Process:") > -1) { both++; }
+  var rows = REG["cmp-kinds"].textContent;
+  var want = ["who compiled it", "what language", "where it lands",
+              "what checks it", "what stops it"];
+  var i, missing = [];
+  for (i = 0; i < want.length; i++) {
+    if (rows.indexOf(want[i]) < 0) { missing.push(want[i]); }
   }
-  chk("all five panels answer for a capsule and for a process", both, 5);
+  chk("all five questions are on screen at once", missing.join(", "), "");
+  chk("and both kinds of code are named as columns",
+      rows.indexOf("A capsule") > -1 && rows.indexOf("A process") > -1, true);
+  chk("the process column says what the capsule column cannot",
+      rows.indexOf("Anything at all") > -1, true);
+  chk("and what stops a process, which is the row chapter 4 ended on",
+      rows.indexOf("timeslice") > -1, true);
 }());
-chk("the language row is where C and assembly could go",
-    REG["twp-1"].textContent.indexOf("anything at all") > -1, true);
-chk("and the last row is the one chapter 4 ended on",
-    REG["twp-4"].textContent.indexOf("timeslice") > -1, true);
-REG["tw-0"].fire("click");
-chk("clicking back to the first releases the others",
-    onlyOne("twp-", 5, "is-on") + REG["tw-1"].getAttribute("aria-pressed"), "1false");
 
 // ---- Figure 2: the sixteen bytes ----
 walk("hd-", "hdp-", 5, "figure 2");
@@ -440,22 +438,88 @@ chk("and the fourth gives the same thirty-two as figure 6",
     REG["agp-3"].textContent.indexOf("thirty-two bytes") > -1, true);
 REG["ag-0"].fire("click");
 
-// ---- Figure 10: the six states ----
-walk("ps-", "psp-", 6, "figure 10");
+// ---- Figure 10: the six states, driven ----
+// Every transition is one method in process_standard.rs and every refusal is
+// that method's own guard. What a list of six states could not show is the
+// shape, so the shape is what is asserted: where each call is refused, that
+// Stopped remembers what it interrupted, and that a faulted process cannot be
+// restarted without being terminated first.
 (function () {
-  var NAMES = ["Running", "Yielded", "YieldedFor", "Stopped", "Faulted",
-               "Terminated"];
-  var i, wrong = 0;
-  for (i = 0; i < NAMES.length; i++) {
-    if (REG["ps-" + i].textContent.indexOf(NAMES[i]) < 0) { wrong++; }
+  function now() { return REG["st-now"].textContent; }
+  function press(k) { REG["sc-" + k].fire("click"); }
+  function reset() { press("reset"); }
+  function open_() {
+    var S = ["start", "stopped", "faulted", "terminated", "refused"], i, on = [];
+    for (i = 0; i < S.length; i++) {
+      if (REG["stp-" + S[i]].classList.contains("is-on")) { on.push(S[i]); }
+    }
+    return on.join("+");
   }
-  chk("the six buttons carry the six names the kernel uses", wrong, 0);
+
+  reset();
+  chk("a process the kernel has just started is Running", now(), "Running");
+  chk("and all six states are on screen, not one at a time",
+      REG["st-running"] && REG["st-yielded"] && REG["st-yieldedfor"]
+        && REG["st-stopped"] && REG["st-faulted"] && REG["st-terminated"]
+        ? "all six" : "missing", "all six");
+
+  press("yield");
+  chk("yielding leaves Running", now(), "Yielded");
+  press("wake");
+  chk("and an upcall brings it back", now(), "Running");
+  press("waitfor");
+  chk("waiting for one upcall is its own state", now(), "YieldedFor");
+
+  press("stop");
+  chk("stopping records what it interrupted", REG["st-was"].textContent, "YieldedFor");
+  chk("and says so", open_(), "stopped");
+  press("resume");
+  chk("resuming puts it back exactly there, not into Running", now(), "YieldedFor");
+
+  reset();
+  press("fault");
+  chk("a fault ends it", now(), "Faulted");
+  press("restart");
+  chk("restarting a faulted process is refused", now(), "Faulted");
+  chk("and the refusal is counted rather than silent",
+      REG["st-refused"].textContent, "1");
+  chk("with the panel naming the guard",
+      REG["stp-faulted"].textContent.indexOf("try_restart") > -1, true);
+  press("terminate");
+  chk("terminating it is what clears the fault", now(), "Terminated");
+  press("restart");
+  chk("and only then can it run again", now(), "Yielded");
+
+  reset();
+  press("yield");
+  press("yield");
+  chk("yielding twice is refused, because yield is only from Running",
+      now(), "Yielded");
+  // Yielding twice cannot tell a guard on Running from no guard at all: both
+  // leave the process Yielded. A state yield has no business reaching can.
+  reset();
+  press("fault");
+  press("yield");
+  chk("and a faulted process cannot yield its way out", now(), "Faulted");
+  press("terminate");
+  press("yield");
+  chk("nor can a terminated one", now(), "Terminated");
+
+  (function () {
+    var CALLS = ["yield", "waitfor", "wake", "stop", "resume", "fault",
+                 "terminate", "restart"];
+    var NAMES = "running yielded yieldedfor stopped faulted terminated";
+    var i, k, bad = 0;
+    for (i = 0; i < CALLS.length; i++) {
+      reset();
+      for (k = 0; k < 12; k++) { press(CALLS[(i + k) % CALLS.length]); }
+      if (NAMES.indexOf(now().toLowerCase()) < 0) { bad++; }
+      if (open_().indexOf("+") > -1 || open_() === "") { bad++; }
+    }
+    chk("driven every way round, it is always in one of the six", bad, 0);
+  }());
+  reset();
 }());
-chk("Running is about willingness rather than about holding the processor",
-    REG["psp-0"].textContent.indexOf("may not be currently scheduled") > -1, true);
-chk("and Faulted says a process cannot simply be restarted",
-    REG["psp-4"].textContent.indexOf("terminated first") > -1, true);
-REG["ps-0"].fire("click");
 
 // ---- Figure 11: two boards, two policies ----
 (function () {
@@ -527,7 +591,7 @@ chk("goal 1, what a process is in flash and in RAM, is delivered by figures 4 an
     REG["rgp-2"].textContent.indexOf("flashed separately from the kernel") > -1
       && REG["mmp-6"].textContent.indexOf("The bottom") === 0, true);
 chk("goal 2, why chapter 4's promise cannot be made, is delivered by figure 1",
-    REG["twp-0"].textContent.indexOf("it arrives as bytes") > -1, true);
+    REG["cmp-kinds"].textContent.indexOf("it arrives as bytes") > -1, true);
 chk("goal 3, the search and what stops it, is delivered by figure 3",
     REG["wkp-5"].textContent.indexOf("fails to be an entry") > -1, true);
 chk("goal 4, what a process is handed, is delivered by figure 9",
@@ -537,13 +601,6 @@ chk("goal 4, what a process is handed, is delivered by figure 9",
 // Panels ship visible in the markup so a reader with no JavaScript meets all
 // of them, and the script is what puts the rest away. That inverts which side
 // has to be asserted: what matters is that the script did the hiding.
-(function () {
-  var i, hidden = 0;
-  for (i = 0; i < 5; i++) {
-    if (REG["twp-" + i].classList.contains("is-off")) { hidden++; }
-  }
-  chk("the script closes the panels the markup leaves open", hidden, 4);
-}());
 (function () {
   var i, hidden = 0;
   for (i = 0; i < 7; i++) {
@@ -692,8 +749,6 @@ chk("the reader is told where a .tbf comes from",
 // off and every panel is stacked.
 chk("the version panel names its field",
     REG["hdp-0"].textContent.indexOf("The version must be 2") === 0, true);
-chk("the YieldedFor panel names its state",
-    REG["psp-2"].textContent.indexOf("YieldedFor") === 0, true);
 chk("and the imix panel names its board",
     REG["fpp-1"].textContent.indexOf("On imix") === 0, true);
 

@@ -449,7 +449,33 @@ dfn {
   padding-top: .7rem;
 }
 
+/* ---------- Figure 1: the two kinds of code, side by side ----------
+   This was five buttons, each opening a paragraph that answered one question
+   twice. The content is a comparison and the whole point is the column that
+   differs, which a reader can only see with both columns on screen. A lookup
+   table does not want interaction; it wants to be a table. */
+.cmp { width: 100%; border-collapse: collapse; margin: .6rem 0 .3rem;
+  font-size: .92rem; }
+.cmp th, .cmp td { border: 1px solid var(--rule); padding: .5rem .65rem;
+  text-align: left; vertical-align: top; line-height: 1.5; }
+.cmp thead th { font-family: var(--display); font-size: .64rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  background: var(--surface-sunk); }
+.cmp th[scope="row"] { font-family: var(--display); font-size: .8rem;
+  font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink);
+  background: var(--surface); width: 8.5rem; }
+.cmp td { color: var(--ink-soft); }
+@media (max-width: 34rem) {
+  .cmp, .cmp tbody, .cmp tr, .cmp th, .cmp td { display: block; width: auto; }
+  .cmp thead { display: none; }
+  .cmp tr { margin-bottom: .7rem; border: 1px solid var(--rule); }
+  .cmp th, .cmp td { border: 0; }
+  .cmp td::before { content: attr(data-who) ": "; font-family: var(--display);
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-faint); display: block; }
+}
 /* An imperative naming the control, immediately above the figure it drives. */
+
 .dothis {
   font-family: var(--display);
   font-size: .9rem;
@@ -837,6 +863,37 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
   .instrument button, .bet-opt, .q-opt { min-height: 2.75rem; }
   .instrument input[type="range"] { height: 2.75rem; }
 }
+
+/* ---------- Figure 10: the six states, driven ----------
+   Six buttons opening six paragraphs told a reader what each state is. What it
+   could not tell them is the shape: which states a process passes through and
+   which two it ends in, that Stopped remembers what it interrupted, and that a
+   faulted process cannot be restarted without being terminated first. Those
+   are facts about the edges, and a list of nodes has no edges in it. */
+.stgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: .35rem; margin: .5rem 0 .7rem; }
+.stbox { border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--surface-sunk); padding: .5rem .6rem; }
+.stbox-n { display: block; font-family: var(--mono); font-size: .82rem;
+  font-weight: 600; color: var(--ink-soft); }
+.stbox-w { font-family: var(--display); font-size: .58rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
+.stbox.is-at { border-color: var(--hot); background: var(--hot-soft); }
+.stbox.is-at .stbox-n, .stbox.is-at .stbox-w { color: var(--hot); }
+/* The two a process ends in, which is the note's claim and has to be visible
+   without clicking anything. */
+.stbox.is-end { border-style: dashed; }
+.stlog { font-family: var(--mono); font-size: .8rem; line-height: 1.7;
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem;
+  margin: .2rem 0 .9rem; color: var(--ink-soft); min-height: 3.4rem; }
+.stlog-k { font-family: var(--display); font-size: .6rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  margin-right: .4rem; }
+#st-result.no { color: var(--danger); }
+.stsay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: 0 0 1rem; }
+.stp { display: none; }
+.stp.is-on { display: block; }
 </style>
 
 <div class="wrap">
@@ -906,21 +963,17 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
     <span class="instrument-title">Five questions, asked of both kinds of code</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a question. Each panel answers it twice: once for a capsule, once for a process.</p>
-    <div class="blk" role="group" aria-label="Five questions asked of a capsule and of a process">
-      <button type="button" id="tw-0" aria-pressed="true">who compiled it</button>
-      <button type="button" id="tw-1" aria-pressed="false">what language</button>
-      <button type="button" id="tw-2" aria-pressed="false">where it lands</button>
-      <button type="button" id="tw-3" aria-pressed="false">what checks it</button>
-      <button type="button" id="tw-4" aria-pressed="false">what stops it</button>
-    </div>
-    <div class="blksay">
-      <p class="blkp is-on" id="twp-0"><b>Capsule:</b> the same build as the kernel, in this tree, at the same moment. <b>Process:</b> not here. It was built somewhere else, possibly on another machine and possibly years earlier, and it arrives as bytes.</p>
-      <p class="blkp" id="twp-1"><b>Capsule:</b> Rust, and Rust with <b>#![forbid(unsafe_code)]</b> at the top of its crate. <b>Process:</b> anything at all that ends up as instructions this processor will execute.</p>
-      <p class="blkp" id="twp-2"><b>Capsule:</b> inside the kernel binary, in the 255&nbsp;kB of flash it is linked into. <b>Process:</b> a separate 256&nbsp;kB region that the kernel binary reserves and does not occupy.</p>
-      <p class="blkp" id="twp-3"><b>Capsule:</b> the compiler, once, before anything ran. <b>Process:</b> sixteen bytes of header at boot, and hardware for every instruction after that. Figure 2 is the sixteen bytes.</p>
-      <p class="blkp" id="twp-4"><b>Capsule:</b> nothing. Chapter 4 ended on exactly that. <b>Process:</b> the scheduler. A process has a timeslice, and the kernel gets the processor back whether the process agrees or not.</p>
-    </div>
+    <p class="dothis">Read down the two columns. Four of the five questions are not about the code at all &mdash; find the one that is.</p>
+    <table class="cmp" id="cmp-kinds">
+      <thead><tr><th>&nbsp;</th><th>A capsule</th><th>A process</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">who compiled it</th><td data-who="Capsule">The same build as the kernel, in this tree, at the same moment.</td><td data-who="Process">Not here. It was built somewhere else, possibly on another machine and possibly years earlier, and it arrives as bytes.</td></tr>
+        <tr><th scope="row">what language</th><td data-who="Capsule">Rust, and Rust with <code>#![forbid(unsafe_code)]</code> at the top of its crate.</td><td data-who="Process">Anything at all that ends up as instructions this processor will execute.</td></tr>
+        <tr><th scope="row">where it lands</th><td data-who="Capsule">Inside the kernel binary, in the 255&nbsp;kB of flash it is linked into.</td><td data-who="Process">A separate 256&nbsp;kB region that the kernel binary reserves and does not occupy.</td></tr>
+        <tr><th scope="row">what checks it</th><td data-who="Capsule">The compiler, once, before anything ran.</td><td data-who="Process">Sixteen bytes of header at boot, and hardware for every instruction after that. Figure 2 is the sixteen bytes.</td></tr>
+        <tr><th scope="row">what stops it</th><td data-who="Capsule">Nothing. Chapter 4 ended on exactly that.</td><td data-who="Process">The scheduler. A process has a timeslice, and the kernel gets the processor back whether the process agrees or not.</td></tr>
+      </tbody>
+    </table>
   </div>
   <div class="instrument-note">Notice that only one of the five is about the code itself. A process is not defined by what it is written in. It is defined by the fact that nobody here compiled it.</div>
 </figure>
@@ -1265,22 +1318,43 @@ argument3: app_break,</pre></button>
     <span class="instrument-title">The six states, and how a process leaves each</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a state. Two of the six are the ones a process ends in rather than passes through.</p>
-    <div class="blk" role="group" aria-label="The six states a process can be in">
-      <button type="button" id="ps-0" aria-pressed="true">Running</button>
-      <button type="button" id="ps-1" aria-pressed="false">Yielded</button>
-      <button type="button" id="ps-2" aria-pressed="false">YieldedFor</button>
-      <button type="button" id="ps-3" aria-pressed="false">Stopped</button>
-      <button type="button" id="ps-4" aria-pressed="false">Faulted</button>
-      <button type="button" id="ps-5" aria-pressed="false">Terminated</button>
+    <p class="dothis">Drive it. Every button is a real call in <code>process_standard.rs</code>, and three of them refuse from some states &mdash; the refusals are the shape worth finding. Two states have no way out except through another state first.</p>
+
+    <div class="stgrid" aria-hidden="true">
+      <div class="stbox is-at" id="st-running"><span class="stbox-n">Running</span><span class="stbox-w">has work to do</span></div>
+      <div class="stbox" id="st-yielded"><span class="stbox-n">Yielded</span><span class="stbox-w">waiting for anything</span></div>
+      <div class="stbox" id="st-yieldedfor"><span class="stbox-n">YieldedFor</span><span class="stbox-w">waiting for one thing</span></div>
+      <div class="stbox" id="st-stopped"><span class="stbox-n">Stopped</span><span class="stbox-w">set aside by somebody</span></div>
+      <div class="stbox is-end" id="st-faulted"><span class="stbox-n">Faulted</span><span class="stbox-w">ended here</span></div>
+      <div class="stbox is-end" id="st-terminated"><span class="stbox-n">Terminated</span><span class="stbox-w">ended here</span></div>
     </div>
-    <div class="blksay">
-      <p class="blkp is-on" id="psp-0">Has work to do. Note the wording in the source: it "may not be currently scheduled", but it wants to be. Running is about willingness, not about which process holds the processor this instant.</p>
-      <p class="blkp" id="psp-1">Asked to be set aside, by making the one call that means "wake me when something happens". This is where a well-behaved application spends nearly all of its life.</p>
-      <p class="blkp" id="psp-2">YieldedFor is the same, but narrower: wake me when <em>this particular</em> thing happens. The kernel will not schedule it until that one driver calls back, and which call it is waiting for is stored with the state.</p>
-      <p class="blkp" id="psp-3">Set aside by somebody else rather than by itself. The state carries the state it was in when it was stopped, so that resuming it puts it back where it was rather than at the beginning.</p>
-      <p class="blkp" id="psp-4">It touched something it should not have, and the hardware said so. A faulted process cannot simply be restarted &mdash; it has to be terminated first, so that everything it owned is cleaned up.</p>
-      <p class="blkp" id="psp-5">Finished, or killed. Everything it had has been released, and a process in this state can be run again from the beginning if somebody asks for it.</p>
+
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">the process is</span><span class="costcell-v" id="st-now">Running</span></div>
+      <div class="costcell"><span class="costcell-k">stopped from</span><span class="costcell-v" id="st-was">&mdash;</span></div>
+      <div class="costcell"><span class="costcell-k">calls refused so far</span><span class="costcell-v" id="st-refused">0</span></div>
+    </div>
+
+    <div class="loop-ctl" role="group" aria-label="Calls the kernel can make on a process">
+      <button type="button" id="sc-yield">it calls yield</button>
+      <button type="button" id="sc-waitfor">yield, waiting for one upcall</button>
+      <button type="button" id="sc-wake">an upcall is scheduled</button>
+      <button type="button" id="sc-stop">stop it</button>
+      <button type="button" id="sc-resume">resume it</button>
+      <button type="button" id="sc-fault">it faults</button>
+      <button type="button" id="sc-terminate">terminate it</button>
+      <button type="button" id="sc-restart">restart it</button>
+      <button type="button" id="sc-reset">start over</button>
+    </div>
+
+    <p class="stlog"><span class="stlog-k">last call</span> <span id="st-last">none yet</span><br><span class="stlog-k">result</span> <span id="st-result" data-start="a process the kernel has just started is Running">a process the kernel has just started is Running</span></p>
+
+    <div class="stsay">
+      <p class="stp is-on" id="stp-start">Six states, and the two drawn with a dashed edge are the ones a process ends in rather than passes through. Getting out of either takes another call first, and one of the two will not take the obvious one.</p>
+      <p class="stp" id="stp-stopped">Stopped carries the state it interrupted, which is why the readout has somewhere to put it. Resuming does not guess: it puts the process back exactly where it was, so a process stopped while waiting goes back to waiting rather than to running.</p>
+      <p class="stp" id="stp-faulted">Faulted, and this is the one worth pushing at. Try to restart it. A faulted process cannot be made runnable directly &mdash; <b>try_restart</b> returns unless the state is already Terminated, so the fault has to be cleaned up by terminating first.</p>
+      <p class="stp" id="stp-terminated">Terminated, and a process here can be run again from the beginning. That is the difference between the two ending states: one is a dead end until something clears it, and the other is a starting line.</p>
+      <p class="stp" id="stp-refused">That call was refused, and nothing happened. The kernel does not fault a process for asking at the wrong moment; the method checks the state, returns, and leaves the process where it was.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that a capsule has none of these. It is called, it returns, and there is no state anywhere describing it in between &mdash; which is exactly why chapter 4's loop could not be stopped.</div>
@@ -1533,8 +1607,6 @@ argument3: app_break,</pre></button>
     pick(opening);
   }
 
-  /* ---------------- Figure 1: capsule against process ---------------- */
-  group("tw-", "twp-", 5, "", "is-on", "is-off");
 
   /* ---------------- Figure 2: the header fields ---------------- */
   group("hd-", "hdp-", 5, "", "is-on", "is-off");
@@ -1765,8 +1837,112 @@ argument3: app_break,</pre></button>
   /* ---------------- Figure 9: the four arguments ---------------- */
   group("ag-", "agp-", 4, "", "is-on", "is-off");
 
-  /* ---------------- Figure 10: the six states ---------------- */
-  group("ps-", "psp-", 6, "", "is-on", "is-off");
+  /* ---------------- Figure 10: the six states, driven ----------------
+     Every transition below is one method in kernel/src/process_standard.rs,
+     and every refusal is that method's own guard rather than a rule invented
+     for the figure:
+
+       set_yielded_state     :688  only from Running
+       stop                  :719  Running/Yielded/YieldedFor remember which
+       resume                :735  puts back exactly what stop recorded
+       set_fault_state       :745  to Faulted
+       try_restart           :782  returns unless the state is Terminated
+       terminate             :803  returns unless running, or already Faulted
+
+     The last two are the point. A faulted process cannot be restarted; it has
+     to be terminated first, and a list of six states cannot show that. */
+  (function () {
+    var at = "running", was = null, refused = 0;
+    var STATES = ["running", "yielded", "yieldedfor", "stopped",
+                  "faulted", "terminated"];
+    var NAME = { running: "Running", yielded: "Yielded",
+                 yieldedfor: "YieldedFor", stopped: "Stopped",
+                 faulted: "Faulted", terminated: "Terminated" };
+
+    function el(id) { return document.getElementById(id); }
+
+    /* Each call returns the state it moves to, or null for a refusal. */
+    var CALL = {
+      yield: function () { return at === "running" ? "yielded" : null; },
+      waitfor: function () {
+        if (at === "running") { return "yieldedfor"; }
+        // stop() records YieldedFor, and set_yielded_for_state takes it back.
+        return (at === "stopped" && was === "yieldedfor") ? "yieldedfor" : null;
+      },
+      wake: function () {
+        return (at === "yielded" || at === "yieldedfor") ? "running" : null;
+      },
+      stop: function () {
+        return (at === "running" || at === "yielded" || at === "yieldedfor")
+          ? "stopped" : null;
+      },
+      resume: function () { return at === "stopped" ? was : null; },
+      fault: function () { return at === "faulted" ? null : "faulted"; },
+      terminate: function () {
+        // Running counts as running; so do the two yielded states. A faulted
+        // process may be terminated, which is how a fault gets cleaned up.
+        return (at === "running" || at === "yielded" || at === "yieldedfor"
+                || at === "faulted") ? "terminated" : null;
+      },
+      restart: function () { return at === "terminated" ? "yielded" : null; }
+    };
+
+    function draw(said, refusedNow) {
+      var i, s, open;
+      for (i = 0; i < STATES.length; i++) {
+        s = STATES[i];
+        el("st-" + s).classList.toggle("is-at", s === at);
+      }
+      el("st-now").textContent = NAME[at];
+      el("st-was").textContent = (at === "stopped" && was) ? NAME[was] : "\u2014";
+      el("st-refused").textContent = String(refused);
+      if (said) { el("st-result").textContent = said; }
+      el("st-result").classList.toggle("no", !!refusedNow);
+      open = refusedNow ? "refused"
+        : (at === "faulted" ? "faulted"
+        : (at === "terminated" ? "terminated"
+        : (at === "stopped" ? "stopped" : "start")));
+      var SAY = ["start", "stopped", "faulted", "terminated", "refused"], k;
+      for (k = 0; k < SAY.length; k++) {
+        el("stp-" + SAY[k]).classList.toggle("is-on", SAY[k] === open);
+      }
+    }
+
+    /* The words for what happened come off the button that was pressed and
+       out of NAME, so nothing here writes a sentence -- the readout holds a
+       call and a result, and the panels below hold the prose. */
+    function wire(key) {
+      var button = el("sc-" + key);
+      button.addEventListener("click", function () {
+        var to = CALL[key]();
+        el("st-last").textContent = button.textContent;
+        if (to === null) {
+          refused++;
+          draw("refused, and it stayed " + NAME[at], true);
+          return;
+        }
+        if (to === "stopped") { was = at; }
+        else if (at === "stopped") { was = null; }
+        var from = at;
+        at = to;
+        draw(NAME[from] + " \u2192 " + NAME[at], false);
+      });
+    }
+    wire("yield");
+    wire("waitfor");
+    wire("wake");
+    wire("stop");
+    wire("resume");
+    wire("fault");
+    wire("terminate");
+    wire("restart");
+    el("sc-reset").addEventListener("click", function () {
+      at = "running"; was = null; refused = 0;
+      el("st-last").textContent = "none yet";
+      draw(el("st-result").getAttribute("data-start"), false);
+    });
+    draw(null, false);
+  }());
 
   /* ---------------- Figure 11: two boards, two policies ---------------- */
   group("fp-", "fpp-", 2, "is-on", "is-on", "");
