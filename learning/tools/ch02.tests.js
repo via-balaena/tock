@@ -744,6 +744,17 @@ chk("question 2 is still waiting", REG["qa-2"].classList.contains("is-off"), tru
 
 // This one contradicted Figure 14 until it was fixed: the chapter proves by
 // compiling that a lone store is kept.
+// The prose used to restate, twenty lines below the figure, the confession the
+// figure panel had already made -- and left the rule itself only inside a panel
+// a reader has to click for. It states the rule now, in the reading flow.
+(function () {
+  var t = REG["whatsurvives"].textContent;
+  chk("the prose says what the optimizer does take",
+      t.indexOf("Repeated stores, reordered stores and ignored reads go missing") > -1, true);
+  chk("and what it leaves alone",
+      t.indexOf("a single store you never read back stays") > -1, true);
+}());
+
 chk("the compiler answer no longer claims a lone store is deleted",
     REG["qa-3"].textContent.indexOf("delete a store nothing reads back"), -1);
 chk("and says what actually happens to one",

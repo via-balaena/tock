@@ -1120,6 +1120,38 @@ def figure_reachable_checks(html):
     return problems
 
 
+def own_path_checks(html):
+    """A page naming a file of its own that is not where it says.
+
+    Every path under `learning/` is this series talking about itself, so unlike
+    a citation into the kernel tree it is checkable against the working tree
+    for free. Nothing was checking them.
+
+    Chapter 2's provenance list said Figure 4 was built from
+    `learning/ch01-everything-is-memory/optimizer-demo.rs`. The file moved with
+    the material when chapter 1 was split, and `demo_source_checks` kept
+    passing because it joins the filename to the chapter directory itself and
+    never reads the sentence. The figure's own note said "beside this page",
+    which was true, so the page contradicted itself in two places forty lines
+    apart and every check agreed with both.
+
+    That is the shape to watch for: a path in prose is a claim, and the checks
+    that use the same file compute the path instead of reading it.
+    """
+    problems = []
+    seen = set()
+    text = re.sub(r"<script.*?</script>", " ", html, flags=re.S)
+    for path in re.findall(r"\blearning/[A-Za-z0-9_./-]*[A-Za-z0-9_]", text):
+        path = html_module.unescape(path)
+        if path in seen:
+            continue
+        seen.add(path)
+        if not os.path.exists(os.path.join(os.path.dirname(ROOT), path)):
+            problems.append("the page names learning/%s, and there is no such "
+                            "file or directory" % path[len("learning/"):])
+    return problems
+
+
 def map_node_checks(html):
     """A node on the cover's map drawn with a number that is not its own.
 
@@ -2528,6 +2560,7 @@ def static_checks(html, name):
     problems.extend(assembled_listing_checks(html, os.path.join(ROOT, name)))
     problems.extend(citation_chain_checks(html))
     problems.extend(figure_reachable_checks(html))
+    problems.extend(own_path_checks(html))
     problems.extend(counted_tree_checks(html))
     problems.extend(staticref_inventory_checks(html))
     problems.extend(shared_client_checks(html))
@@ -3757,7 +3790,11 @@ def main():
     print("-" * len("index"))
     problems = index_checks(ROOT, chapters)
     with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
-        problems += map_node_checks(fh.read())
+        cover = fh.read()
+    problems += map_node_checks(cover)
+    # The cover points at tools/check.py by name, and is the one page that does
+    # not go through static_checks, so it would keep that promise unchecked.
+    problems += own_path_checks(cover)
     for problem in problems:
         print("  FAIL  %s" % problem)
     if problems:
