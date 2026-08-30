@@ -963,13 +963,35 @@ the cheapest come first:
 Run `make prepush` from the repository root too, if you have touched anything
 outside `learning/`.
 
-## Viewing a chapter
+## Reading it
 
-The pages are self-contained: no build step, no bundler, no external assets beyond
-Google Fonts. Open `index.html` in a browser, or serve the directory:
+The nine pages are self-contained -- no build step, no bundler, no external
+assets beyond Google Fonts -- but reading them one directory at a time is
+reading nine things rather than one book. `mkbook.py` binds them into a single
+document with a router, and `serve.py` serves that and rebuilds it on every
+request:
 
 ```
-python3 -m http.server --directory learning 8000
+python3 learning/tools/serve.py
+```
+
+A full build is about 0.15 seconds, so there is no watcher and no build product
+to go stale: edit a chapter, and the page reloads itself into what you just
+saved. `#ch05` deep-links a chapter, `?theme=dark` forces a theme instead of
+following the system, and any other path is served out of `learning/` as an
+ordinary file, so a single chapter still reads at its own URL.
+
+Two things it does that opening a built file cannot. It supplies the doctype
+and `<head>` the pages deliberately lack -- the host adds those at publish
+time, and without them a browser renders in quirks mode, so "it looked right
+locally" stops meaning anything. And when the gate refuses to build the book,
+the failure becomes the page, rather than leaving the last good build on screen
+while a broken edit looks fine.
+
+To build the file without serving it:
+
+```
+python3 learning/tools/mkbook.py /tmp/book.html
 ```
 
 ## License

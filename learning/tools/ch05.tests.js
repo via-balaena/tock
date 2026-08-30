@@ -32,6 +32,60 @@ function walk(btn, panel, n, name) {
   }
 }
 
+// ---- What a reader with no JavaScript is shown ----
+// Every readout below ships a value in the markup and is overwritten by the
+// script at load. That makes the markup's copy invisible to every other
+// assertion here, and wrong for the only reader who ever sees it: the one with
+// scripting off. Figure 8 shipped exactly that defect -- a switch reading 0
+// over a sentence describing a 1 -- and nothing caught it.
+//
+// This runs before anything is clicked, so what the script has computed is
+// still the opening state, and comparing the two is the whole check.
+(function () {
+  // PAGE_TEXT is a raw global rather than one of the scoped proxies, so in the
+  // assembled book its keys carry a chNN-- prefix and a literal lookup finds
+  // nothing at all. Match on the suffix, and treat "not found" as a failure
+  // rather than as a pass.
+  function shipped(id) {
+    var k;
+    for (k in PAGE_TEXT) {
+      if (k === id || k.slice(-(id.length + 2)) === "--" + id) {
+        return PAGE_TEXT[k];
+      }
+    }
+    return null;
+  }
+  var LIVE = [
+    // figure 2, the register builder
+    "rb-hex", "rl-hex", "rb-base", "rb-sh", "rb-ap", "rb-xn",
+    "rl-limit", "rl-pxn", "rl-idx", "rl-en", "bench-size-badge",
+    "rb-decode", "rl-decode", "rg-decode",
+    // figure 3, the region and the probe
+    "brk-badge", "ro-grant", "ro-waste", "ro-last", "ro-rlar", "probe-badge",
+    // figure 1, the access
+    "ac-who",
+    // figure 5, the rack
+    "rk-count", "rw-2", "rw-7",
+    // figure 6, the two chips
+    "cmp-badge", "cmp-a8", "cmp-a7", "cmp-g8", "cmp-g7",
+    "cmp-s8", "cmp-s7", "cmp-l8", "cmp-l7",
+    // figure 7, the fault
+    "mx-who", "mx-mode", "mx-mmfar", "mx-flag", "fl-at",
+    // figure 8, the control bits
+    "ctrl-hex", "swv-en", "swv-priv", "swv-hf"
+  ];
+  var i, id, was, now, bad = [];
+  for (i = 0; i < LIVE.length; i++) {
+    id = LIVE[i];
+    was = shipped(id);
+    now = REG[id].textContent;
+    if (was === null) { bad.push(id + " (no markup text)"); continue; }
+    if (was !== now) { bad.push(id + ": markup " + was + ", script " + now); }
+  }
+  chk("every readout's markup value is the one the script computes at load",
+      bad.join(" | "), "");
+}());
+
 // ---- No figure may boot empty ----
 // Most readers never click, so a figure that opens on "choose something"
 // teaches nothing. Checked first, because everything below moves these.
