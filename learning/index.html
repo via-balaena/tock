@@ -178,6 +178,55 @@ code {
   word-break: break-word;
 }
 
+
+/* ---------- the dependency map ----------
+   "Reading order is dependency order" was a sentence, and the order itself was
+   reachable only by hovering eight cards one at a time -- which does nothing
+   at all on a touchscreen, and nothing for anyone who does not think to try.
+   The structure is small enough to draw, so it is drawn.
+
+   Marking a chapter read is what fills it in, which makes the map a thing to
+   plan with rather than a picture of the table of contents. */
+
+.depmap { margin: 1.6rem 0 2.2rem; }
+.map-scroll { overflow-x: auto; padding-bottom: .3rem; }
+.depmap svg { width: 100%; height: auto; min-width: 30rem; display: block; }
+
+.dep { stroke: var(--rule); stroke-width: 2; stroke-dasharray: 3 4; }
+/* An edge whose source you have read is a step you can now take. */
+.dep.is-met { stroke: var(--rule-strong); stroke-dasharray: none; }
+/* The edges into whichever chapter is selected. */
+.dep.is-sel { stroke: var(--accent); stroke-width: 3; stroke-dasharray: none; }
+
+.node { cursor: pointer; }
+.node-c { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 2; }
+.node-n { font-family: var(--display); font-size: 15px; font-weight: 700;
+  fill: var(--ink-soft); }
+.node-t { font-family: var(--display); font-size: 11px; font-weight: 600;
+  fill: var(--ink-faint); }
+.node-s { font-family: var(--mono); font-size: 10px; fill: var(--ink-faint); }
+
+/* Everything it needs is behind you. */
+.node.is-open .node-c { stroke: var(--hot); stroke-width: 2.5; }
+.node.is-open .node-n { fill: var(--hot); }
+/* You have read it. */
+.node.is-done .node-c { fill: var(--accent); stroke: var(--accent); }
+.node.is-done .node-n { fill: var(--surface); }
+.node.is-done .node-t { fill: var(--accent); }
+/* Chosen, whatever else it is. */
+.node.is-sel .node-c { stroke: var(--ink); stroke-width: 3.5; }
+.node:hover .node-t { fill: var(--ink); }
+.node:focus-visible .node-c { stroke: var(--accent); stroke-width: 4; }
+
+.mapsay { font-size: .97rem; line-height: 1.6; color: var(--ink-soft);
+  border-left: 3px solid var(--rule-strong); padding: .3rem 0 .3rem 1rem;
+  margin: .9rem 0 .5rem; min-height: 3.1em; max-width: var(--measure); }
+.mp { display: none; }
+.mp.is-on { display: inline; }
+.map-needs { font-family: var(--mono); font-size: .9rem; color: var(--ink); }
+.mapfoot { font-family: var(--mono); font-size: .72rem; color: var(--ink-faint);
+  margin: 0; }
+
 /* ---------- contents ---------- */
 
 .contents { margin: 0 0 4rem; }
@@ -378,86 +427,154 @@ pre {
   <h2>Reading order is dependency order</h2>
   <p>Chapter&nbsp;1 defines the vocabulary from nothing; everything after inherits it. Beyond that, every chapter after the first names what it stands on, so you can see the ground one needs before you open it.</p>
 
-  <div class="shelf">
+  <figure class="depmap">
+    <p class="dothis">Click a chapter to see what it stands on. Mark chapters read below and the map fills in: a chapter turns solid when you have read it, and outlined when everything it needs is behind you.</p>
+    <div class="map-scroll">
+      <svg viewBox="0 0 560 300" role="group" aria-label="The eight chapters as a dependency graph. Chapter 1 stands alone and everything else descends from it; chapter 0 is optional and stands apart.">
+        <line class="dep" id="eg-12" x1="60" y1="150" x2="168" y2="92"></line>
+        <line class="dep" id="eg-14" x1="60" y1="150" x2="168" y2="212"></line>
+        <line class="dep" id="eg-13" x1="60" y1="150" x2="280" y2="58"></line>
+        <line class="dep" id="eg-23" x1="168" y1="92" x2="280" y2="58"></line>
+        <line class="dep" id="eg-45" x1="168" y1="212" x2="280" y2="246"></line>
+        <line class="dep" id="eg-46" x1="168" y1="212" x2="392" y2="200"></line>
+        <line class="dep" id="eg-56" x1="280" y1="246" x2="392" y2="200"></line>
+        <line class="dep" id="eg-37" x1="280" y1="58" x2="500" y2="140"></line>
+        <line class="dep" id="eg-47" x1="168" y1="212" x2="500" y2="140"></line>
+        <line class="dep" id="eg-67" x1="392" y1="200" x2="500" y2="140"></line>
+        <g class="node" id="nd-0" role="button" tabindex="-1" aria-label="Chapter 0, Running it">
+          <circle class="node-c" cx="60" cy="42" r="19"></circle>
+          <text class="node-n" x="60" y="47" text-anchor="middle">0</text>
+          <text class="node-t" x="60" y="78" text-anchor="middle">Running it</text>
+        </g>
+        <g class="node" id="nd-1" role="button" tabindex="0" aria-label="Chapter 1, Memory">
+          <circle class="node-c" cx="60" cy="150" r="19"></circle>
+          <text class="node-n" x="60" y="155" text-anchor="middle">1</text>
+          <text class="node-t" x="60" y="186" text-anchor="middle">Memory</text>
+        </g>
+        <g class="node" id="nd-2" role="button" tabindex="-1" aria-label="Chapter 2, Boot">
+          <circle class="node-c" cx="168" cy="92" r="19"></circle>
+          <text class="node-n" x="168" y="97" text-anchor="middle">2</text>
+          <text class="node-t" x="168" y="128" text-anchor="middle">Boot</text>
+        </g>
+        <g class="node" id="nd-3" role="button" tabindex="-1" aria-label="Chapter 3, Drivers">
+          <circle class="node-c" cx="280" cy="58" r="19"></circle>
+          <text class="node-n" x="280" y="63" text-anchor="middle">3</text>
+          <text class="node-t" x="280" y="94" text-anchor="middle">Drivers</text>
+        </g>
+        <g class="node" id="nd-4" role="button" tabindex="-1" aria-label="Chapter 4, Processes">
+          <circle class="node-c" cx="168" cy="212" r="19"></circle>
+          <text class="node-n" x="168" y="217" text-anchor="middle">4</text>
+          <text class="node-t" x="168" y="248" text-anchor="middle">Processes</text>
+        </g>
+        <g class="node" id="nd-5" role="button" tabindex="-1" aria-label="Chapter 5, The MPU">
+          <circle class="node-c" cx="280" cy="246" r="19"></circle>
+          <text class="node-n" x="280" y="251" text-anchor="middle">5</text>
+          <text class="node-t" x="280" y="282" text-anchor="middle">The MPU</text>
+        </g>
+        <g class="node" id="nd-6" role="button" tabindex="-1" aria-label="Chapter 6, Syscalls">
+          <circle class="node-c" cx="392" cy="200" r="19"></circle>
+          <text class="node-n" x="392" y="205" text-anchor="middle">6</text>
+          <text class="node-t" x="392" y="236" text-anchor="middle">Syscalls</text>
+        </g>
+        <g class="node" id="nd-7" role="button" tabindex="-1" aria-label="Chapter 7, Grants">
+          <circle class="node-c" cx="500" cy="140" r="19"></circle>
+          <text class="node-n" x="500" y="145" text-anchor="middle">7</text>
+          <text class="node-t" x="500" y="176" text-anchor="middle">Grants</text>
+        </g>
+        <text class="node-s" x="60" y="18" text-anchor="middle">optional</text>
+      </svg>
+    </div>
+    <p class="mapsay" aria-live="polite">
+      <span class="mp is-on" id="mp-none">Nothing chosen. Click a chapter above, or start at 1 &mdash; it is the only one that stands on nothing.</span>
+      <span class="mp" id="mp-open">Ready to read: everything it stands on is behind you.</span>
+      <span class="mp" id="mp-shut">Not yet. It stands on chapters you have not marked read.</span>
+      <span class="mp" id="mp-done">You have marked this one read.</span>
+      <span class="mp" id="mp-free">Optional, and it stands on nothing. It is the only chapter here you can read at any point.</span>
+      <span class="map-needs" id="mp-needs"></span>
+    </p>
+    <figcaption class="mapfoot"><span id="mp-count">0 of 8 marked read</span> &middot; kept in this browser only, and cleared by clearing site data.</figcaption>
+  </figure>
 
-    <article class="entry" data-ch="0" data-needs="">
+  <div class="shelf" id="shelf">
+
+    <article class="entry" id="entry-0" data-ch="0" data-needs="">
       <div class="ord">0</div>
       <div>
         <h3><a href="ch00-getting-it-running/">Getting It Running</a></h3>
         <p class="hook">Tock on a chip you can hold: one command to build it, one to put it there, three wires to make it talk &mdash; and which two of this board's four flashing routes fail without saying so.</p>
         <p class="needs"><b>Optional</b></p>
       </div>
-      <button class="mark" type="button" data-mark="0" aria-label="Mark chapter 0 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-0" data-mark="0" aria-label="Mark chapter 0 as read" aria-pressed="false"></button>
     </article>
 
-    <article class="entry" data-ch="1" data-needs="">
+    <article class="entry" id="entry-1" data-ch="1" data-needs="">
       <div class="ord">1</div>
       <div>
         <h3><a href="ch01-everything-is-memory/">Everything Is Memory</a></h3>
         <p class="hook">One <code>str</code> instruction, and the 3.3&nbsp;volts it puts on a pin at the other end &mdash; and why, before any of the protections the later chapters describe, a write can land anywhere at all.</p>
         <p class="needs"><b>Needs nothing</b></p>
       </div>
-      <button class="mark" type="button" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-1" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
     </article>
 
-    <article class="entry" data-ch="2" data-needs="1">
+    <article class="entry" id="entry-2" data-ch="2" data-needs="1">
       <div class="ord">2</div>
       <div>
         <h3><a href="ch02-how-code-starts-running/">How Code Starts Running</a></h3>
         <p class="hook">Power-on to <code>main()</code>: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" actually means.</p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
       </div>
-      <button class="mark" type="button" data-mark="2" aria-label="Mark chapter 2 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-2" data-mark="2" aria-label="Mark chapter 2 as read" aria-pressed="false"></button>
     </article>
 
-    <article class="entry" data-ch="3" data-needs="1,2">
+    <article class="entry" id="entry-3" data-ch="3" data-needs="1,2">
       <div class="ord">3</div>
       <div>
         <h3><a href="ch03-what-a-driver-may-touch/">What a Driver May Touch</a></h3>
         <p class="hook">Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip &mdash; and the three things it can still do to you anyway.</p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span> <span class="chip">2</span></p>
       </div>
-      <button class="mark" type="button" data-mark="3" aria-label="Mark chapter 3 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-3" data-mark="3" aria-label="Mark chapter 3 as read" aria-pressed="false"></button>
     </article>
 
-    <article class="entry" data-ch="4" data-needs="1">
+    <article class="entry" id="entry-4" data-ch="4" data-needs="1">
       <div class="ord">4</div>
       <div>
         <h3><a href="ch04-what-a-process-is/">What a Process Is</a></h3>
         <p class="hook">Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it.</p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
       </div>
-      <button class="mark" type="button" data-mark="4" aria-label="Mark chapter 4 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-4" data-mark="4" aria-label="Mark chapter 4 as read" aria-pressed="false"></button>
     </article>
 
-    <article class="entry" data-ch="5" data-needs="4">
+    <article class="entry" id="entry-5" data-ch="5" data-needs="4">
       <div class="ord">5</div>
       <div>
         <h3><a href="ch05-the-memory-protection-unit/">The Memory Protection Unit</a></h3>
         <p class="hook">The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process.</p>
         <p class="needs"><b>Needs</b> <span class="chip">4</span></p>
       </div>
-      <button class="mark" type="button" data-mark="5" aria-label="Mark chapter 5 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-5" data-mark="5" aria-label="Mark chapter 5 as read" aria-pressed="false"></button>
     </article>
 
-    <article class="entry" data-ch="6" data-needs="4,5">
+    <article class="entry" id="entry-6" data-ch="6" data-needs="4,5">
       <div class="ord">6</div>
       <div>
         <h3><a href="ch06-asking-the-kernel/">Asking the Kernel</a></h3>
         <p class="hook">One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that.</p>
         <p class="needs"><b>Needs</b> <span class="chip">4</span> <span class="chip">5</span></p>
       </div>
-      <button class="mark" type="button" data-mark="6" aria-label="Mark chapter 6 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-6" data-mark="6" aria-label="Mark chapter 6 as read" aria-pressed="false"></button>
     </article>
 
-    <article class="entry" data-ch="7" data-needs="3,4,6">
+    <article class="entry" id="entry-7" data-ch="7" data-needs="3,4,6">
       <div class="ord">7</div>
       <div>
         <h3><a href="ch07-grants/">Grants</a></h3>
         <p class="hook">How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and not freed until the process exits.</p>
         <p class="needs"><b>Needs</b> <span class="chip">3</span> <span class="chip">4</span> <span class="chip">6</span></p>
       </div>
-      <button class="mark" type="button" data-mark="7" aria-label="Mark chapter 7 as read" aria-pressed="false"></button>
+      <button class="mark" type="button" id="mark-7" data-mark="7" aria-label="Mark chapter 7 as read" aria-pressed="false"></button>
     </article>
 
   </div>
@@ -507,47 +624,119 @@ pre {
 
 <script>
 (function () {
-  var shelf = document.querySelector(".shelf");
-  if (shelf) { shelf.classList.add("interactive"); }
+  "use strict";
 
-  var entries = Array.prototype.slice.call(document.querySelectorAll(".entry"));
-  var byNum = {};
-  entries.forEach(function (e) { byNum[e.getAttribute("data-ch")] = e; });
+  /* Rewritten to reach elements by id alone. It used querySelector, which the
+     gate's DOM shim deliberately does not implement -- so this page, the front
+     door of the series, was the one page with no behavioural assertions at all
+     and the one page mkbook.py left out of the book's assertion run. Every id
+     it needs is in the markup now, and cover.tests.js exercises it. */
 
-  function light(entry, on) {
-    var needs = (entry.getAttribute("data-needs") || "").split(",");
-    needs.forEach(function (n) {
-      if (n && byNum[n]) { byNum[n].classList.toggle("lit", on); }
-    });
-  }
-
-  entries.forEach(function (entry) {
-    entry.addEventListener("mouseenter", function () { light(entry, true); });
-    entry.addEventListener("mouseleave", function () { light(entry, false); });
-    entry.addEventListener("focusin", function () { light(entry, true); });
-    entry.addEventListener("focusout", function () { light(entry, false); });
-  });
-
+  var NEEDS = { 0: [], 1: [], 2: [1], 3: [1, 2], 4: [1], 5: [4], 6: [4, 5],
+                7: [3, 4, 6] };
+  var EDGES = [[1,2],[1,4],[1,3],[2,3],[4,5],[4,6],[5,6],[3,7],[4,7],[6,7]];
   var KEY = "tock-series-read-v1";
   var read = {};
-  try { read = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { read = {}; }
+  var chosen = null;
 
-  function paint(entry, on) {
-    entry.classList.toggle("read", on);
-    var btn = entry.querySelector(".mark");
-    if (btn) { btn.setAttribute("aria-pressed", on ? "true" : "false"); }
+  try { read = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; }
+  catch (e) { read = {}; }
+
+  function isRead(n) { return !!read[n]; }
+  function open_(n) {
+    var i, needs = NEEDS[n];
+    for (i = 0; i < needs.length; i++) {
+      if (!isRead(needs[i])) { return false; }
+    }
+    return true;
   }
 
-  entries.forEach(function (entry) {
-    var n = entry.getAttribute("data-ch");
-    paint(entry, !!read[n]);
-    var btn = entry.querySelector(".mark");
-    if (!btn) { return; }
-    btn.addEventListener("click", function () {
+  function draw() {
+    var n, i, a, b, edge, node, entry, done = 0, state, needs, missing;
+
+    for (n = 0; n <= 7; n++) {
+      node = document.getElementById("nd-" + n);
+      entry = document.getElementById("entry-" + n);
+      node.classList.toggle("is-done", isRead(n));
+      node.classList.toggle("is-open", !isRead(n) && open_(n));
+      node.classList.toggle("is-sel", chosen === n);
+      node.setAttribute("tabindex", chosen === n || (chosen === null && n === 1)
+                        ? "0" : "-1");
+      entry.classList.toggle("read", isRead(n));
+      entry.classList.toggle("lit", chosen !== null && NEEDS[chosen].indexOf(n) > -1);
+      document.getElementById("mark-" + n)
+        .setAttribute("aria-pressed", isRead(n) ? "true" : "false");
+      if (isRead(n)) { done++; }
+    }
+
+    for (i = 0; i < EDGES.length; i++) {
+      a = EDGES[i][0];
+      b = EDGES[i][1];
+      edge = document.getElementById("eg-" + a + b);
+      edge.classList.toggle("is-met", isRead(a));
+      edge.classList.toggle("is-sel", chosen === b);
+    }
+
+    /* Which sentence applies. All five are in the markup; the only thing
+       written from here is a list of chapter numbers. */
+    if (chosen === null) { state = "none"; }
+    else if (isRead(chosen)) { state = "done"; }
+    else if (NEEDS[chosen].length === 0) { state = chosen === 0 ? "free" : "open"; }
+    else { state = open_(chosen) ? "open" : "shut"; }
+    var NAMES = ["none", "open", "shut", "done", "free"];
+    for (i = 0; i < NAMES.length; i++) {
+      document.getElementById("mp-" + NAMES[i])
+        .classList.toggle("is-on", NAMES[i] === state);
+    }
+
+    missing = [];
+    if (chosen !== null) {
+      needs = NEEDS[chosen];
+      for (i = 0; i < needs.length; i++) {
+        if (!isRead(needs[i])) { missing.push(needs[i]); }
+      }
+    }
+    document.getElementById("mp-needs").textContent =
+      state === "shut" ? " Still to read: " + missing.join(", ") + "." : "";
+    document.getElementById("mp-count").textContent = done + " of 8 marked read";
+  }
+
+  function choose(n) { chosen = n; draw(); }
+
+  function wireNode(n) {
+    var node = document.getElementById("nd-" + n);
+    node.addEventListener("click", function () { choose(n); });
+    node.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        if (e.preventDefault) { e.preventDefault(); }
+        choose(n);
+      }
+    });
+  }
+  function wireMark(n) {
+    document.getElementById("mark-" + n).addEventListener("click", function () {
       if (read[n]) { delete read[n]; } else { read[n] = 1; }
       try { localStorage.setItem(KEY, JSON.stringify(read)); } catch (e) {}
-      paint(entry, !!read[n]);
+      draw();
     });
-  });
-})();
+  }
+  /* Hovering a card still lights what it stands on, which is the same
+     relation the map draws. It is no longer the only way to reach it. */
+  function wireEntry(n) {
+    var entry = document.getElementById("entry-" + n);
+    entry.addEventListener("mouseenter", function () { choose(n); });
+    entry.addEventListener("focusin", function () { choose(n); });
+  }
+
+  /* The mark buttons are `display: none` until this class is added, so that a
+     reader with no scripting is not offered a control that would do nothing.
+     Dropping this line hides all eight of them and takes the map's only input
+     with them -- and nothing in the shim can see a CSS rule, so only a render
+     or this assertion catches it. */
+  document.getElementById("shelf").classList.add("interactive");
+
+  var i;
+  for (i = 0; i <= 7; i++) { wireNode(i); wireMark(i); wireEntry(i); }
+  draw();
+}());
 </script>

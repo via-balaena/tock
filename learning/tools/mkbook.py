@@ -322,8 +322,12 @@ def assertions_hold(page):
     namespace. Two of them compare an ARIA target, whose value must now carry
     the page prefix, and those are counted rather than failed.
 
-    The cover has no suite, and its script uses a `document.querySelector` the
-    shim does not implement, so it is left out of this and rendered by eye.
+    The cover used to be left out of this, because its script reached elements
+    with `document.querySelector` -- which the shim refuses on purpose -- so it
+    could not be run at all. It has a suite now and is run like the rest, which
+    matters here more than on its own page: the cover is the one section whose
+    ids collide with nothing and whose script addresses eight chapters, so a
+    prefixing mistake would show up here first.
     """
     spec = importlib.util.spec_from_file_location("check",
                                                   os.path.join(TOOLS, "check.py"))
@@ -332,8 +336,7 @@ def assertions_hold(page):
     if not os.path.exists(check.JSC):
         return ["jsc not found, so the book's behaviour was not checked"]
 
-    trimmed = re.sub(r"/\* ---- cover ---- \*/\n\(function \(D\) \{.*?\n\}\(document\)\);",
-                     "", page, flags=re.S)
+    trimmed = page
     parts = ["var PASS = 0, FAIL = 0, PREFIXED = 0, WHY = [];",
              "var REAL = REG, RDOC = document;",
              """function scoped(k) { return new Proxy({}, { get: function (t, p) {
@@ -348,6 +351,8 @@ def assertions_hold(page):
                   FAIL++; WHY.push(d); }"""]
     suites = sorted(f for f in os.listdir(TOOLS)
                     if re.fullmatch(r"ch\d\d\.tests\.js", f))
+    if os.path.exists(os.path.join(TOOLS, "cover.tests.js")):
+        suites.append("cover.tests.js")
     for name in suites:
         key = name.split(".")[0]
         with open(os.path.join(TOOLS, name), encoding="utf-8") as fh:

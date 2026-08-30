@@ -2928,9 +2928,22 @@ def index_checks(root, chapters):
 
     # The visible ordinal, the directory it links, and the order on the page
     # all have to agree. They are three hand-written copies of one fact.
-    entries = re.findall(
-        r'<article class="entry" data-ch="(\d+)" data-needs="([^"]*)">(.*?)</article>',
-        html, re.S)
+    # Attributes in any order. Requiring `data-ch` and `data-needs` to sit in
+    # exactly that place, immediately before the `>`, made this silently count
+    # zero entries the moment an `id` was added to the tag -- and "0 entries for
+    # 8 chapters" is what a cover with no contents list at all would report, so
+    # the failure did not describe what had happened. Same lesson as the
+    # positional attribute read in boot_state_checks.
+    entries = []
+    for tag in re.finditer(r'<article class="entry"([^>]*)>(.*?)</article>',
+                           html, re.S):
+        attrs, block = tag.groups()
+        number = re.search(r'data-ch="(\d+)"', attrs)
+        needs = re.search(r'data-needs="([^"]*)"', attrs)
+        if number is None or needs is None:
+            problems.append("index: an entry is missing data-ch or data-needs")
+            continue
+        entries.append((number.group(1), needs.group(1), block))
     if len(entries) != len(chapters):
         problems.append("index: %d entries for %d chapters"
                         % (len(entries), len(chapters)))
@@ -3195,6 +3208,24 @@ def main():
 
         if bad:
             failures += 1
+
+    # The cover's own script, which had no assertions at all until it stopped
+    # using `querySelector` and could be run under the shim. It is the first
+    # page anybody opens and it was the only one nothing exercised, which is
+    # exactly the wrong way round.
+    cover_tests = os.path.join(TOOLS, "cover.tests.js")
+    if os.path.exists(cover_tests):
+        print("\ncover")
+        print("-" * len("cover"))
+        with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
+            cover_html = fh.read()
+        ok, out = behavior_checks(cover_html, cover_tests)
+        if ok is None:
+            print("  ----  %s" % out)
+        else:
+            print(out)
+            if not ok:
+                failures += 1
 
     # The cover duplicates every chapter's number, title and place in the
     # order, so it runs after the chapters it describes.
