@@ -1209,5 +1209,68 @@
     "says": "Where chapter 1 left off",
     "about": "ch01",
     "kept_by": "0xD0000018"
+  },
+  {
+    "id": "cover-question-ch02",
+    "in": "cover",
+    "says": "Chapter 2 asks one question: any code can write any address, so what stops it?",
+    "about": "ch02",
+    "kept_by": "any code can write any address"
+  },
+  {
+    "id": "cover-arc-ends-grants",
+    "in": "cover",
+    "says": "the last one lands on grants, which is the final mechanism chapter 2 names",
+    "about": "ch02",
+    "kept_by": "grants"
+  },
+  {
+    "id": "cover-listings-ch02",
+    "in": "cover",
+    "says": "listings in chapters 2 and 7",
+    "about": "ch02",
+    "kept_by": "optimizer-demo.rs"
+  },
+  {
+    "id": "cover-bytecount-ch08",
+    "in": "cover",
+    "says": "in chapter 8 a byte count",
+    "about": "ch08",
+    "kept_by": "grant-sizes.rs"
+  },
+  {
+    "id": "cover-vocab-ch01",
+    "in": "cover",
+    "says": "Chapter 1 defines the vocabulary from nothing; everything after inherits it",
+    "about": "ch01",
+    "kept_by": "Every word, collected"
+  },
+  {
+    "id": "cover-begin-ch00",
+    "in": "cover",
+    "says": "Chapter 0 - Getting It Running",
+    "about": "ch00",
+    "kept_by": "Getting It Running"
+  },
+  {
+    "id": "cover-ch00-optional",
+    "in": "cover",
+    "says": "Optional - chapter 1 reads fine from an armchair",
+    "about": "ch01",
+    "kept_by": "no hardware needed"
+  },
+  {
+    "id": "cover-map-shut",
+    "in": "cover",
+    "says": "Not yet",
+    "about": null,
+    "why": "The map's word for a chapter whose prerequisites are unread. It is a state of the picture, not a promise about a later chapter."
+  },
+  {
+    "id": "cover-later-chapters",
+    "in": "cover",
+    "says": "before any of the protections the later chapters describe",
+    "about": null,
+    "why": "Chapter 1's own summary of what it is for, said on the card that links it. The chapters it means are the rest of the series, each of which carries its own entry; naming them here would duplicate the contents."
   }
 ]

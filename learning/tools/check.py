@@ -1092,6 +1092,41 @@ def staticref_inventory_checks(html):
     return problems
 
 
+def map_node_checks(html):
+    """A node on the cover's map drawn with a number that is not its own.
+
+    The map is hand-laid SVG: each node carries an id, an accessible name, a
+    digit drawn inside the circle and a title under it. Renumbering the series
+    moved the ids and the accessible names and left the drawn digits alone,
+    because a bare digit in an SVG text node looks like nothing in particular.
+    Six of the nine were wrong, two circles both read "2", and it survived a
+    full gate run -- it was found by Jon looking at the picture.
+
+    So: the digit, the id and the number in the accessible name all have to
+    agree, and no two circles may show the same one.
+    """
+    problems, seen = [], {}
+    for node in re.finditer(r'<g class="node" id="nd-(\d+)"[^>]*'
+                            r'aria-label="Chapter (\d+),[^"]*"(.*?)</g>',
+                            html, re.S):
+        nid, named, inner = node.group(1), node.group(2), node.group(3)
+        drawn = re.search(r'class="node-n"[^>]*>(\d+)</text>', inner)
+        if not drawn:
+            problems.append("the map's node nd-%s draws no number" % nid)
+            continue
+        drawn = drawn.group(1)
+        if not (nid == named == drawn):
+            problems.append(
+                "the map's node nd-%s is named chapter %s and draws %s -- the "
+                "three have to agree" % (nid, named, drawn))
+        seen.setdefault(drawn, []).append(nid)
+    for drawn, nodes in sorted(seen.items()):
+        if len(nodes) > 1:
+            problems.append("the map draws %s on %d circles: %s"
+                            % (drawn, len(nodes), ", ".join("nd-" + n for n in nodes)))
+    return problems
+
+
 def counted_tree_checks(html):
     """A figure printing a count of the tree that the tree no longer supports.
 
@@ -3224,6 +3259,15 @@ def promise_checks(root, chapters):
         if os.path.exists(page):
             with open(page, encoding="utf-8") as fh:
                 text_of[chapter.split("-", 1)[0]] = _chapter_sentences(fh.read())
+    # The cover talks about the chapters more than any chapter does, and was
+    # outside this check entirely. Renumbering the series left it saying
+    # "chapter 1 asks one question" about a sentence that had moved to chapter
+    # 2, and nothing here objected because the cover was not a page this read.
+    cover = os.path.join(root, "index.html")
+    if os.path.exists(cover):
+        with open(cover, encoding="utf-8") as fh:
+            text_of["cover"] = _chapter_sentences(fh.read())
+        prefix_of["cover"] = "index.html"
 
     seen_ids = set()
     for entry in entries:
@@ -3683,6 +3727,8 @@ def main():
     print("\nindex")
     print("-" * len("index"))
     problems = index_checks(ROOT, chapters)
+    with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as fh:
+        problems += map_node_checks(fh.read())
     for problem in problems:
         print("  FAIL  %s" % problem)
     if problems:
