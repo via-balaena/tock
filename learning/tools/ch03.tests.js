@@ -37,14 +37,15 @@ function walk(btn, panel, n, name) {
 // The rule this series is built on: most readers never click, so a figure that
 // says "select something to begin" teaches nothing. Checked before anything
 // else touches a control, because everything below moves these.
-chk("figure 1 opens with a part chosen", REG["sg-0"].getAttribute("aria-pressed"), "true");
+chk("figure 1 opens on the real declaration", REG["rba-0"].getAttribute("aria-pressed"), "true");
+chk("with no second field", REG["rbb-0"].getAttribute("aria-pressed"), "true");
 chk("figure 2 opens with a candidate chosen", REG["cd-0"].getAttribute("aria-pressed"), "true");
 chk("figure 3 opens on capsules", REG["ar-0"].getAttribute("aria-pressed"), "true");
 chk("figure 4 opens on the first step", REG["hp-0"].getAttribute("aria-pressed"), "true");
 chk("figure 6 opens on the board's line", REG["wr-0"].getAttribute("aria-pressed"), "true");
 chk("figure 7 opens on the Pico 2", REG["bd-0"].getAttribute("aria-pressed"), "true");
 chk("and each of those has its panel open",
-    REG["sgp-0"].classList.contains("is-on")
+    REG["rbp-real"].classList.contains("is-on")
       && REG["cdp-0"].classList.contains("is-on")
       && REG["arp-0"].classList.contains("is-on")
       && REG["hpp-0"].classList.contains("is-on")
@@ -62,16 +63,107 @@ chk("the SIO description is the open one",
 chk("and it is the one that names chapter 1's register",
     REG["adb-sio"].textContent.indexOf("gpio_out_set") > -1, true);
 
-// ---- Figure 1: the declaration ----
-walk("sg-", "sgp-", 5, "figure 1");
-chk("the field panel is the one that says there is a single field",
-    REG["sgp-4"].textContent.indexOf("one field") > -1, true);
-chk("and the type-parameter panel names the trait's five methods",
-    REG["sgp-2"].textContent.indexOf("five methods") > -1, true);
-REG["sg-0"].fire("click");
-chk("clicking back to the first releases the others",
-    onlyOne("sg-", 5, "is-on") + REG["sg-1"].getAttribute("aria-pressed"),
-    "0false");
+// ---- Figure 1: the reach bench ----
+// Nine combinations of a bound and a second field. What is asserted is the
+// shape of the table across all nine, not the wording of any one panel: two
+// rows never change, one row is no everywhere, and the rest turn over exactly
+// where the declaration gives them something to turn over on.
+(function () {
+  function set(a, b) { REG["rba-" + a].fire("click"); REG["rbb-" + b].fire("click"); }
+  function row(n) { return REG["rb-t" + n].classList.contains("yes"); }
+  function open_() {
+    var SAY = ["real", "more", "concrete", "pins", "raw"], i, on = [];
+    for (i = 0; i < SAY.length; i++) {
+      if (REG["rbp-" + SAY[i]].classList.contains("is-on")) { on.push(SAY[i]); }
+    }
+    return on.join("+");
+  }
+
+  set(0, 0);
+  chk("the real declaration can turn an LED on and read it back",
+      [row(1), row(2)].join(","), "true,true");
+  chk("and can do none of the other four",
+      [row(3), row(4), row(5), row(6), row(7)].join(","),
+      "false,false,false,false,false");
+  chk("with five methods on the bound", REG["rb-methods"].textContent, "5 methods");
+  chk("and it builds for any board with LEDs",
+      REG["rb-boards"].textContent, "any with LEDs");
+
+  // Configuring a pin arrives either on the LEDs' own bound or as a field.
+  set(1, 0);
+  chk("a wider bound is what lets it configure a pin", row(4), true);
+  chk("through the LEDs themselves", REG["rb-t4"].textContent, "yes, on an LED");
+  chk("and the bound is ten methods wider", REG["rb-methods"].textContent, "15 methods");
+  set(0, 1);
+  chk("or a slice of pins does it instead", row(4), true);
+  chk("through the pins", REG["rb-t4"].textContent, "yes, on a pin");
+  chk("without widening what it may call on an LED",
+      REG["rb-methods"].textContent, "5 methods");
+
+  // The concrete type is the one that costs every other board.
+  set(2, 0);
+  chk("only a concrete type lets it say which chip it is on", row(5), true);
+  chk("and the price is on the readout", REG["rb-boards"].textContent, "this chip only");
+  set(1, 0);
+  chk("which the generic version does not pay",
+      REG["rb-boards"].textContent, "any with LEDs");
+
+  // A raw pointer is the interesting nothing: legal to hold, useless to hold.
+  set(0, 2);
+  chk("a raw pointer field still does not reach an address", row(6), false);
+  chk("and the reason is the word, not the address",
+      REG["rb-t6"].textContent, "no, needs unsafe");
+  chk("the crate compiles all the same", REG["rb-builds"].textContent, "yes");
+  chk("and the panel names what forbids it",
+      REG["rbp-raw"].textContent.indexOf("forbid(unsafe_code)") > -1, true);
+  set(0, 0);
+  chk("while with no pointer at all there is no address to refuse",
+      REG["rb-t6"].textContent, "no, has no address");
+
+  // The whole chapter, as a column of nine identical answers.
+  (function () {
+    var a, b, reach = 0, over = 0, on = 0, read = 0, one = 0;
+    for (a = 0; a < 3; a++) {
+      for (b = 0; b < 3; b++) {
+        set(a, b);
+        if (row(7)) { reach++; }              // never
+        if (row(3)) { over++; }               // never
+        if (row(1)) { on++; }                 // always
+        if (row(2)) { read++; }               // always
+        if (open_().indexOf("+") < 0 && open_() !== "") { one++; }
+      }
+    }
+    chk("in none of the nine can it touch what it was not handed", reach, 0);
+    chk("nor index past the end", over, 0);
+    chk("in all nine it can turn an LED on", on, 9);
+    chk("and read one back", read, 9);
+    chk("and exactly one sentence shows in each", one, 9);
+  }());
+
+  // The declaration on screen is the declaration being described.
+  set(2, 2);
+  chk("the shown bound follows the switch",
+      REG["rbda-2"].classList.contains("is-on"), true);
+  chk("and the other two are put away",
+      REG["rbda-0"].classList.contains("is-on")
+        || REG["rbda-1"].classList.contains("is-on"), false);
+  chk("as does the shown field", REG["rbdb-2"].classList.contains("is-on"), true);
+  // A default type parameter would leave the driver generic. Pinning it means
+  // the parameter goes and the field names the type, so both have to move.
+  chk("the concrete choice takes the type parameter out",
+      REG["rbda-2"].textContent.replace(/\s/g, ""), "");
+  chk("and names the chip's type in the field instead",
+      REG["rbfe-1"].classList.contains("is-on"), true);
+  REG["rba-1"].fire("click");
+  chk("while a bound leaves the field generic",
+      REG["rbfe-0"].classList.contains("is-on"), true);
+  chk("and puts the parameter back",
+      REG["rbda-1"].textContent.indexOf("L: led::Led") > -1, true);
+
+  chk("the parts that never move are on the page rather than behind a control",
+      REG["rb-foot"].textContent.indexOf("Two parts never move") > -1, true);
+  set(0, 0);
+}());
 
 // ---- Figure 2: which line compiles ----
 // The chapter's claim is that exactly one of the three is legal, so exactly one
@@ -435,7 +527,7 @@ chk("and in how many LEDs they have",
 // The three goals at the top, each tied to the thing on the page that delivers
 // it. A goal nothing answers is the failure mode these exist to catch.
 chk("goal 1, the one field, is delivered by figure 1",
-    REG["sgp-4"].textContent.indexOf("whole of what the driver can reach") > -1, true);
+    REG["rb-t7"].textContent.indexOf("in all nine") > -1, true);
 chk("goal 2, why a driver cannot corrupt the kernel, is delivered by figure 2",
     REG["cdp-1"].textContent.indexOf("forbids the word") > -1, true);
 chk("goal 3, which layer knows the chip, is delivered by figure 4",
@@ -471,10 +563,10 @@ chk("and it says which one can be turned back off",
 
 // The bounds check is not there because the length is known. It is there
 // because indexing past the end panics, which finding 1 is the cost of.
-chk("the NUM_LEDS panel gives the real reason for the bounds check",
-    REG["sgp-3"].textContent.indexOf("it panics") > -1, true);
+chk("the figure gives the real reason for the bounds check",
+    REG["rb-foot"].textContent.indexOf("It panics") > -1, true);
 chk("and no longer claims the known length is the cause",
-    REG["sgp-3"].textContent.indexOf("Because the length is known"), -1);
+    REG["rb-foot"].textContent.indexOf("Because the length is known"), -1);
 
 // "That line is real" has to survive being checked verbatim; the real one is a
 // module-level const, not a let binding inside a function.
@@ -488,20 +580,93 @@ chk("and the panel cites it by line",
 // imperatives and notes, which is what most readers take -- it was a bare
 // heading, in the one place a reader is most likely to stop reading.
 chk("the boundary section has an instrument of its own",
-    REG["st-0"].getAttribute("aria-pressed"), "true");
-walk("st-", "stp-", 3, "figure 8");
-REG["st-0"].fire("click");
-chk("it names the panic handler's return type",
-    REG["stp-0"].textContent.indexOf("never returns") > -1, true);
-chk("it says nothing preempts a capsule that will not return",
-    REG["stp-1"].textContent.indexOf("never left") > -1, true);
-// The third one is the finding: the earlier wording said a capsule bug could
-// not touch another capsule's state, which is true of memory and false of
-// everything a virtualizer shares.
-chk("and it says what a capsule can still do to another one",
-    REG["stp-2"].textContent.indexOf("degrades every other client") > -1, true);
-chk("with the board's own count of who shares what",
-    REG["stp-2"].textContent.indexOf("four capsules on one serial port") > -1, true);
+    REG["br-w0"].getAttribute("aria-pressed"), "true");
+// ---- Figure 8: how far each failure reaches ----
+// Two of the three reach the whole board whoever does them; the third reaches
+// exactly the other holders of what the culprit was handed. That asymmetry is
+// what the figure is for, so it is asserted across all twelve combinations
+// rather than as three strings.
+(function () {
+  function set(who, what) {
+    REG["br-w" + who].fire("click"); REG["br-h" + what].fire("click");
+  }
+  function marked(kind) {
+    var i, n = 0;
+    for (i = 0; i < 5; i++) {
+      if (REG["brc-" + i].classList.contains(kind)) { n++; }
+    }
+    return n;
+  }
+  function open_() {
+    var SAY = ["panic", "loop", "hog", "alone"], i, on = [];
+    for (i = 0; i < SAY.length; i++) {
+      if (REG["brp-" + SAY[i]].classList.contains("is-on")) { on.push(SAY[i]); }
+    }
+    return on.join("+");
+  }
+
+  // A panic and a loop take the board down whoever did it.
+  (function () {
+    var who, what, wrong = 0;
+    for (what = 0; what < 2; what++) {
+      for (who = 0; who < 4; who++) {
+        set(who, what);
+        if (REG["br-board"].textContent !== "stops") { wrong++; }
+        if (marked("is-hit") !== 4) { wrong++; }
+        if (marked("is-fine") !== 0) { wrong++; }
+      }
+    }
+    chk("a panic or a loop stops the board whichever capsule did it", wrong, 0);
+  }());
+  set(0, 0);
+  chk("and the panel names the handler's return type",
+      REG["brp-panic"].textContent.indexOf("never returns") > -1, true);
+  chk("and that it takes the LED pin for itself",
+      REG["brp-panic"].textContent.indexOf("blinks it forever") > -1, true);
+  set(0, 1);
+  chk("nothing preempts a capsule that will not return",
+      REG["brp-loop"].textContent.indexOf("never left") > -1, true);
+
+  // Hogging is the one where being handed less means doing less harm.
+  set(0, 2);
+  chk("the board keeps going when a capsule only hogs",
+      REG["br-board"].textContent, "keeps going");
+  chk("the console shares the port with two others",
+      REG["br-hit"].textContent, "2 others");
+  chk("and the panel says what a virtualizer is for",
+      REG["brp-hog"].textContent.indexOf("degrades every other client") > -1, true);
+  chk("with the board's own count of who shares what",
+      REG["brp-hog"].textContent.indexOf("three capsules on one serial port") > -1, true);
+  set(1, 2);
+  chk("the process console holds both, so it reaches three",
+      REG["br-hit"].textContent, "3 others");
+  set(2, 2);
+  chk("the alarm driver holds only the timer, so it reaches one",
+      REG["br-hit"].textContent, "one other");
+  set(3, 2);
+  chk("and the LED driver, handed one pin, reaches nobody",
+      REG["br-hit"].textContent, "nobody");
+  chk("which is the panel that says why", open_(), "alone");
+  chk("and it names figure 6 as the reason",
+      REG["brp-alone"].textContent.indexOf("Figure 6 is the reason") > -1, true);
+  chk("with every other capsule left unmarked", marked("is-hit"), 0);
+
+  // One culprit, one sentence, at every setting.
+  (function () {
+    var who, what, bad = 0;
+    for (who = 0; who < 4; who++) {
+      for (what = 0; what < 3; what++) {
+        set(who, what);
+        if (marked("is-guilty") !== 1) { bad++; }
+        if (open_().indexOf("+") > -1 || open_() === "") { bad++; }
+        if (REG["br-fix"].textContent.indexOf("nothing") < 0) { bad++; }
+      }
+    }
+    chk("one culprit and one sentence in all twelve, and nothing restarts it",
+        bad, 0);
+  }());
+  set(0, 0);
+}());
 
 // Tock's kernel is no_std and has no allocator. Chapter 7 is about handing a
 // driver per-process state without one, so naming an allocator here would have
@@ -539,18 +704,18 @@ chk("the goals promise the boundary as well as the guarantee",
 chk("and the prerequisites name the Rust as well as the chapters",
     REG["goalbox"].textContent.indexOf("lifetime and a type parameter") > -1, true);
 
-// `'a` was a visible part of a declaration under an imperative that says to
-// click the parts of it, and had no button.
-chk("the lifetime is one of the parts you can click",
-    REG["sg-1"].textContent.indexOf("'a") > -1, true);
-chk("and its panel ties it to what Figure 7 shows",
-    REG["sgp-1"].textContent.indexOf("'static") > -1, true);
-// Both halves of Figure 1's imperative -- what a part lets in, and what it
-// leaves out -- now land on every panel rather than two of four.
-chk("the name panel says what the name leaves out",
-    REG["sgp-0"].textContent.indexOf("leaves out") > -1, true);
-chk("and the count panel says what the count is not",
-    REG["sgp-3"].textContent.indexOf("not: a pin number") > -1, true);
+// `'a` is in the declaration on screen and never varies, so it is described
+// beside the bench rather than being a control that does nothing.
+chk("the lifetime is named where it cannot be missed",
+    REG["rb-foot"].textContent.indexOf("'a") > -1, true);
+chk("and tied to what Figure 7 shows",
+    REG["rb-foot"].textContent.indexOf("'static") > -1, true);
+// Both halves of the old imperative -- what a part lets in and what it leaves
+// out -- are now the two columns of the table and the line under it.
+chk("the opening panel says what the declaration leaves out",
+    REG["rbp-real"].textContent.indexOf("leaves out") > -1, true);
+chk("and the count is still said not to be a pin number",
+    REG["rb-foot"].textContent.indexOf("not: a pin number") > -1, true);
 
 // The chapter's central picture is the simplest capsule in the tree. The rule
 // survives the field count; the picture does not, and the note said nothing.
@@ -592,18 +757,18 @@ chk("and says why the detour comes first",
 // the rest away. The markup is inverted now, so what has to be asserted is
 // that the script does the hiding it took over.
 (function () {
-  var i, hidden = 0;
-  for (i = 0; i < 5; i++) {
-    if (REG["sgp-" + i].classList.contains("is-off")) { hidden++; }
+  var SAY = ["more", "concrete", "pins", "raw"], i, hidden = 0;
+  for (i = 0; i < SAY.length; i++) {
+    if (!REG["rbp-" + SAY[i]].classList.contains("is-on")) { hidden++; }
   }
   chk("the script closes the panels the markup no longer closes", hidden, 4);
 }());
 (function () {
-  var i, hidden = 0;
-  for (i = 0; i < 3; i++) {
-    if (REG["stp-" + i].classList.contains("is-off")) { hidden++; }
+  var SAY = ["loop", "hog", "alone"], i, hidden = 0;
+  for (i = 0; i < SAY.length; i++) {
+    if (!REG["brp-" + SAY[i]].classList.contains("is-on")) { hidden++; }
   }
-  chk("and does it for the last figure too", hidden, 2);
+  chk("and does it for the last figure too", hidden, 3);
 }());
 // The self-check answers are inverted the same way, and that is already
 // asserted: the four "starts with its answer hidden" checks above run after

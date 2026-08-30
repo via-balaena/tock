@@ -931,6 +931,62 @@ def _strip_rust_comments(src):
     return "".join(out)
 
 
+def shared_client_checks(html):
+    """A count of who shares a peripheral, taken by hand and gone stale.
+
+    The third hand-counted number in chapter 3 to drift with a re-pin. It said
+    four capsules on one serial port; the board hands `uart_mux` to three --
+    the console, the debug writer and the process console. Two on one timer was
+    right. Nothing checked either, and the difference between a right number
+    and a wrong one here is the size of the blast radius the figure is about.
+
+    So count how many times the board passes each mux as an argument, at the
+    chapter's own pinned commit, and compare with the numbers the page spells.
+    A `let` line and a `.finalize(...)` line are not clients, and neither is
+    the tuple the setup returns, so only bare argument lines count.
+
+    Skipped where git or the pinned commit is unavailable.
+    """
+    said = re.search(r"(\w+) capsules on one serial port and (\w+) on one timer",
+                     html_module.unescape(re.sub(r"<[^>]+>", " ", html)))
+    if not said:
+        return []
+    block = re.search(r'<section class="col sources">(.*?)</section>', html, re.S)
+    pin = re.search(r"commit <code>([0-9a-f]{7,40})</code>",
+                    block.group(1) if block else "")
+    if not pin:
+        return []
+    pin = pin.group(1)
+    if subprocess.run(["git", "cat-file", "-e", pin + "^{commit}"],
+                      capture_output=True).returncode != 0:
+        return []
+
+    WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+             "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+    want = []
+    for word in said.groups():
+        if word.lower() not in WORDS:
+            return ["the sharing sentence spells %r, which is not a number "
+                    "this can check" % word]
+        want.append(WORDS[word.lower()])
+
+    board = "boards/raspberry_pi_pico_2/src/lib.rs"
+    shown = subprocess.run(["git", "show", "%s:%s" % (pin, board)],
+                           capture_output=True, text=True)
+    if shown.returncode != 0:
+        return []
+    problems = []
+    for name, got, what in (("uart_mux", want[0], "the serial port"),
+                            ("mux_alarm", want[1], "the timer")):
+        real = len(re.findall(r"^\s+%s,\s*$" % name, shown.stdout, re.M))
+        if real != got:
+            problems.append(
+                "the page says %d capsules share %s and the board at %s hands "
+                "%s to %d -- a re-pin moves these and nothing else notices"
+                % (got, what, pin, name, real))
+    return problems
+
+
 def staticref_inventory_checks(html):
     """A figure claiming to hold every address, that is missing some.
 
@@ -2410,6 +2466,7 @@ def static_checks(html, name):
     problems.extend(citation_chain_checks(html))
     problems.extend(counted_tree_checks(html))
     problems.extend(staticref_inventory_checks(html))
+    problems.extend(shared_client_checks(html))
     problems.extend(figure_citation_checks(html))
     problems.extend(compiled_size_checks(html, os.path.join(ROOT, name)))
     problems.extend(live_name_checks(html))

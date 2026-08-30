@@ -549,26 +549,8 @@ dfn {
 .mop.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
 
 /* ---------- A row of buttons over stacked panels: Figures 1 and 8 ---------- */
-.blk { display: flex; flex-wrap: wrap; gap: .3rem; margin: .2rem 0 1rem; }
-/* Words of a program image, so they are addresses and must not be uppercased. */
-.blk button {
-  font-family: var(--mono); font-size: .82rem; font-weight: 500;
-  text-transform: none; letter-spacing: 0;
-  padding: .4rem .5rem; background: var(--surface-sunk); border: 1px solid var(--rule);
-}
-.blk button[aria-pressed="true"] {
-  border-color: var(--hot); background: var(--hot-soft); color: var(--hot);
-}
-.blksay { display: flex; flex-direction: column; gap: .45rem; margin-top: .3rem; }
-.blkp {
-  font-size: .93rem; line-height: 1.55; color: var(--ink-faint);
-  padding: .5rem .7rem; border-left: 2px solid var(--rule);
-}
-.blkp.is-on { color: var(--ink); background: var(--surface-sunk); border-left-color: var(--hot); }
-/* Seven explanations at once is a wall. The script shows one; with no
-   scripting none of that runs and all seven stay readable. */
-.blkp.is-off { display: none; }
-.blkp b { font-family: var(--mono); font-weight: 500; }
+/* A register or a line of source set inside Figure 8's panels. */
+.brp b { font-family: var(--mono); font-weight: 500; }
 
 /* ---------- An offset beside a name: Figure 6 ---------- */
 .vt { display: flex; flex-direction: column; gap: 2px; margin: .2rem 0 1rem; }
@@ -739,6 +721,71 @@ dfn {
 
    The other thing a list hid is how empty the map is. Thirty-one addresses in
    six megabytes reads as a lot until the spaces between them are drawn. */
+
+/* ---------- Figure 1: the reach bench ----------
+   The chapter's thesis is that a capsule reaches the machine through the
+   fields it was handed and nowhere else, and five buttons over one fixed
+   declaration cannot test a thesis -- there is nothing to vary. So the
+   declaration varies instead: what the LEDs are bounded by, and what second
+   field the board hands over. Nine combinations, and the row that says no in
+   all nine is the one carrying the argument. */
+
+/* ---------- Figure 8: the blast radius ----------
+   Three named failures with a paragraph each says what happens. What it cannot
+   say is the thing that makes them different from one another: how far each
+   one reaches, and that how far depends on what the misbehaving capsule was
+   handed. That is Figure 1's thesis arriving as a consequence, and it needs
+   two choices crossed rather than three panels. */
+.brwho { display: flex; gap: .5rem; flex-wrap: wrap; margin: .6rem 0 .3rem; }
+.brcap { flex: 1 1 8rem; border: 1px solid var(--rule); border-radius: 2px;
+  background: var(--surface-sunk); padding: .45rem .55rem; }
+.brcap-k { display: block; font-family: var(--mono); font-size: .78rem;
+  font-weight: 600; color: var(--ink); margin-bottom: .15rem; }
+.brcap-v { font-family: var(--display); font-size: .58rem; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--ink-faint); }
+.brcap.is-guilty { border-color: var(--hot); background: var(--hot-soft); }
+.brcap.is-guilty .brcap-k, .brcap.is-guilty .brcap-v { color: var(--hot); }
+.brcap.is-hit { border-color: var(--danger); background: var(--danger-soft); }
+.brcap.is-hit .brcap-k, .brcap.is-hit .brcap-v { color: var(--danger); }
+.brcap.is-fine { border-color: var(--accent); }
+.brcap.is-fine .brcap-v { color: var(--accent); }
+.brsay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: .6rem 0 1rem; }
+.brp { display: none; }
+.brp.is-on { display: block; }
+
+.rbdecl { font-family: var(--mono); font-size: .84rem; line-height: 1.7;
+  background: var(--surface-sunk); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .6rem .8rem; margin: .2rem 0 .8rem;
+  overflow-x: auto; white-space: pre; color: var(--ink); }
+.rbswap { display: none; }
+.rbswap.is-on { display: inline; }
+.rbswap.is-on em { font-style: normal; background: var(--hot-soft);
+  color: var(--hot); border-radius: 2px; padding: 0 .15rem; }
+.rbnil { color: var(--ink-faint); }
+
+.rbwhat { width: 100%; border-collapse: collapse; margin: .5rem 0 .3rem;
+  font-size: .86rem; }
+.rbwhat th, .rbwhat td { border: 1px solid var(--rule); padding: .32rem .55rem;
+  text-align: left; }
+.rbwhat th { font-family: var(--display); font-size: .62rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  background: var(--surface-sunk); }
+.rbwhat th[scope="row"] { font-family: var(--body); font-size: .88rem;
+  font-weight: 400; text-transform: none; letter-spacing: 0;
+  color: var(--ink); background: var(--surface); }
+.rbwhat td { font-family: var(--mono); font-size: .8rem; width: 11rem; }
+.rbwhat td.yes { color: var(--accent); background: var(--accent-soft); }
+.rbwhat td.no { color: var(--danger); background: var(--danger-soft); }
+.rbwhat tr.never th[scope="row"] { font-weight: 600; }
+
+.rbfoot { font-size: .84rem; line-height: 1.55; color: var(--ink-faint);
+  margin: .1rem 0 .8rem; }
+.rbsay { font-size: .92rem; line-height: 1.55; color: var(--ink-soft);
+  border-left: 2px solid var(--rule-strong); padding-left: .7rem; margin: .6rem 0 1rem; }
+.rbp { display: none; }
+.rbp.is-on { display: block; }
+
 .adrow { display: flex; align-items: center; gap: .7rem; margin-bottom: .5rem;
   flex-wrap: wrap; }
 .adrow label { font-family: var(--display); font-size: .72rem; font-weight: 700;
@@ -866,23 +913,54 @@ dfn {
     <span class="instrument-title">The whole reach of a driver</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click a part of the declaration. The panel says what it lets in, and what it leaves out.</p>
-<pre>pub struct LedDriver&lt;'a, L: led::Led, const NUM_LEDS: usize&gt; {
-    leds: &amp;'a [&amp;'a L; NUM_LEDS],
-}</pre>
-    <div class="blk" role="group" aria-label="The parts of the LedDriver declaration">
-      <button type="button" id="sg-0" aria-pressed="true">LedDriver</button>
-      <button type="button" id="sg-1" aria-pressed="false">'a</button>
-      <button type="button" id="sg-2" aria-pressed="false">L: led::Led</button>
-      <button type="button" id="sg-3" aria-pressed="false">NUM_LEDS</button>
-      <button type="button" id="sg-4" aria-pressed="false">leds</button>
+    <p class="dothis">Change the declaration and read the table. One row says no in all nine combinations, and finding out which one is the whole of what this chapter is for.</p>
+
+    <div class="rbdecl" aria-hidden="true">pub struct LedDriver&lt;'a, <span class="rbswap is-on" id="rbda-0"><em>L: led::Led</em>, </span><span class="rbswap" id="rbda-1"><em>L: led::Led + gpio::Configure</em>, </span><span class="rbswap" id="rbda-2"></span>const NUM_LEDS: usize&gt; {
+    leds: &amp;'a [&amp;'a <span class="rbswap is-on" id="rbfe-0">L</span><span class="rbswap" id="rbfe-1"><em>RPGpioPin&lt;'a&gt;</em></span>; NUM_LEDS],<span class="rbswap is-on" id="rbdb-0"><span class="rbnil"></span></span><span class="rbswap" id="rbdb-1">
+    <em>pins: &amp;'a [&amp;'a dyn gpio::Configure]</em>,</span><span class="rbswap" id="rbdb-2">
+    <em>raw: *mut u32</em>,</span>
+}</div>
+
+    <div class="costs" role="group" aria-label="What the LEDs are bounded by">
+      <button type="button" id="rba-0" aria-pressed="true">L: led::Led</button>
+      <button type="button" id="rba-1" aria-pressed="false">L: led::Led + gpio::Configure</button>
+      <button type="button" id="rba-2" aria-pressed="false">no L, just RPGpioPin</button>
     </div>
-    <div class="blksay">
-      <p class="blkp is-on" id="sgp-0">The driver for the LEDs on every board Tock runs on. Not one per chip &mdash; one, in <b>capsules/core/src/led.rs</b>, 158 lines including its own documentation. What the name leaves out is any chip at all: nothing here or in that file says RP2350.</p>
-      <p class="blkp" id="sgp-1">A lifetime, and the only one this driver has. It says the references in <b>leds</b> outlive the driver holding them. The board is what guarantees that, by handing over things that live for the whole run &mdash; Figure 7 shows the same slot filled in with <b>'static</b>.</p>
-      <p class="blkp" id="sgp-2"><b>L</b> stands for whatever type the board hands over. The bound after the colon is everything this driver knows about it: that it implements <b>led::Led</b>, a trait of five methods &mdash; init, on, off, toggle, read. Which chip <b>L</b> belongs to is not knowable here.</p>
-      <p class="blkp" id="sgp-3">How many there are, fixed when the board is compiled. The driver checks against it by hand, one line above the call: <b>if data &gt;= NUM_LEDS</b>. It has to, because indexing past the end of an array in safe Rust does not corrupt anything &mdash; it panics, and what that costs is Figure 8. Note what it is not: a pin number. This driver never learns which pins these are.</p>
-      <p class="blkp" id="sgp-4">The one field: a reference to an array of references. This is the whole of what the driver can reach, and there is not a number in it.</p>
+    <div class="costs" role="group" aria-label="What second field the board hands over">
+      <button type="button" id="rbb-0" aria-pressed="true">and no second field</button>
+      <button type="button" id="rbb-1" aria-pressed="false">and a slice of pins</button>
+      <button type="button" id="rbb-2" aria-pressed="false">and a raw pointer</button>
+    </div>
+
+    <p class="rbfoot" id="rb-foot">Two parts never move. <b>'a</b> is the only lifetime this driver has, and it says the references in <b>leds</b> outlive the driver holding them. The board is what guarantees that, and Figure 7 shows the same slot filled in with <b>'static</b>. And <b>NUM_LEDS</b> is not: a pin number. It is how many there are, fixed when the board is compiled. The driver checks against it by hand one line above the call, <b>if data &gt;= NUM_LEDS</b>, because indexing past the end of an array in safe Rust does not corrupt anything. It panics, and what that costs is Figure 8.</p>
+
+    <table class="rbwhat">
+      <thead>
+        <tr><th>can this driver&hellip;</th><th>&nbsp;</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">turn LED 3 on</th><td id="rb-t1">yes</td></tr>
+        <tr><th scope="row">ask whether LED 3 is on</th><td id="rb-t2">yes</td></tr>
+        <tr><th scope="row">reach LED 9, when the board handed it four</th><td id="rb-t3">no</td></tr>
+        <tr><th scope="row">make a pin an input</th><td id="rb-t4">no</td></tr>
+        <tr><th scope="row">say which chip it is running on</th><td id="rb-t5">no</td></tr>
+        <tr><th scope="row">read or write through an address of its own</th><td id="rb-t6">no</td></tr>
+        <tr class="never"><th scope="row">touch anything the board did not hand it</th><td id="rb-t7">no</td></tr>
+      </tbody>
+    </table>
+
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">on an LED it may call</span><span class="costcell-v" id="rb-methods">5 methods</span></div>
+      <div class="costcell"><span class="costcell-k">boards this builds for</span><span class="costcell-v" id="rb-boards">any with LEDs</span></div>
+      <div class="costcell"><span class="costcell-k">does the crate compile</span><span class="costcell-v" id="rb-builds">yes</span></div>
+    </div>
+
+    <div class="rbsay">
+      <p class="rbp is-on" id="rbp-real">The real declaration, in <b>capsules/core/src/led.rs</b>, 158 lines including its own documentation. One field, one lifetime, and a bound of five methods &mdash; init, on, off, toggle, read. What the name leaves out is any chip at all: nothing here or in that file says RP2350.</p>
+      <p class="rbp" id="rbp-more">Ten more methods, because <b>gpio::Configure</b> declares ten. The driver can now make its LEDs into inputs, which is a strange thing for an LED driver to want. It is the bound that decides, not the board and not what the type turns out to be.</p>
+      <p class="rbp" id="rbp-concrete">The type parameter is gone and the field names the chip's own type, so this is now a driver for one chip. Everything <b>RPGpioPin</b> has is reachable, and the price is on the readout: this file no longer builds for any board that is not this one. The generic version is not a style choice, it is what makes one driver serve every board Tock runs on.</p>
+      <p class="rbp" id="rbp-pins">A second thing handed over, and the reach grows by exactly what was handed. It can configure these pins because the board chose to give them; it still cannot reach a pin that is not in that slice, and nothing in the declaration would let it name one.</p>
+      <p class="rbp" id="rbp-raw">It may hold the pointer. It may not read or write through it, because that needs the word <b>unsafe</b>, and the crate this lives in opens with <b>#![forbid(unsafe_code)]</b>. So the field is inert: an address the driver owns, and no way to reach it. That is what the whole of this chapter is describing.</p>
     </div>
   </div>
   <div class="instrument-note" id="fig1note">Notice that there is one field. This driver is the simplest in the tree; the middle capsule has four, and the largest has thirty-one. The count does not change the rule: a capsule reaches the machine through the fields it was handed, and nowhere else.</div>
@@ -1200,19 +1278,42 @@ dfn {
 <figure class="instrument">
   <div class="instrument-head">
     <span class="instrument-label">Figure 8</span>
-    <span class="instrument-title">Three things a capsule can still do to you</span>
+    <span class="instrument-title">Three things a capsule can still do, and how far each one reaches</span>
   </div>
   <div class="instrument-body">
-    <p class="dothis">Click each one. None of these is a memory error, and the compiler prevents none of them.</p>
-    <div class="blk" role="group" aria-label="Three failures the type system does not prevent">
-      <button type="button" id="st-0" aria-pressed="true">panic</button>
-      <button type="button" id="st-1" aria-pressed="false">never return</button>
-      <button type="button" id="st-2" aria-pressed="false">hog what it shares</button>
+    <p class="dothis">Pick a capsule and pick what it does. None of these is a memory error and the compiler prevents none of them. What is left to ask is how far each one reaches, and the answer comes from what that capsule was handed.</p>
+
+    <div class="costs" role="group" aria-label="Which capsule misbehaves">
+      <button type="button" id="br-w0" aria-pressed="true">the console</button>
+      <button type="button" id="br-w1" aria-pressed="false">the process console</button>
+      <button type="button" id="br-w2" aria-pressed="false">the alarm driver</button>
+      <button type="button" id="br-w3" aria-pressed="false">the LED driver</button>
     </div>
-    <div class="blksay">
-      <p class="blkp is-on" id="stp-0">There is one <b>#[panic_handler]</b> in the whole binary and its return type is <b>!</b>, meaning it never returns. The comment above that decision says the system "is no longer in a well-defined state". On this board the handler then takes GPIO&nbsp;25 for itself and blinks it forever &mdash; the same pin Figure 6 handed to the driver.</p>
-      <p class="blkp" id="stp-1">A timeslice governs a process, not kernel code. A capsule is <em>called</em> by the kernel and runs until it returns, so one that never returns is never left. Nothing preempts it and nothing restarts it.</p>
-      <p class="blkp" id="stp-2">What a capsule was handed is often shared. This board puts four capsules on one serial port and two on one timer, each through a <b>virtualizer</b> whose stated job is to "allow multiple Tock capsules to use the same UART bus". A capsule that takes more than its share degrades every other client of it.</p>
+    <div class="costs" role="group" aria-label="What it does">
+      <button type="button" id="br-h0" aria-pressed="true">panics</button>
+      <button type="button" id="br-h1" aria-pressed="false">never returns</button>
+      <button type="button" id="br-h2" aria-pressed="false">hogs what it shares</button>
+    </div>
+
+    <div class="brwho" aria-hidden="true">
+      <span class="brcap" id="brc-0"><span class="brcap-k">console</span><span class="brcap-v" id="brv-0">uart</span></span>
+      <span class="brcap" id="brc-1"><span class="brcap-k">process console</span><span class="brcap-v" id="brv-1">uart, timer</span></span>
+      <span class="brcap" id="brc-2"><span class="brcap-k">debug writer</span><span class="brcap-v" id="brv-2">uart</span></span>
+      <span class="brcap" id="brc-3"><span class="brcap-k">alarm driver</span><span class="brcap-v" id="brv-3">timer</span></span>
+      <span class="brcap" id="brc-4"><span class="brcap-k">LED driver</span><span class="brcap-v" id="brv-4">GPIO 25</span></span>
+    </div>
+
+    <div class="costgrid">
+      <div class="costcell"><span class="costcell-k">what the board does</span><span class="costcell-v" id="br-board">stops</span></div>
+      <div class="costcell"><span class="costcell-k">others affected</span><span class="costcell-v" id="br-hit">all four</span></div>
+      <div class="costcell"><span class="costcell-k">what restarts it</span><span class="costcell-v" id="br-fix">nothing</span></div>
+    </div>
+
+    <div class="brsay">
+      <p class="brp is-on" id="brp-panic">There is one <b>#[panic_handler]</b> in the whole binary and its return type is <b>!</b>, meaning it never returns. The comment above that decision says the system "is no longer in a well-defined state". On this board the handler then takes GPIO&nbsp;25 for itself and blinks it forever &mdash; the same pin Figure 6 handed to the driver. Which capsule panicked makes no difference at all.</p>
+      <p class="brp" id="brp-loop">A timeslice governs a process, not kernel code. A capsule is <em>called</em> by the kernel and runs until it returns, so one that never returns is never left. Nothing preempts it and nothing restarts it, and again it does not matter which one it was.</p>
+      <p class="brp" id="brp-hog">Here it does matter. What a capsule was handed is often shared. This board puts three capsules on one serial port and two on one timer, each through a <b>virtualizer</b> whose stated job is to "allow multiple Tock capsules to use the same UART bus". A capsule that takes more than its share degrades every other client of it, and nobody else.</p>
+      <p class="brp" id="brp-alone">Nobody else. This driver was handed GPIO 25 and nothing else, and Figure 6 is the reason. The board author took that pin out of the general-purpose GPIO driver's list by hand, so there is no second client to degrade. Hogging a thing you are the only holder of is not a failure anyone can see.</p>
     </div>
   </div>
   <div class="instrument-note">Notice that the compiler stopped none of these. It governs what a capsule can reach, and has nothing to say about what it does with what it reached.</div>
@@ -1415,8 +1516,79 @@ dfn {
     pick(opening);
   }
 
-  /* ---------------- Figure 1: the declaration ---------------- */
-  group("sg-", "sgp-", 5, "", "is-on", "is-off");
+  /* ---------------- Figure 1: the reach bench ----------------
+     Two things about the declaration are variable and everything else is
+     computed from them: the bound on `L`, and what second field the board
+     hands over. Nothing is a special case, and one row is a constant `no` for
+     all nine combinations, which is the chapter's claim stated as arithmetic
+     rather than as a sentence.
+
+     Led declares five methods -- kernel/src/hil/led.rs:19-32 -- and
+     gpio::Configure declares ten, at kernel/src/hil/gpio.rs:87-143. RPGpioPin
+     implements Configure, Output, Input and Interrupt, at
+     chips/rp2350/src/gpio.rs:1446, :1514, :1546 and :1391. */
+  (function () {
+    var bound = 0, field = 0;
+
+    function el(id) { return document.getElementById(id); }
+    function cell(id, ok, text) {
+      var c = el(id);
+      c.textContent = text;
+      c.classList.toggle("yes", ok);
+      c.classList.toggle("no", !ok);
+    }
+
+    function draw() {
+      var k;
+      /* Configuring a pin needs a type that can, whether that arrives on the
+         LEDs' own bound or as a second field of its own. */
+      var configures = bound > 0 || field === 1;
+      var concrete = bound === 2;
+
+      cell("rb-t1", true, "yes, Led::on");
+      cell("rb-t2", true, "yes, Led::read");
+      cell("rb-t3", false, "no, it checks");
+      cell("rb-t4", configures, configures
+        ? (bound > 0 ? "yes, on an LED" : "yes, on a pin") : "no");
+      cell("rb-t5", concrete, concrete ? "yes, by name" : "no");
+      cell("rb-t6", false, field === 2 ? "no, needs unsafe" : "no, has no address");
+      cell("rb-t7", false, "no, in all nine");
+
+      el("rb-methods").textContent = concrete ? "whatever that type has"
+        : (bound === 1 ? "15 methods" : "5 methods");
+      el("rb-boards").textContent = concrete ? "this chip only" : "any with LEDs";
+      /* Holding a raw pointer is legal in a crate that forbids unsafe code.
+         Dereferencing one is not, so the crate builds and the field is inert. */
+      el("rb-builds").textContent = "yes";
+
+      for (k = 0; k < 3; k++) {
+        el("rba-" + k).setAttribute("aria-pressed", String(k === bound));
+        el("rbb-" + k).setAttribute("aria-pressed", String(k === field));
+        el("rbda-" + k).classList.toggle("is-on", k === bound);
+        // Naming the chip's type in the field, rather than defaulting the
+        // parameter to it, is what actually stops this building elsewhere.
+        if (k < 2) { el("rbfe-" + k).classList.toggle("is-on", (k === 1) === concrete); }
+        el("rbdb-" + k).classList.toggle("is-on", k === field);
+      }
+
+      /* The second field speaks when it has something to say, and the bound
+         otherwise, so every combination has exactly one sentence under it. */
+      var open = field === 2 ? "raw" : (field === 1 ? "pins"
+        : (bound === 2 ? "concrete" : (bound === 1 ? "more" : "real")));
+      var SAY = ["real", "more", "concrete", "pins", "raw"];
+      for (k = 0; k < SAY.length; k++) {
+        el("rbp-" + SAY[k]).classList.toggle("is-on", SAY[k] === open);
+      }
+    }
+
+    function wire(k) {
+      el("rba-" + k).addEventListener("click", function () { bound = k; draw(); });
+      el("rbb-" + k).addEventListener("click", function () { field = k; draw(); });
+    }
+    var k;
+    for (k = 0; k < 3; k++) { wire(k); }
+    draw();
+  }());
 
   /* ---------------- Figure 2: the same line, in two crates ----------------
      Only the first line is free of `unsafe`, so only the first is unaffected
@@ -1673,8 +1845,90 @@ dfn {
   /* ---------------- Figure 7: two boards ---------------- */
   group("bd-", "bdp-", 2, "is-on", "is-on", "");
 
-  /* ---------------- Figure 8: what is left over ---------------- */
-  group("st-", "stp-", 3, "", "is-on", "is-off");
+  /* ---------------- Figure 8: how far each failure reaches ----------------
+     Two of the three reach the whole board whoever does them, and the third
+     reaches exactly the other holders of whatever the capsule was handed. That
+     asymmetry is the figure, and it is computed from the sharing rather than
+     written per case:
+
+       panic       -> one #[panic_handler], return type `!`   io.rs:88-89
+       never return-> a capsule is called and runs to return, and a timeslice
+                      governs a process, not kernel code
+       hog         -> the other clients of the same mux
+
+     Who shares what comes from the board at the pinned commit: uart_mux is
+     handed to the console, the debug writer and the process console, and
+     mux_alarm to the alarm driver and the process console.
+     boards/raspberry_pi_pico_2/src/lib.rs:310, :361, :379, :298, :380 */
+  (function () {
+    /* the five capsules on the board, and what each was handed */
+    var HELD = [["uart"], ["uart", "timer"], ["uart"], ["timer"], ["gpio25"]];
+    /* which capsule each button blames */
+    var WHO = [0, 1, 3, 4];
+    var guilty = 0, doing = 0;
+
+    function el(id) { return document.getElementById(id); }
+
+    function shares(a, b) {
+      var i, j;
+      for (i = 0; i < HELD[a].length; i++) {
+        for (j = 0; j < HELD[b].length; j++) {
+          if (HELD[a][i] === HELD[b][j]) { return true; }
+        }
+      }
+      return false;
+    }
+
+    function hit(who) {
+      // Everyone but the culprit, when the board itself goes; otherwise the
+      // other holders of whatever the culprit was handed.
+      var i, out = [];
+      for (i = 0; i < HELD.length; i++) {
+        if (i === who) { continue; }
+        if (doing < 2 || shares(i, who)) { out.push(i); }
+      }
+      return out;
+    }
+
+    function draw() {
+      var who = WHO[guilty], hurt = hit(who), i, k;
+      var SAY = ["panic", "loop", "hog", "alone"];
+      var open = doing === 0 ? "panic"
+        : (doing === 1 ? "loop" : (hurt.length ? "hog" : "alone"));
+
+      el("br-board").textContent = doing < 2 ? "stops" : "keeps going";
+      el("br-hit").textContent = hurt.length === 0 ? "nobody"
+        : (hurt.length === 1 ? "one other" : hurt.length + " others");
+      el("br-fix").textContent = doing === 0 ? "nothing, it blinks GPIO 25"
+        : (doing === 1 ? "nothing" : "nothing, it is not a fault");
+
+      for (i = 0; i < HELD.length; i++) {
+        el("brc-" + i).classList.toggle("is-guilty", i === who);
+        el("brc-" + i).classList.toggle("is-hit", hurt.indexOf(i) > -1);
+        el("brc-" + i).classList.toggle("is-fine",
+          i !== who && hurt.indexOf(i) < 0);
+      }
+      for (k = 0; k < WHO.length; k++) {
+        el("br-w" + k).setAttribute("aria-pressed", String(k === guilty));
+      }
+      for (k = 0; k < 3; k++) {
+        el("br-h" + k).setAttribute("aria-pressed", String(k === doing));
+      }
+      for (k = 0; k < SAY.length; k++) {
+        el("brp-" + SAY[k]).classList.toggle("is-on", SAY[k] === open);
+      }
+    }
+
+    function wire(k) {
+      el("br-w" + k).addEventListener("click", function () { guilty = k; draw(); });
+      if (k < 3) {
+        el("br-h" + k).addEventListener("click", function () { doing = k; draw(); });
+      }
+    }
+    var k;
+    for (k = 0; k < WHO.length; k++) { wire(k); }
+    draw();
+  }());
 
   /* ---------------- Figure 9: what the guard reads ----------------
      Two bits decide everything, and FUNCSEL is not one of them:
