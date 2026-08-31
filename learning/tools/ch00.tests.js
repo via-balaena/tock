@@ -264,8 +264,11 @@ chk("program fails loudly on a missing application and quietly on the copy",
     REG["tgp-2"].textContent.indexOf("fails loudly") > -1
       && REG["tgp-2"].textContent.indexOf("fails quietly") > -1, true);
 REG["tg-0"].fire("click");
-chk("the route this chapter takes installs nothing board-specific",
-    REG["tgp-0"].textContent.indexOf("nothing you install after that is specific to this board") > -1, true);
+// The released OpenOCD has no rp2350.cfg, so which build you fetch is the one
+// board-specific choice on this route. The panel claimed the opposite until
+// brew install open-ocd was actually run.
+chk("the route names which build of OpenOCD as the part specific to the chip",
+    REG["tgp-0"].textContent.indexOf("which build of it you fetch is the only part") > -1, true);
 // It does need OpenOCD, which the first draft of Figure 1 denied.
 chk("and names OpenOCD as the one thing you do fetch",
     REG["tgp-0"].textContent.indexOf("one thing you fetch") > -1, true);
