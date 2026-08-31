@@ -575,7 +575,7 @@ pre {
       <div class="ord">8</div>
       <div>
         <h3><a href="ch08-grants/">Grants</a></h3>
-        <p class="hook">How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and not freed until the process exits.</p>
+        <p class="hook"> How a driver stores per-process state inside the process's own memory—bounded, with no allocator. Seventy-six bytes for a console, carved from the top of the process's memory downward, and not freed until the process exits. </p>
         <p class="needs"><b>Needs</b> <span class="chip">4</span> <span class="chip">5</span> <span class="chip">7</span></p>
       </div>
       <button class="mark" type="button" id="mark-8" data-mark="8" aria-label="Mark chapter 8 as read" aria-pressed="false"></button>
@@ -589,7 +589,7 @@ pre {
   <section class="panel">
     <p class="kicker">Why the wall before the door</p>
     <h2>Problems first, mechanisms second</h2>
-    <p>The memory protection unit comes before syscalls: meet the wall, then find the door. It is the same shape as letting a read-modify-write race lose a pin before the atomic register is offered &mdash; the mechanism means nothing until you have felt the problem it answers.</p>
+    <p>The memory protection unit comes before syscalls: meet the wall, then find the door.</p>
   </section>
 
   <section class="panel">
