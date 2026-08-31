@@ -431,6 +431,12 @@ dfn {
   border-top: 1px solid var(--rule);
   padding-top: .7rem;
 }
+.goals .beside { font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem; }
+.goals .beside a { color: var(--accent); }
 
 /* An imperative naming the control, immediately above the figure it drives. */
 .dothis {
@@ -820,6 +826,7 @@ dfn {
       <li>Follow one event from inside a driver to a function running inside a process, naming the queue it waited in.</li>
     </ul>
     <p class="cost">Plan on forty-five minutes. Chapters 5 and 6 are assumed: what a process is, and the fence the hardware puts round it. Chapter 4 comes back at the far end, because the thing that answers a request is the capsule chapter 4 was about.</p>
+    <p class="beside">In the book: <a href="https://book.tockos.org/doc/syscalls"><code>doc/syscalls</code></a> and <a href="https://book.tockos.org/trd/trd104-syscalls"><code>TRD104</code></a>, which specify the interface this chapter watches run.</p>
   </div>
 </section>
 

@@ -448,6 +448,12 @@ dfn {
   border-top: 1px solid var(--rule);
   padding-top: .7rem;
 }
+.goals .beside { font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem; }
+.goals .beside a { color: var(--accent); }
 
 /* ---------- Figure 1: the two kinds of code, side by side ----------
    This was five buttons, each opening a paragraph that answered one question
@@ -924,6 +930,7 @@ input[type="range"] { accent-color: var(--hot-fill); width: 100%; display: block
       <li>Say what a process is handed the moment it starts, and why it has to be handed anything.</li>
     </ul>
     <p class="cost">Plan on forty minutes. Chapters 1 to 4 are assumed: what an address is, how the kernel gets started, and what a capsule may touch. There is no new Rust here. Almost every line in this chapter is arithmetic.</p>
+    <p class="beside">In the book: <a href="https://book.tockos.org/doc/processes"><code>doc/processes</code></a> and <a href="https://book.tockos.org/doc/tock_binary_format"><code>doc/tock_binary_format</code></a>, which specify the header this chapter parses by hand.</p>
   </div>
 </section>
 

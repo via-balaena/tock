@@ -448,6 +448,12 @@ dfn {
   border-top: 1px solid var(--rule);
   padding-top: .7rem;
 }
+.goals .beside { font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem; }
+.goals .beside a { color: var(--accent); }
 
 /* An imperative naming the control, immediately above the figure it drives. */
 .dothis {
@@ -909,6 +915,7 @@ dfn {
       <li>Say why a call that every layer honoured can still leave the pin exactly where it was.</li>
     </ul>
     <p class="cost">Plan on forty minutes. Chapters 1 and 3 are assumed: what an address is, what a store does, and how the kernel got started. So is enough Rust to read a <dfn>struct</dfn> with a lifetime and a type parameter on it, which the Rust Book reaches in its chapter 10.</p>
+    <p class="beside">In the book: <a href="https://book.tockos.org/doc/design"><code>doc/design</code></a> and <a href="https://book.tockos.org/development/hil"><code>development/hil</code></a>, which give the rule this chapter tests by handing a driver something it was not meant to have.</p>
   </div>
 </section>
 

@@ -745,6 +745,12 @@ dfn {
   border-top: 1px solid var(--rule);
   padding-top: .7rem;
 }
+.goals .beside { font-family: var(--display);
+  font-size: .82rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: .7rem; }
+.goals .beside a { color: var(--accent); }
 
 /* An imperative naming the control, immediately above the figure it drives. */
 .dothis {
@@ -1290,6 +1296,7 @@ dfn {
       <li>Explain why <code>x |= 1</code> is a real bug on a chip with two processors, and what the hardware offers instead.</li>
     </ol>
     <p class="cost">Plan on forty minutes. Chapter 1 is the prerequisite and the only one; there is still nothing to install and no hardware needed.</p>
+    <p class="beside">In the book: nothing on this either. <code>read-modify-write</code> appears on none of its pages, and outside two lines of <a href="https://book.tockos.org/development/code_size"><code>development/code_size</code></a> the word <code>volatile</code> there is only ever about whether storage survives a reset.</p>
   </div>
 </section>
 
