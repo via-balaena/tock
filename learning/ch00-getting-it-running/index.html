@@ -436,7 +436,7 @@ button:focus-visible, [tabindex]:focus-visible, a:focus-visible {
   background: var(--surface-sunk); border: 1px solid var(--rule);
   border-radius: 2px; padding: .6rem .3rem; margin: .3rem 0 .9rem;
   overflow-x: auto; }
-.term-line { display: block; width: 100%; text-align: left;
+.term-line { display: block; width: max-content; min-width: 100%; text-align: left;
   font-family: var(--mono); font-size: .84rem; line-height: 1.7;
   font-weight: 400; text-transform: none; letter-spacing: 0;
   background: none; border: 0; border-left: 2px solid transparent;
@@ -1129,7 +1129,7 @@ tock$</pre>
       <button type="button" class="term-line" id="bo-2">Error loading processes!</button>
       <button type="button" class="term-line" id="bo-1">tock$</button>
       <button type="button" class="term-line" id="bo-3">tock$ list
- PID    Name    Quanta  Syscalls  Restarts  Grants  State</button>
+ PID    ShortID    Name                Quanta  Syscalls  Restarts  Grants  State</button>
     </div>
     <p class="proved" aria-live="polite">
       <span class="pv" id="pv-none">Nothing yet. Reset the board and watch what arrives.</span>
@@ -1358,6 +1358,7 @@ $ openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg \
     <li>The console running at 115200 &mdash; the same file, :303</li>
     <li>The banner, and where in start-up it is printed &mdash; <code>boards/raspberry_pi_pico_2/src/main.rs</code>:100</li>
     <li>The second banner sitting after the first rather than replacing it, with the search for applications between them &mdash; the same file, :100, then <code>load_processes</code> at :117, then :132</li>
+    <li>The prompt, and the header row <code>list</code> prints, both quoted as the process console writes them &mdash; <code>capsules/core/src/process_console.rs</code>:1036 for <code>tock$&nbsp;</code>, and :897&ndash;898 for the header</li>
     <li>The tree having five Pico directories, one of them a Pico 2&nbsp;W &mdash; <code>boards/</code> at that commit</li>
     <li>Pin&nbsp;25 being the light the plain Pico&nbsp;2 hands to the light driver &mdash; the same file, :95</li>
     <li>The Pico 2&nbsp;W crate having no light driver, and printing rather than blinking on a panic &mdash; <code>boards/raspberry_pi_pico_2_w/src/main.rs</code> and <code>boards/raspberry_pi_pico_2_w/src/io.rs</code></li>
