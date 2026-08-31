@@ -277,6 +277,17 @@ code {
 
 .hook { color: var(--ink-soft); margin: 0 0 .7rem; max-width: 52ch; font-size: .97rem; }
 
+.pairs {
+  font-family: var(--mono);
+  font-size: .69rem;
+  letter-spacing: .04em;
+  color: var(--ink-faint);
+  margin: 0 0 .7rem;
+  max-width: 52ch;
+}
+.pairs b { font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+.pairs a { color: var(--accent); }
+
 .needs {
   display: flex;
   flex-wrap: wrap;
@@ -406,10 +417,19 @@ pre {
 <div class="sheet">
 
 <header class="cover">
-  <p class="imprint">Eight chapters, and one before them</p>
+  <p class="imprint">An interactive companion to the Tock Book</p>
   <h1>Learning Tock from the Ground Up</h1>
-  <p class="standfirst">Microcontrollers and the Tock kernel from first principles.</p>
+  <p class="standfirst">Microcontrollers and the Tock kernel from first principles, on a Raspberry&nbsp;Pi Pico&nbsp;2 &mdash; a board the official book does not cover.</p>
 </header>
+
+<section class="panel">
+  <p class="kicker">What this is</p>
+  <h2>The book says what Tock does. These pages show it happening.</h2>
+  <p>The <a href="https://book.tockos.org/">Tock Book</a> is the project's own documentation, and it is the right place for installing the toolchain, writing applications, and the reference specifications. This series does not repeat it. Each entry below names the book page it sits beside.</p>
+  <p>Two things are missing there, and they are what these pages are for. The first is this board: the book's guided material is built around an nRF52840DK, and its getting-started list names five boards, not one of them a Pico. Everything here runs on a Pico&nbsp;2 or a Pico&nbsp;2&nbsp;W.</p>
+  <p>The second is mechanism. The book states how Tock is built; these pages take one instruction, one register, one refused write, and let you drive it until the reason is obvious. Two of the nine have no counterpart in the book at all.</p>
+</section>
+
 
 <section class="contents">
   <p class="kicker">The chapters</p>
@@ -496,7 +516,8 @@ pre {
       <div class="ord">0</div>
       <div>
         <h3><a href="ch00-getting-it-running/">Getting It Running</a></h3>
-        <p class="hook">Tock on a chip you can hold: one command to build it, one to put it there, three wires to make it talk. </p>
+        <p class="hook">Tock on a chip you can hold: one command to build it, one to put it there, three wires to make it talk.</p>
+        <p class="pairs"><b>Book</b> <a href="https://book.tockos.org/getting_started">Getting Started</a> &mdash; five boards, no Pico</p>
         <p class="needs"><b>Optional</b></p>
       </div>
       <button class="mark" type="button" id="mark-0" data-mark="0" aria-label="Mark chapter 0 as read" aria-pressed="false"></button>
@@ -506,7 +527,8 @@ pre {
       <div class="ord">1</div>
       <div>
         <h3><a href="ch01-everything-is-memory/">Everything Is Memory</a></h3>
-        <p class="hook">One <code>str</code> writes 3.3 V to a pin. The hardware determines which block answers the address, which register inside it does the work, and which of thirty pins that single bit picks. </p>
+        <p class="hook">One <code>str</code> writes 3.3 V to a pin. The hardware determines which block answers the address, which register inside it does the work, and which of thirty pins that single bit picks.</p>
+        <p class="pairs"><b>Book</b> nothing on this</p>
         <p class="needs"><b>Needs nothing</b></p>
       </div>
       <button class="mark" type="button" id="mark-1" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
@@ -516,6 +538,7 @@ pre {
       <div>
         <h3><a href="ch02-registers-are-not-variables/">Registers Are Not Variables</a></h3>
         <p class="hook">A register is not a variable, and three things go wrong when you treat it as one: what a read gives back, what the compiler does to a loop that polls, and what the second processor does to your value while you are holding it.</p>
+        <p class="pairs"><b>Book</b> nothing on this</p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
       </div>
       <button class="mark" type="button" id="mark-2" data-mark="2" aria-label="Mark chapter 2 as read" aria-pressed="false"></button>
@@ -526,6 +549,7 @@ pre {
       <div>
         <h3><a href="ch03-how-code-starts-running/">How Code Starts Running</a></h3>
         <p class="hook">Power-on to <code>main()</code>: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" actually means.</p>
+        <p class="pairs"><b>Book</b> <a href="https://book.tockos.org/doc/startup">doc/startup</a></p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
       </div>
       <button class="mark" type="button" id="mark-3" data-mark="3" aria-label="Mark chapter 3 as read" aria-pressed="false"></button>
@@ -536,6 +560,7 @@ pre {
       <div>
         <h3><a href="ch04-what-a-driver-may-touch/">What a Driver May Touch</a></h3>
         <p class="hook">Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip &mdash; and the three things it can still do to you anyway.</p>
+        <p class="pairs"><b>Book</b> <a href="https://book.tockos.org/doc/design">doc/design</a>, <a href="https://book.tockos.org/development/hil">development/hil</a></p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span> <span class="chip">3</span></p>
       </div>
       <button class="mark" type="button" id="mark-4" data-mark="4" aria-label="Mark chapter 4 as read" aria-pressed="false"></button>
@@ -545,7 +570,8 @@ pre {
       <div class="ord">5</div>
       <div>
         <h3><a href="ch05-what-a-process-is/">What a Process Is</a></h3>
-        <p class="hook"> Code the compiler never saw: sixteen trusted bytes at the start of an application, a traversal through flash that halts when the header parsing ends, and a reserved slice of RAM at the top where the kernel keeps its private record of the process. </p>
+        <p class="hook">Code the compiler never saw: sixteen trusted bytes at the start of an application, a traversal through flash that halts when the header parsing ends, and a reserved slice of RAM at the top where the kernel keeps its private record of the process.</p>
+        <p class="pairs"><b>Book</b> <a href="https://book.tockos.org/doc/processes">doc/processes</a>, <a href="https://book.tockos.org/doc/tock_binary_format">doc/tock_binary_format</a></p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
       </div>
       <button class="mark" type="button" id="mark-5" data-mark="5" aria-label="Mark chapter 5 as read" aria-pressed="false"></button>
@@ -555,7 +581,8 @@ pre {
       <div class="ord">6</div>
       <div>
         <h3><a href="ch06-the-memory-protection-unit/">The Memory Protection Unit</a></h3>
-        <p class="hook"> One instruction issues one of eight request classes across four registers; the same registers return an eight-word response. A buffer that straddles a protected region hits the fence built to stop it. </p>
+        <p class="hook">One instruction issues one of eight request classes across four registers; the same registers return an eight-word response. A buffer that straddles a protected region hits the fence built to stop it.</p>
+        <p class="pairs"><b>Book</b> <a href="https://book.tockos.org/course/root-of-trust/userspace-attack">course/root-of-trust/userspace-attack</a></p>
         <p class="needs"><b>Needs</b> <span class="chip">5</span></p>
       </div>
       <button class="mark" type="button" id="mark-6" data-mark="6" aria-label="Mark chapter 6 as read" aria-pressed="false"></button>
@@ -566,6 +593,7 @@ pre {
       <div>
         <h3><a href="ch07-asking-the-kernel/">Asking the Kernel</a></h3>
         <p class="hook">One instruction out: eight classes of request encoded in four registers, the same eight registers returning the response, and a buffer that crosses a memory boundary designed to prevent exactly that.</p>
+        <p class="pairs"><b>Book</b> <a href="https://book.tockos.org/doc/syscalls">doc/syscalls</a>, <a href="https://book.tockos.org/trd/trd104-syscalls">TRD104</a></p>
         <p class="needs"><b>Needs</b> <span class="chip">5</span> <span class="chip">6</span></p>
       </div>
       <button class="mark" type="button" id="mark-7" data-mark="7" aria-label="Mark chapter 7 as read" aria-pressed="false"></button>
@@ -575,7 +603,8 @@ pre {
       <div class="ord">8</div>
       <div>
         <h3><a href="ch08-grants/">Grants</a></h3>
-        <p class="hook"> How a driver stores per-process state inside the process's own memory—bounded, with no allocator. Seventy-six bytes for a console, carved from the top of the process's memory downward, and not freed until the process exits. </p>
+        <p class="hook">How a driver stores per-process state inside the process's own memory &mdash; bounded, with no allocator. Seventy-six bytes for a console, carved from the top of the process's memory downward, and not freed until the process exits.</p>
+        <p class="pairs"><b>Book</b> <a href="https://book.tockos.org/doc/syscalls">doc/syscalls</a>, <a href="https://book.tockos.org/development/syscall">development/syscall</a></p>
         <p class="needs"><b>Needs</b> <span class="chip">4</span> <span class="chip">5</span> <span class="chip">7</span></p>
       </div>
       <button class="mark" type="button" id="mark-8" data-mark="8" aria-label="Mark chapter 8 as read" aria-pressed="false"></button>

@@ -1211,30 +1211,9 @@
     "kept_by": "0xD0000018"
   },
   {
-    "id": "cover-arc-ends-grants",
-    "in": "cover",
-    "says": "the last chapter arrives at grants - the final mechanism chapter 2 names",
-    "about": "ch02",
-    "kept_by": "grants"
-  },
-  {
-    "id": "cover-listings-ch02",
-    "in": "cover",
-    "says": "listings in chapters 2 and 7",
-    "about": "ch02",
-    "kept_by": "optimizer-demo.rs"
-  },
-  {
-    "id": "cover-bytecount-ch08",
-    "in": "cover",
-    "says": "in chapter 8 a byte count",
-    "about": "ch08",
-    "kept_by": "grant-sizes.rs"
-  },
-  {
     "id": "cover-vocab-ch01",
     "in": "cover",
-    "says": "Chapter 1 defines the vocabulary from nothing; everything after inherits it",
+    "says": "Chapter 1 defines the vocabulary; everything after inherits it",
     "about": "ch01",
     "kept_by": "Every word, collected"
   },

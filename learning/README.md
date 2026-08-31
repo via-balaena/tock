@@ -4,42 +4,64 @@
 
 # Learning Tock from the Ground Up
 
-A series that teaches microcontrollers and the Tock kernel from first principles,
-written from the position of someone actually learning them rather than someone
-who already knows.
+An interactive companion to the [Tock Book](https://book.tockos.org/), for
+people learning microcontrollers and the Tock kernel on a Raspberry Pi Pico 2
+or Pico 2 W -- a board the official book does not cover.
 
 Each chapter is a self-contained, interactive HTML page. Every technical claim is
 checked against this repository and cited by file, with the line and the commit
 wherever a chapter's argument turns on a line, so a reader can verify rather
 than trust.
 
+## What this is, and what the book is
+
+The Tock Book is the project's own documentation. It is the right place for
+installing the toolchain, writing applications, the guided courses, and the
+reference specifications, and this series does not repeat any of it. Each
+chapter names the book page it sits beside.
+
+Two things are missing there. The first is the board: the book's guided
+material is built around an nRF52840DK, and its getting-started list names five
+boards -- Hail, imix, nRF52840dk, Arduino Nano 33 BLE, BBC Micro:bit v2 --
+under a line reading "As of February 2021". A search of all 127 pages for
+`pico`, `rp2040`, `rp2350` or `raspberry` returns nothing. Everything here runs
+on hardware you can buy for about ten dollars.
+
+The second is mechanism. The book states how Tock is built; these pages take
+one instruction, one register, one refused write, and let you drive it until
+the reason is obvious. Chapters 1 and 2 have no counterpart in the book at all:
+`read-modify-write` appears nowhere in it, and every use of the word "volatile"
+except two lines in `development/code_size` means non-volatile *storage* rather
+than a compiler's treatment of a register.
+
 ## Chapters
 
-Seven, and then the series is finished. Chapter 1 asks one question -- any code
-can write any address -- and each chapter after it answers part of that. The
-last one lands on grants, which is the last mechanism chapter 1 names, so the
-arc closes where the first chapter said it would.
+Nine. Chapter 1 asks one question -- any code can write any address -- and each
+chapter after it answers part of that. The last one lands on grants, which is
+the last mechanism chapter 1 names, so the arc closes where the first chapter
+said it would.
 
 Chapter 0 sits outside that arc and answers nothing in it. It is the hands-on
-chapter the other seven had been assuming rather than teaching: chapter 8 ends
+chapter the other eight had been assuming rather than teaching: chapter 8 ends
 by telling the reader to run `make flash-openocd`, and until chapter 0 the
 series never said how to reach the point where that command works. It is
 optional, and it says so on the cover.
 
-| # | Title | Covers | Status |
-|---|-------|--------|--------|
-| 0 | [Getting It Running](ch00-getting-it-running/) | Tock on a chip you can hold: build it, put it there with one command, three wires to make it talk -- and which two of this board's four flashing routes fail without saying so | published, verified on hardware |
-| 1 | [Everything Is Memory](ch01-everything-is-memory/) | One `str` instruction to 3.3 V on a pin, and why, before anything later introduces a protection, nothing stops it landing anywhere | published |
-| 2 | [How Code Starts Running](ch03-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | published |
-| 3 | [What a Driver May Touch](ch04-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | published |
-| 4 | [What a Process Is](ch05-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | published |
-| 5 | [The Memory Protection Unit](ch06-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | published |
-| 6 | [Asking the Kernel](ch07-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | published |
-| 7 | [Grants](ch08-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and not freed until the process exits | published |
+| # | Title | Covers | Beside, in the book |
+|---|-------|--------|---------------------|
+| 0 | [Getting It Running](ch00-getting-it-running/) | Tock on a chip you can hold: build it, put it there with one command, three wires to make it talk -- and which two of this board's four flashing routes fail without saying so | [getting_started](https://book.tockos.org/getting_started) -- five boards, no Pico |
+| 1 | [Everything Is Memory](ch01-everything-is-memory/) | One `str` instruction to 3.3 V on a pin, and why, before anything later introduces a protection, nothing stops it landing anywhere | nothing on this |
+| 2 | [Registers Are Not Variables](ch02-registers-are-not-variables/) | What a read gives back, what the compiler does to a loop that polls, and what the second processor does to your value while you are holding it | nothing on this |
+| 3 | [How Code Starts Running](ch03-how-code-starts-running/) | Power-on to `main()`: where the processor looks for its first instruction, what the boot ROM hunts for in the kilobyte ahead of the kernel, and what "initialize RAM" means | [doc/startup](https://book.tockos.org/doc/startup) |
+| 4 | [What a Driver May Touch](ch04-what-a-driver-may-touch/) | Capsules and HILs: a driver that cannot reach hardware it was not handed, enforced by the type system rather than by the chip -- and the three things it can still do to you anyway | [doc/design](https://book.tockos.org/doc/design), [development/hil](https://book.tockos.org/development/hil) |
+| 5 | [What a Process Is](ch05-what-a-process-is/) | Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it | [doc/processes](https://book.tockos.org/doc/processes), [doc/tock_binary_format](https://book.tockos.org/doc/tock_binary_format) |
+| 6 | [The Memory Protection Unit](ch06-the-memory-protection-unit/) | The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process | [course/root-of-trust/userspace-attack](https://book.tockos.org/course/root-of-trust/userspace-attack) |
+| 7 | [Asking the Kernel](ch07-asking-the-kernel/) | One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that | [doc/syscalls](https://book.tockos.org/doc/syscalls), [TRD104](https://book.tockos.org/trd/trd104-syscalls) |
+| 8 | [Grants](ch08-grants/) | How a driver keeps per-process state inside the process's own memory, bounded, with no allocator: seventy-six bytes for a console, cut from the top downward, and not freed until the process exits | [doc/syscalls](https://book.tockos.org/doc/syscalls), [development/syscall](https://book.tockos.org/development/syscall) |
 
 ## The cover
 
-`learning/index.html` is the front door: chapter 0 and then the seven in
+`learning/index.html` is the front door: chapter 0 and then the eight in
 dependency order, what the series is for, and how to check a claim rather than
 believe it.
 A clone gets working links because it links by relative path.
@@ -90,8 +112,8 @@ and each of them is a way the book could be quietly wrong:
   name. Those values are prefixed at the call site, and the build refuses if
   any `aria-*` target does not resolve.
 
-**The build proves itself.** It runs all eight chapters' own assertion suites
-against the assembled book -- 995 of them -- with a `REG` and a `document`
+**The build proves itself.** It runs all ten pages' own assertion suites
+against the assembled book -- 1734 of them -- with a `REG` and a `document`
 scoped to each chapter, and writes nothing if any fails. Two compare an ARIA
 target whose value must now carry the prefix, and are counted rather than
 failed. `preflight.sh` runs the whole thing.
@@ -193,7 +215,7 @@ Each chapter now carries three links:
   Chapter 8 has no card to link, because there is no chapter 9.
 
 **The cover is a page in the order, not a table of it.** It links down into all
-seven chapters, and for a while nothing linked it *forward* -- so the one page
+nine chapters, and for a while nothing linked it *forward* -- so the one page
 holding the reading order was the only page not in it, and chapter 1's row was
 the odd one out, with an empty left slot. What is behind chapter 1 is the
 cover. So the cover carries a `.begin` card at its foot, where a chapter's
@@ -314,8 +336,8 @@ count above honest when adding one; it has now said the wrong number twice:
   pinned commit is unavailable.
 
 - **A chapter's summary of another chapter.** Only a closing chapter has this
-  problem, and chapter 8 has it badly: its last figure walks all seven chapters
-  in one panel each, and four of the seven were wrong on the first draft --
+  problem, and chapter 8 has it badly: its last figure walks all eight chapters
+  in one panel each, and four of the eight were wrong on the first draft --
   written from memory about pages that were not open. It said the chip is wired
   to fetch the first instruction, where chapter 3's headline is that the first
   instruction is never yours. It credited the type system with a refusal
