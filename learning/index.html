@@ -408,27 +408,16 @@ pre {
 <header class="cover">
   <p class="imprint">Eight chapters, and one before them</p>
   <h1>Learning Tock from the Ground Up</h1>
-  <p class="standfirst">Microcontrollers and the Tock kernel from first principles, written from the position of someone actually learning them rather than someone who already knows.</p>
-
-  <div class="premise">
-    <p>The opening two chapters end on one sentence: <em>any code can write any address, so what stops it?</em> Everything after them answers part of it, and the last chapter arrives at grants &mdash; the final mechanism chapter&nbsp;2 names. The arc closes where that chapter said it would.</p>
-  </div>
+  <p class="standfirst">Microcontrollers and the Tock kernel from first principles.</p>
 </header>
-
-<section class="stance">
-  <p class="kicker">How to read a claim here</p>
-  <h2>Nothing on these pages asks to be believed</h2>
-  <p>Claims about the kernel are checked against the Tock tree and cited by file, and wherever a chapter's argument turns on a particular line, it gives the line and the commit it is pinned to. Where a chapter rests on the RP2350 or Pico&nbsp;2 datasheet instead, it says so, and gives the section wherever a fact turns on one.</p>
-  <p>Three chapters ship the source a figure rests on, so that what those figures print is compiled or assembled rather than transcribed &mdash; listings in chapters 2 and 7, and in chapter 8 a byte count. That is not a stylistic preference: the first draft of that byte count was wrong by four bytes, and no amount of careful reading had caught it.</p>
-</section>
 
 <section class="contents">
   <p class="kicker">The chapters</p>
   <h2>Reading order is dependency order</h2>
-  <p>Chapter&nbsp;1 defines the vocabulary from nothing; everything after inherits it. Beyond that, every chapter after the first names what it stands on, so you can see the ground one needs before you open it.</p>
+  <p>Chapter&nbsp;1 defines the vocabulary; everything after inherits it.</p>
 
   <figure class="depmap">
-    <p class="dothis">Click a chapter to see what it stands on. Mark chapters read below and the map fills in: a chapter turns solid when you have read it, and outlined when everything it needs is behind you.</p>
+    <p class="dothis">Click a chapter to see what it stands on.</p>
     <div class="map-scroll">
       <svg viewBox="0 0 560 310" role="group" aria-label="The nine chapters as a dependency graph. Chapter 1 stands alone and everything else descends from it; chapter 0 is optional and stands apart.">
         <line class="dep" id="eg-13" x1="60" y1="150" x2="168" y2="92"></line>
@@ -507,7 +496,7 @@ pre {
       <div class="ord">0</div>
       <div>
         <h3><a href="ch00-getting-it-running/">Getting It Running</a></h3>
-        <p class="hook">Tock on a chip you can hold: one command to build it, one to put it there, three wires to make it talk &mdash; and which two of this board's four flashing routes fail without saying so.</p>
+        <p class="hook">Tock on a chip you can hold: one command to build it, one to put it there, three wires to make it talk. </p>
         <p class="needs"><b>Optional</b></p>
       </div>
       <button class="mark" type="button" id="mark-0" data-mark="0" aria-label="Mark chapter 0 as read" aria-pressed="false"></button>
@@ -517,7 +506,7 @@ pre {
       <div class="ord">1</div>
       <div>
         <h3><a href="ch01-everything-is-memory/">Everything Is Memory</a></h3>
-        <p class="hook">One <code>str</code> instruction, and the 3.3&nbsp;volts it puts on a pin at the other end: which block of hardware answers an address, which control inside it, and which of thirty pins a single bit picks out.</p>
+        <p class="hook">One <code>str</code> writes 3.3 V to a pin. The hardware determines which block answers the address, which register inside it does the work, and which of thirty pins that single bit picks. </p>
         <p class="needs"><b>Needs nothing</b></p>
       </div>
       <button class="mark" type="button" id="mark-1" data-mark="1" aria-label="Mark chapter 1 as read" aria-pressed="false"></button>
@@ -556,7 +545,7 @@ pre {
       <div class="ord">5</div>
       <div>
         <h3><a href="ch05-what-a-process-is/">What a Process Is</a></h3>
-        <p class="hook">Code the compiler never saw: sixteen trusted bytes at the front of an application, a walk through flash that ends when a header stops parsing, and a slice of RAM with the kernel's own record of the process hidden at the top of it.</p>
+        <p class="hook"> Code the compiler never saw: sixteen trusted bytes at the start of an application, a traversal through flash that halts when the header parsing ends, and a reserved slice of RAM at the top where the kernel keeps its private record of the process. </p>
         <p class="needs"><b>Needs</b> <span class="chip">1</span></p>
       </div>
       <button class="mark" type="button" id="mark-5" data-mark="5" aria-label="Mark chapter 5 as read" aria-pressed="false"></button>
@@ -566,7 +555,7 @@ pre {
       <div class="ord">6</div>
       <div>
         <h3><a href="ch06-the-memory-protection-unit/">The Memory Protection Unit</a></h3>
-        <p class="hook">The hardware that checks every address a process touches: two registers per region, eight regions, a 32-byte size rule, and the six steps from a refused store to a stopped process.</p>
+        <p class="hook"> One instruction issues one of eight request classes across four registers; the same registers return an eight-word response. A buffer that straddles a protected region hits the fence built to stop it. </p>
         <p class="needs"><b>Needs</b> <span class="chip">5</span></p>
       </div>
       <button class="mark" type="button" id="mark-6" data-mark="6" aria-label="Mark chapter 6 as read" aria-pressed="false"></button>
@@ -576,7 +565,7 @@ pre {
       <div class="ord">7</div>
       <div>
         <h3><a href="ch07-asking-the-kernel/">Asking the Kernel</a></h3>
-        <p class="hook">One instruction out: eight classes of request in four registers, the same eight words carrying the answer back, and how a buffer crosses a fence built to stop exactly that.</p>
+        <p class="hook">One instruction out: eight classes of request encoded in four registers, the same eight registers returning the response, and a buffer that crosses a memory boundary designed to prevent exactly that.</p>
         <p class="needs"><b>Needs</b> <span class="chip">5</span> <span class="chip">6</span></p>
       </div>
       <button class="mark" type="button" id="mark-7" data-mark="7" aria-label="Mark chapter 7 as read" aria-pressed="false"></button>
