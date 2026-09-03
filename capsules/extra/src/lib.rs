@@ -85,6 +85,7 @@ pub mod process_info_driver;
 pub mod proximity;
 pub mod public_key_crypto;
 pub mod pwm;
+pub mod reclaim_leak_demo;
 pub mod rainfall;
 pub mod read_only_state;
 pub mod rf233;

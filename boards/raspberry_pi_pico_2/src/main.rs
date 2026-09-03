@@ -93,6 +93,8 @@ pub struct RaspberryPiPico2 {
     >,
     gpio: &'static capsules_core::gpio::GPIO<'static, RPGpioPin<'static>>,
     led: &'static capsules_core::led::LedDriver<'static, LedHigh<'static, RPGpioPin<'static>>, 1>,
+    // BENCH INSTRUMENT -- NOT FOR UPSTREAM. See capsules/extra/src/reclaim_leak_demo.rs
+    leak_demo: &'static capsules_extra::reclaim_leak_demo::ReclaimLeakDemo<'static, 1>,
 }
 
 impl SyscallDriverLookup for RaspberryPiPico2 {
@@ -105,6 +107,7 @@ impl SyscallDriverLookup for RaspberryPiPico2 {
             capsules_core::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules_core::led::DRIVER_NUM => f(Some(self.led)),
+            capsules_extra::reclaim_leak_demo::DRIVER_NUM => f(Some(self.leak_demo)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -363,7 +366,6 @@ pub unsafe fn main() {
             13 => peripherals.pins.get_pin(RPGpio::GPIO13),
             14 => peripherals.pins.get_pin(RPGpio::GPIO14),
             15 => peripherals.pins.get_pin(RPGpio::GPIO15),
-            16 => peripherals.pins.get_pin(RPGpio::GPIO16),
             17 => peripherals.pins.get_pin(RPGpio::GPIO17),
             18 => peripherals.pins.get_pin(RPGpio::GPIO18),
             19 => peripherals.pins.get_pin(RPGpio::GPIO19),
@@ -387,6 +389,24 @@ pub unsafe fn main() {
         LedHigh<'static, RPGpioPin<'static>>,
         LedHigh::new(peripherals.pins.get_pin(RPGpio::GPIO25))
     ));
+
+    // BENCH INSTRUMENT -- NOT FOR UPSTREAM.
+    // GPIO 16 is a user LED on the Pico Breadboard Kit Plus. It is deliberately
+    // NOT in the GPIO capsule's pin list above, so this driver owns it alone.
+    let leak_demo_pins = static_init!(
+        [&'static dyn kernel::hil::gpio::Pin; 1],
+        [peripherals.pins.get_pin(RPGpio::GPIO16)]
+    );
+    let leak_demo = static_init!(
+        capsules_extra::reclaim_leak_demo::ReclaimLeakDemo<'static, 1>,
+        capsules_extra::reclaim_leak_demo::ReclaimLeakDemo::new(
+            leak_demo_pins,
+            board_kernel.create_grant(
+                capsules_extra::reclaim_leak_demo::DRIVER_NUM,
+                &memory_allocation_capability
+            )
+        )
+    );
 
     // Create the debugger object that handles calls to `debug!()`.
     components::debug_writer::DebugWriterComponent::new::<
@@ -435,6 +455,7 @@ pub unsafe fn main() {
         alarm,
         gpio,
         led,
+        leak_demo,
         scheduler,
         systick: cortexm33::systick::SysTick::new_with_calibration(125_000_000),
     };
