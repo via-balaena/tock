@@ -1,0 +1,238 @@
+# Licensed under the Apache License, Version 2.0 or the MIT License.
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# Copyright Tock Contributors 2026.
+#
+# This is a diff of Tock source and carries Tock's licence, NOT the
+# CC BY-SA of the rest of learning/.
+
+diff --git a/boards/raspberry_pi_pico_2/src/main.rs b/boards/raspberry_pi_pico_2/src/main.rs
+index d434b105a..4bdcc5c46 100644
+--- a/boards/raspberry_pi_pico_2/src/main.rs
++++ b/boards/raspberry_pi_pico_2/src/main.rs
+@@ -143,6 +143,39 @@ pub unsafe fn main() {
+ 
+     kernel::debug!("Initialization complete. Enter main loop");
+ 
++    // ---- defect 5, same demonstration against the FIXED driver ---------
++    {
++        use rp2350::pio::{InterruptSources, Pio, PioIrqClient, SMNumber, StateMachineConfiguration};
++
++        struct BlockClient;
++        impl PioIrqClient for BlockClient {
++            fn on_irq(&self, flags: u32) {
++                kernel::debug!("[fixed] the block client was called, flags={:#06b}", flags);
++            }
++        }
++        static CLIENT: BlockClient = BlockClient;
++
++        let pio: &'static Pio = &peripherals.pio0;
++        pio.init();
++
++        // 0: irq 0      raise flag 0
++        // 1: jmp 1      spin here, so it is raised once
++        const PROG: [u16; 2] = [0xC000, 0x0001];
++        let loaded = pio.add_program16(Some(0), &PROG).unwrap();
++
++        pio.set_irq_client(&CLIENT);
++
++        let cfg = StateMachineConfiguration::default();
++        let sm1 = pio.sm(SMNumber::SM1);
++        sm1.config(&cfg);
++        sm1.exec_program(loaded, true);
++        sm1.set_enabled(true);
++
++        pio.set_irq_source(0, InterruptSources::Interrupt0, true);
++        kernel::debug!("[fixed] SM1 is the state machine raising irq 0");
++    }
++    // ---- end demonstration ---------------------------------------------
++
+     let process_management_capability =
+         create_capability!(capabilities::ProcessManagementCapability);
+ 
+diff --git a/boards/raspberry_pi_pico_2_w/src/pio_gspi_component.rs b/boards/raspberry_pi_pico_2_w/src/pio_gspi_component.rs
+index c175dc09e..2a459c942 100644
+--- a/boards/raspberry_pi_pico_2_w/src/pio_gspi_component.rs
++++ b/boards/raspberry_pi_pico_2_w/src/pio_gspi_component.rs
+@@ -70,7 +70,7 @@ impl Component for PioGspiComponent {
+ 
+         self.dma_channel.set_client(pio_gspi);
+         pio_gspi.init();
+-        self.pio.sm(self.pio_sm).set_sm_client(pio_gspi);
++        self.pio.set_irq_client(pio_gspi);
+ 
+         pio_gspi
+     }
+diff --git a/boards/raspberry_pi_pico_w/src/pio_gspi_component.rs b/boards/raspberry_pi_pico_w/src/pio_gspi_component.rs
+index b0644ed4b..3e9a77cd2 100644
+--- a/boards/raspberry_pi_pico_w/src/pio_gspi_component.rs
++++ b/boards/raspberry_pi_pico_w/src/pio_gspi_component.rs
+@@ -64,7 +64,7 @@ impl Component for PioGspiComponent {
+ 
+         self.dma_channel.set_client(pio_gspi);
+         pio_gspi.init();
+-        self.pio.sm(self.pio_sm).set_sm_client(pio_gspi);
++        self.pio.set_irq_client(pio_gspi);
+ 
+         pio_gspi
+     }
+diff --git a/chips/rp2040/src/pio.rs b/chips/rp2040/src/pio.rs
+index b2bb3d13d..bf5844a4e 100644
+--- a/chips/rp2040/src/pio.rs
++++ b/chips/rp2040/src/pio.rs
+@@ -23,7 +23,7 @@ use rp2xxx::pio::{PioIrqRegisters, PioRegisters};
+ 
+ pub use rp2xxx::pio::{
+     InterruptSources, LoadedProgram, PioBlock, PioFifoJoin, PioMovStatusType, PioPin, PioRxClient,
+-    PioSmClient, PioTxClient, ProgramError, RelocatedProgram, SMNumber, StateMachine,
++    PioIrqClient, PioTxClient, ProgramError, RelocatedProgram, SMNumber, StateMachine,
+     StateMachineConfiguration,
+ };
+ 
+diff --git a/chips/rp2350/src/pio.rs b/chips/rp2350/src/pio.rs
+index 5ed744616..2cc842087 100644
+--- a/chips/rp2350/src/pio.rs
++++ b/chips/rp2350/src/pio.rs
+@@ -28,7 +28,7 @@ use rp2xxx::pio::{PioIrqRegisters, PioRegisters};
+ 
+ pub use rp2xxx::pio::{
+     InterruptSources, LoadedProgram, PioBlock, PioFifoJoin, PioMovStatusType, PioPin, PioRxClient,
+-    PioSmClient, PioTxClient, ProgramError, RelocatedProgram, SMNumber, StateMachine,
++    PioIrqClient, PioTxClient, ProgramError, RelocatedProgram, SMNumber, StateMachine,
+     StateMachineConfiguration,
+ };
+ 
+diff --git a/chips/rp2xxx/src/pio.rs b/chips/rp2xxx/src/pio.rs
+index 8f39cacaf..c6c8dd2e9 100644
+--- a/chips/rp2xxx/src/pio.rs
++++ b/chips/rp2xxx/src/pio.rs
+@@ -633,8 +633,10 @@ pub trait PioRxClient {
+ }
+ 
+ /// Client for State Machine interrupts fired by the `irq` PIO instruction
+-pub trait PioSmClient {
+-    fn on_irq(&self);
++pub trait PioIrqClient {
++    /// One or more of the block's IRQ flags fired. `flags` is a mask over
++    /// flags 0 to 3, already cleared before this is called.
++    fn on_irq(&self, flags: u32);
+ }
+ 
+ #[derive(Clone, Copy, Debug, Default)]
+@@ -679,7 +681,6 @@ pub struct StateMachine {
+     tx_client: OptionalCell<&'static dyn PioTxClient>,
+     rx_state: Cell<StateMachineState>,
+     rx_client: OptionalCell<&'static dyn PioRxClient>,
+-    sm_client: OptionalCell<&'static dyn PioSmClient>,
+ }
+ 
+ impl StateMachine {
+@@ -699,7 +700,6 @@ impl StateMachine {
+             tx_state: Cell::new(StateMachineState::Ready),
+             tx_client: OptionalCell::empty(),
+             rx_state: Cell::new(StateMachineState::Ready),
+-            sm_client: OptionalCell::empty(),
+             rx_client: OptionalCell::empty(),
+         }
+     }
+@@ -747,9 +747,6 @@ impl StateMachine {
+     }
+ 
+     /// Set client for a state machine interrupt.
+-    pub fn set_sm_client(&self, client: &'static dyn PioSmClient) {
+-        self.sm_client.set(client);
+-    }
+ 
+     /// Set every config for the IN pins.
+     ///
+@@ -1280,16 +1277,17 @@ impl StateMachine {
+         }
+     }
+ 
+-    /// Handle an `SMx` interrupt. The PIO program got to a `irq` instruction.
+-    fn handle_sm_interrupt(&self) {
+-        let _ = self.sm_client.map(|client| {
+-            client.on_irq();
+-        });
+-    }
++}
++
++/// The block's IRQ flags asserted in an INTS reading, as a mask over flags
++/// 0 to 3. The INTS bits named SM0 to SM3 are those flags, not state machines.
++fn pending_irq_flags(ints: u32) -> u32 {
++    (ints >> IRQ0_INTS::SM0.shift) & 0xf
+ }
+ 
+ pub struct Pio<B: PioBlock> {
+     registers: StaticRef<PioRegisters>,
++    irq_client: OptionalCell<&'static dyn PioIrqClient>,
+     irq_registers: StaticRef<PioIrqRegisters>,
+     /// Which PIO block this is, in the chip crate's own terms.
+     block: B,
+@@ -1385,6 +1383,7 @@ impl<B: PioBlock> Pio<B> {
+     ) -> Self {
+         Self {
+             registers,
++            irq_client: OptionalCell::empty(),
+             irq_registers,
+             _clear_registers: clear_registers,
+             block,
+@@ -1395,6 +1394,11 @@ impl<B: PioBlock> Pio<B> {
+         }
+     }
+ 
++    /// Set the client for this block's IRQ flags.
++    pub fn set_irq_client(&self, client: &'static dyn PioIrqClient) {
++        self.irq_client.set(client);
++    }
++
+     /// Which PIO block this driver drives.
+     pub fn number(&self) -> B {
+         self.block
+@@ -1575,15 +1579,10 @@ impl<B: PioBlock> Pio<B> {
+                 sm.handle_rx_interrupt();
+             }
+         }
+-        for (sm, irq) in self.sms.iter().zip([
+-            IRQ0_INTS::SM0,
+-            IRQ0_INTS::SM1,
+-            IRQ0_INTS::SM2,
+-            IRQ0_INTS::SM3,
+-        ]) {
+-            if ints.is_set(irq) {
+-                sm.handle_sm_interrupt();
+-            }
++        let flags = pending_irq_flags(ints.get());
++        if flags != 0 {
++            self.registers.irq.set(flags);
++            self.irq_client.map(|client| client.on_irq(flags));
+         }
+     }
+ 
+diff --git a/chips/rp2xxx/src/pio_gspi.rs b/chips/rp2xxx/src/pio_gspi.rs
+index 090164b53..b7c9bef55 100644
+--- a/chips/rp2xxx/src/pio_gspi.rs
++++ b/chips/rp2xxx/src/pio_gspi.rs
+@@ -6,7 +6,7 @@
+ 
+ use crate::dma::{DmaChannel, DmaChannelClient};
+ use crate::pads::{DriveStrength, PioPad, SlewRate};
+-use crate::pio::{Pio, PioPin, PioSmClient, SMNumber, StateMachineConfiguration};
++use crate::pio::{Pio, PioIrqClient, PioPin, SMNumber, StateMachineConfiguration};
+ use kernel::ErrorCode;
+ use kernel::hil::gpio;
+ use kernel::hil::spi::{self, SpiMasterDevice};
+@@ -271,10 +271,10 @@ impl<'a, D: DmaChannel, P: PinFor<D>> SpiMasterDevice<'a> for PioGSpi<'a, D, P>
+     }
+ }
+ 
+-impl<D: DmaChannel, P: PinFor<D>> PioSmClient for PioGSpi<'_, D, P> {
+-    fn on_irq(&self) {
+-        // Clear interrupt
+-        self.pio.interrupt_clear(0);
++impl<D: DmaChannel, P: PinFor<D>> PioIrqClient for PioGSpi<'_, D, P> {
++    fn on_irq(&self, _flags: u32) {
++        // The driver clears the flag before calling. This block raises only
++        // flag 0.
+         self.irq_client.map(|client| client.fired());
+     }
+ }

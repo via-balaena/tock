@@ -1,0 +1,63 @@
+# Licensed under the Apache License, Version 2.0 or the MIT License.
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# Copyright Tock Contributors 2026.
+#
+# This is a diff of Tock source and carries Tock's licence, NOT the
+# CC BY-SA of the rest of learning/.
+
+diff --git a/boards/raspberry_pi_pico_2/src/main.rs b/boards/raspberry_pi_pico_2/src/main.rs
+index d434b105a..248c4f411 100644
+--- a/boards/raspberry_pi_pico_2/src/main.rs
++++ b/boards/raspberry_pi_pico_2/src/main.rs
+@@ -143,6 +143,51 @@ pub unsafe fn main() {
+ 
+     kernel::debug!("Initialization complete. Enter main loop");
+ 
++    // ---- defect 5 demonstration, not for merge -------------------------
++    // SM1 raises PIO irq flag 0. A client is registered on BOTH SM0 and SM1
++    // with distinct names. The hardware fixes no association between the
++    // eight flags and the four state machines, so the question is which one
++    // handle_interrupt calls.
++    {
++        use rp2350::pio::{InterruptSources, Pio, PioSmClient, SMNumber, StateMachineConfiguration};
++
++        struct Probe {
++            who: &'static str,
++            pio: &'static Pio,
++        }
++        impl PioSmClient for Probe {
++            fn on_irq(&self) {
++                // Clear it, so the kernel returns to its loop and the debug
++                // buffer actually flushes.
++                self.pio.interrupt_clear(0);
++                kernel::debug!("[defect5] {} was called", self.who);
++            }
++        }
++
++        let pio: &'static Pio = &peripherals.pio0;
++        pio.init();
++
++        // 0: irq 0      raise flag 0
++        // 1: jmp 1      spin here, so it is raised once
++        const PROG: [u16; 2] = [0xC000, 0x0001];
++        let loaded = pio.add_program16(Some(0), &PROG).unwrap();
++
++        let on_sm0 = kernel::static_init!(Probe, Probe { who: "the client on SM0", pio });
++        let on_sm1 = kernel::static_init!(Probe, Probe { who: "the client on SM1", pio });
++        pio.sm(SMNumber::SM0).set_sm_client(on_sm0);
++        pio.sm(SMNumber::SM1).set_sm_client(on_sm1);
++
++        let cfg = StateMachineConfiguration::default();
++        let sm1 = pio.sm(SMNumber::SM1);
++        sm1.config(&cfg);
++        sm1.exec_program(loaded, true);
++        sm1.set_enabled(true);
++
++        pio.set_irq_source(0, InterruptSources::Interrupt0, true);
++        kernel::debug!("[defect5] SM1 is the state machine raising irq 0");
++    }
++    // ---- end demonstration ---------------------------------------------
++
+     let process_management_capability =
+         create_capability!(capabilities::ProcessManagementCapability);
+ 
