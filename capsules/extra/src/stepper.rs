@@ -278,11 +278,15 @@ impl<'a, A: Alarm<'a>> SyscallDriver for Stepper<'a, A> {
     ///
     /// - `0`: Driver existence check.
     /// - `1`: Step forward. `arg1` is the number of steps, `arg2` the interval
-    ///   between them in microseconds. Returns `BUSY` if another live process
-    ///   is stepping, `INVAL` for a zero count or interval.
+    ///   between them in microseconds. Returns `BUSY` if a run is already in
+    ///   progress for a live process — including this one, since a step
+    ///   command never replaces a movement — and `INVAL` for a zero count or
+    ///   interval.
     /// - `2`: Step in reverse, otherwise as command 1.
-    /// - `3`: Stop. De-energises the windings and releases the motor. No
-    ///   upcall is delivered for a run the caller stopped itself.
+    /// - `3`: Stop. De-energises the windings and releases the motor, and
+    ///   delivers the completion upcall with the steps taken so far: the count
+    ///   is how an open-loop caller knows where the motor ended up. Returns
+    ///   `RESERVE` if the caller does not own the motor.
     fn command(
         &self,
         command_num: usize,
@@ -310,16 +314,21 @@ impl<'a, A: Alarm<'a>> SyscallDriver for Stepper<'a, A> {
             }
 
             3 => {
-                // Only the owner may stop the motor, and a caller that owns
-                // nothing has nothing to stop.
-                //
                 // A stopped run still reports, because the step count is how
                 // an open-loop caller knows where the motor ended up. Ending
                 // the run silently would discard that at precisely the moment
                 // it matters.
-                if self.owner.contains(&processid) {
-                    self.finish();
+                if !self.owner.contains(&processid) {
+                    // Not a no-op with a success return. The case that matters
+                    // is not a dead owner -- the liveness check covers that --
+                    // but a live one that has stopped making progress. A
+                    // supervisor trying to intervene has to be able to tell
+                    // that the motor did not stop, and a silent success is the
+                    // wrong answer from the one command whose whole purpose is
+                    // making something stop.
+                    return CommandReturn::failure(ErrorCode::RESERVE);
                 }
+                self.finish();
                 CommandReturn::success()
             }
 

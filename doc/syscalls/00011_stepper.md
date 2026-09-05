@@ -27,10 +27,12 @@ control with no ownership to unwind, so a motor driven directly through it stays
 energised for the life of the board if its process dies mid-step.
 
 One process at a time may drive the motor. A process attempting to start a run
-while one is in progress receives `BUSY`, **including the process that owns the
-current run** — an owner changing direction or distance stops first, which
-reports how far the previous movement got. The exception is an owner that has
-exited: the motor is then released and the new caller takes it.
+while one is in progress receives `BUSY`, and that includes the process that
+already owns it: **a step command never replaces a movement in progress.** An
+owner wanting to change direction or distance must issue command 3 first, which
+ends the current movement and reports how far it got. The one exception is an
+owner that has exited — the motor is then released and the next caller takes
+it.
 
 A step is one entry in an eight-entry half-step sequence. A caller wanting full
 steps takes two. With a 28BYJ-48's 64:1 gearbox this is 4096 steps per output
@@ -78,14 +80,15 @@ revolution.
     **Description**: Stop. Ends any run this process owns, drives all four
     windings low and releases the motor. A completion upcall is delivered with
     the number of steps actually taken, because for an open-loop motor that
-    count is the only record of where it ended up. Stopping when not the owner
-    does nothing and is not an error.
+    count is the only record of where it ended up.
 
     **Argument 1**: Unused
 
     **Argument 2**: Unused
 
-    **Returns**: `Ok(())`.
+    **Returns**: `Ok(())` if the caller owned the motor and it was stopped.
+    `RESERVE` if the caller does not own it — a caller trying to stop a motor
+    held by another process must be able to tell that it did not stop.
 
 ## Subscribe
 
