@@ -23,12 +23,14 @@ use core::ptr::addr_of_mut;
 use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
 use components::gpio::GpioComponent;
 use kernel::component::Component;
+use kernel::hil::gpio::Configure;
 use kernel::hil::time::Alarm;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
 use kernel::syscall::SyscallDriver;
 use kernel::{capabilities, create_capability, static_init};
 use pio_gspi_component::{PioGspiComponent, pio_gpsi_component_static};
 
+use rp2350::adc::{Adc, Channel};
 use rp2350::chip::{Rp2350, Rp2350DefaultPeripherals};
 use rp2350::gpio::{RPGpio, RPGpioPin};
 use rp2350::pio_gspi::PioGSpi;
@@ -68,6 +70,7 @@ pub struct RaspberryPiPico2W {
     base: raspberry_pi_pico_2::Platform,
     wifi: &'static WifiDriver,
     stepper: &'static StepperDriver,
+    adc: &'static capsules_core::adc::AdcVirtualized<'static>,
 }
 
 impl SyscallDriverLookup for RaspberryPiPico2W {
@@ -78,6 +81,7 @@ impl SyscallDriverLookup for RaspberryPiPico2W {
         match driver_num {
             capsules_extra::wifi::DRIVER_NUM => f(Some(self.wifi)),
             capsules_extra::stepper::DRIVER_NUM => f(Some(self.stepper)),
+            capsules_core::adc::DRIVER_NUM => f(Some(self.adc)),
             _ => self.base.with_driver(driver_num, f),
         }
     }
@@ -154,10 +158,15 @@ pub unsafe fn main() {
                     15 => peripherals.pins.get_pin(RPGpio::GPIO15),
                     16 => peripherals.pins.get_pin(RPGpio::GPIO16),
                     17 => peripherals.pins.get_pin(RPGpio::GPIO17),
-                    22 => peripherals.pins.get_pin(RPGpio::GPIO22),
-                    26 => peripherals.pins.get_pin(RPGpio::GPIO26),
-                    27 => peripherals.pins.get_pin(RPGpio::GPIO27),
-                    28 => peripherals.pins.get_pin(RPGpio::GPIO28)
+                    22 => peripherals.pins.get_pin(RPGpio::GPIO22)
+                    // GPIO 26, 27 and 28 are ADC0, ADC1 and ADC2. Uncomment to
+                    // use them as GPIO pins instead of analogue inputs -- they
+                    // cannot be both, since a process driving one as an output
+                    // while another samples it is a short through the pad
+                    // driver, and neither driver can see the other to refuse.
+                    // 26 => peripherals.pins.get_pin(RPGpio::GPIO26),
+                    // 27 => peripherals.pins.get_pin(RPGpio::GPIO27),
+                    // 28 => peripherals.pins.get_pin(RPGpio::GPIO28)
                 ),
                 create_capability!(capabilities::MemoryAllocationCapability),
             )
@@ -249,10 +258,66 @@ pub unsafe fn main() {
     );
     stepper_alarm.set_alarm_client(stepper);
 
+    // ANALOGUE INPUTS -- channels 0, 1 and 2 only.
+    //
+    // A QFN-60 RP2350 bonds four analogue inputs, but the fourth is GPIO 29,
+    // which on this board is the CYW43439's gSPI clock. Sampling it would mean
+    // taking the pad off the radio, so there is no channel 3 here and adding
+    // one by copying the Pico 2's wiring would break WiFi rather than fail.
+    // The temperature sensor on channel 4 is not wired up either: it needs the
+    // RP2350's own calibration constants, which is a separate claim to check.
+    //
+    // The pads have to leave digital mode before the converter can use them,
+    // and the ADC driver is the wrong place for it -- a pad belongs to GPIO.
+    // Reset for PADS_BANK0 is 0x116 (RP2350 datasheet 9.11, table 853): ISO
+    // set, PDE set, SCHMITT set, DRIVE 4mA, IE clear. The pull-down is the one
+    // that matters. Across an analogue source it is the lower leg of a
+    // divider, so the reading stays plausible while never reaching either
+    // rail, which is the failure that gets diagnosed as a bad sensor rather
+    // than as a pad.
+    //
+    // The order below is the order the C SDK's `adc_gpio_init` uses and each
+    // step is load-bearing: `set_function` clears ISO and points no digital
+    // peripheral at the pin, `PullNone` clears PDE, and `deactivate_pads`
+    // clears IE and sets OD. Dropping any one of them leaves a pad that still
+    // reads, just wrongly.
+    for pin in [RPGpio::GPIO26, RPGpio::GPIO27, RPGpio::GPIO28] {
+        let pin = peripherals.pins.get_pin(pin);
+        pin.set_function(rp2350::gpio::GpioFunction::NULL);
+        pin.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
+        pin.deactivate_pads();
+    }
+
+    peripherals.adc.init();
+
+    let adc_mux = components::adc::AdcMuxComponent::new(&peripherals.adc)
+        .finalize(components::adc_mux_component_static!(Adc));
+
+    let adc_channel_0 = components::adc::AdcComponent::new(adc_mux, Channel::Channel0)
+        .finalize(components::adc_component_static!(Adc));
+
+    let adc_channel_1 = components::adc::AdcComponent::new(adc_mux, Channel::Channel1)
+        .finalize(components::adc_component_static!(Adc));
+
+    let adc_channel_2 = components::adc::AdcComponent::new(adc_mux, Channel::Channel2)
+        .finalize(components::adc_component_static!(Adc));
+
+    let adc = components::adc::AdcVirtualComponent::new(
+        board_kernel,
+        capsules_core::adc::DRIVER_NUM,
+        create_capability!(capabilities::MemoryAllocationCapability),
+    )
+    .finalize(components::adc_syscall_component_helper!(
+        adc_channel_0,
+        adc_channel_1,
+        adc_channel_2,
+    ));
+
     let raspberry_pi_pico_2_w = RaspberryPiPico2W {
         base,
         wifi,
         stepper,
+        adc,
     };
 
     kernel::debug!("Initialization complete. Enter main loop");
