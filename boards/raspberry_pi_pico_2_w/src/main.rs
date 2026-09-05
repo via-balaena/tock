@@ -148,11 +148,15 @@ pub unsafe fn main() {
                     // process that could drive them could power the radio up
                     // underneath the kernel, and once it is running could cut
                     // its power or corrupt a transfer on the bus.
-                    // GPIO 2, 3 and 4 are SPI0 SCK, TX and RX to the
-                    // display header, and GPIO 17 is the SPI capsule's own
-                    // chip select. GPIO 5, 6 and 7 stay here on purpose:
-                    // they are the panel's CS, DC and RST, and userspace
-                    // drives all three.
+                    // GPIO 2 and 3 are SPI0 SCK and TX to the display
+                    // header, and GPIO 17 is the SPI capsule's own chip
+                    // select. GPIO 5, 6 and 7 stay here on purpose: they are
+                    // the panel's CS, DC and RST, and userspace drives all
+                    // three.
+                    //
+                    // GPIO 4 is SPI0 RX, here as a plain pin so MISO can be
+                    // probed -- see the SPI block below.
+                    4 => peripherals.pins.get_pin(RPGpio::GPIO4),
                     5 => peripherals.pins.get_pin(RPGpio::GPIO5),
                     6 => peripherals.pins.get_pin(RPGpio::GPIO6),
                     7 => peripherals.pins.get_pin(RPGpio::GPIO7),
@@ -341,12 +345,22 @@ pub unsafe fn main() {
     // calls them. So two syscalls means two assertions and the controller sees
     // the command as finished before the data phase. Userspace has to own the
     // chip select, which is what every userspace TFT driver does anyway.
+    //
+    // GPIO 4 is SPI0 RX and is deliberately NOT in SPI function right now. It
+    // is a plain userspace pin so the panel's MISO line can be probed, because
+    // reading 0xff at every rate does not distinguish a MISO that is not wired
+    // from a MISO that is wired and read wrongly -- both are a line idling
+    // high. A pull-up/pull-down read settles it: a pin that follows the pull
+    // has nothing on the other end.
+    //
+    // To restore reads once that is answered: drop 4 from the GPIO array below
+    // and add `spi_rx.set_function(SPI)` here. Writes are unaffected either
+    // way -- `read_write_bytes` takes its read buffer as an `Option`, so a
+    // write-only transfer is a first-class case, not a workaround.
     let spi_clk = peripherals.pins.get_pin(RPGpio::GPIO2);
     let spi_tx = peripherals.pins.get_pin(RPGpio::GPIO3);
-    let spi_rx = peripherals.pins.get_pin(RPGpio::GPIO4);
     spi_clk.set_function(rp2350::gpio::GpioFunction::SPI);
     spi_tx.set_function(rp2350::gpio::GpioFunction::SPI);
-    spi_rx.set_function(rp2350::gpio::GpioFunction::SPI);
 
     let mux_spi = components::spi::SpiMuxComponent::new(&peripherals.spi0)
         .finalize(components::spi_mux_component_static!(Spi));
