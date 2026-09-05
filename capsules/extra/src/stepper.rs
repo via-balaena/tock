@@ -231,7 +231,12 @@ impl<'a, A: Alarm<'a>> Stepper<'a, A> {
         Ok(())
     }
 
-    fn finish(&self) {
+    /// End a run: de-energise, release the motor, and report.
+    ///
+    /// Returns the number of steps taken, which is also what the upcall
+    /// carries. `stop` returns it to its caller synchronously as well --
+    /// see the note on command 3.
+    fn finish(&self) -> usize {
         let taken = self.steps_taken.get();
         let owner = self.owner.take();
         let _ = self.alarm.disarm();
@@ -244,6 +249,8 @@ impl<'a, A: Alarm<'a>> Stepper<'a, A> {
                     .schedule_upcall(0, (kernel::errorcode::into_statuscode(Ok(())), taken, 0));
             });
         }
+
+        taken
     }
 }
 
@@ -264,7 +271,7 @@ impl<'a, A: Alarm<'a>> AlarmClient for Stepper<'a, A> {
         self.steps_remaining.set(remaining);
 
         if remaining == 0 {
-            self.finish();
+            let _ = self.finish();
         } else {
             self.arm();
         }
@@ -283,10 +290,13 @@ impl<'a, A: Alarm<'a>> SyscallDriver for Stepper<'a, A> {
     ///   command never replaces a movement — and `INVAL` for a zero count or
     ///   interval.
     /// - `2`: Step in reverse, otherwise as command 1.
-    /// - `3`: Stop. De-energises the windings and releases the motor, and
-    ///   delivers the completion upcall with the steps taken so far: the count
-    ///   is how an open-loop caller knows where the motor ended up. Returns
-    ///   `RESERVE` if the caller does not own the motor.
+    /// - `3`: Stop. De-energises the windings and releases the motor. Returns
+    ///   the number of steps taken, and delivers the completion upcall
+    ///   carrying the same count: the position is how an open-loop caller
+    ///   knows where the motor ended up, and it is reported both ways so that
+    ///   neither a caller without the subscription nor one awaiting the upcall
+    ///   has to go without it. Returns `RESERVE` if the caller does not own
+    ///   the motor.
     fn command(
         &self,
         command_num: usize,
@@ -314,10 +324,6 @@ impl<'a, A: Alarm<'a>> SyscallDriver for Stepper<'a, A> {
             }
 
             3 => {
-                // A stopped run still reports, because the step count is how
-                // an open-loop caller knows where the motor ended up. Ending
-                // the run silently would discard that at precisely the moment
-                // it matters.
                 if !self.owner.contains(&processid) {
                     // Not a no-op with a success return. The case that matters
                     // is not a dead owner -- the liveness check covers that --
@@ -328,8 +334,16 @@ impl<'a, A: Alarm<'a>> SyscallDriver for Stepper<'a, A> {
                     // making something stop.
                     return CommandReturn::failure(ErrorCode::RESERVE);
                 }
-                self.finish();
-                CommandReturn::success()
+                // The count comes back two ways on purpose, and they are not
+                // redundant. The upcall is the *run's* completion, and an
+                // asynchronous caller awaiting it needs a stop to provoke it
+                // or the wait never ends. The return value is for the caller
+                // of stop, which would otherwise be unable to learn the
+                // position without also owning the subscription -- and a
+                // future dropped by something like `select` takes its upcall
+                // with it.
+                let taken = self.finish();
+                CommandReturn::success_u32(u32::try_from(taken).unwrap_or(u32::MAX))
             }
 
             _ => CommandReturn::failure(ErrorCode::NOSUPPORT),
