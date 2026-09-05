@@ -153,7 +153,7 @@ pub struct Rp2040DefaultPeripherals<'a> {
 impl Rp2040DefaultPeripherals<'_> {
     pub fn new(clocks: &'static Clocks, resets: &'static Resets) -> Self {
         Self {
-            adc: adc::Adc::new(),
+            adc: adc::new_adc(),
             dma: dma::Dma::new(),
             i2c0: i2c::I2c::new_i2c0(clocks, resets),
             pins: RPPins::new(),

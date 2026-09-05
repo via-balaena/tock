@@ -8,9 +8,12 @@
 //! can serve. Some are Arm PrimeCells the two chips take verbatim, such as the
 //! PL022 in `spi`. Others are Raspberry Pi's own and differ only in where
 //! things sit rather than in how they are laid out, such as `pio`, whose
-//! interrupt registers begin at a different offset on each chip. Both belong
-//! here, and the `rp2040` and `rp2350` crates wrap them with what genuinely
-//! differs: base addresses, clocks, and GPIO pin types.
+//! interrupt registers begin at a different offset on each chip. The SAR ADC
+//! in `adc` is a third shape: identical offsets, but two fields are wider on
+//! the RP2350 and the number of channels depends on the package, so its
+//! channel type comes from the chip crate. All belong here, and the `rp2040`
+//! and `rp2350` crates wrap them with what genuinely differs: base addresses,
+//! clocks, and GPIO pin types.
 //!
 //! The test is whether the register layout and the behaviour are the same, not
 //! whether the names match. `clocks`, `gpio` and `uart` each diverge by
@@ -25,6 +28,7 @@
 
 #![no_std]
 
+pub mod adc;
 pub mod dma;
 pub mod pads;
 pub mod pio;
