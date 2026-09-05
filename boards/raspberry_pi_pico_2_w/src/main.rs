@@ -23,9 +23,10 @@ use core::ptr::addr_of_mut;
 use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
 use components::gpio::GpioComponent;
 use kernel::component::Component;
+use kernel::hil::time::Alarm;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
 use kernel::syscall::SyscallDriver;
-use kernel::{capabilities, create_capability};
+use kernel::{capabilities, create_capability, static_init};
 use pio_gspi_component::{PioGspiComponent, pio_gpsi_component_static};
 
 use rp2350::chip::{Rp2350, Rp2350DefaultPeripherals};
@@ -55,6 +56,9 @@ type CYW4343xHw = capsules_extra::cyw4343::CYW4343x<
 
 type WifiDriver = capsules_extra::wifi::WifiDriver<'static, CYW4343xHw>;
 
+type StepperDriver =
+    capsules_extra::stepper::Stepper<'static, VirtualMuxAlarm<'static, RPTimer<'static>>>;
+
 // How should the kernel respond when a process faults.
 const FAULT_RESPONSE: capsules_system::process_policies::PanicFaultPolicy =
     capsules_system::process_policies::PanicFaultPolicy {};
@@ -63,6 +67,7 @@ const FAULT_RESPONSE: capsules_system::process_policies::PanicFaultPolicy =
 pub struct RaspberryPiPico2W {
     base: raspberry_pi_pico_2::Platform,
     wifi: &'static WifiDriver,
+    stepper: &'static StepperDriver,
 }
 
 impl SyscallDriverLookup for RaspberryPiPico2W {
@@ -72,6 +77,7 @@ impl SyscallDriverLookup for RaspberryPiPico2W {
     {
         match driver_num {
             capsules_extra::wifi::DRIVER_NUM => f(Some(self.wifi)),
+            capsules_extra::stepper::DRIVER_NUM => f(Some(self.stepper)),
             _ => self.base.with_driver(driver_num, f),
         }
     }
@@ -121,6 +127,12 @@ pub unsafe fn main() {
                     RPGpioPin,
                     // GPIO 0 and 1 are the console UART.
                     //
+                    // GPIO 18 to 21 are the stepper's phase windings. They are
+                    // left out for the same reason as the radio's pins: a
+                    // process able to drive a winding directly could energise
+                    // a coil behind the driver that is responsible for not
+                    // leaving one energised.
+                    //
                     // GPIO 23, 24, 25 and 29 are the CYW43439: power, gSPI data,
                     // chip select and gSPI clock. They are left out because a
                     // process that could drive them could power the radio up
@@ -142,10 +154,6 @@ pub unsafe fn main() {
                     15 => peripherals.pins.get_pin(RPGpio::GPIO15),
                     16 => peripherals.pins.get_pin(RPGpio::GPIO16),
                     17 => peripherals.pins.get_pin(RPGpio::GPIO17),
-                    18 => peripherals.pins.get_pin(RPGpio::GPIO18),
-                    19 => peripherals.pins.get_pin(RPGpio::GPIO19),
-                    20 => peripherals.pins.get_pin(RPGpio::GPIO20),
-                    21 => peripherals.pins.get_pin(RPGpio::GPIO21),
                     22 => peripherals.pins.get_pin(RPGpio::GPIO22),
                     26 => peripherals.pins.get_pin(RPGpio::GPIO26),
                     27 => peripherals.pins.get_pin(RPGpio::GPIO27),
@@ -209,7 +217,37 @@ pub unsafe fn main() {
     )
     .finalize(components::wifi_component_static!(CYW4343xHw));
 
-    let raspberry_pi_pico_2_w = RaspberryPiPico2W { base, wifi };
+    // The stepper's four phase windings, in sequence order, on GPIO 18 to 21.
+    // Contiguous and clear of everything the breadboard kit wires up.
+    let stepper_alarm = static_init!(
+        VirtualMuxAlarm<'static, RPTimer>,
+        VirtualMuxAlarm::new(mux_alarm)
+    );
+    stepper_alarm.setup();
+
+    let stepper = static_init!(
+        StepperDriver,
+        capsules_extra::stepper::Stepper::new(
+            [
+                peripherals.pins.get_pin(RPGpio::GPIO18),
+                peripherals.pins.get_pin(RPGpio::GPIO19),
+                peripherals.pins.get_pin(RPGpio::GPIO20),
+                peripherals.pins.get_pin(RPGpio::GPIO21),
+            ],
+            stepper_alarm,
+            board_kernel.create_grant(
+                capsules_extra::stepper::DRIVER_NUM,
+                &create_capability!(capabilities::MemoryAllocationCapability),
+            ),
+        )
+    );
+    stepper_alarm.set_alarm_client(stepper);
+
+    let raspberry_pi_pico_2_w = RaspberryPiPico2W {
+        base,
+        wifi,
+        stepper,
+    };
 
     kernel::debug!("Initialization complete. Enter main loop");
 
