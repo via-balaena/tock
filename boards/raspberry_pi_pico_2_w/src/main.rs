@@ -127,7 +127,7 @@ pub unsafe fn main() {
                     RPGpioPin,
                     // GPIO 0 and 1 are the console UART.
                     //
-                    // GPIO 10 to 13 are the stepper's phase windings. They are
+                    // GPIO 18 to 21 are the stepper's phase windings. They are
                     // left out for the same reason as the radio's pins: a
                     // process able to drive a winding directly could energise
                     // a coil behind the driver that is responsible for not
@@ -146,14 +146,14 @@ pub unsafe fn main() {
                     7 => peripherals.pins.get_pin(RPGpio::GPIO7),
                     8 => peripherals.pins.get_pin(RPGpio::GPIO8),
                     9 => peripherals.pins.get_pin(RPGpio::GPIO9),
+                    10 => peripherals.pins.get_pin(RPGpio::GPIO10),
+                    11 => peripherals.pins.get_pin(RPGpio::GPIO11),
+                    12 => peripherals.pins.get_pin(RPGpio::GPIO12),
+                    13 => peripherals.pins.get_pin(RPGpio::GPIO13),
                     14 => peripherals.pins.get_pin(RPGpio::GPIO14),
                     15 => peripherals.pins.get_pin(RPGpio::GPIO15),
                     16 => peripherals.pins.get_pin(RPGpio::GPIO16),
                     17 => peripherals.pins.get_pin(RPGpio::GPIO17),
-                    18 => peripherals.pins.get_pin(RPGpio::GPIO18),
-                    19 => peripherals.pins.get_pin(RPGpio::GPIO19),
-                    20 => peripherals.pins.get_pin(RPGpio::GPIO20),
-                    21 => peripherals.pins.get_pin(RPGpio::GPIO21),
                     22 => peripherals.pins.get_pin(RPGpio::GPIO22),
                     26 => peripherals.pins.get_pin(RPGpio::GPIO26),
                     27 => peripherals.pins.get_pin(RPGpio::GPIO27),
@@ -217,13 +217,14 @@ pub unsafe fn main() {
     )
     .finalize(components::wifi_component_static!(CYW4343xHw));
 
-    // The stepper's four phase windings, in sequence order, on GPIO 10 to 13,
-    // which is where the ULN2003's IN1 to IN4 are physically wired.
+    // The stepper's four phase windings, in sequence order, on GPIO 18 to 21:
+    // physical pins 24 to 27, the four bracketed by the grounds at 23 and 28.
     //
-    // NOTE: if this board is seated in the breadboard kit, GPIO 13 is that
-    // board's beeper and GPIO 11 is tied low by something unidentified.
-    // Driving 11 against whatever holds it down is a short through the pin
-    // driver. These pins are correct for a bare board and wrong in the kit.
+    // NOT the obvious contiguous four below them. This board is seated in a
+    // breadboard kit where GPIO 13 is a beeper and GPIO 11 is tied low by
+    // something unidentified, so driving 11 would be a short through the pin
+    // driver and 13 would sound rather than step. 18 to 21 are clear of
+    // everything that kit wires up.
     let stepper_alarm = static_init!(
         VirtualMuxAlarm<'static, RPTimer>,
         VirtualMuxAlarm::new(mux_alarm)
@@ -234,10 +235,10 @@ pub unsafe fn main() {
         StepperDriver,
         capsules_extra::stepper::Stepper::new(
             [
-                peripherals.pins.get_pin(RPGpio::GPIO10),
-                peripherals.pins.get_pin(RPGpio::GPIO11),
-                peripherals.pins.get_pin(RPGpio::GPIO12),
-                peripherals.pins.get_pin(RPGpio::GPIO13),
+                peripherals.pins.get_pin(RPGpio::GPIO18),
+                peripherals.pins.get_pin(RPGpio::GPIO19),
+                peripherals.pins.get_pin(RPGpio::GPIO20),
+                peripherals.pins.get_pin(RPGpio::GPIO21),
             ],
             stepper_alarm,
             board_kernel.create_grant(
