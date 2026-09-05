@@ -4,10 +4,16 @@
 
 //! Peripherals shared by the RP2040 and the RP2350.
 //!
-//! Raspberry Pi's two microcontrollers share several Arm PrimeCell peripherals
-//! verbatim. Drivers for those live here, and the `rp2040` and `rp2350` crates
-//! wrap them with the parts that genuinely differ between the chips -- base
-//! addresses, clocks, and GPIO pin types.
+//! Raspberry Pi's two microcontrollers share some peripherals verbatim -- Arm
+//! PrimeCells such as the PL022 SPI -- and others in all but a few details.
+//! Drivers for both kinds live here, and the `rp2040` and `rp2350` crates wrap
+//! them with the parts that genuinely differ: base addresses, clocks, GPIO pin
+//! types, and anything that follows from the package.
+//!
+//! The admission rule is that the register layout is the same and the
+//! differences can be named. The SAR ADC is the second kind: identical offsets,
+//! but two fields are wider on the RP2350 and the number of channels depends on
+//! the package, so its channel type comes from the chip crate.
 //!
 //! Peripherals that only look alike are *not* here. `clocks`, `gpio` and `uart`
 //! each diverge by hundreds of lines between the two chips and stay in their
@@ -15,6 +21,7 @@
 
 #![no_std]
 
+pub mod adc;
 pub mod spi;
 
 /// Access to the peripheral clock, `clk_peri`.
