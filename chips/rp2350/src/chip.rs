@@ -121,6 +121,7 @@ impl<I: InterruptService> Chip for Rp2350<'_, I> {
 
 pub struct Rp2350DefaultPeripherals<'a> {
     pub dma: dma::Dma<'a>,
+    pub adc: crate::adc::Adc<'a>,
     pub pins: RPPins<'a>,
     /// PIO0. PIO1 and PIO2 exist on this chip and are not held here, because
     /// nothing drives them yet: each holds four state machines, and each of
@@ -139,6 +140,7 @@ impl Rp2350DefaultPeripherals<'_> {
     pub fn new(clocks: &'static Clocks) -> Self {
         Self {
             dma: dma::Dma::new(),
+            adc: crate::adc::new_adc(),
             pins: RPPins::new(),
             pio0: crate::pio::new_pio0(),
             sio: SIO::new(),
@@ -184,6 +186,10 @@ impl InterruptService for Rp2350DefaultPeripherals<'_> {
             }
             interrupts::IO_IRQ_BANK0 => {
                 self.pins.handle_interrupt();
+                true
+            }
+            interrupts::ADC_IRQ_FIFO => {
+                self.adc.handle_interrupt();
                 true
             }
             interrupts::TIMER0_IRQ_0 => {

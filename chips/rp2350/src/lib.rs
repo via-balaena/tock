@@ -7,6 +7,7 @@
 // and requires a deeper recursion limit than the default to fully expand.
 #![recursion_limit = "256"]
 
+pub mod adc;
 pub mod chip;
 pub mod clocks;
 pub mod dma;
