@@ -182,9 +182,7 @@ impl uart::ReceiveClient for MuxUart<'_> {
         // we just received, or if a new receive has been started, we start the
         // underlying UART receive again.
         if read_pending {
-            if let Err((e, buf)) = self.start_receive(next_read_len) {
-                self.buffer.replace(buf);
-
+            if let Err(e) = self.start_receive(next_read_len) {
                 // Report the error to all devices
                 self.devices.iter().for_each(|device| {
                     if device.receiver {
@@ -276,7 +274,11 @@ impl<'a> MuxUart<'a> {
     /// 2. We are in the midst of a read: abort so we can start a new read now
     ///    (return true)
     /// 3. We are idle: start reading (return false)
-    fn start_receive(&self, rx_len: usize) -> Result<bool, (ErrorCode, &'static mut [u8])> {
+    ///
+    /// On failure the mux's own buffer is restored here rather than handed to
+    /// the caller: it belongs to the mux, and the caller has a different buffer
+    /// of its own that it still owns.
+    fn start_receive(&self, rx_len: usize) -> Result<bool, ErrorCode> {
         self.buffer.take().map_or_else(
             || {
                 // No rxbuf which means a read is ongoing
@@ -295,7 +297,10 @@ impl<'a> MuxUart<'a> {
             |rxbuf| {
                 // Case (3). No ongoing receive calls, we can start one now.
                 let len = cmp::min(rx_len, rxbuf.len());
-                self.uart.receive_buffer(rxbuf, len)?;
+                if let Err((e, rxbuf)) = self.uart.receive_buffer(rxbuf, len) {
+                    self.buffer.replace(rxbuf);
+                    return Err(e);
+                }
                 Ok(false)
             },
         )
@@ -472,11 +477,18 @@ impl<'a> uart::Receive<'a> for UartDevice<'a> {
         } else if rx_len > rx_buffer.len() {
             Err((ErrorCode::SIZE, rx_buffer))
         } else {
-            self.rx_buffer.replace(rx_buffer);
             self.rx_len.set(rx_len);
             self.rx_position.set(0);
             self.state.set(UartDeviceReceiveState::Idle);
-            self.mux.start_receive(rx_len)?;
+            // Keep hold of the caller's buffer until the mux has accepted the
+            // read, so that failing gives it back. Propagating the mux's error
+            // with `?` used to hand the caller the *mux's* buffer instead,
+            // leaving the caller owning one it never passed in and the mux's
+            // own slot empty for the life of the board.
+            if let Err(e) = self.mux.start_receive(rx_len) {
+                return Err((e, rx_buffer));
+            }
+            self.rx_buffer.replace(rx_buffer);
             self.state.set(UartDeviceReceiveState::Receiving);
             Ok(())
         }
