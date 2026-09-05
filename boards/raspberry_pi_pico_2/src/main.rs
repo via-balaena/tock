@@ -15,9 +15,9 @@ use core::ptr::addr_of_mut;
 use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
 use components::gpio::GpioComponent;
 use components::led::LedsComponent;
-use enum_primitive::cast::FromPrimitive;
 use kernel::component::Component;
 use kernel::debug::PanicResources;
+use kernel::hil::gpio::Configure;
 use kernel::hil::led::LedHigh;
 use kernel::platform::chip::Chip;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
@@ -25,6 +25,7 @@ use kernel::syscall::SyscallDriver;
 use kernel::utilities::single_thread_value::SingleThreadValue;
 use kernel::{Kernel, capabilities, create_capability, static_init};
 
+use rp2350::adc::{Adc, Channel};
 use rp2350::chip::{Rp2350, Rp2350DefaultPeripherals};
 use rp2350::clocks::{
     AdcAuxiliaryClockSource, HstxAuxiliaryClockSource, PeripheralAuxiliaryClockSource, PllClock,
@@ -93,6 +94,7 @@ pub struct RaspberryPiPico2 {
     >,
     gpio: &'static capsules_core::gpio::GPIO<'static, RPGpioPin<'static>>,
     led: &'static capsules_core::led::LedDriver<'static, LedHigh<'static, RPGpioPin<'static>>, 1>,
+    adc: &'static capsules_core::adc::AdcVirtualized<'static>,
 }
 
 impl SyscallDriverLookup for RaspberryPiPico2 {
@@ -105,6 +107,7 @@ impl SyscallDriverLookup for RaspberryPiPico2 {
             capsules_core::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules_core::led::DRIVER_NUM => f(Some(self.led)),
+            capsules_core::adc::DRIVER_NUM => f(Some(self.adc)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -289,14 +292,6 @@ pub unsafe fn main() {
     gpio_rx.set_function(GpioFunction::UART);
     gpio_tx.set_function(GpioFunction::UART);
 
-    //// Disable IE for pads 26-29 (the Pico SDK runtime does this, not sure why)
-    for pin in 26..30 {
-        peripherals
-            .pins
-            .get_pin(RPGpio::from_usize(pin).unwrap())
-            .deactivate_pads();
-    }
-
     let chip = static_init!(
         Rp2350<Rp2350DefaultPeripherals>,
         Rp2350::new(peripherals, &peripherals.sio)
@@ -374,10 +369,12 @@ pub unsafe fn main() {
             24 => peripherals.pins.get_pin(RPGpio::GPIO24),
             // LED pin
             // 25 => peripherals.pins.get_pin(RPGpio::GPIO25),
-            26 => peripherals.pins.get_pin(RPGpio::GPIO26),
-            27 => peripherals.pins.get_pin(RPGpio::GPIO27),
-            28 => peripherals.pins.get_pin(RPGpio::GPIO28),
-            29 => peripherals.pins.get_pin(RPGpio::GPIO29)
+
+            // Uncomment to use these as GPIO pins instead of ADC pins
+            // 26 => peripherals.pins.get_pin(RPGpio::GPIO26),
+            // 27 => peripherals.pins.get_pin(RPGpio::GPIO27),
+            // 28 => peripherals.pins.get_pin(RPGpio::GPIO28),
+            // 29 => peripherals.pins.get_pin(RPGpio::GPIO29)
         ),
         create_capability!(capabilities::MemoryAllocationCapability),
     )
@@ -386,6 +383,69 @@ pub unsafe fn main() {
     let led = LedsComponent::new().finalize(components::led_component_static!(
         LedHigh<'static, RPGpioPin<'static>>,
         LedHigh::new(peripherals.pins.get_pin(RPGpio::GPIO25))
+    ));
+
+    // The four analogue inputs a QFN-60 RP2350 bonds out. On a Pico 2, GPIO26
+    // through GPIO28 reach the header as ADC0-ADC2 and GPIO29 measures VSYS
+    // through an on-board divider. They are exposed as ADC channels rather
+    // than as GPIO pins; the commented-out entries in the GPIO list above
+    // trade one for the other.
+    //
+    // A pad has to leave digital mode before the converter can use it, and
+    // nothing in the ADC driver does that -- the pad is GPIO's to configure.
+    //
+    // This replaces an earlier loop that cleared IE on the same four pads and
+    // said of the C SDK doing it "not sure why". The why is the converter, and
+    // IE was a third of it. Reset for PADS_BANK0 is 0x116 (datasheet 9.11,
+    // table 853): ISO set, PDE set, SCHMITT set, DRIVE 4mA, IE clear. The
+    // pull-down is the one that bites: across an analogue source it is the
+    // lower leg of a divider, so readings stay plausible while never reaching
+    // either rail, which is the failure that gets diagnosed as a bad sensor
+    // rather than as a pad. Clearing IE alone would not have fixed it.
+    //
+    // The three steps below are the ones `adc_gpio_init` takes in the C SDK
+    // and each is load-bearing. `set_function` clears ISO and points no
+    // digital peripheral at the pin, `PullNone` clears PDE, and
+    // `deactivate_pads` clears IE and sets OD -- the step the old loop did.
+    for pin in [
+        RPGpio::GPIO26,
+        RPGpio::GPIO27,
+        RPGpio::GPIO28,
+        RPGpio::GPIO29,
+    ] {
+        let pin = peripherals.pins.get_pin(pin);
+        pin.set_function(GpioFunction::NULL);
+        pin.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
+        pin.deactivate_pads();
+    }
+
+    peripherals.adc.init();
+
+    let adc_mux = components::adc::AdcMuxComponent::new(&peripherals.adc)
+        .finalize(components::adc_mux_component_static!(Adc));
+
+    let adc_channel_0 = components::adc::AdcComponent::new(adc_mux, Channel::Channel0)
+        .finalize(components::adc_component_static!(Adc));
+
+    let adc_channel_1 = components::adc::AdcComponent::new(adc_mux, Channel::Channel1)
+        .finalize(components::adc_component_static!(Adc));
+
+    let adc_channel_2 = components::adc::AdcComponent::new(adc_mux, Channel::Channel2)
+        .finalize(components::adc_component_static!(Adc));
+
+    let adc_channel_3 = components::adc::AdcComponent::new(adc_mux, Channel::Channel3)
+        .finalize(components::adc_component_static!(Adc));
+
+    let adc = components::adc::AdcVirtualComponent::new(
+        board_kernel,
+        capsules_core::adc::DRIVER_NUM,
+        create_capability!(capabilities::MemoryAllocationCapability),
+    )
+    .finalize(components::adc_syscall_component_helper!(
+        adc_channel_0,
+        adc_channel_1,
+        adc_channel_2,
+        adc_channel_3,
     ));
 
     // Create the debugger object that handles calls to `debug!()`.
@@ -435,6 +495,7 @@ pub unsafe fn main() {
         alarm,
         gpio,
         led,
+        adc,
         scheduler,
         systick: cortexm33::systick::SysTick::new_with_calibration(125_000_000),
     };
