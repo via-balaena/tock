@@ -34,6 +34,7 @@ use rp2350::adc::{Adc, Channel};
 use rp2350::chip::{Rp2350, Rp2350DefaultPeripherals};
 use rp2350::gpio::{RPGpio, RPGpioPin};
 use rp2350::pio_gspi::PioGSpi;
+use rp2350::spi::Spi;
 use rp2350::timer::RPTimer;
 use rp2350::{dma, pio};
 
@@ -71,6 +72,10 @@ pub struct RaspberryPiPico2W {
     wifi: &'static WifiDriver,
     stepper: &'static StepperDriver,
     adc: &'static capsules_core::adc::AdcVirtualized<'static>,
+    spi: &'static capsules_core::spi_controller::Spi<
+        'static,
+        capsules_core::virtualizers::virtual_spi::VirtualSpiMasterDevice<'static, Spi<'static>>,
+    >,
 }
 
 impl SyscallDriverLookup for RaspberryPiPico2W {
@@ -82,6 +87,7 @@ impl SyscallDriverLookup for RaspberryPiPico2W {
             capsules_extra::wifi::DRIVER_NUM => f(Some(self.wifi)),
             capsules_extra::stepper::DRIVER_NUM => f(Some(self.stepper)),
             capsules_core::adc::DRIVER_NUM => f(Some(self.adc)),
+            capsules_core::spi_controller::DRIVER_NUM => f(Some(self.spi)),
             _ => self.base.with_driver(driver_num, f),
         }
     }
@@ -142,9 +148,11 @@ pub unsafe fn main() {
                     // process that could drive them could power the radio up
                     // underneath the kernel, and once it is running could cut
                     // its power or corrupt a transfer on the bus.
-                    2 => peripherals.pins.get_pin(RPGpio::GPIO2),
-                    3 => peripherals.pins.get_pin(RPGpio::GPIO3),
-                    4 => peripherals.pins.get_pin(RPGpio::GPIO4),
+                    // GPIO 2, 3 and 4 are SPI0 SCK, TX and RX to the
+                    // display header, and GPIO 17 is the SPI capsule's own
+                    // chip select. GPIO 5, 6 and 7 stay here on purpose:
+                    // they are the panel's CS, DC and RST, and userspace
+                    // drives all three.
                     5 => peripherals.pins.get_pin(RPGpio::GPIO5),
                     6 => peripherals.pins.get_pin(RPGpio::GPIO6),
                     7 => peripherals.pins.get_pin(RPGpio::GPIO7),
@@ -157,7 +165,6 @@ pub unsafe fn main() {
                     14 => peripherals.pins.get_pin(RPGpio::GPIO14),
                     15 => peripherals.pins.get_pin(RPGpio::GPIO15),
                     16 => peripherals.pins.get_pin(RPGpio::GPIO16),
-                    17 => peripherals.pins.get_pin(RPGpio::GPIO17),
                     22 => peripherals.pins.get_pin(RPGpio::GPIO22)
                     // GPIO 26, 27 and 28 are ADC0, ADC1 and ADC2. Uncomment to
                     // use them as GPIO pins instead of analogue inputs -- they
@@ -313,11 +320,63 @@ pub unsafe fn main() {
         adc_channel_2,
     ));
 
+    // SPI0 TO THE DISPLAY HEADER.
+    //
+    // The kit silkscreens GP2-GP7 as SCLK, MOSI, MISO, CS, DC, RST, and the
+    // first four land exactly on SPI0's own functions in the RP2350 pin table:
+    // GP2 is SPI0 SCK, GP3 is SPI0 TX, GP4 is SPI0 RX, GP5 is SPI0 CSn. Only
+    // the first three are put in SPI mode here. GP5, GP6 and GP7 stay in the
+    // userspace GPIO array as plain pins.
+    //
+    // That is deliberate and it is the whole reason this is wired the way it
+    // is. Reading a register out of a TFT controller is one chip-select
+    // assertion spanning a change of the data/command line:
+    //
+    //     CS low -> DC low -> command -> DC high -> read reply -> CS high
+    //
+    // The SPI syscall driver cannot express it. It asserts chip select per
+    // transfer and releases it on completion, and commands 3 and 4 -- set and
+    // get chip select -- both return NOSUPPORT. `hil::spi::SpiMaster` has
+    // `hold_low`/`release_low` for exactly this, but the syscall capsule never
+    // calls them. So two syscalls means two assertions and the controller sees
+    // the command as finished before the data phase. Userspace has to own the
+    // chip select, which is what every userspace TFT driver does anyway.
+    let spi_clk = peripherals.pins.get_pin(RPGpio::GPIO2);
+    let spi_tx = peripherals.pins.get_pin(RPGpio::GPIO3);
+    let spi_rx = peripherals.pins.get_pin(RPGpio::GPIO4);
+    spi_clk.set_function(rp2350::gpio::GpioFunction::SPI);
+    spi_tx.set_function(rp2350::gpio::GpioFunction::SPI);
+    spi_rx.set_function(rp2350::gpio::GpioFunction::SPI);
+
+    let mux_spi = components::spi::SpiMuxComponent::new(&peripherals.spi0)
+        .finalize(components::spi_mux_component_static!(Spi));
+
+    // The capsule still needs a chip select of its own and will toggle it
+    // around every transfer, so it is pointed at GPIO 17 -- one of the two
+    // discrete user LEDs, which `kit_blink` has driven successfully, so it is
+    // known not to be the addressable LED's data line. A spare pin from the
+    // free list would have been a guess: the WS2812's data pin has never been
+    // identified, and clocking every SPI transfer into it would light the
+    // thing up as a side effect. A pin that is known beats a pin that is
+    // merely unclaimed, and the LED makes bus activity visible for free.
+    // GPIO 17 therefore leaves the userspace GPIO array.
+    let spi = components::spi::SpiSyscallComponent::new(
+        board_kernel,
+        mux_spi,
+        kernel::hil::spi::cs::IntoChipSelect::<_, kernel::hil::spi::cs::ActiveLow>::into_cs(
+            peripherals.pins.get_pin(RPGpio::GPIO17),
+        ),
+        capsules_core::spi_controller::DRIVER_NUM,
+        create_capability!(capabilities::MemoryAllocationCapability),
+    )
+    .finalize(components::spi_syscall_component_static!(Spi));
+
     let raspberry_pi_pico_2_w = RaspberryPiPico2W {
         base,
         wifi,
         stepper,
         adc,
+        spi,
     };
 
     kernel::debug!("Initialization complete. Enter main loop");
