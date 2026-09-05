@@ -295,16 +295,26 @@ impl DeferredCallClient for Uart<'_> {
 
     fn handle_deferred_call(&self) {
         if self.tx_status.get() == UARTStateTX::AbortRequested {
+            // Idle before the callback, for the same reason as the receive
+            // path below: a client that starts a new transmit from inside
+            // `transmitted_buffer` would otherwise be refused.
+            self.tx_status.set(UARTStateTX::Idle);
             // alert client
             self.tx_client.map(|client| {
                 self.tx_buffer.take().map(|buf| {
                     client.transmitted_buffer(buf, self.tx_position.get(), Err(ErrorCode::CANCEL));
                 });
             });
-            self.tx_status.set(UARTStateTX::Idle);
         }
 
         if self.rx_status.get() == UARTStateRX::AbortRequested {
+            // Return to Idle *before* the callback, not after. A client may
+            // start a new receive from inside `received_buffer`, and
+            // `receive_buffer` below refuses unless the driver is Idle. The
+            // UART mux does exactly that on every abort, so clearing the state
+            // afterwards makes that restart fail with BUSY -- which the mux
+            // reports by ending every other client's receive as well.
+            self.rx_status.set(UARTStateRX::Idle);
             // alert client
             self.rx_client.map(|client| {
                 self.rx_buffer.take().map(|buf| {
@@ -316,7 +326,6 @@ impl DeferredCallClient for Uart<'_> {
                     );
                 });
             });
-            self.rx_status.set(UARTStateRX::Idle);
         }
     }
 }
