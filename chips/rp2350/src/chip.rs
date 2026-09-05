@@ -182,6 +182,10 @@ impl InterruptService for Rp2350DefaultPeripherals<'_> {
                 self.pio0.handle_interrupt();
                 true
             }
+            interrupts::IO_IRQ_BANK0 => {
+                self.pins.handle_interrupt();
+                true
+            }
             interrupts::TIMER0_IRQ_0 => {
                 self.timer0.handle_interrupt();
                 true
