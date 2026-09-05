@@ -199,6 +199,11 @@ impl uart::ReceiveClient for MuxUart<'_> {
                                     Err(e),
                                     uart::Error::Aborted,
                                 );
+                            } else {
+                                // Not receiving, so there is no callback to
+                                // make -- but the buffer still has to go back.
+                                // Dropping it here leaked the client's buffer.
+                                device.rx_buffer.replace(rxbuf);
                             }
                         });
                     }
