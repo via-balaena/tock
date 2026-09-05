@@ -23,6 +23,7 @@ pub enum NUM {
     LowLevelDebug         = 0x00008,
     ReadOnlyState         = 0x00009,
     Pwm                   = 0x00010,
+    Stepper               = 0x00011,
 
     // Kernel
     Ipc                   = 0x10000,
