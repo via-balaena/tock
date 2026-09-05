@@ -78,17 +78,26 @@ revolution.
   * ### Command number: `3`
 
     **Description**: Stop. Ends any run this process owns, drives all four
-    windings low and releases the motor. A completion upcall is delivered with
-    the number of steps actually taken, because for an open-loop motor that
-    count is the only record of where it ended up.
+    windings low and releases the motor. For an open-loop motor the number of
+    steps actually taken is the only record of where it ended up, so it is
+    reported twice: returned to this caller, and carried by the completion
+    upcall.
+
+    Both, rather than either, because the two reach different callers. The
+    upcall is the run's completion, and a caller waiting on it needs the stop
+    to provoke it or the wait never ends. The return value is for whoever
+    calls stop, who may not hold the subscription — and a caller that wrapped
+    the run in something like a `select` may already have dropped the machinery
+    the upcall would arrive through.
 
     **Argument 1**: Unused
 
     **Argument 2**: Unused
 
-    **Returns**: `Ok(())` if the caller owned the motor and it was stopped.
-    `RESERVE` if the caller does not own it — a caller trying to stop a motor
-    held by another process must be able to tell that it did not stop.
+    **Returns**: The number of steps taken, if the caller owned the motor and
+    it was stopped. `RESERVE` if the caller does not own it — a caller trying
+    to stop a motor held by another process must be able to tell that it did
+    not stop.
 
 ## Subscribe
 
