@@ -4,27 +4,37 @@
 
 //! Peripherals shared by the RP2040 and the RP2350.
 //!
-//! Raspberry Pi's two microcontrollers share some peripherals verbatim -- Arm
-//! PrimeCells such as the PL022 SPI -- and others in all but a few details.
-//! Drivers for both kinds live here, and the `rp2040` and `rp2350` crates wrap
-//! them with the parts that genuinely differ: base addresses, clocks, GPIO pin
-//! types, and anything that follows from the package.
+//! Raspberry Pi's two microcontrollers carry several peripherals one driver
+//! can serve. Some are Arm PrimeCells the two chips take verbatim, such as the
+//! PL022 in `spi`. Others are Raspberry Pi's own and differ only in where
+//! things sit rather than in how they are laid out, such as `pio`, whose
+//! interrupt registers begin at a different offset on each chip. Both belong
+//! here, and the `rp2040` and `rp2350` crates wrap them with what genuinely
+//! differs: base addresses, clocks, and GPIO pin types.
 //!
-//! The admission rule is that the register layout is the same and the
-//! differences can be named. The SAR ADC is the second kind: identical offsets,
-//! but two fields are wider on the RP2350 and the number of channels depends on
-//! the package, so its channel type comes from the chip crate.
+//! The test is whether the register layout and the behaviour are the same, not
+//! whether the names match. `clocks`, `gpio` and `uart` each diverge by
+//! hundreds of lines between the two chips and stay in their own crates.
 //!
-//! Peripherals that only look alike are *not* here. `clocks`, `gpio` and `uart`
-//! each diverge by hundreds of lines between the two chips and stay in their
-//! own crates. `pads` is the exception within GPIO rather than a softening of
-//! that rule: the pad control register really is identical on both chips, so
-//! the two enums describing it are shared while everything around them is not.
+//! `adc` is the borderline case: the offsets are identical, but two fields are
+//! wider on the RP2350 and the number of channels depends on the package. It
+//! is declared at the wider width, and the chip crate supplies the `Channel`
+//! type that keeps a value the chip cannot reach out of the register.
+//!
+//! Not everything here is a driver. `dma` and `pads` hold no registers at all,
+//! only the traits a shared driver needs of a chip. DMA is the case that makes
+//! them necessary: its registers differ too much for one driver, so each chip
+//! keeps its own, and `dma` describes what `pio_gspi` needs of either. A
+//! peripheral can fail the test above and still have an interface worth
+//! stating once.
 
 #![no_std]
 
 pub mod adc;
+pub mod dma;
 pub mod pads;
+pub mod pio;
+pub mod pio_gspi;
 pub mod spi;
 
 /// Access to the peripheral clock, `clk_peri`.

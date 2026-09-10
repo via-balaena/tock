@@ -1,10 +1,18 @@
 // Licensed under the Apache License, Version 2.0 or the MIT License.
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// Copyright OxidOS Automotive 2025.
+// Copyright Tock Contributors 2026.
 
-//! Tock kernel for the Raspberry Pi Pico 2.
+//! Tock kernel for the Raspberry Pi Pico 2 W.
 //!
-//! It is based on RP2350SoC SoC (Cortex M33).
+//! It is based on the RP2350 SoC (Cortex M33) and carries an Infineon
+//! CYW43439 radio, reached over half duplex SPI driven by a PIO state
+//! machine with DMA underneath it.
+//!
+//! The board is the Raspberry Pi Pico 2 with the radio wired into four of the
+//! pins the plain board leaves free, so it is built on
+//! [`raspberry_pi_pico_2`] and differs from it only where the radio takes
+//! something over: the LED, since GPIO 25 is the LED on a Pico 2 and the
+//! radio's chip select here, and the four pins the radio is wired to.
 
 #![no_std]
 #![no_main]
@@ -12,50 +20,64 @@
 
 use core::ptr::addr_of_mut;
 
+use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
 use components::gpio::GpioComponent;
-use components::led::LedsComponent;
 use kernel::component::Component;
-use kernel::hil::gpio::Configure;
-use kernel::hil::led::LedHigh;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
 use kernel::syscall::SyscallDriver;
 use kernel::{capabilities, create_capability};
+use pio_gspi_component::{PioGspiComponent, pio_gpsi_component_static};
 
-use rp2350::adc::{Adc, Channel};
 use rp2350::chip::{Rp2350, Rp2350DefaultPeripherals};
-use rp2350::gpio::{GpioFunction, RPGpio, RPGpioPin};
+use rp2350::gpio::{RPGpio, RPGpioPin};
+use rp2350::pio_gspi::PioGSpi;
+use rp2350::timer::RPTimer;
+use rp2350::{dma, pio};
 
 mod io;
+mod pio_gspi_component;
 
 // Allocate memory for the stack
 kernel::stack_size! {0x3000}
 
-// State for loading and holding applications.
+type CYW4343xSpiBus = capsules_extra::cyw4343::spi_bus::CYW4343xSpiBus<
+    'static,
+    PioGSpi<'static>,
+    VirtualMuxAlarm<'static, RPTimer<'static>>,
+>;
+
+type CYW4343xHw = capsules_extra::cyw4343::CYW4343x<
+    'static,
+    RPGpioPin<'static>,
+    VirtualMuxAlarm<'static, RPTimer<'static>>,
+    CYW4343xSpiBus,
+>;
+
+type WifiDriver = capsules_extra::wifi::WifiDriver<'static, CYW4343xHw>;
+
 // How should the kernel respond when a process faults.
 const FAULT_RESPONSE: capsules_system::process_policies::PanicFaultPolicy =
     capsules_system::process_policies::PanicFaultPolicy {};
 
 /// Supported drivers by the platform
-pub struct RaspberryPiPico2 {
+pub struct RaspberryPiPico2W {
     base: raspberry_pi_pico_2::Platform,
-    led: &'static capsules_core::led::LedDriver<'static, LedHigh<'static, RPGpioPin<'static>>, 1>,
-    adc: &'static capsules_core::adc::AdcVirtualized<'static>,
+    wifi: &'static WifiDriver,
 }
 
-impl SyscallDriverLookup for RaspberryPiPico2 {
+impl SyscallDriverLookup for RaspberryPiPico2W {
     fn with_driver<F, R>(&self, driver_num: usize, f: F) -> R
     where
         F: FnOnce(Option<&dyn SyscallDriver>) -> R,
     {
         match driver_num {
-            capsules_core::led::DRIVER_NUM => f(Some(self.led)),
-            capsules_core::adc::DRIVER_NUM => f(Some(self.adc)),
+            capsules_extra::wifi::DRIVER_NUM => f(Some(self.wifi)),
             _ => self.base.with_driver(driver_num, f),
         }
     }
 }
 
-impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for RaspberryPiPico2 {
+impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for RaspberryPiPico2W {
     type SyscallDriverLookup = Self;
     type SyscallFilter = ();
     type ProcessFault = ();
@@ -90,16 +112,20 @@ impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for Ras
 /// Main function called after RAM initialized.
 #[no_mangle]
 pub unsafe fn main() {
-    let (board_kernel, base, peripherals, _mux_alarm, chip) =
+    let (board_kernel, base, peripherals, mux_alarm, chip) =
         raspberry_pi_pico_2::setup(|board_kernel, peripherals| {
             GpioComponent::new(
                 board_kernel,
                 capsules_core::gpio::DRIVER_NUM,
                 components::gpio_component_helper!(
                     RPGpioPin,
-                    // Used for serial communication. Comment them in if you don't use serial.
-                    // 0 => peripherals.pins.get_pin(RPGpio::GPIO0),
-                    // 1 => peripherals.pins.get_pin(RPGpio::GPIO1),
+                    // GPIO 0 and 1 are the console UART.
+                    //
+                    // GPIO 23, 24, 25 and 29 are the CYW43439: power, gSPI data,
+                    // chip select and gSPI clock. They are left out because a
+                    // process that could drive them could power the radio up
+                    // underneath the kernel, and once it is running could cut
+                    // its power or corrupt a transfer on the bus.
                     2 => peripherals.pins.get_pin(RPGpio::GPIO2),
                     3 => peripherals.pins.get_pin(RPGpio::GPIO3),
                     4 => peripherals.pins.get_pin(RPGpio::GPIO4),
@@ -121,14 +147,9 @@ pub unsafe fn main() {
                     20 => peripherals.pins.get_pin(RPGpio::GPIO20),
                     21 => peripherals.pins.get_pin(RPGpio::GPIO21),
                     22 => peripherals.pins.get_pin(RPGpio::GPIO22),
-                    23 => peripherals.pins.get_pin(RPGpio::GPIO23),
-                    24 => peripherals.pins.get_pin(RPGpio::GPIO24),
-                    // LED pin
-                    // 25 => peripherals.pins.get_pin(RPGpio::GPIO25),
                     26 => peripherals.pins.get_pin(RPGpio::GPIO26),
                     27 => peripherals.pins.get_pin(RPGpio::GPIO27),
-                    28 => peripherals.pins.get_pin(RPGpio::GPIO28),
-                    29 => peripherals.pins.get_pin(RPGpio::GPIO29)
+                    28 => peripherals.pins.get_pin(RPGpio::GPIO28)
                 ),
                 create_capability!(capabilities::MemoryAllocationCapability),
             )
@@ -138,75 +159,57 @@ pub unsafe fn main() {
     // Set the UART used for panic
     (*addr_of_mut!(io::WRITER)).set_uart(&peripherals.uart0);
 
-    let led = LedsComponent::new().finalize(components::led_component_static!(
-        LedHigh<'static, RPGpioPin<'static>>,
-        LedHigh::new(peripherals.pins.get_pin(RPGpio::GPIO25))
-    ));
-
-    // The four analogue inputs a QFN-60 RP2350 bonds out. On a Pico 2, GPIO26
-    // through GPIO28 reach the header as ADC0-ADC2 and GPIO29 measures VSYS
-    // through an on-board divider. They are exposed as ADC channels rather
-    // than as GPIO pins; the commented-out entries in the GPIO list above
-    // trade one for the other.
+    // The CYW43439 radio.
     //
-    // A pad has to leave digital mode before the converter can use it, and
-    // nothing in the ADC driver does that -- the pad is GPIO's to configure.
-    //
-    // This replaces an earlier loop that cleared IE on the same four pads and
-    // said of the C SDK doing it "not sure why". The why is the converter, and
-    // IE was a third of it. Reset for PADS_BANK0 is 0x116 (datasheet 9.11,
-    // table 853): ISO set, PDE set, SCHMITT set, DRIVE 4mA, IE clear. The
-    // pull-down is the one that bites: across an analogue source it is the
-    // lower leg of a divider, so readings stay plausible while never reaching
-    // either rail, which is the failure that gets diagnosed as a bad sensor
-    // rather than as a pad. Clearing IE alone would not have fixed it.
-    //
-    // The three steps below are the ones `adc_gpio_init` takes in the C SDK
-    // and each is load-bearing. `set_function` clears ISO and points no
-    // digital peripheral at the pin, `PullNone` clears PDE, and
-    // `deactivate_pads` clears IE and sets OD -- the step the old loop did.
-    for pin in [
-        RPGpio::GPIO26,
-        RPGpio::GPIO27,
-        RPGpio::GPIO28,
-        RPGpio::GPIO29,
-    ] {
-        let pin = peripherals.pins.get_pin(pin);
-        pin.set_function(GpioFunction::NULL);
-        pin.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
-        pin.deactivate_pads();
-    }
+    // It hangs off four pins rather than a bus the chip has a peripheral for:
+    // chip select and power are plain outputs, and clock and data are driven
+    // by a PIO state machine running a half duplex SPI program, with a DMA
+    // channel moving the words. The pins are the same four the RP2040 Pico W
+    // uses, which is why boards/raspberry_pi_pico_w reads almost identically
+    // from here down.
+    let cs = peripherals.pins.get_pin(RPGpio::GPIO25);
+    cs.make_output();
 
-    peripherals.adc.init();
+    let pio_gspi = PioGspiComponent::new(
+        &peripherals.pio0,
+        pio::SMNumber::SM0,
+        peripherals.dma.channel(dma::Channel::Ch0),
+        dma::Irq::Irq0,
+        peripherals.pins.get_pin(RPGpio::GPIO29),
+        peripherals.pins.get_pin(RPGpio::GPIO24),
+        cs,
+    )
+    .finalize(pio_gpsi_component_static!());
 
-    let adc_mux = components::adc::AdcMuxComponent::new(&peripherals.adc)
-        .finalize(components::adc_mux_component_static!(Adc));
+    let (fw, nvram, clm) = (
+        tock_firmware_cyw43::cyw43439::FW,
+        tock_firmware_cyw43::cyw43439::NVRAM,
+        tock_firmware_cyw43::cyw43439::CLM,
+    );
 
-    let adc_channel_0 = components::adc::AdcComponent::new(adc_mux, Channel::Channel0)
-        .finalize(components::adc_component_static!(Adc));
+    let pwr = peripherals.pins.get_pin(RPGpio::GPIO23);
+    pwr.make_output();
 
-    let adc_channel_1 = components::adc::AdcComponent::new(adc_mux, Channel::Channel1)
-        .finalize(components::adc_component_static!(Adc));
+    let cyw4343_spi_bus =
+        components::cyw4343::CYW4343xSpiBusComponent::new(mux_alarm, pio_gspi, fw, nvram).finalize(
+            components::cyw4343x_spi_bus_component_static!(PioGSpi<'static>, RPTimer),
+        );
+    pio_gspi.set_irq_client(cyw4343_spi_bus);
 
-    let adc_channel_2 = components::adc::AdcComponent::new(adc_mux, Channel::Channel2)
-        .finalize(components::adc_component_static!(Adc));
+    let cyw4343_device =
+        components::cyw4343::CYW4343xComponent::new(pwr, mux_alarm, cyw4343_spi_bus, clm).finalize(
+            components::cyw4343_component_static!(RPGpioPin, RPTimer, CYW4343xSpiBus),
+        );
 
-    let adc_channel_3 = components::adc::AdcComponent::new(adc_mux, Channel::Channel3)
-        .finalize(components::adc_component_static!(Adc));
-
-    let adc = components::adc::AdcVirtualComponent::new(
+    let wifi = components::wifi::WifiComponent::new(
         board_kernel,
-        capsules_core::adc::DRIVER_NUM,
+        capsules_extra::wifi::DRIVER_NUM,
+        cyw4343_device,
         create_capability!(capabilities::MemoryAllocationCapability),
     )
-    .finalize(components::adc_syscall_component_helper!(
-        adc_channel_0,
-        adc_channel_1,
-        adc_channel_2,
-        adc_channel_3,
-    ));
+    .finalize(components::wifi_component_static!(CYW4343xHw));
 
-    let raspberry_pi_pico = RaspberryPiPico2 { base, led, adc };
+    let raspberry_pi_pico_2_w = RaspberryPiPico2W { base, wifi };
 
     kernel::debug!("Initialization complete. Enter main loop");
 
@@ -247,9 +250,9 @@ pub unsafe fn main() {
     let main_loop_capability = create_capability!(capabilities::MainLoopCapability);
 
     board_kernel.kernel_loop(
-        &raspberry_pi_pico,
+        &raspberry_pi_pico_2_w,
         chip,
-        Some(&raspberry_pi_pico.base.ipc),
+        Some(&raspberry_pi_pico_2_w.base.ipc),
         &main_loop_capability,
     );
 }
