@@ -287,20 +287,25 @@ impl<'a, D: Device<'a>> Client for WifiDriver<'a, D> {
 
     fn scanned_network(&self, ssid: Ssid) {
         self.process_id.get().map(|process_id| {
-            self.grants
-                .enter(process_id, |_, kernel_data| {
-                    let _ = kernel_data
-                        .get_readwrite_processbuffer(rw_allow::SCAN_SSID)
-                        .and_then(|buf| {
-                            buf.mut_enter(|buf| {
-                                let len = usize::min(ssid.len.get() as _, buf.len());
-                                buf[..len].copy_from_slice(&ssid.buf[..len]);
-                            })
-                        });
-                    let _ =
-                        kernel_data.schedule_upcall(upcall::SCAN_RES, (ssid.len.get() as _, 0, 0));
-                })
-                .unwrap();
+            // Dropped, not unwrapped. A scan result can arrive after the
+            // process that asked for it has exited: nothing clears
+            // `process_id`, and the radio keeps producing results until the
+            // scan ends on its own. `Grant::enter` then returns
+            // `Error::InactiveApp`, and unwrapping it panicked the whole
+            // kernel -- reachable by any unprivileged app that starts a scan
+            // and exits, which is not a fault it should be able to cause.
+            // `scan_done` below has always dropped it; this now matches.
+            let _ = self.grants.enter(process_id, |_, kernel_data| {
+                let _ = kernel_data
+                    .get_readwrite_processbuffer(rw_allow::SCAN_SSID)
+                    .and_then(|buf| {
+                        buf.mut_enter(|buf| {
+                            let len = usize::min(ssid.len.get() as _, buf.len());
+                            buf[..len].copy_from_slice(&ssid.buf[..len]);
+                        })
+                    });
+                let _ = kernel_data.schedule_upcall(upcall::SCAN_RES, (ssid.len.get() as _, 0, 0));
+            });
         });
     }
 }
