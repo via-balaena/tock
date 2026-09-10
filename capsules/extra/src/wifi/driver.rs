@@ -296,15 +296,31 @@ impl<'a, D: Device<'a>> Client for WifiDriver<'a, D> {
             // and exits, which is not a fault it should be able to cause.
             // `scan_done` below has always dropped it; this now matches.
             let _ = self.grants.enter(process_id, |_, kernel_data| {
-                let _ = kernel_data
+                // Report what was written, not how long the SSID is. The copy
+                // is clamped to the buffer the process shared, so a caller told
+                // the larger number reads bytes it was never given. Measured on
+                // a Pico 2 W: against an 8-byte buffer, 18 of 24 results
+                // reported more than 8.
+                let written = kernel_data
                     .get_readwrite_processbuffer(rw_allow::SCAN_SSID)
                     .and_then(|buf| {
                         buf.mut_enter(|buf| {
-                            let len = usize::min(ssid.len.get() as _, buf.len());
+                            let len = usize::min(ssid.len.get() as usize, buf.len());
                             buf[..len].copy_from_slice(&ssid.buf[..len]);
+                            len
                         })
-                    });
-                let _ = kernel_data.schedule_upcall(upcall::SCAN_RES, (ssid.len.get() as _, 0, 0));
+                    })
+                    .unwrap_or(0);
+
+                // Zero is the scan-done sentinel on this upcall, so a result
+                // that reached the process with no bytes -- no buffer shared,
+                // or an empty one -- is dropped rather than reported.
+                // Reporting it would end the caller's scan early. A real
+                // result is never zero-length: `Ssid` holds its length as a
+                // `NonZeroU8`.
+                if written > 0 {
+                    let _ = kernel_data.schedule_upcall(upcall::SCAN_RES, (written, 0, 0));
+                }
             });
         });
     }
