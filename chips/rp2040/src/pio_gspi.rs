@@ -6,7 +6,7 @@
 
 use crate::dma::{self, DmaChannel, DmaChannelClient};
 use crate::gpio::{RPGpio, RPGpioPin};
-use crate::pio::{Pio, PioSmClient, SMNumber, StateMachineConfiguration};
+use crate::pio::{Pio, PioIrqClient, SMNumber, StateMachineConfiguration};
 use enum_primitive::cast::FromPrimitive;
 use kernel::ErrorCode;
 use kernel::hil::gpio::{self, Configure as _, Output as _};
@@ -123,8 +123,11 @@ impl<'a> PioGSpi<'a> {
             &config,
         );
 
-        self.pio
-            .set_irq_source(0, crate::pio::InterruptSources::Interrupt0, true);
+        self.pio.set_irq_source(
+            crate::pio::PioInterrupt::Irq0,
+            crate::pio::InterruptSources::Interrupt0,
+            true,
+        );
     }
 }
 
@@ -267,10 +270,10 @@ impl<'a> SpiMasterDevice<'a> for PioGSpi<'a> {
     }
 }
 
-impl PioSmClient for PioGSpi<'_> {
-    fn on_irq(&self) {
-        // Clear interrupt
-        self.pio.interrupt_clear(0);
+impl PioIrqClient for PioGSpi<'_> {
+    fn on_irq(&self, _flags: u32) {
+        // The driver has already cleared the flag. This block raises only
+        // flag 0, from cyw43_spi_program_init, so there is nothing to sort.
         self.irq_client.map(|client| client.fired());
     }
 }
