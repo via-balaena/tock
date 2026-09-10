@@ -68,6 +68,7 @@ the tables below. The "2.0" column indicates whether the driver has been
 |   | 0x00006       | DAC              | Digital to analog converter                |
 |   | 0x00007       | [AnalogComparator](00007_analog_comparator.md) | Analog Comparator |
 |   | 0x00010       | [PWM](00010_pwm.md)| Control PWM pins                         |
+|   | 0x00011       | [Stepper](00011_stepper.md)| Drive a four-phase stepper motor  |
 |   | 0x20000       | UART             | UART                                       |
 |   | 0x20001       | SPI              | Raw SPI Master interface                   |
 |   | 0x20002       | SPI Slave        | Raw SPI slave interface                    |
