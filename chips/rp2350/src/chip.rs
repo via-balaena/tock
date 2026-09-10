@@ -153,6 +153,10 @@ impl Rp2350DefaultPeripherals<'_> {
 impl InterruptService for Rp2350DefaultPeripherals<'_> {
     fn service_interrupt(&self, interrupt: u32) -> bool {
         match interrupt {
+            interrupts::IO_IRQ_BANK0 => {
+                self.pins.handle_interrupt();
+                true
+            }
             interrupts::TIMER0_IRQ_0 => {
                 self.timer0.handle_interrupt();
                 true
