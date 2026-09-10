@@ -118,6 +118,7 @@ impl<I: InterruptService> Chip for Rp2350<'_, I> {
 }
 
 pub struct Rp2350DefaultPeripherals<'a> {
+    pub adc: crate::adc::Adc<'a>,
     pub pins: RPPins<'a>,
     pub sio: SIO,
     pub spi0: spi::Spi<'a>,
@@ -131,6 +132,7 @@ pub struct Rp2350DefaultPeripherals<'a> {
 impl Rp2350DefaultPeripherals<'_> {
     pub fn new(clocks: &'static Clocks) -> Self {
         Self {
+            adc: crate::adc::new_adc(),
             pins: RPPins::new(),
             sio: SIO::new(),
             spi0: spi::new_spi0(clocks),
@@ -155,6 +157,10 @@ impl InterruptService for Rp2350DefaultPeripherals<'_> {
         match interrupt {
             interrupts::IO_IRQ_BANK0 => {
                 self.pins.handle_interrupt();
+                true
+            }
+            interrupts::ADC_IRQ_FIFO => {
+                self.adc.handle_interrupt();
                 true
             }
             interrupts::TIMER0_IRQ_0 => {
