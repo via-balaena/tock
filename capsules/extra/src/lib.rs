@@ -5,6 +5,7 @@
 #![forbid(unsafe_code)]
 #![no_std]
 
+pub mod stepper;
 pub mod test;
 pub mod tutorials;
 
