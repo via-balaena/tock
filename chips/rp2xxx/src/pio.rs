@@ -453,6 +453,14 @@ INTR [
     SM1_RXNEMPTY OFFSET(1) NUMBITS(1) [],
     SM0_RXNEMPTY OFFSET(0) NUMBITS(1) []
 ],
+// Modelled on the RP2040, which routes four of the block's eight IRQ flags to
+// the NVIC: IRQ0_INTE bits 8..11 (RP2040 datasheet table 386). The RP2350
+// routes all eight, at bits 8..15 (RP2350 datasheet table 1019). The upper
+// four are not declared here, so this driver cannot enable them and
+// handle_interrupt neither reports nor clears them. Nothing can raise them
+// through this API either -- InterruptSources stops at Interrupt3 -- so the
+// gap is a missing capability on the RP2350, not a flag that can be left
+// asserting.
 IRQ_INTE [
     SM3 OFFSET(11) NUMBITS(1) [],
     SM2 OFFSET(10) NUMBITS(1) [],
@@ -1789,12 +1797,15 @@ mod tests {
         }
         // The TXNFULL and RXNEMPTY halves sit below them and must not leak in.
         assert_eq!(pending_irq_flags(0xff), 0);
-        // Only four flags reach the NVIC, however much else is set.
+        // Four flags reach the NVIC on the RP2040. The RP2350 routes eight
+        // (IRQ0_INTE bits 8..15, datasheet table 1019), which this driver
+        // does not model -- see the note on the IRQ_INTE bitfield.
         assert_eq!(pending_irq_flags(0xffff_ffff), 0xf);
     }
 
     // The discriminants index irq_lines, so they are the register layout, not
-    // just names: IRQ0's enable/force/status group is the one at 0x12C.
+    // just names: IRQ0's enable/force/status group is the one at +0x004 from
+    // the start of the interrupt block, wherever the chip puts that block.
     #[test]
     fn the_interrupt_lines_index_their_own_registers() {
         assert_eq!(PioInterrupt::Irq0 as usize, 0);
@@ -1802,8 +1813,10 @@ mod tests {
         assert_eq!(NUMBER_INTERRUPT_LINES, 2);
     }
 
-    // All twelve against the RP2040 datasheet's IRQ0_INTE table. Both lines
-    // share the layout, so this covers IRQ1 too.
+    // All twelve against the RP2040 datasheet's IRQ0_INTE table (table 386).
+    // Both lines share the layout, so this covers IRQ1 too. These twelve sit
+    // at the same bits on the RP2350; what that chip adds beyond them is
+    // noted on the IRQ_INTE bitfield.
     #[test]
     fn every_interrupt_source_sits_where_the_datasheet_puts_it() {
         for (source, bit) in [
