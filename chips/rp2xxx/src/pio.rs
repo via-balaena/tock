@@ -1,0 +1,1930 @@
+// Licensed under the Apache License, Version 2.0 or the MIT License.
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright OxidOS Automotive 2024.
+//
+// Author: Radu Matei <radu.matei.05.21@gmail.com>
+//         Alberto Udrea <albertoudrea4@gmail.com>
+
+//! Programmable Input Output (PIO) hardware.
+//!
+//! Shared by the RP2040 and the RP2350. The two chips lay the block out
+//! identically from `CTRL` through the per state machine registers, which is
+//! everything this driver touches. They differ only in where the interrupt
+//! registers begin: the RP2350 inserts sixteen `RXFn_PUTGETn` registers and a
+//! `GPIOBASE` ahead of them. That is an address rather than a layout, so the
+//! interrupt registers are a separate block here and each chip crate says
+//! where its own starts.
+//!
+//! The two figures this driver hardcodes, four state machines per block and
+//! thirty two instruction memory words, hold on both chips. An RP2350 reports
+//! them itself: `DBG_CFGINFO` at `0x50200044` reads `0x10200404`, giving
+//! `SM_COUNT` 4 and `IMEM_SIZE` 32, alongside `VERSION` 1 for the RP2350 where
+//! the RP2040 reads 0. That is why `SMNumber` needs no chip specific form and
+//! why `RelocatedProgram`'s five bit JMP addresses port unchanged.
+//!
+//! Refer to the RP2040 Datasheet, Section 3, or the RP2350 Datasheet,
+//! Section 11.
+//!
+//! RP2040 Datasheet [1], RP2350 Datasheet [2].
+//!
+//! [1]: https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
+//! [2]: https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf
+
+use core::cell::Cell;
+
+use kernel::utilities::StaticRef;
+use kernel::utilities::cells::OptionalCell;
+use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeable};
+use kernel::utilities::registers::{
+    FieldValue, ReadOnly, ReadWrite, register_bitfields, register_structs,
+};
+use kernel::{ErrorCode, debug};
+
+/// Shared by both chips rather than supplied per chip.
+///
+/// Both report four state machines and thirty two instruction memory words in
+/// `DBG_CFGINFO`. See the module documentation for how that was checked.
+const NUMBER_STATE_MACHINES: usize = 4;
+const NUMBER_INSTR_MEMORY_LOCATIONS: usize = 32;
+const NUMBER_INTERRUPT_LINES: usize = 2;
+const NUMBER_IRQ_FLAGS: usize = 8;
+
+#[repr(C)]
+struct InstrMem {
+    // Write-only access to instruction memory locations 0-31
+    instr_mem: ReadWrite<u32, INSTR_MEMx::Register>,
+}
+
+#[repr(C)]
+struct StateMachineReg {
+    // Clock divisor register for state machine x
+    // Frequency = clock freq / (CLKDIV_INT + CLKDIV_FRAC / 256)
+    clkdiv: ReadWrite<u32, SMx_CLKDIV::Register>,
+    // Execution/behavioural settings for state machine x
+    execctrl: ReadWrite<u32, SMx_EXECCTRL::Register>,
+    // Control behaviour of the input/output shift registers for
+    // state machine x
+    shiftctrl: ReadWrite<u32, SMx_SHIFTCTRL::Register>,
+    // Current instruction address of state machine x
+    addr: ReadOnly<u32, SMx_ADDR::Register>,
+    // Read to see the instruction currently addressed by state
+    // machine x’s program counter Write to execute an instruction
+    // immediately (including jumps) and then resume execution.
+    instr: ReadWrite<u32, SMx_INSTR::Register>,
+    // State machine pin control
+    pinctrl: ReadWrite<u32, SMx_PINCTRL::Register>,
+}
+
+register_structs! {
+/// The enable, force and status registers for one of a PIO block's two
+/// interrupt lines. The two groups are identical and contiguous, so the line
+/// indexes them rather than naming a register.
+    pub IrqReg {
+        // Interrupt enable
+        (0x000 => inte: ReadWrite<u32, IRQ_INTE::Register>),
+        // Interrupt force
+        (0x004 => intf: ReadWrite<u32, IRQ_INTF::Register>),
+        // Interrupt status after masking and forcing
+        (0x008 => ints: ReadWrite<u32, IRQ_INTS::Register>),
+        (0x00C => @END),
+    },
+
+    pub PioRegisters {
+        // PIO control register
+        (0x000 => ctrl: ReadWrite<u32, CTRL::Register>),
+        // FIFO status register
+        (0x004 => fstat: ReadOnly<u32, FSTAT::Register>),
+        // FIFO debug register
+        (0x008 => fdebug: ReadWrite<u32, FDEBUG::Register>),
+        // FIFO levels
+        (0x00C => flevel: ReadOnly<u32, FLEVEL::Register>),
+        // Direct write access to the TX FIFO for this state machine. Each
+        // write pushes one word to the FIFO. Attempting to write to a full
+        // FIFO has no effect on the FIFO state or contents, and sets the
+        // sticky FDEBUG_TXOVER error flag for this FIFO.
+        (0x010 => txf: [ReadWrite<u32, TXFx::Register>; 4]),
+        // Direct read access to the RX FIFO for this state machine. Each
+        // read pops one word from the FIFO. Attempting to read from an empty
+        // FIFO has no effect on the FIFO state, and sets the sticky
+        // FDEBUG_RXUNDER error flag for this FIFO. The data returned
+        // to the system on a read from an empty FIFO is undefined.
+        (0x020 => rxf: [ReadOnly<u32, RXFx::Register>; 4]),
+        // State machine IRQ flags register. Write 1 to clear. There are 8
+        // state machine IRQ flags, which can be set, cleared, and waited on
+        // by the state machines. There’s no fixed association between
+        // flags and state machines — any state machine can use any flag.
+        // Any of the 8 flags can be used for timing synchronisation
+        // between state machines, using IRQ and WAIT instructions. The
+        // lower four of these flags are also routed out to system-level
+        // interrupt requests, alongside FIFO status interrupts —
+        // see e.g. IRQ_INTE.
+        (0x030 => irq: ReadWrite<u32, IRQ::Register>),
+        // Writing a 1 to each of these bits will forcibly assert the
+        // corresponding IRQ. Note this is different to the INTF register:
+        // writing here affects PIO internal state. INTF just asserts the
+        // processor-facing IRQ signal for testing ISRs, and is not visible to
+        // the state machines.
+        (0x034 => irq_force: ReadWrite<u32, IRQ_FORCE::Register>),
+        // There is a 2-flipflop synchronizer on each GPIO input, which
+        // protects PIO logic from metastabilities. This increases input
+        // delay, and for fast synchronous IO (e.g. SPI) these synchronizers
+        // may need to be bypassed. Each bit in this register corresponds
+        // to one GPIO.
+        // 0 → input is synchronized (default)
+        // 1 → synchronizer is bypassed
+        // If in doubt, leave this register as all zeroes.
+        (0x038 => input_sync_bypass: ReadWrite<u32, INPUT_SYNC_BYPASS::Register>),
+        // Read to sample the pad output values PIO is currently driving
+        // to the GPIOs.
+        (0x03C => dbg_padout: ReadOnly<u32, DBG_PADOUT::Register>),
+        // Read to sample the pad output enables (direction) PIO is
+        // currently driving to the GPIOs. The RP2040 and the RP2350A both
+        // have 30 GPIOs, so their two most significant bits are hardwired
+        // to 0.
+        (0x040 => dbg_padoe: ReadOnly<u32, DBG_PADOE::Register>),
+        // The PIO hardware has some free parameters that may vary
+        // between chip products.
+        (0x044 => dbg_cfginfo: ReadOnly<u32, DBG_CFGINFO::Register>),
+        // Write-only access to instruction memory locations 0-31
+        (0x048 => instr_mem: [InstrMem; NUMBER_INSTR_MEMORY_LOCATIONS]),
+        // State Machines
+        (0x0c8 => sm: [StateMachineReg; NUMBER_STATE_MACHINES]),
+        (0x128 => @END),
+    },
+
+    /// The interrupt registers, which both chips lay out the same way but
+    /// place at different offsets inside the PIO block.
+    ///
+    /// On the RP2040 this block begins at `+0x128`, immediately after the
+    /// state machine registers. On the RP2350 it begins at `+0x16c`, after
+    /// the `RXFn_PUTGETn` registers and `GPIOBASE`.
+    pub PioIrqRegisters {
+        // Raw Interrupts
+        (0x000 => intr: ReadWrite<u32, INTR::Register>),
+        // Interrupt registers, one group per interrupt line
+        (0x004 => irq_lines: [IrqReg; NUMBER_INTERRUPT_LINES]),
+        (0x01C => @END),
+    }
+}
+
+register_bitfields![u32,
+CTRL [
+    // Restart a state machine’s clock divider from an initial
+    // phase of 0. Clock dividers are free-running, so once
+    // started, their output (including fractional jitter) is
+    // completely determined by the integer/fractional divisor
+    // configured in SMx_CLKDIV. This means that, if multiple
+    // clock dividers with the same divisor are restarted
+    // simultaneously, by writing multiple 1 bits to this field, the
+    // execution clocks of those state machines will run in
+    // precise lockstep.
+    // - SM_ENABLE does not stop the clock divider from running
+    // - CLKDIV_RESTART can be written to whilst the state machine is running
+    CLKDIV3_RESTART OFFSET(11) NUMBITS(1) [],
+    CLKDIV2_RESTART OFFSET(10) NUMBITS(1) [],
+    CLKDIV1_RESTART OFFSET(9) NUMBITS(1) [],
+    CLKDIV0_RESTART OFFSET(8) NUMBITS(1) [],
+    // Write 1 to instantly clear internal SM state which may be
+    // otherwise difficult to access and will affect future
+    // execution.
+    // Specifically, the following are cleared: input and output
+    // shift counters; the contents of the input shift register; the
+    // delay counter; the waiting-on-IRQ state; any stalled
+    // instruction written to SMx_INSTR or run by OUT/MOV
+    // EXEC; any pin write left asserted due to OUT_STICKY.
+    SM3_RESTART OFFSET(7) NUMBITS(1) [],
+    SM2_RESTART OFFSET(6) NUMBITS(1) [],
+    SM1_RESTART OFFSET(5) NUMBITS(1) [],
+    SM0_RESTART OFFSET(4) NUMBITS(1) [],
+    // Enable/disable each of the four state machines by writing
+    // 1/0 to each of these four bits. When disabled, a state
+    // machine will cease executing instructions, except those
+    // written directly to SMx_INSTR by the system. Multiple bits
+    // can be set/cleared at once to run/halt multiple state
+    // machines simultaneously.
+    SM3_ENABLE OFFSET(3) NUMBITS(1) [],
+    SM2_ENABLE OFFSET(2) NUMBITS(1) [],
+    SM1_ENABLE OFFSET(1) NUMBITS(1) [],
+    SM0_ENABLE OFFSET(0) NUMBITS(1) [],
+],
+FSTAT [
+    // State machine TX FIFO is empty
+    TXEMPTY3 OFFSET(27) NUMBITS(1) [],
+    TXEMPTY2 OFFSET(26) NUMBITS(1) [],
+    TXEMPTY1 OFFSET(25) NUMBITS(1) [],
+    TXEMPTY0 OFFSET(24) NUMBITS(1) [],
+    // State machine TX FIFO is full
+    TXFULL3 OFFSET(19) NUMBITS(1) [],
+    TXFULL2 OFFSET(18) NUMBITS(1) [],
+    TXFULL1 OFFSET(17) NUMBITS(1) [],
+    TXFULL0 OFFSET(16) NUMBITS(1) [],
+    // State machine RX FIFO is empty
+    RXEMPTY3 OFFSET(11) NUMBITS(1) [],
+    RXEMPTY2 OFFSET(10) NUMBITS(1) [],
+    RXEMPTY1 OFFSET(9) NUMBITS(1) [],
+    RXEMPTY0 OFFSET(8) NUMBITS(1) [],
+    // State machine RX FIFO is full
+    RXFULL3 OFFSET(3) NUMBITS(1) [],
+    RXFULL2 OFFSET(2) NUMBITS(1) [],
+    RXFULL1 OFFSET(1) NUMBITS(1) [],
+    RXFULL0 OFFSET(0) NUMBITS(1) []
+],
+FDEBUG [
+    // State machine has stalled on empty TX FIFO during a
+    // blocking PULL, or an OUT with autopull enabled. Write 1 to
+    // clear.
+    TXSTALL OFFSET(24) NUMBITS(4) [],
+    // TX FIFO overflow (i.e. write-on-full by the system) has
+    // occurred. Write 1 to clear. Note that write-on-full does not
+    // alter the state or contents of the FIFO in any way, but the
+    // data that the system attempted to write is dropped, so if
+    // this flag is set, your software has quite likely dropped
+    // some data on the floor.
+    TXOVER OFFSET(16) NUMBITS(4) [],
+    // RX FIFO underflow (i.e. read-on-empty by the system) has
+    // occurred. Write 1 to clear. Note that read-on-empty does
+    // not perturb the state of the FIFO in any way, but the data
+    // returned by reading from an empty FIFO is undefined, so
+    // this flag generally only becomes set due to some kind of
+    // software error.
+    RXUNDER OFFSET(8) NUMBITS(4) [],
+    // State machine has stalled on full RX FIFO during a
+    // blocking PUSH, or an IN with autopush enabled. This flag
+    // is also set when a nonblocking PUSH to a full FIFO took
+    // place, in which case the state machine has dropped data.
+    // Write 1 to clear.
+    RXSTALL OFFSET(0) NUMBITS(4) []
+],
+FLEVEL [
+    RX3 OFFSET(28) NUMBITS(4) [],
+    TX3 OFFSET(24) NUMBITS(4) [],
+    RX2 OFFSET(20) NUMBITS(4) [],
+    TX2 OFFSET(16) NUMBITS(4) [],
+    RX1 OFFSET(12) NUMBITS(4) [],
+    TX1 OFFSET(8) NUMBITS(4) [],
+    RX0 OFFSET(4) NUMBITS(4) [],
+    TX0 OFFSET(0) NUMBITS(4) []
+],
+TXFx [
+    TXF OFFSET(0) NUMBITS(32) []
+],
+RXFx [
+    RXF OFFSET(0) NUMBITS(32) []
+],
+IRQ [
+    IRQ7 OFFSET(7) NUMBITS(1) [],
+    IRQ6 OFFSET(6) NUMBITS(1) [],
+    IRQ5 OFFSET(5) NUMBITS(1) [],
+    IRQ4 OFFSET(4) NUMBITS(1) [],
+    IRQ3 OFFSET(3) NUMBITS(1) [],
+    IRQ2 OFFSET(2) NUMBITS(1) [],
+    IRQ1 OFFSET(1) NUMBITS(1) [],
+    IRQ0 OFFSET(0) NUMBITS(1) []
+],
+IRQ_FORCE [
+    IRQ_FORCE OFFSET(0) NUMBITS(8) []
+],
+INPUT_SYNC_BYPASS [
+    INPUT_SYNC_BYPASS OFFSET(0) NUMBITS(32) []
+],
+DBG_PADOUT [
+    DBG_PADOUT OFFSET(0) NUMBITS(32) []
+],
+DBG_PADOE [
+    DBG_PADOE OFFSET(0) NUMBITS(32) []
+],
+DBG_CFGINFO [
+    // The size of the instruction memory, measured in units of
+    // one instruction
+    IMEM_SIZE OFFSET(16) NUMBITS(6) [],
+    // The number of state machines this PIO instance is
+    // equipped with.
+    SM_COUNT OFFSET(8) NUMBITS(4) [],
+    // The depth of the state machine TX/RX FIFOs, measured in
+    // words.
+    FIFO_DEPTH OFFSET(0) NUMBITS(6) []
+],
+INSTR_MEMx [
+    // Write-only access to instruction memory location x
+    INSTR_MEM OFFSET(0) NUMBITS(16) []
+],
+SMx_CLKDIV [
+    // Effective frequency is sysclk/(int + frac/256).
+    // Value of 0 is interpreted as 65536. If INT is 0, FRAC must
+    // also be 0.
+    INT OFFSET(16) NUMBITS(16) [],
+    // Fractional part of clock divisor
+    FRAC OFFSET(8) NUMBITS(8) []
+],
+SMx_EXECCTRL [
+    // If 1, an instruction written to SMx_INSTR is stalled, and
+    // latched by the state machine. Will clear to 0 once this
+    // instruction completes.
+    EXEC_STALLED OFFSET(31) NUMBITS(1) [],
+    // If 1, the MSB of the Delay/Side-set instruction field is used
+    // as side-set enable, rather than a side-set data bit. This
+    // allows instructions to perform side-set optionally, rather
+    // than on every instruction, but the maximum possible side-
+    // set width is reduced from 5 to 4. Note that the value of
+    // PINCTRL_SIDESET_COUNT is inclusive of this enable bit.
+    SIDE_EN OFFSET(30) NUMBITS(1) [],
+    // If 1, side-set data is asserted to pin directions, instead of
+    // pin values
+    SIDE_PINDIR OFFSET(29) NUMBITS(1) [],
+    // The GPIO number to use as condition for JMP PIN.
+    // Unaffected by input mapping.
+    JMP_PIN OFFSET(24) NUMBITS(5) [],
+    // Which data bit to use for inline OUT enable
+    OUT_EN_SEL OFFSET(19) NUMBITS(5) [],
+    // If 1, use a bit of OUT data as an auxiliary write enable
+    // When used in conjunction with OUT_STICKY, writes with
+    // an enable of 0 will
+    // deassert the latest pin write. This can create useful
+    // masking/override behaviour
+    // due to the priority ordering of state machine pin writes
+    // (SM0 < SM1 < …)
+    INLINE_OUT_EN OFFSET(18) NUMBITS(1) [],
+    // Continuously assert the most recent OUT/SET to the pins
+    OUT_STICKY OFFSET(17) NUMBITS(1) [],
+    // After reaching this address, execution is wrapped to
+    // wrap_bottom.
+    // If the instruction is a jump, and the jump condition is true,
+    // the jump takes priority.
+    WRAP_TOP OFFSET(12) NUMBITS(5) [],
+    // After reaching wrap_top, execution is wrapped to this
+    // address.
+    WRAP_BOTTOM OFFSET(7) NUMBITS(5) [],
+    STATUS_SEL OFFSET(4) NUMBITS(1) [],
+    // Comparison level for the MOV x, STATUS instruction
+    STATUS_N OFFSET(0) NUMBITS(4) []
+],
+SMx_SHIFTCTRL [
+    // When 1, RX FIFO steals the TX FIFO’s storage, and
+    // becomes twice as deep.
+    // TX FIFO is disabled as a result (always reads as both full
+    // and empty).
+    // FIFOs are flushed when this bit is changed.
+    FJOIN_RX OFFSET(31) NUMBITS(1) [],
+    // When 1, TX FIFO steals the RX FIFO’s storage, and
+    // becomes twice as deep.
+    // RX FIFO is disabled as a result (always reads as both full
+    // and empty).
+    // FIFOs are flushed when this bit is changed.
+    FJOIN_TX OFFSET(30) NUMBITS(1) [],
+    // Number of bits shifted out of OSR before autopull, or
+    // conditional pull (PULL IFEMPTY), will take place.
+    // Write 0 for value of 32.
+    PULL_THRESH OFFSET(25) NUMBITS(5) [],
+    // Number of bits shifted into ISR before autopush, or
+    // conditional push (PUSH IFFULL), will take place.
+    // Write 0 for value of 32
+    PUSH_THRESH OFFSET(20) NUMBITS(5) [],
+    OUT_SHIFTDIR OFFSET(19) NUMBITS(1) [
+        ShiftRight = 1,
+        ShiftLeft = 0
+    ],
+    IN_SHIFTDIR OFFSET(18) NUMBITS(1) [
+        ShiftRight = 1,
+        ShiftLeft = 0
+    ],
+    // Pull automatically when the output shift register is
+    // emptied, i.e. on or following an OUT instruction which
+    // causes the output shift counter to reach or exceed
+    // PULL_THRESH.
+    AUTOPULL OFFSET(17) NUMBITS(1) [],
+    // Push automatically when the input shift register is filled,
+    // i.e. on an IN instruction which causes the input shift
+    // counter to reach or exceed PUSH_THRESH.
+    AUTOPUSH OFFSET(16) NUMBITS(1) []
+],
+SMx_ADDR [
+    ADDR OFFSET(0) NUMBITS(5) []
+],
+SMx_INSTR [
+    INSTR OFFSET(0) NUMBITS(16) []
+],
+SMx_PINCTRL [
+    // The number of MSBs of the Delay/Side-set instruction
+    // field which are used for side-set. Inclusive of the enable
+    // bit, if present. Minimum of 0 (all delay bits, no side-set)
+    // and maximum of 5 (all side-set, no delay).
+    SIDESET_COUNT OFFSET(29) NUMBITS(3) [],
+    // The number of pins asserted by a SET. In the range 0 to 5
+    // inclusive.
+    SET_COUNT OFFSET(26) NUMBITS(3) [],
+    // The number of pins asserted by an OUT PINS, OUT
+    // PINDIRS or MOV PINS instruction. In the range 0 to 32
+    // inclusive.
+    OUT_COUNT OFFSET(20) NUMBITS(6) [],
+    // The pin which is mapped to the least-significant bit of a
+    // state machine’s IN data bus. Higher-numbered pins are
+    // mapped to consecutively more-significant data bits, with a
+    // modulo of 32 applied to pin number.
+    IN_BASE OFFSET(15) NUMBITS(5) [],
+    // The lowest-numbered pin that will be affected by a side-
+    // set operation. The MSBs of an instruction’s side-set/delay
+    // field (up to 5, determined by SIDESET_COUNT) are used
+    // for side-set data, with the remaining LSBs used for delay.
+    // The least-significant bit of the side-set portion is the bit
+    // written to this pin, with more-significant bits written to
+    // higher-numbered pins.
+    SIDESET_BASE OFFSET(10) NUMBITS(5) [],
+    // The lowest-numbered pin that will be affected by a SET
+    // PINS or SET PINDIRS instruction. The data written to this
+    // pin is the least-significant bit of the SET data.
+    SET_BASE OFFSET(5) NUMBITS(5) [],
+    // The lowest-numbered pin that will be affected by an OUT
+    // PINS, OUT PINDIRS or MOV PINS instruction. The data
+    // written to this pin will always be the least-significant bit of
+    // the OUT or MOV data.
+    OUT_BASE OFFSET(0) NUMBITS(5) []
+],
+INTR [
+    SM3 OFFSET(11) NUMBITS(1) [],
+    SM2 OFFSET(10) NUMBITS(1) [],
+    SM1 OFFSET(9) NUMBITS(1) [],
+    SM0 OFFSET(8) NUMBITS(1) [],
+    SM3_TXNFULL OFFSET(7) NUMBITS(1) [],
+    SM2_TXNFULL OFFSET(6) NUMBITS(1) [],
+    SM1_TXNFULL OFFSET(5) NUMBITS(1) [],
+    SM0_TXNFULL OFFSET(4) NUMBITS(1) [],
+    SM3_RXNEMPTY OFFSET(3) NUMBITS(1) [],
+    SM2_RXNEMPTY OFFSET(2) NUMBITS(1) [],
+    SM1_RXNEMPTY OFFSET(1) NUMBITS(1) [],
+    SM0_RXNEMPTY OFFSET(0) NUMBITS(1) []
+],
+IRQ_INTE [
+    SM3 OFFSET(11) NUMBITS(1) [],
+    SM2 OFFSET(10) NUMBITS(1) [],
+    SM1 OFFSET(9) NUMBITS(1) [],
+    SM0 OFFSET(8) NUMBITS(1) [],
+    SM3_TXNFULL OFFSET(7) NUMBITS(1) [],
+    SM2_TXNFULL OFFSET(6) NUMBITS(1) [],
+    SM1_TXNFULL OFFSET(5) NUMBITS(1) [],
+    SM0_TXNFULL OFFSET(4) NUMBITS(1) [],
+    SM3_RXNEMPTY OFFSET(3) NUMBITS(1) [],
+    SM2_RXNEMPTY OFFSET(2) NUMBITS(1) [],
+    SM1_RXNEMPTY OFFSET(1) NUMBITS(1) [],
+    SM0_RXNEMPTY OFFSET(0) NUMBITS(1) []
+],
+IRQ_INTF [
+    SM3 OFFSET(11) NUMBITS(1) [],
+    SM2 OFFSET(10) NUMBITS(1) [],
+    SM1 OFFSET(9) NUMBITS(1) [],
+    SM0 OFFSET(8) NUMBITS(1) [],
+    SM3_TXNFULL OFFSET(7) NUMBITS(1) [],
+    SM2_TXNFULL OFFSET(6) NUMBITS(1) [],
+    SM1_TXNFULL OFFSET(5) NUMBITS(1) [],
+    SM0_TXNFULL OFFSET(4) NUMBITS(1) [],
+    SM3_RXNEMPTY OFFSET(3) NUMBITS(1) [],
+    SM2_RXNEMPTY OFFSET(2) NUMBITS(1) [],
+    SM1_RXNEMPTY OFFSET(1) NUMBITS(1) [],
+    SM0_RXNEMPTY OFFSET(0) NUMBITS(1) []
+],
+IRQ_INTS [
+    SM3 OFFSET(11) NUMBITS(1) [],
+    SM2 OFFSET(10) NUMBITS(1) [],
+    SM1 OFFSET(9) NUMBITS(1) [],
+    SM0 OFFSET(8) NUMBITS(1) [],
+    SM3_TXNFULL OFFSET(7) NUMBITS(1) [],
+    SM2_TXNFULL OFFSET(6) NUMBITS(1) [],
+    SM1_TXNFULL OFFSET(5) NUMBITS(1) [],
+    SM0_TXNFULL OFFSET(4) NUMBITS(1) [],
+    SM3_RXNEMPTY OFFSET(3) NUMBITS(1) [],
+    SM2_RXNEMPTY OFFSET(2) NUMBITS(1) [],
+    SM1_RXNEMPTY OFFSET(1) NUMBITS(1) [],
+    SM0_RXNEMPTY OFFSET(0) NUMBITS(1) []
+]
+];
+
+/// Represents a relocated PIO program.
+///
+/// An [Iterator] that yields the original program except `JMP` instructions have
+/// relocated target addresses based on an origin.
+pub struct RelocatedProgram<'a, I>
+where
+    I: Iterator<Item = &'a u16>,
+{
+    iter: I,
+    origin: usize,
+}
+
+impl<'a, I> RelocatedProgram<'a, I>
+where
+    I: Iterator<Item = &'a u16>,
+{
+    fn new(iter: I, origin: usize) -> Self {
+        Self { iter, origin }
+    }
+}
+
+impl<'a, I> Iterator for RelocatedProgram<'a, I>
+where
+    I: Iterator<Item = &'a u16>,
+{
+    type Item = u16;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|&instr| {
+            if instr & 0b1110_0000_0000_0000 == 0 {
+                // this is a JMP instruction -> add offset to address
+                let address = instr & 0b1_1111;
+                let address = address.wrapping_add(self.origin as u16) % 32;
+                instr & (!0b11111) | address
+            } else {
+                instr
+            }
+        })
+    }
+}
+
+/// Convert a big-endian `&[u8]` program into PIO instructions.
+///
+/// Split out of [`Pio::add_program`] so it can be tested on the host: the rest
+/// of that path writes instruction memory and needs the real peripheral.
+///
+/// Returns the full-size buffer and how much of it is populated.
+fn instructions_from_bytes(
+    program: &[u8],
+) -> Result<([u16; NUMBER_INSTR_MEMORY_LOCATIONS], usize), ProgramError> {
+    if !program.len().is_multiple_of(2) {
+        return Err(ProgramError::NotInstructionAligned);
+    }
+    let len = program.len() / 2;
+    if len > NUMBER_INSTR_MEMORY_LOCATIONS {
+        return Err(ProgramError::InsufficientSpace);
+    }
+
+    let mut instructions = [0u16; NUMBER_INSTR_MEMORY_LOCATIONS];
+    let (pairs, _) = program.as_chunks::<2>();
+    for (slot, chunk) in instructions.iter_mut().zip(pairs) {
+        *slot = u16::from_be_bytes(*chunk);
+    }
+    Ok((instructions, len))
+}
+
+/// The write-one-to-clear bit for one of the block's eight IRQ flags, or
+/// `None` if there is no such flag.
+fn irq_flag_bit(irq_num: u32) -> Option<u32> {
+    (irq_num < NUMBER_IRQ_FLAGS as u32).then(|| 1 << irq_num)
+}
+
+/// The block's IRQ flags asserted in an INTS reading, as a mask over flags
+/// 0 to 3.
+///
+/// The INTS bits named SM0 to SM3 are those flags, not state machines. The
+/// datasheet names them that way, which is the trap: any state machine can
+/// raise any flag.
+fn pending_irq_flags(ints: u32) -> u32 {
+    (ints >> IRQ_INTS::SM0.shift) & 0xf
+}
+
+/// The INTE bits that enable or disable one interrupt source.
+///
+/// The two interrupt lines have the same layout, so this does not depend on
+/// which one a source is being routed to. Split out of
+/// [`Pio::set_irq_source`] so a test can check all twelve against the
+/// datasheet, and check that disabling clears, without a peripheral.
+fn interrupt_source_bits(
+    source: InterruptSources,
+    enabled: bool,
+) -> FieldValue<u32, IRQ_INTE::Register> {
+    let field = match source {
+        InterruptSources::Interrupt0 => IRQ_INTE::SM0,
+        InterruptSources::Interrupt1 => IRQ_INTE::SM1,
+        InterruptSources::Interrupt2 => IRQ_INTE::SM2,
+        InterruptSources::Interrupt3 => IRQ_INTE::SM3,
+        InterruptSources::Sm0TXNotFull => IRQ_INTE::SM0_TXNFULL,
+        InterruptSources::Sm1TXNotFull => IRQ_INTE::SM1_TXNFULL,
+        InterruptSources::Sm2TXNotFull => IRQ_INTE::SM2_TXNFULL,
+        InterruptSources::Sm3TXNotFull => IRQ_INTE::SM3_TXNFULL,
+        InterruptSources::Sm0RXNotEmpty => IRQ_INTE::SM0_RXNEMPTY,
+        InterruptSources::Sm1RXNotEmpty => IRQ_INTE::SM1_RXNEMPTY,
+        InterruptSources::Sm2RXNotEmpty => IRQ_INTE::SM2_RXNEMPTY,
+        InterruptSources::Sm3RXNotEmpty => IRQ_INTE::SM3_RXNEMPTY,
+    };
+    field.val(enabled as u32)
+}
+
+/// The SHIFTCTRL bits for a FIFO join setting.
+///
+/// Both bits are always written, so a join can be undone and the two settings
+/// cannot both be left set. Split out of [`StateMachine::set_fifo_join`] so a
+/// test can assert what that function writes rather than restate it.
+fn fifo_join_bits(fifo_join: PioFifoJoin) -> FieldValue<u32, SMx_SHIFTCTRL::Register> {
+    let (rx, tx) = match fifo_join {
+        PioFifoJoin::PioFifoJoinNone => (0, 0),
+        PioFifoJoin::PioFifoJoinTx => (0, 1),
+        PioFifoJoin::PioFifoJoinRx => (1, 0),
+    };
+    SMx_SHIFTCTRL::FJOIN_RX.val(rx) + SMx_SHIFTCTRL::FJOIN_TX.val(tx)
+}
+
+#[derive(Clone, Copy)]
+pub struct LoadedProgram {
+    used_memory: u32,
+    origin: usize,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ProgramError {
+    /// Insufficient consecutive free instruction space to load program.
+    InsufficientSpace,
+    /// Loading a program would overwrite the existing one
+    AddrInUse(usize),
+    /// A `&[u8]` program did not contain a whole number of 16-bit instructions.
+    NotInstructionAligned,
+}
+
+/// There are a total of 4 State Machines per PIO.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum SMNumber {
+    SM0 = 0,
+    SM1 = 1,
+    SM2 = 2,
+    SM3 = 3,
+}
+
+/// Array of all SMNumbers, used for convenience in Pio constructor
+const SM_NUMBERS: [SMNumber; 4] = [SMNumber::SM0, SMNumber::SM1, SMNumber::SM2, SMNumber::SM3];
+
+/// The FIFO queues can be joined together for twice the length in one direction.
+#[derive(PartialEq)]
+pub enum PioFifoJoin {
+    PioFifoJoinNone,
+    PioFifoJoinTx,
+    PioFifoJoinRx,
+}
+
+/// Which of a PIO block's two interrupt lines a source is routed to.
+///
+/// Each line reaches the NVIC separately -- PIO0_IRQ_0 and PIO0_IRQ_1 for
+/// PIO0, PIO1_IRQ_0 and PIO1_IRQ_1 for PIO1 -- and each has its own enable,
+/// force and status registers with the same layout.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PioInterrupt {
+    Irq0 = 0,
+    Irq1 = 1,
+}
+
+/// PIO interrupt source numbers for PIO related interrupts
+#[derive(Clone, Copy, PartialEq)]
+pub enum InterruptSources {
+    Interrupt0 = 0,
+    Interrupt1 = 1,
+    Interrupt2 = 2,
+    Interrupt3 = 3,
+    Sm0TXNotFull = 4,
+    Sm1TXNotFull = 5,
+    Sm2TXNotFull = 6,
+    Sm3TXNotFull = 7,
+    Sm0RXNotEmpty = 8,
+    Sm1RXNotEmpty = 9,
+    Sm2RXNotEmpty = 10,
+    Sm3RXNotEmpty = 11,
+}
+
+pub trait PioTxClient {
+    fn on_buffer_space_available(&self);
+}
+
+pub trait PioRxClient {
+    fn on_data_received(&self, data: u32);
+}
+
+/// Client for a PIO block's IRQ flags, raised by the `irq` PIO instruction.
+///
+/// The flags belong to the block, not to a state machine. The hardware fixes
+/// no association between the eight flags and the four state machines, and any
+/// state machine can raise any flag, so there is one client for the block
+/// rather than one per state machine. Only flags 0 to 3 reach the NVIC.
+pub trait PioIrqClient {
+    /// One or more of the block's IRQ flags fired.
+    ///
+    /// `flags` is a mask over flags 0 to 3. They are cleared before this is
+    /// called, so any state machine blocked on one is already free to run.
+    fn on_irq(&self, flags: u32);
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+enum StateMachineState {
+    #[default]
+    Ready,
+    Waiting,
+}
+
+/// A type naming one of a chip's PIO blocks.
+///
+/// How many blocks a chip has, and what they are called, are facts about the
+/// chip, so the chip crate names them and this driver is generic over that
+/// type. The driver never asks what the value means: it reads its registers
+/// through the bases it was handed, and carries the block only so `number`
+/// can give it back. Keeping it concrete is what lets an interface that takes
+/// a block, such as `DmaPeripheral`, still get one rather than an index.
+///
+/// It has no methods for that reason. When a shared driver first needs to ask
+/// something of a block, that question goes here.
+pub trait PioBlock: Copy {}
+
+/// A GPIO pin a PIO state machine can drive.
+///
+/// The PIO registers address pins by number within the bank, so the driver
+/// needs that number. `kernel::hil::gpio` has no equivalent, and each chip
+/// keeps its own pin type, so the chip crate implements this for its pin and
+/// the driver stays generic over it. This is the same reason `PeripheralClock`
+/// exists for the shared SPI driver.
+pub trait PioPin {
+    /// This pin's number within its bank.
+    fn pin_number(&self) -> u32;
+}
+
+pub struct StateMachine {
+    sm_number: SMNumber,
+    registers: StaticRef<PioRegisters>,
+    irq_registers: StaticRef<PioIrqRegisters>,
+    xor_registers: StaticRef<PioRegisters>,
+    set_registers: StaticRef<PioRegisters>,
+    tx_state: Cell<StateMachineState>,
+    tx_client: OptionalCell<&'static dyn PioTxClient>,
+    rx_state: Cell<StateMachineState>,
+    rx_client: OptionalCell<&'static dyn PioRxClient>,
+}
+
+impl StateMachine {
+    fn new(
+        sm_id: SMNumber,
+        registers: StaticRef<PioRegisters>,
+        irq_registers: StaticRef<PioIrqRegisters>,
+        xor_registers: StaticRef<PioRegisters>,
+        set_registers: StaticRef<PioRegisters>,
+    ) -> StateMachine {
+        StateMachine {
+            sm_number: sm_id,
+            registers,
+            irq_registers,
+            xor_registers,
+            set_registers,
+            tx_state: Cell::new(StateMachineState::Ready),
+            tx_client: OptionalCell::empty(),
+            rx_state: Cell::new(StateMachineState::Ready),
+            rx_client: OptionalCell::empty(),
+        }
+    }
+
+    /// State machine configuration with any config structure.
+    pub fn config(&self, config: &StateMachineConfiguration) {
+        self.set_in_pins(config.in_pins_base);
+        self.set_out_pins(config.out_pins_base, config.out_pins_count);
+        self.set_set_pins(config.set_pins_base, config.set_pins_count);
+        self.set_side_set_pins(
+            config.side_set_base,
+            config.side_set_bit_count,
+            config.side_set_opt_enable,
+            config.side_set_pindirs,
+        );
+        self.set_in_shift(
+            config.in_shift_direction_right,
+            config.in_autopush,
+            config.in_push_threshold,
+        );
+        self.set_out_shift(
+            config.out_shift_direction_right,
+            config.out_autopull,
+            config.out_pull_threshold,
+        );
+        self.set_jmp_pin(config.jmp_pin);
+        self.set_wrap(config.wrap_to, config.wrap);
+        self.set_mov_status(config.mov_status_sel, config.mov_status_n);
+        self.set_out_special(
+            config.out_special_sticky,
+            config.out_special_has_enable_pin,
+            config.out_special_enable_pin_index,
+        );
+        self.set_clkdiv_int_frac(config.div_int, config.div_frac);
+    }
+
+    /// Set tx client for a state machine.
+    pub fn set_tx_client(&self, client: &'static dyn PioTxClient) {
+        self.tx_client.set(client);
+    }
+
+    /// Set rx client for a state machine.
+    pub fn set_rx_client(&self, client: &'static dyn PioRxClient) {
+        self.rx_client.set(client);
+    }
+
+    /// Set every config for the IN pins.
+    ///
+    /// in_base => the starting location for the input pins
+    pub fn set_in_pins(&self, in_base: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .pinctrl
+            .modify(SMx_PINCTRL::IN_BASE.val(in_base));
+    }
+
+    /// Set every config for the SET pins.
+    ///
+    /// set_base => the starting location for the SET pins
+    /// set_count => the number of SET pins
+    pub fn set_set_pins(&self, set_base: u32, set_count: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .pinctrl
+            .modify(SMx_PINCTRL::SET_BASE.val(set_base));
+        self.registers.sm[self.sm_number as usize]
+            .pinctrl
+            .modify(SMx_PINCTRL::SET_COUNT.val(set_count));
+    }
+
+    /// Set every config for the OUT pins.
+    ///
+    /// out_base => the starting location for the OUT pins
+    /// out_count => the number of OUT pins
+    pub fn set_out_pins(&self, out_base: u32, out_count: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .pinctrl
+            .modify(SMx_PINCTRL::OUT_BASE.val(out_base));
+        self.registers.sm[self.sm_number as usize]
+            .pinctrl
+            .modify(SMx_PINCTRL::OUT_COUNT.val(out_count));
+    }
+
+    /// Setup 'in' shifting parameters.
+    ///
+    ///  shift_right => true to shift ISR to right or false to shift to left
+    ///  autopush => true to enable, false to disable
+    ///  push_threshold => threshold in bits to shift in before auto/conditional re-pushing of the ISR
+    pub fn set_in_shift(&self, shift_right: bool, autopush: bool, push_threshold: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::IN_SHIFTDIR.val(shift_right.into()));
+        self.registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::AUTOPUSH.val(autopush.into()));
+        self.registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::PUSH_THRESH.val(push_threshold));
+    }
+
+    /// Setup 'out' shifting parameters.
+    ///
+    /// shift_right => `true` to shift OSR to right or false to shift to left
+    /// autopull => true to enable, false to disable
+    /// pull_threshold => threshold in bits to shift out before auto/conditional re-pulling of the OSR
+    pub fn set_out_shift(&self, shift_right: bool, autopull: bool, pull_threshold: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::OUT_SHIFTDIR.val(shift_right.into()));
+        self.registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::AUTOPULL.val(autopull.into()));
+        self.registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::PULL_THRESH.val(pull_threshold));
+    }
+
+    /// Set special OUT operations in a state machine.
+    ///
+    /// sticky
+    /// => true to enable sticky output (rere-asserting most recent OUT/SET pin values on subsequent cycles)
+    /// => false to disable sticky output
+    /// has_enable_pin
+    /// => true to enable auxiliary OUT enable pin
+    /// => false to disable auxiliary OUT enable pin
+    /// enable_pin_index => pin index for auxiliary OUT enable
+    pub fn set_out_special(&self, sticky: bool, has_enable_pin: bool, enable_pin_index: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::OUT_STICKY.val(sticky as u32));
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::INLINE_OUT_EN.val(has_enable_pin as u32));
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::OUT_EN_SEL.val(enable_pin_index));
+    }
+
+    /// Set the 'jmp' pin.
+    ///
+    /// pin => the raw GPIO pin number to use as the source for a jmp pin instruction
+    pub fn set_jmp_pin(&self, pin: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::JMP_PIN.val(pin));
+    }
+
+    /// Set the clock divider for a state machine.
+    ///
+    /// div_int => Integer part of the divisor
+    /// div_frac => Fractional part in 1/256ths
+    pub fn set_clkdiv_int_frac(&self, div_int: u32, div_frac: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .clkdiv
+            .modify(SMx_CLKDIV::INT.val(div_int));
+        self.registers.sm[self.sm_number as usize]
+            .clkdiv
+            .modify(SMx_CLKDIV::FRAC.val(div_frac));
+    }
+
+    /// Setup the FIFO joining in a state machine.
+    ///
+    /// fifo_join => specifies the join type - see the `PioFifoJoin` type
+    pub fn set_fifo_join(&self, fifo_join: PioFifoJoin) {
+        self.registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(fifo_join_bits(fifo_join));
+    }
+
+    /// Set every config for the SIDESET pins.
+    ///
+    /// sideset_base => the starting location for the SIDESET pins
+    /// bit_count => number of SIDESET bits per instruction - max 5
+    /// optional
+    /// => true to use the topmost sideset bit as a flag for whether to apply side set on that instruction
+    /// => false to use sideset with every instruction
+    /// pindirs
+    /// => true to affect pin direction
+    /// => false to affect value of a pin
+    pub fn set_side_set_pins(
+        &self,
+        sideset_base: u32,
+        bit_count: u32,
+        optional: bool,
+        pindirs: bool,
+    ) {
+        self.registers.sm[self.sm_number as usize]
+            .pinctrl
+            .modify(SMx_PINCTRL::SIDESET_BASE.val(sideset_base));
+        self.registers.sm[self.sm_number as usize]
+            .pinctrl
+            .modify(SMx_PINCTRL::SIDESET_COUNT.val(bit_count));
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::SIDE_EN.val(optional as u32));
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::SIDE_PINDIR.val(pindirs as u32));
+    }
+
+    /// Use a state machine to set the same pin direction for multiple consecutive pins for the PIO instance.
+    /// This is the pio_sm_set_consecutive_pindirs function from the pico sdk, renamed to be more clear.
+    ///
+    /// pin => starting pin
+    /// count => how many pins (including the base) should be changed
+    /// is_out
+    /// => true to set the pin as OUT
+    /// => false to set the pin as IN
+    pub fn set_pins_dirs(&self, mut pin: u32, mut count: u32, is_out: bool) {
+        // "set pindirs, 0" command created by pioasm
+        let set_pindirs_0: u16 = 0b1110000010000000;
+        self.with_paused(|| {
+            let mut pindir_val: u8 = 0x00;
+            if is_out {
+                pindir_val = 0x1f;
+            }
+            while count > 5 {
+                self.registers.sm[self.sm_number as usize]
+                    .pinctrl
+                    .modify(SMx_PINCTRL::SET_COUNT.val(5));
+                self.registers.sm[self.sm_number as usize]
+                    .pinctrl
+                    .modify(SMx_PINCTRL::SET_BASE.val(pin));
+                self.exec((set_pindirs_0) | (pindir_val as u16));
+                count -= 5;
+                pin = (pin + 5) & 0x1f;
+            }
+            self.registers.sm[self.sm_number as usize]
+                .pinctrl
+                .modify(SMx_PINCTRL::SET_COUNT.val(count));
+            self.registers.sm[self.sm_number as usize]
+                .pinctrl
+                .modify(SMx_PINCTRL::SET_BASE.val(pin));
+            self.exec((set_pindirs_0) | (pindir_val as u16));
+        });
+    }
+
+    /// Sets pin output values. Pauses the state machine to run `SET` commands
+    /// and temporarily unsets the `OUT_STICKY` bit to avoid side effects.
+    ///
+    /// pins => the pins to set the value for
+    /// high => true to set the pin high
+    pub fn set_pins<P: PioPin>(&self, pins: &[&P], high: bool) {
+        self.with_paused(|| {
+            for pin in pins {
+                self.registers.sm[self.sm_number as usize]
+                    .pinctrl
+                    .modify(SMx_PINCTRL::SET_BASE.val(pin.pin_number()));
+                self.registers.sm[self.sm_number as usize]
+                    .pinctrl
+                    .modify(SMx_PINCTRL::SET_COUNT.val(1));
+
+                self.exec(0b11100_000_000_00000 | high as u16);
+            }
+        });
+    }
+
+    /// Set the wrap addresses for a state machine.
+    ///
+    /// wrap_target => the instruction memory address to wrap to
+    /// wrap => the instruction memory address after which the program counters wraps to the target
+    pub fn set_wrap(&self, wrap_target: u32, wrap: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::WRAP_BOTTOM.val(wrap_target));
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::WRAP_TOP.val(wrap));
+    }
+
+    /// Resets the state machine to a consistent state and configures it.
+    pub fn init(&self) {
+        self.clear_fifos();
+        self.restart();
+        self.clkdiv_restart();
+        self.registers.sm[self.sm_number as usize]
+            .instr
+            .modify(SMx_INSTR::INSTR.val(0));
+    }
+
+    /// Address of the RX FIFO
+    pub fn rx_fifo_addr(&self) -> u32 {
+        // Taken from the register block rather than recomputed from a base
+        // address and an offset. `register_structs!` asserts at compile time
+        // that `rxf` sits where the datasheet puts it, so this cannot drift
+        // from the layout the rest of the driver uses.
+        core::ptr::addr_of!(self.registers.rxf[self.sm_number as usize]) as u32
+    }
+
+    /// Address of the TX FIFO
+    pub fn tx_fifo_addr(&self) -> u32 {
+        // See `rx_fifo_addr`.
+        core::ptr::addr_of!(self.registers.txf[self.sm_number as usize]) as u32
+    }
+
+    /// Restart a state machine.
+    pub fn restart(&self) {
+        match self.sm_number {
+            SMNumber::SM0 => self.set_registers.ctrl.modify(CTRL::SM0_RESTART::SET),
+            SMNumber::SM1 => self.set_registers.ctrl.modify(CTRL::SM1_RESTART::SET),
+            SMNumber::SM2 => self.set_registers.ctrl.modify(CTRL::SM2_RESTART::SET),
+            SMNumber::SM3 => self.set_registers.ctrl.modify(CTRL::SM3_RESTART::SET),
+        }
+    }
+
+    /// Clear a state machine’s TX and RX FIFOs.
+    pub fn clear_fifos(&self) {
+        self.xor_registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::FJOIN_RX::SET);
+        self.xor_registers.sm[self.sm_number as usize]
+            .shiftctrl
+            .modify(SMx_SHIFTCTRL::FJOIN_RX::SET);
+    }
+
+    /// Restart a state machine's clock divider.
+    pub fn clkdiv_restart(&self) {
+        match self.sm_number {
+            SMNumber::SM0 => self.set_registers.ctrl.modify(CTRL::CLKDIV0_RESTART::SET),
+            SMNumber::SM1 => self.set_registers.ctrl.modify(CTRL::CLKDIV1_RESTART::SET),
+            SMNumber::SM2 => self.set_registers.ctrl.modify(CTRL::CLKDIV2_RESTART::SET),
+            SMNumber::SM3 => self.set_registers.ctrl.modify(CTRL::CLKDIV3_RESTART::SET),
+        }
+    }
+
+    /// Returns true if the TX FIFO is full.
+    pub fn tx_full(&self) -> bool {
+        let field = match self.sm_number {
+            SMNumber::SM0 => FSTAT::TXFULL0,
+            SMNumber::SM1 => FSTAT::TXFULL1,
+            SMNumber::SM2 => FSTAT::TXFULL2,
+            SMNumber::SM3 => FSTAT::TXFULL3,
+        };
+        self.registers.fstat.read(field) != 0
+    }
+
+    /// Returns true if the RX FIFO is empty.
+    pub fn rx_empty(&self) -> bool {
+        let field = match self.sm_number {
+            SMNumber::SM0 => FSTAT::RXEMPTY0,
+            SMNumber::SM1 => FSTAT::RXEMPTY1,
+            SMNumber::SM2 => FSTAT::RXEMPTY2,
+            SMNumber::SM3 => FSTAT::RXEMPTY3,
+        };
+        self.registers.fstat.read(field) != 0
+    }
+
+    /// Returns true if the TX FIFO is empty.
+    pub fn tx_empty(&self) -> bool {
+        let field = match self.sm_number {
+            SMNumber::SM0 => FSTAT::TXEMPTY0,
+            SMNumber::SM1 => FSTAT::TXEMPTY1,
+            SMNumber::SM2 => FSTAT::TXEMPTY2,
+            SMNumber::SM3 => FSTAT::TXEMPTY3,
+        };
+        self.registers.fstat.read(field) != 0
+    }
+
+    /// Immediately execute an instruction on a state machine.
+    ///
+    /// => instr: the instruction to execute
+    /// Implicitly restricted size of instr to u16, cause it's the size pio asm instr
+    pub fn exec(&self, instr: u16) {
+        self.registers.sm[self.sm_number as usize]
+            .instr
+            .modify(SMx_INSTR::INSTR.val(instr as u32));
+    }
+
+    /// Executes a program on a state machine.
+    /// Jumps to the instruction at given address and runs the program.
+    ///
+    /// => program: a program loaded to PIO
+    /// => wrap: true to wrap the program, so it runs in loop
+    pub fn exec_program(&self, program: LoadedProgram, wrap: bool) {
+        if wrap {
+            self.set_wrap(
+                program.origin as u32,
+                program.origin as u32 + program.used_memory.count_ones(),
+            );
+        }
+        self.exec((program.origin as u16) & 0x1fu16)
+    }
+
+    /// Set source for 'mov status' in a state machine.
+    ///
+    /// status_sel => comparison used for the `MOV x, STATUS` instruction
+    /// status_n => comparison level for the `MOV x, STATUS` instruction
+    pub fn set_mov_status(&self, status_sel: PioMovStatusType, status_n: u32) {
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::STATUS_SEL.val(status_sel as u32));
+        self.registers.sm[self.sm_number as usize]
+            .execctrl
+            .modify(SMx_EXECCTRL::STATUS_N.val(status_n));
+    }
+
+    /// Set a state machine's state to enabled or to disabled.
+    ///
+    /// enabled => true to enable the state machine
+    pub fn set_enabled(&self, enabled: bool) {
+        match self.sm_number {
+            SMNumber::SM0 => self.registers.ctrl.modify(match enabled {
+                true => CTRL::SM0_ENABLE::SET,
+                false => CTRL::SM0_ENABLE::CLEAR,
+            }),
+            SMNumber::SM1 => self.registers.ctrl.modify(match enabled {
+                true => CTRL::SM1_ENABLE::SET,
+                false => CTRL::SM1_ENABLE::CLEAR,
+            }),
+            SMNumber::SM2 => self.registers.ctrl.modify(match enabled {
+                true => CTRL::SM2_ENABLE::SET,
+                false => CTRL::SM2_ENABLE::CLEAR,
+            }),
+            SMNumber::SM3 => self.registers.ctrl.modify(match enabled {
+                true => CTRL::SM3_ENABLE::SET,
+                false => CTRL::SM3_ENABLE::CLEAR,
+            }),
+        }
+    }
+
+    /// Is state machine enabled.
+    pub fn is_enabled(&self) -> bool {
+        let field = match self.sm_number {
+            SMNumber::SM0 => CTRL::SM0_ENABLE,
+            SMNumber::SM1 => CTRL::SM1_ENABLE,
+            SMNumber::SM2 => CTRL::SM2_ENABLE,
+            SMNumber::SM3 => CTRL::SM3_ENABLE,
+        };
+        self.registers.ctrl.read(field) != 0
+    }
+
+    /// Runs function with the state machine paused.
+    /// Keeps pinctrl and execctrl of the SM the same during execution
+    fn with_paused(&self, f: impl FnOnce()) {
+        let enabled = self.is_enabled();
+        self.set_enabled(false);
+
+        let pio_sm = &self.registers.sm[self.sm_number as usize];
+
+        let pinctrl = pio_sm.pinctrl.get();
+        let execctrl = pio_sm.execctrl.get();
+        // Hold pins value set by latest OUT/SET op
+        pio_sm.execctrl.modify(SMx_EXECCTRL::OUT_STICKY::CLEAR);
+
+        f();
+
+        pio_sm.pinctrl.set(pinctrl);
+        pio_sm.execctrl.set(execctrl);
+        self.set_enabled(enabled);
+    }
+
+    /// Write a word of data to a state machine’s TX FIFO.
+    /// If the FIFO is full, the client will be notified when space is available.
+    ///
+    /// => data: the data to write to the FIFO
+    pub fn push(&self, data: u32) -> Result<(), ErrorCode> {
+        match self.tx_state.get() {
+            StateMachineState::Ready => {
+                if self.tx_full() {
+                    // TX queue is full, set interrupt
+                    let field = match self.sm_number {
+                        SMNumber::SM0 => IRQ_INTE::SM0_TXNFULL::SET,
+                        SMNumber::SM1 => IRQ_INTE::SM1_TXNFULL::SET,
+                        SMNumber::SM2 => IRQ_INTE::SM2_TXNFULL::SET,
+                        SMNumber::SM3 => IRQ_INTE::SM3_TXNFULL::SET,
+                    };
+                    self.irq_registers.irq_lines[PioInterrupt::Irq0 as usize]
+                        .inte
+                        .modify(field);
+                    self.tx_state.set(StateMachineState::Waiting);
+                    Err(ErrorCode::BUSY)
+                } else {
+                    self.registers.txf[self.sm_number as usize].set(data);
+                    Ok(())
+                }
+            }
+            StateMachineState::Waiting => Err(ErrorCode::BUSY),
+        }
+    }
+
+    /// Wait until a state machine's TX FIFO is empty, then write a word of data to it.
+    /// If state machine is disabled and there is no space, an error will be returned.
+    /// If SM is stalled on RX or in loop, this will block forever.
+    ///
+    /// => data: the data to write to the FIFO
+    pub fn push_blocking(&self, data: u32) -> Result<(), ErrorCode> {
+        if self.tx_full() && !self.is_enabled() {
+            return Err(ErrorCode::OFF);
+        }
+        while self.tx_full() {}
+        self.registers.txf[self.sm_number as usize].set(data);
+        Ok(())
+    }
+
+    /// Read a word of data from a state machine’s RX FIFO.
+    /// If the FIFO is empty, the client will be notified when data is available.
+    pub fn pull(&self) -> Result<u32, ErrorCode> {
+        match self.rx_state.get() {
+            StateMachineState::Ready => {
+                if self.rx_empty() {
+                    // RX queue is empty, set interrupt
+                    let field = match self.sm_number {
+                        SMNumber::SM0 => IRQ_INTE::SM0_RXNEMPTY::SET,
+                        SMNumber::SM1 => IRQ_INTE::SM1_RXNEMPTY::SET,
+                        SMNumber::SM2 => IRQ_INTE::SM2_RXNEMPTY::SET,
+                        SMNumber::SM3 => IRQ_INTE::SM3_RXNEMPTY::SET,
+                    };
+                    self.irq_registers.irq_lines[PioInterrupt::Irq0 as usize]
+                        .inte
+                        .modify(field);
+                    self.rx_state.set(StateMachineState::Waiting);
+                    Err(ErrorCode::BUSY)
+                } else {
+                    Ok(self.registers.rxf[self.sm_number as usize].read(RXFx::RXF))
+                }
+            }
+            StateMachineState::Waiting => Err(ErrorCode::BUSY),
+        }
+    }
+
+    /// Reads a word of data from a state machine’s RX FIFO.
+    /// If state machine is disabled and there is no space, an error will be returned.
+    /// If SM is stalled on TX or in loop, this will block forever.
+    pub fn pull_blocking(&self) -> Result<u32, ErrorCode> {
+        if self.tx_full() && !self.is_enabled() {
+            return Err(ErrorCode::OFF);
+        }
+        while self.rx_empty() {}
+        Ok(self.registers.rxf[self.sm_number as usize].read(RXFx::RXF))
+    }
+
+    /// Handle a TX interrupt - notify that buffer space is available.
+    fn handle_tx_interrupt(&self) {
+        match self.tx_state.get() {
+            StateMachineState::Waiting => {
+                // TX queue has emptied, clear interrupt
+                let field = match self.sm_number {
+                    SMNumber::SM0 => IRQ_INTE::SM0_TXNFULL::CLEAR,
+                    SMNumber::SM1 => IRQ_INTE::SM1_TXNFULL::CLEAR,
+                    SMNumber::SM2 => IRQ_INTE::SM2_TXNFULL::CLEAR,
+                    SMNumber::SM3 => IRQ_INTE::SM3_TXNFULL::CLEAR,
+                };
+                self.irq_registers.irq_lines[PioInterrupt::Irq0 as usize]
+                    .inte
+                    .modify(field);
+                self.tx_state.set(StateMachineState::Ready);
+                self.tx_client.map(|client| {
+                    client.on_buffer_space_available();
+                });
+            }
+            StateMachineState::Ready => {}
+        }
+    }
+
+    /// Handle an RX interrupt - notify that data has been received.
+    fn handle_rx_interrupt(&self) {
+        match self.rx_state.get() {
+            StateMachineState::Waiting => {
+                // RX queue has data, clear interrupt
+                let field = match self.sm_number {
+                    SMNumber::SM0 => IRQ_INTE::SM0_RXNEMPTY::CLEAR,
+                    SMNumber::SM1 => IRQ_INTE::SM1_RXNEMPTY::CLEAR,
+                    SMNumber::SM2 => IRQ_INTE::SM2_RXNEMPTY::CLEAR,
+                    SMNumber::SM3 => IRQ_INTE::SM3_RXNEMPTY::CLEAR,
+                };
+                self.irq_registers.irq_lines[PioInterrupt::Irq0 as usize]
+                    .inte
+                    .modify(field);
+                self.rx_state.set(StateMachineState::Ready);
+                self.rx_client.map(|client| {
+                    client.on_data_received(
+                        self.registers.rxf[self.sm_number as usize].read(RXFx::RXF),
+                    );
+                });
+            }
+            StateMachineState::Ready => {}
+        }
+    }
+}
+
+pub struct Pio<B: PioBlock> {
+    registers: StaticRef<PioRegisters>,
+    irq_registers: StaticRef<PioIrqRegisters>,
+    irq_client: OptionalCell<&'static dyn PioIrqClient>,
+    /// Which PIO block this is, in the chip crate's own terms.
+    block: B,
+    sms: [StateMachine; NUMBER_STATE_MACHINES],
+    instructions_used: Cell<u32>,
+    _clear_registers: StaticRef<PioRegisters>,
+}
+
+/// 'MOV STATUS' types.
+#[derive(Clone, Copy)]
+pub enum PioMovStatusType {
+    StatusTxLessthan = 0,
+    StatusRxLessthan = 1,
+}
+
+/// PIO State Machine configuration structure
+///
+/// Used to initialize a PIO with all of its state machines.
+pub struct StateMachineConfiguration {
+    pub out_pins_count: u32,
+    pub out_pins_base: u32,
+    pub set_pins_count: u32,
+    pub set_pins_base: u32,
+    pub in_pins_base: u32,
+    pub side_set_base: u32,
+    pub side_set_opt_enable: bool,
+    pub side_set_bit_count: u32,
+    pub side_set_pindirs: bool,
+    pub wrap: u32,
+    pub wrap_to: u32,
+    pub in_shift_direction_right: bool,
+    pub in_autopush: bool,
+    pub in_push_threshold: u32,
+    pub out_shift_direction_right: bool,
+    pub out_autopull: bool,
+    pub out_pull_threshold: u32,
+    pub jmp_pin: u32,
+    pub out_special_sticky: bool,
+    pub out_special_has_enable_pin: bool,
+    pub out_special_enable_pin_index: u32,
+    pub mov_status_sel: PioMovStatusType,
+    pub mov_status_n: u32,
+    pub div_int: u32,
+    pub div_frac: u32,
+}
+
+impl Default for StateMachineConfiguration {
+    fn default() -> Self {
+        StateMachineConfiguration {
+            out_pins_count: 32,
+            out_pins_base: 0,
+            set_pins_count: 0,
+            set_pins_base: 0,
+            in_pins_base: 0,
+            side_set_base: 0,
+            side_set_opt_enable: false,
+            side_set_bit_count: 0,
+            side_set_pindirs: false,
+            wrap: 31,
+            wrap_to: 0,
+            in_shift_direction_right: true,
+            in_autopush: false,
+            in_push_threshold: 32,
+            out_shift_direction_right: true,
+            out_autopull: false,
+            out_pull_threshold: 32,
+            jmp_pin: 0,
+            out_special_sticky: false,
+            out_special_has_enable_pin: false,
+            out_special_enable_pin_index: 0,
+            mov_status_sel: PioMovStatusType::StatusTxLessthan,
+            mov_status_n: 0,
+            div_int: 0,
+            div_frac: 0,
+        }
+    }
+}
+
+impl<B: PioBlock> Pio<B> {
+    /// Create a driver for one PIO block.
+    ///
+    /// `block` names the block in the chip crate's own terms. `registers` is
+    /// its base. `irq_registers` is where its interrupt registers start, which
+    /// is not the same offset on every chip. The remaining three are the
+    /// block's atomic XOR, SET and CLEAR aliases.
+    pub fn new(
+        block: B,
+        registers: StaticRef<PioRegisters>,
+        irq_registers: StaticRef<PioIrqRegisters>,
+        xor_registers: StaticRef<PioRegisters>,
+        set_registers: StaticRef<PioRegisters>,
+        clear_registers: StaticRef<PioRegisters>,
+    ) -> Self {
+        Self {
+            registers,
+            irq_registers,
+            _clear_registers: clear_registers,
+            irq_client: OptionalCell::empty(),
+            block,
+            sms: SM_NUMBERS.map(|x| {
+                StateMachine::new(x, registers, irq_registers, xor_registers, set_registers)
+            }),
+            instructions_used: Cell::new(0),
+        }
+    }
+
+    /// Which PIO block this driver drives.
+    pub fn number(&self) -> B {
+        self.block
+    }
+
+    /// Set the client for this block's IRQ flags.
+    pub fn set_irq_client(&self, client: &'static dyn PioIrqClient) {
+        self.irq_client.set(client);
+    }
+
+    /// Get state machine
+    pub fn sm(&self, sm_number: SMNumber) -> &StateMachine {
+        &self.sms[sm_number as usize]
+    }
+
+    /// Enable or disable one interrupt source on one of the block's two
+    /// interrupt lines.
+    pub fn set_irq_source(
+        &self,
+        interrupt: PioInterrupt,
+        interrupt_source: InterruptSources,
+        enabled: bool,
+    ) {
+        self.irq_registers.irq_lines[interrupt as usize]
+            .inte
+            .modify(interrupt_source_bits(interrupt_source, enabled));
+    }
+
+    /// Checks if a PIO interrupt is set.
+    pub fn interrupt_get(&self, irq_num: u32) -> bool {
+        let mut temp = 0;
+        match irq_num {
+            0 => temp = self.registers.irq.read(IRQ::IRQ0),
+            1 => temp = self.registers.irq.read(IRQ::IRQ1),
+            2 => temp = self.registers.irq.read(IRQ::IRQ2),
+            3 => temp = self.registers.irq.read(IRQ::IRQ3),
+            4 => temp = self.registers.irq.read(IRQ::IRQ4),
+            5 => temp = self.registers.irq.read(IRQ::IRQ5),
+            6 => temp = self.registers.irq.read(IRQ::IRQ6),
+            7 => temp = self.registers.irq.read(IRQ::IRQ7),
+            _ => debug!("IRQ Number invalid - must be from 0 to 7"),
+        }
+        temp != 0
+    }
+
+    /// Clear a PIO interrupt.
+    pub fn interrupt_clear(&self, irq_num: u32) {
+        // Write one to clear, so only the named flag may be written. modify()
+        // would read the other seven and write them back, clearing those too.
+        match irq_flag_bit(irq_num) {
+            Some(bit) => self.registers.irq.set(bit),
+            None => debug!("IRQ Number invalid - must be from 0 to 7"),
+        }
+    }
+
+    /// Service one of the block's two interrupt lines.
+    ///
+    /// `interrupt` must be the line that actually fired: it selects which
+    /// status register is read, and the two are independent.
+    pub fn handle_interrupt(&self, interrupt: PioInterrupt) {
+        let ints = &self.irq_registers.irq_lines[interrupt as usize].ints;
+
+        for (sm, irq) in self.sms.iter().zip([
+            IRQ_INTS::SM0_TXNFULL,
+            IRQ_INTS::SM1_TXNFULL,
+            IRQ_INTS::SM2_TXNFULL,
+            IRQ_INTS::SM3_TXNFULL,
+        ]) {
+            if ints.is_set(irq) {
+                sm.handle_tx_interrupt();
+            }
+        }
+        for (sm, irq) in self.sms.iter().zip([
+            IRQ_INTS::SM0_RXNEMPTY,
+            IRQ_INTS::SM1_RXNEMPTY,
+            IRQ_INTS::SM2_RXNEMPTY,
+            IRQ_INTS::SM3_RXNEMPTY,
+        ]) {
+            if ints.is_set(irq) {
+                sm.handle_rx_interrupt();
+            }
+        }
+        // The block's own IRQ flags, which belong to no particular state
+        // machine. Cleared here rather than by the client: leaving one set
+        // leaves the peripheral asserting, and the kernel's poll loop would
+        // find it pending again on the next pass.
+        //
+        // Before the call, not after, so a flag raised while the client runs
+        // survives to the next pass instead of being cleared unseen. And only
+        // the flags just read, because clearing all four would discard one
+        // raised between that read and this write.
+        let flags = pending_irq_flags(ints.get());
+        if flags != 0 {
+            self.registers.irq.set(flags);
+            self.irq_client.map(|client| client.on_irq(flags));
+        }
+    }
+
+    /// Bypass the two flip-flop synchroniser on one pin's input.
+    ///
+    /// The synchroniser protects the state machines from metastability at the
+    /// cost of input delay, which fast synchronous buses cannot afford.
+    ///
+    /// pin => the pin to bypass
+    /// enabled => true to bypass the synchroniser
+    pub fn set_input_sync_bypass<P: PioPin>(&self, pin: &P, enabled: bool) {
+        let pin = pin.pin_number();
+        let reg_val = self.registers.input_sync_bypass.get();
+        if enabled {
+            self.registers.input_sync_bypass.set(reg_val | (1 << pin));
+        } else {
+            self.registers
+                .input_sync_bypass
+                .set(reg_val & (!(1 << pin)));
+        }
+    }
+
+    /// Adds a program to PIO.
+    /// Call this with `add_program(Some(0), include_bytes!("path_to_file"))`.
+    /// => origin: the address in the PIO instruction memory to start the program at or None to find an empty space
+    /// => program: the program to load into the PIO
+    /// Returns `LoadedProgram` which contains information about program location and length.
+    pub fn add_program(
+        &self,
+        origin: Option<usize>,
+        program: &[u8],
+    ) -> Result<LoadedProgram, ProgramError> {
+        let (instructions, len) = instructions_from_bytes(program)?;
+        self.add_program16(origin, &instructions[0..len])
+    }
+
+    /// Adds a program to PIO.
+    /// Takes `&[u16]` as input, cause pio-asm operations are 16bit.
+    /// => origin: the address in the PIO instruction memory to start the program at or None to find an empty space
+    /// => program: the program to load into the PIO
+    /// Returns `LoadedProgram` which contains information about program location and size.
+    pub fn add_program16(
+        &self,
+        origin: Option<usize>,
+        program: &[u16],
+    ) -> Result<LoadedProgram, ProgramError> {
+        // if origin is not set, try naively to find an empty space
+        match origin {
+            Some(origin) => {
+                assert!(origin < NUMBER_INSTR_MEMORY_LOCATIONS);
+                self.try_load_program_at(origin, program)
+                    .map_err(|_| ProgramError::AddrInUse(origin))
+            }
+            None => {
+                for origin in 0..NUMBER_INSTR_MEMORY_LOCATIONS {
+                    if let res @ Ok(_) = self.try_load_program_at(origin, program) {
+                        return res;
+                    }
+                }
+                Err(ProgramError::InsufficientSpace)
+            }
+        }
+    }
+
+    /// Try to load program at a specific origin, relocate operations if necessary.
+    /// Only for internals, use `add_program` or `add_program16` instead.
+    /// => origin: the address in the PIO instruction memory to start the program at
+    /// => program: the program to load into the PIO
+    /// Returns Ok(()) if the program was loaded successfully, otherwise an error.
+    fn try_load_program_at(
+        &self,
+        origin: usize,
+        program: &[u16],
+    ) -> Result<LoadedProgram, ProgramError> {
+        // Relocate program
+        let program = RelocatedProgram::new(program.iter(), origin);
+        let mut used_mask = 0;
+        for (i, instr) in program.enumerate() {
+            // wrapping around the end of program memory is valid
+            let addr = (i + origin) % 32;
+            let mask = 1 << addr;
+            if (self.instructions_used.get() | used_mask) & mask != 0 {
+                return Err(ProgramError::AddrInUse(addr));
+            }
+            self.registers.instr_mem[addr]
+                .instr_mem
+                .modify(INSTR_MEMx::INSTR_MEM.val(instr as u32));
+            used_mask |= mask;
+        }
+        // update the mask of used instructions slots
+        self.instructions_used
+            .set(self.instructions_used.get() | used_mask);
+        Ok(LoadedProgram {
+            used_memory: used_mask,
+            origin,
+        })
+    }
+
+    /// Clears all of a PIO instance's instruction memory.
+    pub fn clear_instr_registers(&self) {
+        for i in 0..NUMBER_INSTR_MEMORY_LOCATIONS {
+            self.registers.instr_mem[i]
+                .instr_mem
+                .modify(INSTR_MEMx::INSTR_MEM::CLEAR);
+        }
+
+        // update the mask of used instructions slots
+        self.instructions_used.set(0);
+    }
+
+    /// Initialize a new PIO with the same default configuration for all four state machines.
+    pub fn init(&self) {
+        let default_config: StateMachineConfiguration = StateMachineConfiguration::default();
+        for state_machine in self.sms.iter() {
+            state_machine.config(&default_config);
+        }
+        self.clear_instr_registers()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use kernel::utilities::registers::LocalRegisterCopy;
+
+    // Composed by the driver's own fifo_join_bits rather than rebuilt here, so
+    // a change to what set_fifo_join writes fails this instead of passing it.
+    #[test]
+    fn joining_either_fifo_sets_that_bit_and_clears_the_other() {
+        assert_eq!(fifo_join_bits(PioFifoJoin::PioFifoJoinRx).value, 1 << 31);
+        assert_eq!(fifo_join_bits(PioFifoJoin::PioFifoJoinTx).value, 1 << 30);
+        assert_eq!(fifo_join_bits(PioFifoJoin::PioFifoJoinNone).value, 0);
+    }
+
+    // The same bits applied to a register, so the test sees what a write does
+    // rather than what it encodes. LocalRegisterCopy is tock-registers' own
+    // in-memory register; no mock is involved.
+    #[test]
+    fn switching_the_join_clears_the_previous_one() {
+        let mut shiftctrl: LocalRegisterCopy<u32, SMx_SHIFTCTRL::Register> =
+            LocalRegisterCopy::new(0);
+
+        shiftctrl.modify(fifo_join_bits(PioFifoJoin::PioFifoJoinRx));
+        assert!(shiftctrl.is_set(SMx_SHIFTCTRL::FJOIN_RX));
+
+        shiftctrl.modify(fifo_join_bits(PioFifoJoin::PioFifoJoinTx));
+        assert!(shiftctrl.is_set(SMx_SHIFTCTRL::FJOIN_TX));
+        assert!(
+            !shiftctrl.is_set(SMx_SHIFTCTRL::FJOIN_RX),
+            "both FIFOs joined at once"
+        );
+
+        shiftctrl.modify(fifo_join_bits(PioFifoJoin::PioFifoJoinNone));
+        assert_eq!(shiftctrl.get(), 0, "a join could not be undone");
+    }
+
+    #[test]
+    fn a_program_filling_instruction_memory_converts() {
+        let (instrs, len) = instructions_from_bytes(&[0xe0; 64]).unwrap();
+        assert_eq!(len, NUMBER_INSTR_MEMORY_LOCATIONS);
+        assert_eq!(instrs[31], 0xe0e0);
+    }
+
+    #[test]
+    fn a_program_longer_than_instruction_memory_is_rejected() {
+        assert_eq!(
+            instructions_from_bytes(&[0xe0; 66]),
+            Err(ProgramError::InsufficientSpace)
+        );
+    }
+
+    #[test]
+    fn an_odd_byte_count_is_rejected() {
+        assert_eq!(
+            instructions_from_bytes(&[0xe0; 3]),
+            Err(ProgramError::NotInstructionAligned)
+        );
+    }
+
+    #[test]
+    fn bytes_are_read_big_endian() {
+        let (instrs, len) = instructions_from_bytes(&[0x12, 0x34, 0x56, 0x78]).unwrap();
+        assert_eq!(len, 2);
+        assert_eq!(instrs[0], 0x1234);
+        assert_eq!(instrs[1], 0x5678);
+    }
+
+    // Where each interrupt register lands, computed the way the hardware
+    // sees it: the array's own offset, plus the line's stride, plus the
+    // field's offset inside the group. register_structs! checks that a field
+    // sits at its declared offset, but not that the declaration names the
+    // right register, so these are the datasheet's numbers written down once.
+    //
+    // These are offsets inside `PioIrqRegisters`, not inside the PIO block.
+    // The block sits at a different place on each chip -- +0x128 on the
+    // RP2040, +0x16c on the RP2350 -- and each chip crate holds its own
+    // IRQ_OFFSET. Add 0x128 to these to recover the RP2040's numbers.
+    #[test]
+    fn the_interrupt_registers_land_on_their_datasheet_offsets() {
+        use core::mem::{offset_of, size_of};
+        let group = |line: PioInterrupt| {
+            offset_of!(PioIrqRegisters, irq_lines) + (line as usize) * size_of::<IrqReg>()
+        };
+        for (line, inte) in [(PioInterrupt::Irq0, 0x04), (PioInterrupt::Irq1, 0x10)] {
+            assert_eq!(group(line) + offset_of!(IrqReg, inte), inte);
+            assert_eq!(group(line) + offset_of!(IrqReg, intf), inte + 4);
+            assert_eq!(group(line) + offset_of!(IrqReg, ints), inte + 8);
+        }
+    }
+
+    // The two functions work in different registers: pending_irq_flags reads
+    // INTS, where flag n is bit n + 8, and irq_flag_bit writes `irq`, where
+    // flag n is bit n. handle_interrupt feeds one to the other, so they have
+    // to agree on which flag is which.
+    #[test]
+    fn a_pending_flag_clears_the_flag_it_names() {
+        for n in 0..4u32 {
+            let pending = pending_irq_flags(1 << (IRQ_INTS::SM0.shift as u32 + n));
+            assert_eq!(pending, irq_flag_bit(n).unwrap(), "flag {n}");
+        }
+    }
+
+    #[test]
+    fn only_the_eight_real_irq_flags_have_a_clear_bit() {
+        for n in 0..8u32 {
+            assert_eq!(irq_flag_bit(n), Some(1 << n));
+        }
+        assert_eq!(irq_flag_bit(8), None, "there is no ninth flag");
+        assert_eq!(irq_flag_bit(u32::MAX), None);
+    }
+
+    // Flags 0 to 3 are INTS bits 8 to 11 per the datasheet. Written out here
+    // rather than taken from the bitfield, so moving the field fails this.
+    #[test]
+    fn pending_flags_are_the_block_irq_bits_and_nothing_else() {
+        for flags in 0..16u32 {
+            assert_eq!(pending_irq_flags(flags << 8), flags);
+        }
+        // The TXNFULL and RXNEMPTY halves sit below them and must not leak in.
+        assert_eq!(pending_irq_flags(0xff), 0);
+        // Only four flags reach the NVIC, however much else is set.
+        assert_eq!(pending_irq_flags(0xffff_ffff), 0xf);
+    }
+
+    // The discriminants index irq_lines, so they are the register layout, not
+    // just names: IRQ0's enable/force/status group is the one at 0x12C.
+    #[test]
+    fn the_interrupt_lines_index_their_own_registers() {
+        assert_eq!(PioInterrupt::Irq0 as usize, 0);
+        assert_eq!(PioInterrupt::Irq1 as usize, 1);
+        assert_eq!(NUMBER_INTERRUPT_LINES, 2);
+    }
+
+    // All twelve against the RP2040 datasheet's IRQ0_INTE table. Both lines
+    // share the layout, so this covers IRQ1 too.
+    #[test]
+    fn every_interrupt_source_sits_where_the_datasheet_puts_it() {
+        for (source, bit) in [
+            (InterruptSources::Sm0RXNotEmpty, 0),
+            (InterruptSources::Sm1RXNotEmpty, 1),
+            (InterruptSources::Sm2RXNotEmpty, 2),
+            (InterruptSources::Sm3RXNotEmpty, 3),
+            (InterruptSources::Sm0TXNotFull, 4),
+            (InterruptSources::Sm1TXNotFull, 5),
+            (InterruptSources::Sm2TXNotFull, 6),
+            (InterruptSources::Sm3TXNotFull, 7),
+            (InterruptSources::Interrupt0, 8),
+            (InterruptSources::Interrupt1, 9),
+            (InterruptSources::Interrupt2, 10),
+            (InterruptSources::Interrupt3, 11),
+        ] {
+            assert_eq!(interrupt_source_bits(source, true).value, 1 << bit);
+            assert_eq!(
+                interrupt_source_bits(source, false).value,
+                0,
+                "disabling still wrote a one"
+            );
+        }
+    }
+
+    // Enabling one source must not disturb the eleven others, which is the
+    // reason set_irq_source composes a field rather than writing the register.
+    #[test]
+    fn enabling_a_source_leaves_the_others_alone() {
+        let mut inte: LocalRegisterCopy<u32, IRQ_INTE::Register> = LocalRegisterCopy::new(0);
+        inte.modify(interrupt_source_bits(InterruptSources::Sm0TXNotFull, true));
+        inte.modify(interrupt_source_bits(InterruptSources::Interrupt2, true));
+        assert_eq!(inte.get(), (1 << 4) | (1 << 10));
+
+        inte.modify(interrupt_source_bits(InterruptSources::Sm0TXNotFull, false));
+        assert_eq!(inte.get(), 1 << 10, "disabling one cleared another");
+    }
+
+    #[test]
+    fn relocation_moves_jmp_targets_and_wraps_at_32() {
+        // jmp 3, then `set pindirs, 31`, which is not a jmp.
+        let jmp3 = 0b000_00000_000_00011u16;
+        let set = 0b111_00000_100_11111u16;
+        let mut out = [0u16; 2];
+        for (slot, instr) in out
+            .iter_mut()
+            .zip(RelocatedProgram::new([jmp3, set].iter(), 5))
+        {
+            *slot = instr;
+        }
+        assert_eq!(out[0], 0b000_00000_000_01000);
+        assert_eq!(out[1], set, "a non-jmp must be copied untouched");
+
+        // 3 + 30 is 33, which must come back as 1 and must not spill out of
+        // the five address bits. Comparing the whole instruction is the point:
+        // masking the result would hide a missing wrap.
+        let mut wrapped = [0u16; 1];
+        for (slot, instr) in wrapped
+            .iter_mut()
+            .zip(RelocatedProgram::new([jmp3].iter(), 30))
+        {
+            *slot = instr;
+        }
+        assert_eq!(wrapped[0], 0b000_00000_000_00001);
+    }
+
+    // Only opcode 000 is JMP. Every other opcode must survive relocation
+    // unchanged, including the ones whose low bits look like an address.
+    #[test]
+    fn relocation_leaves_every_other_opcode_alone() {
+        for opcode in 1..8u16 {
+            let instr = (opcode << 13) | 0b00000_000_11111;
+            let mut out = [0u16; 1];
+            for (slot, relocated) in out.iter_mut().zip(RelocatedProgram::new([instr].iter(), 7)) {
+                *slot = relocated;
+            }
+            assert_eq!(out[0], instr, "opcode {opcode:03b} was relocated");
+        }
+    }
+
+    // 0 means 32 in both threshold fields, and 0 means 65536 in CLKDIV::INT.
+    // Both come out right today only because .val() masks; nothing states the
+    // convention, so nothing would notice a field growing a bit.
+    #[test]
+    fn a_shift_threshold_of_32_encodes_as_zero() {
+        assert_eq!(SMx_SHIFTCTRL::PUSH_THRESH.val(32).value, 0);
+        assert_eq!(SMx_SHIFTCTRL::PULL_THRESH.val(32).value, 0);
+        assert_eq!(SMx_SHIFTCTRL::PUSH_THRESH.val(31).value, 31 << 20);
+    }
+
+    #[test]
+    fn a_clock_divisor_of_65536_encodes_as_zero() {
+        assert_eq!(SMx_CLKDIV::INT.val(65536).value, 0);
+        assert_eq!(SMx_CLKDIV::INT.val(1).value, 1 << 16);
+    }
+
+    // TXF0 is at +0x10 and RXF0 at +0x20, four bytes apart per state machine.
+    //
+    // This used to check an address computation: a base address picked by
+    // block, plus an offset, plus the state machine's index. That computation
+    // is gone -- both accessors now take the address from the register block
+    // itself, so a wrong base, or a state machine paired with the block it
+    // does not belong to, is no longer expressible. The stride is carried by
+    // the array type. What is left to get wrong is where the two arrays are
+    // declared to start, which is what this reads.
+    #[test]
+    fn fifo_addresses_match_the_datasheet_map() {
+        use core::mem::offset_of;
+        assert_eq!(offset_of!(PioRegisters, txf), 0x10);
+        assert_eq!(offset_of!(PioRegisters, rxf), 0x20);
+    }
+
+    // Unrelated SHIFTCTRL fields must survive a join change.
+    #[test]
+    fn changing_the_join_leaves_the_shift_settings_alone() {
+        let mut shiftctrl: LocalRegisterCopy<u32, SMx_SHIFTCTRL::Register> =
+            LocalRegisterCopy::new(0);
+        shiftctrl.modify(SMx_SHIFTCTRL::PUSH_THRESH.val(8) + SMx_SHIFTCTRL::AUTOPUSH::SET);
+        shiftctrl.modify(fifo_join_bits(PioFifoJoin::PioFifoJoinRx));
+
+        assert_eq!(shiftctrl.read(SMx_SHIFTCTRL::PUSH_THRESH), 8);
+        assert!(shiftctrl.is_set(SMx_SHIFTCTRL::AUTOPUSH));
+    }
+}

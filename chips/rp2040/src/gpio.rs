@@ -14,7 +14,6 @@ use kernel::utilities::StaticRef;
 use kernel::utilities::cells::OptionalCell;
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeable};
 use kernel::utilities::registers::{ReadOnly, ReadWrite, register_bitfields, register_structs};
-pub use rp2xxx::pads::{DriveStrength, SlewRate};
 
 use crate::chip::Processor;
 #[repr(C)]
@@ -397,6 +396,24 @@ enum_from_primitive! {
     }
 }
 
+/// Slew rate of an output
+#[derive(Debug, Eq, PartialEq)]
+pub enum SlewRate {
+    /// Fast slew rate.
+    Fast = 1,
+    /// Slow slew rate.
+    Slow = 0,
+}
+
+/// Drive Strength of a GPIO Pin
+#[derive(Debug, Eq, PartialEq)]
+pub enum DriveStrength {
+    Drive2mA = 0,
+    Drive4ma = 1,
+    Drive8ma = 2,
+    Drive12ma = 3,
+}
+
 pub struct RPGpioPin<'a> {
     pin: usize,
     client: OptionalCell<&'a dyn hil::gpio::Client>,
@@ -706,5 +723,43 @@ impl SIO {
             1 => Processor::Processor1,
             _ => panic!("SIO CPUID cannot be {}", proc_id),
         }
+    }
+}
+
+impl rp2xxx::pads::PioPad for RPGpioPin<'_> {
+    type Block = crate::pio::PIONumber;
+
+    fn select_pio(&self, block: Self::Block) {
+        crate::pio::gpio_init(block, self)
+    }
+
+    fn set_schmitt(&self, enable: bool) {
+        RPGpioPin::set_schmitt(self, enable)
+    }
+
+    fn set_slew_rate(&self, rate: rp2xxx::pads::SlewRate) {
+        RPGpioPin::set_slew_rate(
+            self,
+            match rate {
+                rp2xxx::pads::SlewRate::Slow => SlewRate::Slow,
+                rp2xxx::pads::SlewRate::Fast => SlewRate::Fast,
+            },
+        )
+    }
+
+    fn set_drive_strength(&self, strength: rp2xxx::pads::DriveStrength) {
+        RPGpioPin::set_drive_strength(
+            self,
+            match strength {
+                rp2xxx::pads::DriveStrength::Drive2mA => DriveStrength::Drive2mA,
+                rp2xxx::pads::DriveStrength::Drive4mA => DriveStrength::Drive4ma,
+                rp2xxx::pads::DriveStrength::Drive8mA => DriveStrength::Drive8ma,
+                rp2xxx::pads::DriveStrength::Drive12mA => DriveStrength::Drive12ma,
+            },
+        )
+    }
+
+    fn activate_pads(&self) {
+        RPGpioPin::activate_pads(self)
     }
 }
