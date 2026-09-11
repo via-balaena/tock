@@ -15,6 +15,7 @@ pub mod gpio;
 pub mod interrupts;
 pub mod pio;
 pub mod pio_gspi;
+pub mod pwm;
 pub mod resets;
 pub mod spi;
 pub mod ticks;
