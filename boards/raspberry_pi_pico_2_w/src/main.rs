@@ -29,7 +29,7 @@ use kernel::{capabilities, create_capability, static_init};
 use pio_gspi_component::{PioGspiComponent, pio_gpsi_component_static};
 
 use rp2350::chip::{Rp2350, Rp2350DefaultPeripherals};
-use rp2350::gpio::{RPGpio, RPGpioPin};
+use rp2350::gpio::{GpioFunction, RPGpio, RPGpioPin};
 use rp2350::pio_gspi::PioGSpi;
 use rp2350::timer::RPTimer;
 use rp2350::{dma, pio};
@@ -228,6 +228,14 @@ pub unsafe fn main() {
     // The kit's beeper is passive: it needs a square wave, not a level, so it
     // hangs off PWM rather than a GPIO. GP13 is PWM6 B (RP2350 datasheet
     // table 646).
+    // The slice drives nothing until the pad is switched to it: the PWM driver
+    // does not touch the pin's function, and GP13 comes up as NULL. Without
+    // this the block runs correctly and silently, which is exactly what it did.
+    peripherals
+        .pins
+        .get_pin(RPGpio::GPIO13)
+        .set_function(GpioFunction::PWM);
+
     let mux_pwm = components::pwm::PwmMuxComponent::new(&peripherals.pwm)
         .finalize(components::pwm_mux_component_static!(rp2350::pwm::Pwm));
     let virtual_pwm_buzzer =
