@@ -138,6 +138,11 @@ pub unsafe fn main() {
                     // process that could drive them could power the radio up
                     // underneath the kernel, and once it is running could cut
                     // its power or corrupt a transfer on the bus.
+                    //
+                    // GPIO 13 is the kit's beeper and belongs to PWM. Handing
+                    // it out here as well would let a process take the pin's
+                    // function away from the PWM slice mid-note, and would put
+                    // two drivers on one pin with no arbitration between them.
                     2 => peripherals.pins.get_pin(RPGpio::GPIO2),
                     3 => peripherals.pins.get_pin(RPGpio::GPIO3),
                     4 => peripherals.pins.get_pin(RPGpio::GPIO4),
@@ -149,7 +154,6 @@ pub unsafe fn main() {
                     10 => peripherals.pins.get_pin(RPGpio::GPIO10),
                     11 => peripherals.pins.get_pin(RPGpio::GPIO11),
                     12 => peripherals.pins.get_pin(RPGpio::GPIO12),
-                    13 => peripherals.pins.get_pin(RPGpio::GPIO13),
                     14 => peripherals.pins.get_pin(RPGpio::GPIO14),
                     15 => peripherals.pins.get_pin(RPGpio::GPIO15),
                     16 => peripherals.pins.get_pin(RPGpio::GPIO16),
