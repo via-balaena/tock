@@ -25,7 +25,7 @@ use components::gpio::GpioComponent;
 use kernel::component::Component;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
 use kernel::syscall::SyscallDriver;
-use kernel::{capabilities, create_capability};
+use kernel::{capabilities, create_capability, static_init};
 use pio_gspi_component::{PioGspiComponent, pio_gpsi_component_static};
 
 use rp2350::chip::{Rp2350, Rp2350DefaultPeripherals};
@@ -59,10 +59,21 @@ type WifiDriver = capsules_extra::wifi::WifiDriver<'static, CYW4343xHw>;
 const FAULT_RESPONSE: capsules_system::process_policies::PanicFaultPolicy =
     capsules_system::process_policies::PanicFaultPolicy {};
 
+/// The kit's passive beeper on GP13, which is PWM6 B on this chip.
+type KitBuzzer = capsules_extra::buzzer_driver::Buzzer<
+    'static,
+    capsules_extra::buzzer_pwm::PwmBuzzer<
+        'static,
+        VirtualMuxAlarm<'static, RPTimer<'static>>,
+        capsules_core::virtualizers::virtual_pwm::PwmPinUser<'static, rp2350::pwm::Pwm<'static>>,
+    >,
+>;
+
 /// Supported drivers by the platform
 pub struct RaspberryPiPico2W {
     base: raspberry_pi_pico_2::Platform,
     wifi: &'static WifiDriver,
+    buzzer: &'static KitBuzzer,
 }
 
 impl SyscallDriverLookup for RaspberryPiPico2W {
@@ -72,6 +83,7 @@ impl SyscallDriverLookup for RaspberryPiPico2W {
     {
         match driver_num {
             capsules_extra::wifi::DRIVER_NUM => f(Some(self.wifi)),
+            capsules_extra::buzzer_driver::DRIVER_NUM => f(Some(self.buzzer)),
             _ => self.base.with_driver(driver_num, f),
         }
     }
@@ -209,7 +221,52 @@ pub unsafe fn main() {
     )
     .finalize(components::wifi_component_static!(CYW4343xHw));
 
-    let raspberry_pi_pico_2_w = RaspberryPiPico2W { base, wifi };
+    // The kit's beeper is passive: it needs a square wave, not a level, so it
+    // hangs off PWM rather than a GPIO. GP13 is PWM6 B (RP2350 datasheet
+    // table 646).
+    let mux_pwm = components::pwm::PwmMuxComponent::new(&peripherals.pwm)
+        .finalize(components::pwm_mux_component_static!(rp2350::pwm::Pwm));
+    let virtual_pwm_buzzer =
+        components::pwm::PwmPinUserComponent::new(mux_pwm, rp2350::gpio::RPGpio::GPIO13)
+            .finalize(components::pwm_pin_user_component_static!(rp2350::pwm::Pwm));
+
+    let virtual_alarm_buzzer = static_init!(
+        VirtualMuxAlarm<'static, RPTimer<'static>>,
+        VirtualMuxAlarm::new(mux_alarm)
+    );
+    virtual_alarm_buzzer.setup();
+
+    let pwm_buzzer = static_init!(
+        capsules_extra::buzzer_pwm::PwmBuzzer<
+            'static,
+            VirtualMuxAlarm<'static, RPTimer<'static>>,
+            capsules_core::virtualizers::virtual_pwm::PwmPinUser<
+                'static,
+                rp2350::pwm::Pwm<'static>,
+            >,
+        >,
+        capsules_extra::buzzer_pwm::PwmBuzzer::new(
+            virtual_pwm_buzzer,
+            virtual_alarm_buzzer,
+            capsules_extra::buzzer_pwm::DEFAULT_MAX_BUZZ_TIME_MS,
+        )
+    );
+
+    let buzzer = static_init!(
+        KitBuzzer,
+        capsules_extra::buzzer_driver::Buzzer::new(
+            pwm_buzzer,
+            capsules_extra::buzzer_driver::DEFAULT_MAX_BUZZ_TIME_MS,
+            board_kernel.create_grant(
+                capsules_extra::buzzer_driver::DRIVER_NUM,
+                &create_capability!(capabilities::MemoryAllocationCapability)
+            )
+        )
+    );
+    kernel::hil::buzzer::Buzzer::set_client(pwm_buzzer, buzzer);
+    kernel::hil::time::Alarm::set_alarm_client(virtual_alarm_buzzer, pwm_buzzer);
+
+    let raspberry_pi_pico_2_w = RaspberryPiPico2W { base, wifi, buzzer };
 
     kernel::debug!("Initialization complete. Enter main loop");
 

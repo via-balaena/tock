@@ -13,6 +13,7 @@ use crate::dma;
 use crate::gpio::{RPPins, SIO};
 use crate::interrupts;
 use crate::pio::{Pio, PioInterrupt};
+use crate::pwm;
 use crate::spi;
 use crate::ticks::Ticks;
 use crate::timer::RPTimer;
@@ -127,6 +128,7 @@ pub struct Rp2350DefaultPeripherals<'a> {
     /// nothing drives them yet: each holds four state machines, and each of
     /// those three client cells and two state cells.
     pub pio0: Pio,
+    pub pwm: pwm::Pwm<'a>,
     pub sio: SIO,
     pub spi0: spi::Spi<'a>,
     pub ticks: Ticks,
@@ -143,6 +145,7 @@ impl Rp2350DefaultPeripherals<'_> {
             dma: dma::Dma::new(),
             pins: RPPins::new(),
             pio0: crate::pio::new_pio0(),
+            pwm: pwm::Pwm::new(clocks),
             sio: SIO::new(),
             spi0: spi::new_spi0(clocks),
             ticks: Ticks::new(),
