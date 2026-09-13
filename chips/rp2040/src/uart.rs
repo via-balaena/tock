@@ -457,14 +457,26 @@ impl<'a> Uart<'a> {
         self.registers.uartimsc.modify(UARTIMSC::TXIM::CLEAR);
     }
 
+    /// Enable the receive interrupt, and the overrun interrupt with it.
+    ///
+    /// `OEIM` has to be unmasked here rather than checked per character. In
+    /// the case that matters there is no character left to carry the flag:
+    /// measured on an rp2350, whose driver is the same block, a stuck board
+    /// showed `UARTRIS` bit 10 set with `UARTFR.RXFE` still 1 and neither
+    /// the receive interrupt nor a pending character to find it by. Nothing
+    /// would ever have looked.
     pub fn enable_receive_interrupt(&self) {
         self.registers.uartifls.modify(UARTIFLS::RXIFLSEL::FIFO_1_8);
 
-        self.registers.uartimsc.modify(UARTIMSC::RXIM::SET);
+        self.registers
+            .uartimsc
+            .modify(UARTIMSC::RXIM::SET + UARTIMSC::OEIM::SET);
     }
 
     pub fn disable_receive_interrupt(&self) {
-        self.registers.uartimsc.modify(UARTIMSC::RXIM::CLEAR);
+        self.registers
+            .uartimsc
+            .modify(UARTIMSC::RXIM::CLEAR + UARTIMSC::OEIM::CLEAR);
     }
 
     fn uart_is_writable(&self) -> bool {
@@ -479,9 +491,14 @@ impl<'a> Uart<'a> {
     pub fn handle_interrupt(&self) {
         if self.registers.uartimsc.is_set(UARTIMSC::TXIM) {
             if self.registers.uartfr.is_set(UARTFR::TXFE) {
-                if self.tx_status.get() == UARTStateTX::Idle {
-                    panic!("No data to transmit");
-                } else if self.tx_status.get() == UARTStateTX::Transmitting {
+                // An armed transmit interrupt with nothing outstanding used
+                // to `panic!` here. Taking the kernel down is not a response
+                // to an interrupt, and the driver has one available: disarm
+                // it. `AbortRequested` reached this arm and was ignored, so
+                // the panic was for the one state that could not reach it.
+                if self.tx_status.get() != UARTStateTX::Transmitting {
+                    self.disable_transmit_interrupt();
+                } else {
                     self.disable_transmit_interrupt();
                     if self.tx_position.get() < self.tx_len.get() {
                         self.fill_fifo();
@@ -501,37 +518,76 @@ impl<'a> Uart<'a> {
         }
 
         if self.registers.uartimsc.is_set(UARTIMSC::RXIM) {
-            if self.registers.uartfr.is_set(UARTFR::RXFF) {
+            // Drain while the receive FIFO is NOT EMPTY, rather than reading
+            // one character while it is FULL.
+            //
+            // `RXFF` is "receive FIFO full". `configure` clears `FEN`, so
+            // "full" means one character and the old test worked -- but only
+            // because of that, and it read exactly one character per
+            // interrupt. `RXFE` clear means at least one character is
+            // waiting, which is true whether or not the FIFOs are on, so
+            // this is correct for both and is what `FEN` would need.
+            while !self.registers.uartfr.is_set(UARTFR::RXFE)
+                && self.rx_status.get() == UARTStateRX::Receiving
+            {
                 let byte = self.registers.uartdr.get() as u8;
 
-                self.disable_receive_interrupt();
-                if self.rx_status.get() == UARTStateRX::Receiving {
-                    if self.rx_position.get() < self.rx_len.get() {
-                        self.rx_buffer.map(|buf| {
-                            buf[self.rx_position.get()] = byte;
-                            self.rx_position.replace(self.rx_position.get() + 1);
-                        });
-                    }
-                    if self.rx_position.get() == self.rx_len.get() {
-                        // reception done
-                        self.rx_status.replace(UARTStateRX::Idle);
-                    } else {
-                        self.enable_receive_interrupt();
-                    }
-                    // notify client if transfer is done
-                    if self.rx_status.get() == UARTStateRX::Idle {
-                        self.rx_client.map(|client| {
-                            if let Some(buf) = self.rx_buffer.take() {
-                                client.received_buffer(
-                                    buf,
-                                    self.rx_len.get(),
-                                    Ok(()),
-                                    hil::uart::Error::None,
-                                );
-                            }
-                        });
-                    }
+                if self.rx_position.get() < self.rx_len.get() {
+                    self.rx_buffer.map(|buf| {
+                        buf[self.rx_position.get()] = byte;
+                        self.rx_position.replace(self.rx_position.get() + 1);
+                    });
                 }
+
+                if self.rx_position.get() == self.rx_len.get() {
+                    self.rx_status.replace(UARTStateRX::Idle);
+                    self.disable_receive_interrupt();
+                    self.rx_client.map(|client| {
+                        if let Some(buf) = self.rx_buffer.take() {
+                            client.received_buffer(
+                                buf,
+                                self.rx_len.get(),
+                                Ok(()),
+                                hil::uart::Error::None,
+                            );
+                        }
+                    });
+                }
+            }
+
+            // An armed receive interrupt with nothing outstanding: disarm it
+            // rather than leave it asserted with nobody to drain the
+            // character that raised it.
+            if self.rx_status.get() != UARTStateRX::Receiving {
+                self.disable_receive_interrupt();
+            }
+        }
+
+        // An overrun: a character arrived with nowhere to put it and was
+        // dropped. `configure` clears `FEN`, so the receive side is one
+        // location deep and anything arriving before this handler runs is
+        // overwritten in the shift register and gone.
+        //
+        // Reporting matters more than it sounds. Carrying on hands the
+        // client a buffer with a hole in it and tells it the receive
+        // succeeded, which is worse than failing: the data is equally lost
+        // either way, but this way nobody finds out. `hil::uart` enumerates
+        // `Error::OverrunError` for exactly this.
+        if self.registers.uartris.is_set(UARTRIS::OERIS) {
+            self.registers.uarticr.write(UARTICR::OEIC::SET);
+            if self.rx_status.get() == UARTStateRX::Receiving {
+                self.rx_status.replace(UARTStateRX::Idle);
+                self.disable_receive_interrupt();
+                self.rx_client.map(|client| {
+                    if let Some(buf) = self.rx_buffer.take() {
+                        client.received_buffer(
+                            buf,
+                            self.rx_position.get(),
+                            Err(ErrorCode::FAIL),
+                            hil::uart::Error::OverrunError,
+                        );
+                    }
+                });
             }
         }
     }
