@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
 #
-# Run the `hil::uart` conformance test on qemu_rv32_virt and read its verdict.
+# Run the `hil::uart` conformance test under QEMU and read its verdict.
+#
+#   uart-contract-qemu.sh [rv32|q35]      (default: rv32)
 #
 # The test is a kernel test that prints at boot, so this needs neither apps nor
 # tockloader nor QMP -- which is why it is not part of `qemu-virt-ci-runner`,
-# whose job is installing libtock-c apps and driving them over QMP. This takes
-# about two seconds.
+# whose job is installing libtock-c apps and driving them over QMP. Each
+# platform takes a couple of seconds.
+#
+# Two platforms, two architectures, two different chip drivers:
+#
+#   rv32  qemu_rv32_virt   riscv32   qemu_virt_chip::uart, through a UartDevice
+#                                    on the console's mux -- so it covers the
+#                                    VIRTUALIZER as well as the chip driver.
+#   q35   qemu_i486_q35    i486      x86_q35::serial::SerialPort on COM2,
+#                                    against the chip driver directly.
 #
 # Exit status:
 #   0  every clause held
@@ -16,9 +26,8 @@
 
 set -uo pipefail
 
-BOARD="qemu_rv32_virt"
-TARGET="riscv32imac-unknown-none-elf"
-BOOT_SECONDS="${BOOT_SECONDS:-8}"
+PLATFORM="${1:-rv32}"
+BOOT_SECONDS="${BOOT_SECONDS:-10}"
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root" || exit 2
@@ -26,11 +35,28 @@ cd "$root" || exit 2
 fail() { printf '  FAIL  %s\n' "$*"; }
 note() { printf '        %s\n' "$*"; }
 
+case "$PLATFORM" in
+  rv32)
+    BOARD="qemu_rv32_virt"
+    TARGET="riscv32imac-unknown-none-elf"
+    QEMU="qemu-system-riscv32"
+    ;;
+  q35)
+    BOARD="qemu_i486_q35"
+    TARGET="i486-unknown-none"
+    QEMU="qemu-system-i386"
+    ;;
+  *)
+    fail "unknown platform '$PLATFORM' -- expected rv32 or q35"
+    exit 2
+    ;;
+esac
+
 printf 'uart contract, %s under qemu\n' "$BOARD"
 
-command -v qemu-system-riscv32 > /dev/null 2>&1
+command -v "$QEMU" > /dev/null 2>&1
 if [ "$?" -ne 0 ]; then
-  fail "qemu-system-riscv32 is not on PATH"
+  fail "$QEMU is not on PATH"
   exit 2
 fi
 
@@ -46,7 +72,7 @@ fi
 # Note also that `cargo build` writes the bare binary, while the `.elf` beside
 # it is written by `make`. Booting the wrong one prints nothing, which reads
 # exactly like a test that did not run.
-build_dir="target/uart-contract"
+build_dir="target/uart-contract-$PLATFORM"
 build_output="$(cd "boards/$BOARD" && cargo build --release \
   --features uart_contract_test --target-dir "../../$build_dir" 2>&1)"
 build_status="$?"
@@ -75,15 +101,43 @@ if [ "$marker_count" -eq 0 ]; then
   exit 2
 fi
 
-console="$(timeout "$BOOT_SECONDS" qemu-system-riscv32 \
-  -machine virt \
-  -semihosting \
-  -global driver=riscv-cpu,property=smepmp,value=true \
-  -global virtio-mmio.force-legacy=false \
-  -device virtio-rng-device \
-  -device virtio-keyboard-device \
-  -bios "$kernel" \
-  -nographic < /dev/null 2>&1)"
+if [ "$PLATFORM" = rv32 ]; then
+  console="$(timeout "$BOOT_SECONDS" "$QEMU" \
+    -machine virt \
+    -semihosting \
+    -global driver=riscv-cpu,property=smepmp,value=true \
+    -global virtio-mmio.force-legacy=false \
+    -device virtio-rng-device \
+    -device virtio-keyboard-device \
+    -bios "$kernel" \
+    -nographic < /dev/null 2>&1)"
+else
+  # TWO serial devices, and the second is not optional.
+  #
+  # The test runs against COM2, because COM1 carries the process console. With
+  # no chardev behind COM2, QEMU's 16550 never raises the transmit interrupt:
+  # the test prints nine clauses, stops dead at the transmit completion, and
+  # says nothing further. That is indistinguishable from a board that cannot
+  # talk, which is what this one was taken for.
+  #
+  # `-display none` rather than `-nographic`, because `-nographic` claims
+  # serial0 for stdio itself and leaves no way to place the second one.
+  #
+  # No `-device isa-debug-exit` here. It is in the board Makefile and it works,
+  # but `exit_qemu()` is reached only from the panic handler, so a kernel that
+  # boots normally never writes port 0xf4 and QEMU never exits on its own. The
+  # timeout is the mechanism; the device would only make the run look like it
+  # had one.
+  console="$(timeout "$BOOT_SECONDS" "$QEMU" \
+    -cpu 486 \
+    -machine q35 \
+    -net none \
+    -device virtio-rng-pci,disable-legacy=on \
+    -display none \
+    -serial stdio \
+    -serial null \
+    -kernel "$kernel" < /dev/null 2>&1)"
+fi
 
 verdict="$(printf '%s\n' "$console" | grep -m1 'uart-contract: [0-9]* clauses')"
 
