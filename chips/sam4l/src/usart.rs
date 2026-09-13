@@ -1232,6 +1232,13 @@ impl<'a> spi::SpiMaster<'a> for USART<'a> {
     }
 
     fn read_write_byte(&self, val: u8) -> Result<u8, ErrorCode> {
+        // `hil::spi`: *"`Err(OFF)`: the SPI bus is powered down."* Only a
+        // USART in SPI mode will clock a byte back, so the wait below cannot
+        // end otherwise and the call hangs the kernel.
+        if self.usart_mode.get() != UsartMode::Spi {
+            return Err(ErrorCode::OFF);
+        }
+
         let usart = &USARTRegManager::new(self);
         usart
             .registers

@@ -363,6 +363,14 @@ impl<'a> spi::SpiMaster<'a> for Spi<'a> {
     }
 
     fn write_byte(&self, out_byte: u8) -> Result<(), ErrorCode> {
+        // `hil::spi`: *"`Err(OFF)`: the SPI bus is powered down."* Without
+        // this the wait below never ends -- with `CR1.SPE` clear nothing is
+        // clocked, so the status flag it spins on cannot change, and a call
+        // before the bus is enabled hangs the kernel.
+        if !self.registers.cr1.is_set(CR1::SPE) {
+            return Err(ErrorCode::OFF);
+        }
+
         // loop till TXE (Transmit Buffer Empty) becomes 1
         while !self.registers.sr.is_set(SR::TXE) {}
 
@@ -375,6 +383,11 @@ impl<'a> spi::SpiMaster<'a> for Spi<'a> {
     }
 
     fn read_write_byte(&self, val: u8) -> Result<u8, ErrorCode> {
+        // See `write_byte`: this wait cannot end on a disabled bus.
+        if !self.registers.cr1.is_set(CR1::SPE) {
+            return Err(ErrorCode::OFF);
+        }
+
         match self.write_byte(val) {
             Ok(()) => {
                 // loop till RXNE becomes 1

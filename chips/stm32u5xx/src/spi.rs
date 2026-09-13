@@ -740,6 +740,14 @@ impl<'a> spi::SpiMaster<'a> for Spi<'a> {
 
     /// Use with care, this is a blocking function
     fn write_byte(&self, val: u8) -> Result<(), kernel::ErrorCode> {
+        // `hil::spi`: *"`Err(OFF)`: the SPI bus is powered down."* Without
+        // this the wait below never ends -- with `CR1.SPE` clear nothing is
+        // clocked, so the status flag it spins on cannot change, and a call
+        // before the bus is enabled hangs the kernel.
+        if !self.registers.cr1.is_set(CR1::SPE) {
+            return Err(kernel::ErrorCode::OFF);
+        }
+
         let regs = &*self.registers;
 
         // Wait until the FIFO has space
@@ -759,6 +767,11 @@ impl<'a> spi::SpiMaster<'a> for Spi<'a> {
 
     /// Use with care, this is a blocking function
     fn read_write_byte(&self, val: u8) -> Result<u8, kernel::ErrorCode> {
+        // See `write_byte`: this wait cannot end on a disabled bus.
+        if !self.registers.cr1.is_set(CR1::SPE) {
+            return Err(kernel::ErrorCode::OFF);
+        }
+
         let regs = &*self.registers;
 
         // Disable SPI to modify TSIZE

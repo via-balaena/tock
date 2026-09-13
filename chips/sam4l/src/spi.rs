@@ -527,6 +527,14 @@ impl<'a> spi::SpiMaster<'a> for SpiHw<'a> {
     fn write_byte(&self, out_byte: u8) -> Result<(), ErrorCode> {
         let spi = &SpiRegisterManager::new(self);
 
+        // `hil::spi`: *"`Err(OFF)`: the SPI bus is powered down."* Without
+        // this the wait below never ends -- with the peripheral disabled
+        // nothing is clocked, so `TDRE` cannot change, and a call before the
+        // bus is enabled hangs the kernel.
+        if !spi.registers.sr.is_set(Status::SPIENS) {
+            return Err(ErrorCode::OFF);
+        }
+
         let tdr = (out_byte as u32) & spi_consts::tdr::TD;
         // Wait for data to leave TDR and enter serializer, so TDR is free
         // for this next byte
@@ -545,6 +553,11 @@ impl<'a> spi::SpiMaster<'a> for SpiHw<'a> {
     /// asynchronous operation is outstanding, do nothing.
     fn read_write_byte(&self, val: u8) -> Result<u8, ErrorCode> {
         let spi = &SpiRegisterManager::new(self);
+
+        // See `write_byte`: this wait cannot end on a disabled bus.
+        if !spi.registers.sr.is_set(Status::SPIENS) {
+            return Err(ErrorCode::OFF);
+        }
 
         self.write_byte(val)?;
         while !spi.registers.sr.is_set(Status::RDRF) {}

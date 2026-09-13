@@ -428,10 +428,27 @@ impl<'a> spi::SpiMaster<'a> for Spi<'a> {
     }
 
     fn is_busy(&self) -> bool {
-        self.registers.sr.is_set(SR::BSY)
+        // `hil::spi`: *"Return whether the SPI peripheral is busy with a
+        // `read_write_bytes` operation."* That is this driver's own transfer
+        // state, not the hardware's `SR.BSY`, which reports only that a shift
+        // is in progress. The two disagree: a transfer sits outstanding
+        // between the end of one shift and its callback, and `BSY` reads
+        // clear throughout. The transfer path already gates on `transfers`,
+        // so reading `BSY` here made the public answer contradict the private
+        // one -- observed on a Discovery as `is_busy()` false followed
+        // immediately by `Err(BUSY)` from the very next call.
+        self.transfers.get() != 0
     }
 
     fn write_byte(&self, out_byte: u8) -> Result<(), ErrorCode> {
+        // `hil::spi`: *"`Err(OFF)`: the SPI bus is powered down."* Without
+        // this the wait below never ends -- with `CR1.SPE` clear nothing is
+        // clocked, so the status flag it spins on cannot change, and a call
+        // before the bus is enabled hangs the kernel.
+        if !self.registers.cr1.is_set(CR1::SPE) {
+            return Err(ErrorCode::OFF);
+        }
+
         // debug! ("spi write byte {}", out_byte);
         // loop till TXE (Transmit Buffer Empty) becomes 1
         while !self.registers.sr.is_set(SR::TXE) {}
@@ -445,6 +462,11 @@ impl<'a> spi::SpiMaster<'a> for Spi<'a> {
     }
 
     fn read_write_byte(&self, val: u8) -> Result<u8, ErrorCode> {
+        // See `write_byte`: this wait cannot end on a disabled bus.
+        if !self.registers.cr1.is_set(CR1::SPE) {
+            return Err(ErrorCode::OFF);
+        }
+
         self.write_byte(val)?;
         // loop till RXNE becomes 1
         while !self.registers.sr.is_set(SR::RXNE) {}
