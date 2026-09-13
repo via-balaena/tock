@@ -432,6 +432,16 @@ impl<'a> uart::Transmit<'a> for UartDevice<'a> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
+        // `hil::uart`: *if there is no outstanding call to `transmit_word` or
+        // `transmit_buffer` then a call to this function returns `Ok(())`*,
+        // and any `Err` promises a callback. Answering `Err` unconditionally
+        // told an idle caller to wait for a callback that cannot come.
+        if !self.transmitting.get() {
+            return Ok(());
+        }
+        // A transmit that has been handed to the mux cannot be recalled, so
+        // this still cannot cancel one. `Err(FAIL)` is the documented answer
+        // for that: the transfer completes and calls back as normal.
         Err(ErrorCode::FAIL)
     }
 
@@ -502,6 +512,14 @@ impl<'a> uart::Receive<'a> for UartDevice<'a> {
     // This virtualized device will abort its read: other devices
     // devices will continue with their reads.
     fn receive_abort(&self) -> Result<(), ErrorCode> {
+        // `hil::uart`: *if there is no outstanding receive operation, `Ok(())`
+        // is returned and there will be no callback*. Answering `Err(BUSY)`
+        // from an idle device promised a `CANCEL` callback that nothing would
+        // ever send, and put the device into `Aborting` with no receive to
+        // abort.
+        if self.rx_buffer.is_none() {
+            return Ok(());
+        }
         self.state.set(UartDeviceReceiveState::Aborting);
         let _ = self.mux.uart.receive_abort();
         Err(ErrorCode::BUSY)
