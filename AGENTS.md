@@ -50,10 +50,15 @@ This is in addition to, not a substitute for, the PR description's AI-use disclo
 - Conditional compilation and `#[cfg]` are heavily discouraged. These must
   be clearly motivated and documented, and are only permitted in specific cases. One of the main cases
   is to ensure that all crates build in CI, even during documentation and test builds.
-- All `unsafe` usage MUST be accompanied by a comment starting with `### Safety`
-  that discusses exactly why the unsafe code is necessary and what checks are
-  needed and completed to ensure the use of `unsafe` does not trigger undefined
-  behavior.
+- All `unsafe` usage MUST be documented, and Rust uses two forms for two
+  different readers. A `pub unsafe fn` carries a `# Safety` section in its doc
+  comment stating what the caller must guarantee; the `kernel` crate denies
+  `clippy::missing_safety_doc`, which requires that heading, and the goal
+  recorded there is to apply it across Tock. An `unsafe` block carries a
+  `// SAFETY:` comment above it explaining why the operation is sound at that
+  site. Either form must discuss exactly why the unsafe code is necessary and
+  what checks are needed and completed to ensure the use of `unsafe` does not
+  trigger undefined behavior.
 - All new exports from the core kernel crate must be carefully examined. Certain
   functionality is only safe within the core kernel. As essentially every crate in
   Tock uses `kernel` as a dependency, anything exported can be used broadly.
