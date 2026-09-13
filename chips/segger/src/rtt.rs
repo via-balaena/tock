@@ -346,7 +346,7 @@ impl<'a, A: hil::time::Alarm<'a>> hil::time::AlarmClient for SeggerRtt<'a, A> {
 // virtualized UART MUX. -pal 1/10/19
 impl<'a, A: hil::time::Alarm<'a>> uart::Configure for SeggerRtt<'a, A> {
     fn configure(&self, parameters: uart::Parameters) -> Result<(), ErrorCode> {
-        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // `hil::uart`: *"`Err(NOSUPPORT)`: The underlying UART cannot
         // satisfy this configuration."* There is no code in this driver for
         // the settings below, so it cannot deliver anything but the default.
         // Accepting the request and sending something else puts wrong bytes

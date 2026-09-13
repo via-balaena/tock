@@ -30,7 +30,7 @@
 //! * NOMEM: No sufficient memory available
 //! * INVAL: Invalid address of the buffer or other error
 //! * BUSY: The driver is currently busy with other tasks
-//! * ENOSUPPORT: The operation is not supported
+//! * NOSUPPORT: The operation is not supported
 //! * ERROR: Operation `map` on Option failed
 //!
 //! ### Subscribe system call
@@ -60,7 +60,7 @@
 //!
 //! * Ok(()):      The command was successful
 //! * BUSY:        The driver is currently busy with other tasks
-//! * ENOSUPPORT:   The operation is not supported
+//! * NOSUPPORT:   The operation is not supported
 //!
 //! Usage
 //! -----

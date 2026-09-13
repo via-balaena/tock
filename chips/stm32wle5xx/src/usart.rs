@@ -603,7 +603,7 @@ impl hil::uart::Configure for Usart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
         // `hil::uart` documents both answers for this: *"`Err(INVAL)`:
         // Impossible parameters (e.g. a `Parameters::baud_rate` of 0)"* and
-        // *"`Err(ENOSUPPORT)`: The underlying UART cannot satisfy this
+        // *"`Err(NOSUPPORT)`: The underlying UART cannot satisfy this
         // configuration."* Panicking takes the board down from a call the
         // contract says returns an error, which AGENTS.md discourages and
         // which a conformance test found by doing exactly that.

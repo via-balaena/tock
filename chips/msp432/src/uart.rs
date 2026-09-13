@@ -141,7 +141,7 @@ impl dma::DmaClient for Uart<'_> {
 
 impl hil::uart::Configure for Uart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
-        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // `hil::uart`: *"`Err(NOSUPPORT)`: The underlying UART cannot
         // satisfy this configuration."* There is no code in this driver for
         // the settings below, so it cannot deliver anything but the default.
         // Accepting the request and sending something else puts wrong bytes
@@ -175,7 +175,7 @@ impl hil::uart::Configure for Uart<'_> {
         match params.width {
             hil::uart::Width::Eight => regs.ctlw0.modify(usci::UCAxCTLW0::UC7BIT::CLEAR),
             hil::uart::Width::Seven => regs.ctlw0.modify(usci::UCAxCTLW0::UC7BIT::SET),
-            // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+            // `hil::uart`: *"`Err(NOSUPPORT)`: The underlying UART cannot
             // satisfy this configuration."* This hardware has no six-bit
             // word, so say so rather than take the board down.
             hil::uart::Width::Six => return Err(ErrorCode::NOSUPPORT),

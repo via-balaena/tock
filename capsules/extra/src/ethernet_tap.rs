@@ -75,7 +75,7 @@
 //! - **Command system call `0`**: Check if the driver is installed.
 //!
 //!   Returns the [`CommandReturn::success`] variant if the driver is installed,
-//!   or [`CommandReturn::failure`] with associated ENOSUPPORT otherwise.
+//!   or [`CommandReturn::failure`] with associated NOSUPPORT otherwise.
 //!
 //! - **Command system call `1`**: Query the interface RX statistics.
 //!

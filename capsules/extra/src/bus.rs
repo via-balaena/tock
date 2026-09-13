@@ -202,7 +202,7 @@ pub trait Bus<'a, A: BusAddr> {
     /// Set the address to write to
     ///
     /// If the underlying bus does not support addresses (eg UART)
-    /// this function returns ENOSUPPORT
+    /// this function returns NOSUPPORT
     fn set_addr(&self, addr: A) -> Result<(), ErrorCode>;
     /// Write data items to the previously set address
     ///

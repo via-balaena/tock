@@ -15,7 +15,7 @@
 //! The `subscribe`call return codes indicate the following:
 //!
 //! * `Ok(())`: the callback been successfully been configured.
-//! * `ENOSUPPORT`: Invalid allow_num.
+//! * `NOSUPPORT`: Invalid allow_num.
 //!
 //!
 //! ### `command` System Call
@@ -32,7 +32,7 @@
 //!
 //! * `Ok(())`:    The operation has been successful.
 //! * `BUSY`:      The driver is busy.
-//! * `ENOSUPPORT`: Invalid `cmd`.
+//! * `NOSUPPORT`: Invalid `cmd`.
 //!
 //! Usage
 //! -----

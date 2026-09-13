@@ -15,7 +15,7 @@
 //! The `subscribe`call return codes indicate the following:
 //!
 //! * `Ok(())`: the callback been successfully been configured.
-//! * `ENOSUPPORT`: Invalid allow_num.
+//! * `NOSUPPORT`: Invalid allow_num.
 //! * `NOMEM`: No sufficient memory available.
 //! * `INVAL`: Invalid address of the buffer or other error.
 //!
@@ -33,7 +33,7 @@
 //!
 //! * `Ok(())`:    The operation has been successful.
 //! * `BUSY`:      The driver is busy.
-//! * `ENOSUPPORT`: Invalid `cmd`.
+//! * `NOSUPPORT`: Invalid `cmd`.
 //! * `NOMEM`:     No sufficient memory available.
 //! * `INVAL`:     Invalid address of the buffer or other error.
 //!

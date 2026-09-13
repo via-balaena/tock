@@ -332,7 +332,7 @@ impl DeferredCallClient for Uart<'_> {
 
 impl hil::uart::Configure for Uart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
-        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // `hil::uart`: *"`Err(NOSUPPORT)`: The underlying UART cannot
         // satisfy this configuration."* This driver does not select the word
         // width, so the only width it can honestly promise is the one it
         // delivers. Accepting the request and sending a different width puts

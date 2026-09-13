@@ -123,7 +123,7 @@ impl<'a> Receive<'a> for VgaText<'a> {
 // Configure for Vga
 impl Configure for VgaText<'_> {
     fn configure(&self, params: Parameters) -> Result<(), ErrorCode> {
-        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // `hil::uart`: *"`Err(NOSUPPORT)`: The underlying UART cannot
         // satisfy this configuration."* There is no code in this driver for
         // the settings below, so it cannot deliver anything but the default.
         // Accepting the request and sending something else puts wrong bytes

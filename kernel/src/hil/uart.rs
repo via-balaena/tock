@@ -120,7 +120,7 @@ pub trait Configure {
     ///   hardware USART controller because it is set up for SPI.
     /// - `Err(INVAL)`: Impossible parameters (e.g. a [`Parameters::baud_rate`]
     ///   of 0).
-    /// - `Err(ENOSUPPORT)`: The underlying UART cannot satisfy this
+    /// - `Err(NOSUPPORT)`: The underlying UART cannot satisfy this
     ///   configuration.
     fn configure(&self, params: Parameters) -> Result<(), ErrorCode>;
 }

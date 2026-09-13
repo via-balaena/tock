@@ -154,7 +154,7 @@ pub trait KVSystem<'a> {
     /// - `BUSY`: An operation is already in progress
     /// - `INVAL`: An invalid parameter was passed
     /// - `NODEVICE`: No KV store was setup
-    /// - `ENOSUPPORT`: The key could not be found.
+    /// - `NOSUPPORT`: The key could not be found.
     /// - `SIZE`: The value is longer than the provided buffer.
     fn get_value(
         &self,
@@ -173,7 +173,7 @@ pub trait KVSystem<'a> {
     /// - `BUSY`: An operation is already in progress
     /// - `INVAL`: An invalid parameter was passed
     /// - `NODEVICE`: No KV store was setup
-    /// - `ENOSUPPORT`: The key could not be found.
+    /// - `NOSUPPORT`: The key could not be found.
     fn invalidate_key(
         &self,
         key: &'static mut Self::K,

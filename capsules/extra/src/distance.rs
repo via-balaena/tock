@@ -15,7 +15,7 @@
 //! The `subscribe` call return codes indicate the following:
 //!
 //! * `Ok(())`: the callback has been successfully been configured.
-//! * `ENOSUPPORT`: Invalid `subscribe_number`.
+//! * `NOSUPPORT`: Invalid `subscribe_number`.
 //! * `NOMEM`: No sufficient memory available.
 //! * `INVAL`: Invalid address of the buffer or other error.
 //!
@@ -34,7 +34,7 @@
 //! * `Ok(())`: The operation has been successful.
 //! * `NOACK`: No acknowledgment was received from the sensor during distance measurement.
 //! * `INVAL`: Invalid measurement, such as when the object is out of range or no valid echo is received.
-//! * `ENOSUPPORT`: Invalid `cmd`.
+//! * `NOSUPPORT`: Invalid `cmd`.
 //! * `NOMEM`: Insufficient memory available.
 //! * `INVAL`: Invalid address of the buffer or other error.
 //!
