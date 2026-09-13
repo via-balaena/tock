@@ -30,53 +30,36 @@
 //!
 //! ## Crc Algorithms
 //!
-//! The capsule supports two general purpose Crc algorithms, as well as a few
-//! hardware specific algorithms implemented on the Atmel SAM4L.
+//! The capsule supports three Crc algorithms, selected by the algorithm
+//! identifier passed to command 1.
 //!
 //! In the values used to identify polynomials below, more-significant bits
 //! correspond to higher-order terms, and the most significant bit is omitted
 //! because it always equals one.  All algorithms listed here consume each input
 //! byte from most-significant bit to least-significant.
 //!
-//! ### Crc-32
+//! ### 0: Crc-32
 //!
 //! __Polynomial__: `0x04C11DB7`
 //!
 //! This algorithm is used in Ethernet and many other applications. It bit-
 //! reverses and then bit-inverts the output.
 //!
-//! ### Crc-32C
+//! ### 1: Crc-32C
 //!
 //! __Polynomial__: `0x1EDC6F41`
 //!
 //! Bit-reverses and then bit-inverts the output. It *may* be equivalent to
 //! various Crc functions using the same name.
 //!
-//! ### SAM4L-16
+//! ### 2: Crc-16CCITT
 //!
 //! __Polynomial__: `0x1021`
 //!
 //! This algorithm does no post-processing on the output value. The sixteen-bit
-//! Crc result is placed in the low-order bits of the returned result value, and
-//! the high-order bits will all be set.  That is, result values will always be
-//! of the form `0xFFFFxxxx` for this algorithm.  It can be performed purely in
-//! hardware on the SAM4L.
-//!
-//! ### SAM4L-32
-//!
-//! __Polynomial__: `0x04C11DB7`
-//!
-//! This algorithm uses the same polynomial as `Crc-32`, but does no post-
-//! processing on the output value.  It can be performed purely in hardware on
-//! the SAM4L.
-//!
-//! ### SAM4L-32C
-//!
-//! __Polynomial__: `0x1EDC6F41`
-//!
-//! This algorithm uses the same polynomial as `Crc-32C`, but does no post-
-//! processing on the output value.  It can be performed purely in hardware on
-//! the SAM4L.
+//! Crc result is placed in the low-order bits of the returned result value and
+//! the high-order bits are zero, so result values are always of the form
+//! `0x0000xxxx`.  It can be performed purely in hardware on the SAM4L.
 
 use core::cell::Cell;
 use core::cmp;

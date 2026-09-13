@@ -25,9 +25,6 @@ pub trait Client {
 ///
 /// In all cases, input bytes are bit-reversed (i.e., consumed from LSB to MSB.)
 ///
-/// Algorithms prefixed with `Sam4L` are native to that chip and thus require
-/// no software post-processing on platforms using it.
-///
 #[derive(Copy, Clone)]
 pub enum CrcAlgorithm {
     /// Polynomial 0x04C11DB7, output reversed then inverted
