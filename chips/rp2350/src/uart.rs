@@ -474,13 +474,13 @@ impl<'a> Uart<'a> {
 
         self.registers
             .uartimsc
-            .modify(UARTIMSC::RXIM::SET + UARTIMSC::RTIM::SET);
+            .modify(UARTIMSC::RXIM::SET + UARTIMSC::RTIM::SET + UARTIMSC::OEIM::SET);
     }
 
     pub fn disable_receive_interrupt(&self) {
         self.registers
             .uartimsc
-            .modify(UARTIMSC::RXIM::CLEAR + UARTIMSC::RTIM::CLEAR);
+            .modify(UARTIMSC::RXIM::CLEAR + UARTIMSC::RTIM::CLEAR + UARTIMSC::OEIM::CLEAR);
     }
 
     fn uart_is_writable(&self) -> bool {
@@ -537,7 +537,8 @@ impl<'a> Uart<'a> {
             while !self.registers.uartfr.is_set(UARTFR::RXFE)
                 && self.rx_status.get() == UARTStateRX::Receiving
             {
-                let byte = self.registers.uartdr.get() as u8;
+                let data = self.registers.uartdr.extract();
+                let byte = data.read(UARTDR::DATA) as u8;
 
                 if self.rx_position.get() < self.rx_len.get() {
                     self.rx_buffer.map(|buf| {
@@ -566,6 +567,40 @@ impl<'a> Uart<'a> {
             // trigger level. Acknowledge it whether or not it is unmasked, so
             // it cannot sit asserted.
             self.registers.uarticr.write(UARTICR::RTIC::SET);
+        }
+
+        // An overrun: a byte arrived with nowhere to put it and was dropped.
+        // The receive side is one location deep while `FEN` is clear, so
+        // anything arriving before this handler runs is overwritten in the
+        // shift register and gone.
+        //
+        // This is checked as its own interrupt rather than as a flag on a
+        // drained character, because in the case that matters there IS no
+        // character left to carry it: measured on a stuck board, `UARTRIS`
+        // bit 10 set with `UARTFR.RXFE` still 1 and neither the receive nor
+        // the timeout interrupt asserted. Nothing would ever have looked.
+        //
+        // Reporting matters more than it sounds. Carrying on hands the client
+        // a buffer with a hole in it and tells it the receive succeeded, which
+        // is worse than failing: the data is equally lost either way, but this
+        // way nobody finds out. `hil::uart` enumerates `Error::OverrunError`
+        // for exactly this, and six other drivers already raise it.
+        if self.registers.uartris.is_set(UARTRIS::OERIS) {
+            self.registers.uarticr.write(UARTICR::OEIC::SET);
+            if self.rx_status.get() == UARTStateRX::Receiving {
+                self.rx_status.replace(UARTStateRX::Idle);
+                self.disable_receive_interrupt();
+                self.rx_client.map(|client| {
+                    if let Some(buf) = self.rx_buffer.take() {
+                        client.received_buffer(
+                            buf,
+                            self.rx_position.get(),
+                            Err(ErrorCode::FAIL),
+                            hil::uart::Error::OverrunError,
+                        );
+                    }
+                });
+            }
         }
     }
 
