@@ -338,7 +338,18 @@ unsafe extern "cdecl" fn main() {
     // enabled, comment the line below and uncomment the next one.
 
     // Debug output uses VGA when available, otherwise COM1
+    #[cfg(not(feature = "uart_contract_test"))]
     let debug_uart_device = vga_uart_mux;
+
+    // The conformance test reports its result through `debug!`, and VGA is
+    // invisible on a headless QEMU run, so send debug to COM1 instead. COM1
+    // also carries the process console; the two share the mux, which is what
+    // it is for.
+    #[cfg(feature = "uart_contract_test")]
+    let debug_uart_device = {
+        let _ = vga_uart_mux;
+        uart_mux
+    };
 
     // let debug_uart_device  = com1_uart_mux;
 
@@ -569,6 +580,47 @@ unsafe extern "cdecl" fn main() {
 
     // Attach the keyboard button press callback to ourself.
     default_peripherals.keyboard.set_client(platform);
+
+    // Run the `hil::uart` conformance test against this chip's serial
+    // driver, on COM2. COM1 carries the console, so testing that one would
+    // fight the process console for the line; COM2 is otherwise unused and
+    // its interrupt is already routed (IRQ3, see `PcDefaultPeripherals`).
+    //
+    // The point of running it here is that it is a different implementation
+    // from the one it was written against. An audit on 2026-09-13 read
+    // eleven `hil::uart` guarantees against all twenty-six implementations
+    // in the tree and found every one of them violated somewhere, so a
+    // driver passing is worth knowing rather than assumed.
+    //
+    // QEMU needs a chardev behind COM2 or the port is not emulated at all:
+    //
+    //   qemu-system-i386 ... -nographic -serial null
+    //
+    // The first `-serial` is COM1; the second backs COM2.
+    #[cfg(feature = "uart_contract_test")]
+    {
+        use capsules_core::test::uart_contract::TestUartContract;
+
+        let test_uart = default_peripherals.com2;
+        let _ = kernel::hil::uart::Configure::configure(
+            test_uart,
+            kernel::hil::uart::Parameters {
+                baud_rate: 115200,
+                width: kernel::hil::uart::Width::Eight,
+                stop_bits: kernel::hil::uart::StopBits::One,
+                parity: kernel::hil::uart::Parity::None,
+                hw_flow_control: false,
+            },
+        );
+        let test_buffer = kernel::static_init!([u8; 64], [0; 64]);
+        let contract = kernel::static_init!(
+            TestUartContract<x86_q35::serial::SerialPort>,
+            TestUartContract::new(test_uart, test_buffer)
+        );
+        kernel::hil::uart::Receive::set_receive_client(test_uart, contract);
+        kernel::hil::uart::Transmit::set_transmit_client(test_uart, contract);
+        contract.run();
+    }
 
     debug!("QEMU i486 \"Q35\" machine, initialization complete.");
     debug!("Entering main loop.");

@@ -22,6 +22,11 @@ capsules-core = { path = "../../capsules/core" }
 capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
 
+[features]
+# Run the hil::uart conformance test against COM2 at boot and print the
+# result. Needs a QEMU chardev behind COM2: add a second `-serial`.
+uart_contract_test = []
+
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
 
