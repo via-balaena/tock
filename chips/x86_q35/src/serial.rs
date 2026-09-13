@@ -165,7 +165,12 @@ impl SerialPort<'_> {
     fn finish_tx(&self, res: Result<(), ErrorCode>) {
         if let Some(b) = self.tx_buffer.take() {
             self.tx_client.map(|c| {
-                c.transmitted_buffer(b, self.tx_len.get(), res);
+                // How many were actually sent, not how many were asked for.
+                // The HIL requires the count on a cancelled transfer to be
+                // the number transmitted; on a completed one the two are
+                // equal, because this is called when the index reaches the
+                // length.
+                c.transmitted_buffer(b, self.tx_index.get(), res);
             });
         }
     }
@@ -181,8 +186,10 @@ impl SerialPort<'_> {
         }
 
         if let Some(b) = self.rx_buffer.take() {
+            // As in `finish_tx`: the count received, not the count asked
+            // for, which is what a cancelled receive must report.
             self.rx_client
-                .map(|c| c.received_buffer(b, self.rx_len.get(), res, error));
+                .map(|c| c.received_buffer(b, self.rx_index.get(), res, error));
         }
     }
 

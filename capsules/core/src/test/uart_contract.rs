@@ -39,7 +39,11 @@
 //!    another asserted on an uninitialized UART; both took the board down
 //!    on a call documented as returning an error.
 //!
-//! 8. With `new_loopback`, the clauses that need the bytes to come back:
+//! 8. A cancelled receive reports how many words actually arrived, not the
+//!    length that was asked for. Two implementations diverge in opposite
+//!    directions: one always answers 0, the other answers the requested
+//!    length.
+//! 9. With `new_loopback`, the clauses that need the bytes to come back:
 //!    a completed receive reports `Ok(())`, reports the length it was
 //!    given, reports `Error::None`, and **the bytes received match the
 //!    bytes sent**. Everything above this line checks what a driver
@@ -454,6 +458,16 @@ impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> 
                 self.check(
                     rval == Err(ErrorCode::CANCEL),
                     "a cancelled receive reports Err(CANCEL)",
+                );
+                // "Err(CANCEL): ... `rx_len` contains how many words were
+                // received." Nothing has been sent at this point, so the
+                // answer is zero. Two implementations get this wrong in
+                // opposite directions: stm32u5xx always reports 0 even when
+                // bytes did arrive, and x86_q35 reported the length that was
+                // asked for rather than the count that came.
+                self.check(
+                    rx_len == 0,
+                    "a cancelled receive reports how many words arrived",
                 );
                 if self.loopback {
                     self.start_loopback(rx_buffer);
