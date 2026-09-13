@@ -344,17 +344,20 @@ pub unsafe fn setup(
     // of leaving them as prose. Results print through `debug!` above.
     {
         use capsules_core::test::uart_contract::TestUartContract;
-        use capsules_core::virtualizers::virtual_uart::UartDevice;
 
-        let test_device = static_init!(UartDevice, UartDevice::new(uart_mux, true));
-        test_device.setup();
+        // Against the chip driver itself, on UART1, not through the mux.
+        // UART0 carries the console, so testing that one would fight the
+        // process console for the line; UART1 is otherwise unused here.
+        // Most of the divergences the audit found live in chip drivers
+        // rather than in the virtualizer.
+        let test_uart = &peripherals.uart1;
         let test_buffer = static_init!([u8; 64], [0; 64]);
         let contract = static_init!(
-            TestUartContract<UartDevice>,
-            TestUartContract::new(test_device, test_buffer)
+            TestUartContract<rp2350::uart::Uart>,
+            TestUartContract::new(test_uart, test_buffer)
         );
-        kernel::hil::uart::Receive::set_receive_client(test_device, contract);
-        kernel::hil::uart::Transmit::set_transmit_client(test_device, contract);
+        kernel::hil::uart::Receive::set_receive_client(test_uart, contract);
+        kernel::hil::uart::Transmit::set_transmit_client(test_uart, contract);
         contract.run();
     }
 
