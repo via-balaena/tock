@@ -809,15 +809,23 @@ impl<'a> hil::uart::Transmit<'a> for Lpuart<'a> {
 
 impl hil::uart::Configure for Lpuart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart` documents both answers for this: *"`Err(INVAL)`:
+        // Impossible parameters (e.g. a `Parameters::baud_rate` of 0)"* and
+        // *"`Err(ENOSUPPORT)`: The underlying UART cannot satisfy this
+        // configuration."* Panicking takes the board down from a call the
+        // contract says returns an error, which AGENTS.md discourages and
+        // which a conformance test found by doing exactly that.
+        if params.baud_rate == 0 {
+            return Err(ErrorCode::INVAL);
+        }
+
         if params.baud_rate != 115200
             || params.stop_bits != hil::uart::StopBits::One
             || params.parity != hil::uart::Parity::None
             || params.hw_flow_control
             || params.width != hil::uart::Width::Eight
         {
-            panic!(
-                "Currently we only support uart setting of 115200bps 8N1, no hardware flow control"
-            );
+            return Err(ErrorCode::NOSUPPORT);
         }
 
         self.enable_clock();

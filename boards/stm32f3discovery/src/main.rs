@@ -861,6 +861,43 @@ unsafe fn start() -> (
     // // See comment in `boards/imix/src/main.rs`
     // virtual_uart_rx_test::run_virtual_uart_receive(mux_uart);
 
+    // The `hil::uart` conformance test, against stm32f303xc's driver. This
+    // chip has been patched twice today without ever being run -- the abort
+    // ordering fix and the spi zero-length guard -- so a driver passing here
+    // is worth knowing rather than assumed.
+    //
+    // USART2, because USART1 carries the console over the ST-LINK virtual COM
+    // port and testing that one would fight the process console for the line.
+    // USART2's clock and NVIC are already enabled above and nothing else uses
+    // it. Its pins are deliberately not muxed: the peripheral shifts bytes
+    // regardless, and every clause here is about the driver's bookkeeping.
+    #[cfg(feature = "uart_contract_test")]
+    {
+        use capsules_core::test::uart_contract::TestUartContract;
+
+        let test_uart = &peripherals.usart2;
+        let _ = kernel::hil::uart::Configure::configure(
+            test_uart,
+            kernel::hil::uart::Parameters {
+                baud_rate: 115200,
+                width: kernel::hil::uart::Width::Eight,
+                stop_bits: kernel::hil::uart::StopBits::One,
+                parity: kernel::hil::uart::Parity::None,
+                hw_flow_control: false,
+            },
+        );
+
+        let test_buffer = static_init!([u8; 64], [0; 64]);
+        let contract = static_init!(
+            TestUartContract<stm32f303xc::usart::Usart>,
+            TestUartContract::new(test_uart, test_buffer)
+        );
+        contract.check_configure(test_uart);
+        kernel::hil::uart::Receive::set_receive_client(test_uart, contract);
+        kernel::hil::uart::Transmit::set_transmit_client(test_uart, contract);
+        contract.run();
+    }
+
     debug!("Initialization complete. Entering main loop");
 
     // These symbols are defined in the linker script.

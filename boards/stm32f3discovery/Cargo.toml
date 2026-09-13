@@ -19,6 +19,12 @@ capsules-core = { path = "../../capsules/core" }
 capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
 
+[features]
+# Run the hil::uart conformance test on USART2 at boot and print the result.
+# USART1 carries the console over the ST-LINK virtual COM port; USART2 has
+# its clock and NVIC enabled and is otherwise unused.
+uart_contract_test = []
+
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
 

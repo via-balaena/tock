@@ -680,12 +680,18 @@ impl<'a, DMA: dma::StreamServer<'a>> hil::uart::Configure for Usart<'a, DMA> {
             return Err(ErrorCode::INVAL);
         }
 
+        // `hil::uart` documents both answers for this: *"`Err(INVAL)`:
+        // Impossible parameters (e.g. a `Parameters::baud_rate` of 0)"* and
+        // *"`Err(ENOSUPPORT)`: The underlying UART cannot satisfy this
+        // configuration."* Panicking takes the board down from a call the
+        // contract says returns an error, which AGENTS.md discourages and
+        // which a conformance test found by doing exactly that.
         if params.stop_bits != hil::uart::StopBits::One
             || params.parity != hil::uart::Parity::None
             || params.hw_flow_control
             || params.width != hil::uart::Width::Eight
         {
-            panic!("Currently we only support uart setting of 8N1, no hardware flow control");
+            return Err(ErrorCode::NOSUPPORT);
         }
 
         // Configure the word length - 0: 1 Start bit, 8 Data bits, n Stop bits

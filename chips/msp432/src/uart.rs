@@ -175,9 +175,10 @@ impl hil::uart::Configure for Uart<'_> {
         match params.width {
             hil::uart::Width::Eight => regs.ctlw0.modify(usci::UCAxCTLW0::UC7BIT::CLEAR),
             hil::uart::Width::Seven => regs.ctlw0.modify(usci::UCAxCTLW0::UC7BIT::SET),
-            hil::uart::Width::Six => {
-                panic!("UART: width of 6 bit is not supported by this hardware!")
-            }
+            // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+            // satisfy this configuration."* This hardware has no six-bit
+            // word, so say so rather than take the board down.
+            hil::uart::Width::Six => return Err(ErrorCode::NOSUPPORT),
         }
 
         // Setup stop bits
