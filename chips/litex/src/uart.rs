@@ -336,8 +336,11 @@ impl<'a, R: LiteXSoCRegisterConfiguration> uart::Transmit<'a> for LiteXUart<'a, 
         tx_buffer: &'static mut [u8],
         tx_len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
-        // Make sure the UART is initialized
-        assert!(self.initialized.get());
+        // `Err(OFF)` is the documented answer for hardware that has not been
+        // initialized, which is what this used to assert.
+        if !self.initialized.get() {
+            return Err((ErrorCode::OFF, tx_buffer));
+        }
 
         if tx_buffer.len() < tx_len {
             return Err((ErrorCode::SIZE, tx_buffer));
@@ -407,8 +410,9 @@ impl<'a, R: LiteXSoCRegisterConfiguration> uart::Transmit<'a> for LiteXUart<'a, 
     }
 
     fn transmit_word(&self, _word: u32) -> Result<(), ErrorCode> {
-        // Make sure the UART is initialized
-        assert!(self.initialized.get());
+        if !self.initialized.get() {
+            return Err(ErrorCode::OFF);
+        }
 
         Err(ErrorCode::FAIL)
     }
@@ -420,8 +424,12 @@ impl<'a, R: LiteXSoCRegisterConfiguration> uart::Transmit<'a> for LiteXUart<'a, 
         // transmission, however that will be routed to
         // `deferred_tx_abort` if `tx_aborted` is set
 
-        // Make sure the UART is initialized
-        assert!(self.initialized.get());
+        // An uninitialized UART has nothing outstanding to abort, which the
+        // HIL documents as `Ok(())`. Returning before touching any register
+        // also keeps this from driving hardware that was never brought up.
+        if !self.initialized.get() {
+            return Ok(());
+        }
 
         self.uart_regs.ev().disable_event(EVENT_MANAGER_INDEX_TX);
 
@@ -447,8 +455,9 @@ impl<'a, R: LiteXSoCRegisterConfiguration> uart::Receive<'a> for LiteXUart<'a, R
         rx_buffer: &'static mut [u8],
         rx_len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
-        // Make sure the UART is initialized
-        assert!(self.initialized.get());
+        if !self.initialized.get() {
+            return Err((ErrorCode::OFF, rx_buffer));
+        }
 
         if rx_len > rx_buffer.len() {
             return Err((ErrorCode::SIZE, rx_buffer));
@@ -494,14 +503,18 @@ impl<'a, R: LiteXSoCRegisterConfiguration> uart::Receive<'a> for LiteXUart<'a, R
     }
 
     fn receive_word(&self) -> Result<(), ErrorCode> {
-        // Make sure the UART is initialized
-        assert!(self.initialized.get());
+        if !self.initialized.get() {
+            return Err(ErrorCode::OFF);
+        }
         Err(ErrorCode::FAIL)
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
-        // Make sure the UART is initialized
-        assert!(self.initialized.get());
+        // As in `transmit_abort`: nothing outstanding, and no register
+        // access on a UART that was never initialized.
+        if !self.initialized.get() {
+            return Ok(());
+        }
 
         // Disable RX events
         self.uart_regs.ev().disable_event(EVENT_MANAGER_INDEX_RX);

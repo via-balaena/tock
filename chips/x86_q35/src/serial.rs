@@ -342,7 +342,10 @@ impl<'a> Transmit<'a> for SerialPort<'a> {
     }
 
     fn transmit_word(&self, _word: u32) -> Result<(), ErrorCode> {
-        unimplemented!()
+        // Not supported. Panicking here would take the board down on a call
+        // the HIL documents as returning an error; `vga_uart_driver` in this
+        // same crate already answers `NOSUPPORT`.
+        Err(ErrorCode::NOSUPPORT)
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
@@ -391,7 +394,8 @@ impl<'a> Receive<'a> for SerialPort<'a> {
     }
 
     fn receive_word(&self) -> Result<(), ErrorCode> {
-        unimplemented!()
+        // Not supported; see `transmit_word`.
+        Err(ErrorCode::NOSUPPORT)
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
