@@ -16,11 +16,9 @@ use crate::gpio::RPGpioPin;
 use kernel::utilities::StaticRef;
 use rp2xxx::spi::SpiRegisters;
 
-const SPI0_BASE: StaticRef<SpiRegisters> =
-    unsafe { StaticRef::new(0x40080000 as *const SpiRegisters) };
+const SPI0_BASE: StaticRef<SpiRegisters> = unsafe { StaticRef::at(0x40080000) };
 
-const SPI1_BASE: StaticRef<SpiRegisters> =
-    unsafe { StaticRef::new(0x40088000 as *const SpiRegisters) };
+const SPI1_BASE: StaticRef<SpiRegisters> = unsafe { StaticRef::at(0x40088000) };
 
 /// The shared PL022 driver, with this chip's clocks and GPIO pins filled in.
 pub type Spi<'a> = rp2xxx::spi::Spi<'a, Clocks, RPGpioPin<'a>>;

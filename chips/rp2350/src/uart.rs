@@ -340,11 +340,9 @@ enum UARTStateRX {
     AbortRequested,
 }
 
-const UART0_BASE: StaticRef<UartRegisters> =
-    unsafe { StaticRef::new(0x40070000 as *const UartRegisters) };
+const UART0_BASE: StaticRef<UartRegisters> = unsafe { StaticRef::at(0x40070000) };
 
-const UART1_BASE: StaticRef<UartRegisters> =
-    unsafe { StaticRef::new(0x40078000 as *const UartRegisters) };
+const UART1_BASE: StaticRef<UartRegisters> = unsafe { StaticRef::at(0x40078000) };
 
 pub struct Uart<'a> {
     registers: StaticRef<UartRegisters>,

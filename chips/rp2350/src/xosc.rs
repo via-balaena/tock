@@ -85,8 +85,7 @@ COUNT [
 ]
 ];
 
-const XOSC_BASE: StaticRef<XoscRegisters> =
-    unsafe { StaticRef::new(0x40048000 as *const XoscRegisters) };
+const XOSC_BASE: StaticRef<XoscRegisters> = unsafe { StaticRef::at(0x40048000) };
 
 pub struct Xosc {
     registers: StaticRef<XoscRegisters>,

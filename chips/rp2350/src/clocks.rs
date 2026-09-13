@@ -860,12 +860,9 @@ pub enum Clock {
     Adc = 9,
 }
 
-const CLOCKS_BASE: StaticRef<ClocksRegisters> =
-    unsafe { StaticRef::new(0x40010000 as *const ClocksRegisters) };
-const PLL_SYS_BASE: StaticRef<PllRegisters> =
-    unsafe { StaticRef::new(0x40050000 as *const PllRegisters) };
-const PLL_USB_BASE: StaticRef<PllRegisters> =
-    unsafe { StaticRef::new(0x40058000 as *const PllRegisters) };
+const CLOCKS_BASE: StaticRef<ClocksRegisters> = unsafe { StaticRef::at(0x40010000) };
+const PLL_SYS_BASE: StaticRef<PllRegisters> = unsafe { StaticRef::at(0x40050000) };
+const PLL_USB_BASE: StaticRef<PllRegisters> = unsafe { StaticRef::at(0x40058000) };
 
 pub enum PllClock {
     Sys = 0,
