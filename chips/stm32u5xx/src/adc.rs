@@ -533,6 +533,11 @@ register_bitfields![u32,
 const ADC12_COMMON_BASE: StaticRef<Adc12_CommonRegisters> =
     unsafe { StaticRef::new(0x42028300 as *const Adc12_CommonRegisters) };
 
+/// Resolution the ADC is configured for, in bits.
+// ADC1 supports 8/10/12/14-bit resolution, but the HIL provides no way to
+// select one, so the driver uses the default (highest).
+const RESOLUTION_BITS: usize = 14;
+
 /// ADC1 channels
 // These enum values are what we receive in the HIL and what we use internally
 // They will be cast to u32 when writing into the "regular conversion sequence" register fields (written as 5 bits)
@@ -730,8 +735,11 @@ impl Adc<'_> {
             // This also clears the ISR.EOC bit
             let data = self.registers.adc_dr.read(ADC_DR::RDATA);
 
-            // The data we provide to the client is the raw value directly
-            self.client.map(|client| client.sample_ready(data as u16));
+            // hil::adc requires the sample left-justified in the u16, so pad the
+            // RESOLUTION_BITS-wide value with zeroes on the right
+            self.client.map(|client| {
+                client.sample_ready((data as u16) << (u16::BITS as usize - RESOLUTION_BITS))
+            });
 
             // If we were to implement Continuous mode, we would need to re-enable the interrupt now,
             // or not disable it from the beginning
@@ -819,10 +827,8 @@ impl<'a> hil::adc::Adc<'a> for Adc<'a> {
     }
 
     /// An application can ask the ADC what resolution the samples it provides are
-    // Although the ADC1 peripheral can be configured with a resolution of 8/10/12/14 bits, since the HIL
-    // doesn't provide a way to configure it, it's hardcoded to the default (highest) resolution
     fn get_resolution_bits(&self) -> usize {
-        14
+        RESOLUTION_BITS
     }
 
     /// An application can ask the ADC what reference voltage it uses for its samples, i.e. what voltage
