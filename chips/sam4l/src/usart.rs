@@ -999,6 +999,14 @@ impl uart::Configure for USART<'_> {
             return Err(ErrorCode::OFF);
         }
 
+        // `hil::uart`: *"`Err(INVAL)`: Impossible parameters (e.g. a
+        // `Parameters::baud_rate` of 0)."* Without this `set_baud_rate`
+        // divides by zero and takes the kernel down, from a call the HIL
+        // documents as returning an error.
+        if parameters.baud_rate == 0 {
+            return Err(ErrorCode::INVAL);
+        }
+
         let usart = &USARTRegManager::new(self);
 
         // set USART mode register

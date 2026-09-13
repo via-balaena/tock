@@ -396,6 +396,14 @@ impl Uart16550<'_> {
 
 impl hil::uart::Configure for Uart16550<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(INVAL)`: Impossible parameters (e.g. a
+        // `Parameters::baud_rate` of 0)."* Without this the divisor
+        // calculation below divides by zero and takes the kernel down, from a
+        // call the HIL documents as returning an error.
+        if params.baud_rate == 0 {
+            return Err(ErrorCode::INVAL);
+        }
+
         use hil::uart::{Parity, StopBits, Width};
 
         // 16550 operates at a default frequency of 115200. Dividing

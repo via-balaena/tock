@@ -332,6 +332,14 @@ impl DeferredCallClient for Uart<'_> {
 
 impl hil::uart::Configure for Uart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(INVAL)`: Impossible parameters (e.g. a
+        // `Parameters::baud_rate` of 0)."* Without this the divisor
+        // calculation below divides by zero and takes the kernel down, from a
+        // call the HIL documents as returning an error.
+        if params.baud_rate == 0 {
+            return Err(ErrorCode::INVAL);
+        }
+
         // This chip does not support these features.
         if params.parity != hil::uart::Parity::None {
             return Err(ErrorCode::NOSUPPORT);

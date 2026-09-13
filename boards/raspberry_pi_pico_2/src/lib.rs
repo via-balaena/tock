@@ -406,6 +406,10 @@ pub unsafe fn setup(
             TestUartContract<rp2350::uart::Uart>,
             TestUartContract::new_loopback(test_uart, test_buffer)
         );
+        // Before `run`, because it is synchronous and because a driver that
+        // does not validate will not return from it.
+        contract.check_configure(test_uart);
+
         kernel::hil::uart::Receive::set_receive_client(test_uart, contract);
         kernel::hil::uart::Transmit::set_transmit_client(test_uart, contract);
         contract.run();

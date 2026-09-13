@@ -672,6 +672,14 @@ impl<'a, DMA: dma::StreamServer<'a>> hil::uart::Transmit<'a> for Usart<'a, DMA> 
 
 impl<'a, DMA: dma::StreamServer<'a>> hil::uart::Configure for Usart<'a, DMA> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(INVAL)`: Impossible parameters (e.g. a
+        // `Parameters::baud_rate` of 0)."* Without this the divisor
+        // calculation below divides by zero and takes the kernel down, from a
+        // call the HIL documents as returning an error.
+        if params.baud_rate == 0 {
+            return Err(ErrorCode::INVAL);
+        }
+
         if params.stop_bits != hil::uart::StopBits::One
             || params.parity != hil::uart::Parity::None
             || params.hw_flow_control

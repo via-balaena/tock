@@ -239,6 +239,36 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
         }
     }
 
+    /// The clauses that need [`uart::Configure`], which the main test cannot
+    /// reach: its bound is `UartData` so that the same test also runs against
+    /// a `UartDevice` from the mux, and the mux has no `Configure`.
+    ///
+    /// Call this before `run` on a board that has the configurable end of the
+    /// UART to hand.
+    ///
+    /// *"`Err(INVAL)`: Impossible parameters (e.g. a `Parameters::baud_rate`
+    /// of 0)."* Nine of the twenty-six implementations compute a clock
+    /// divisor by dividing by the baud rate with nothing checking it first,
+    /// so a request for zero is integer division by zero and takes the kernel
+    /// down -- from a call the HIL documents as returning an error, made from
+    /// a capsule.
+    pub fn check_configure(&self, configure: &dyn uart::Configure) {
+        let impossible = uart::Parameters {
+            baud_rate: 0,
+            width: uart::Width::Eight,
+            stop_bits: uart::StopBits::One,
+            parity: uart::Parity::None,
+            hw_flow_control: false,
+        };
+        // Reaching the next line at all is half the check: on a driver that
+        // divides without looking, this call never returns.
+        let answer = configure.configure(impossible);
+        self.check(
+            answer == Err(ErrorCode::INVAL),
+            "configure() with a baud rate of 0 must answer Err(INVAL)",
+        );
+    }
+
     fn finish(&self) {
         self.stage.set(Stage::Done);
         let (n, bad) = (self.checks.get(), self.failures.get());

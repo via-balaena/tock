@@ -523,6 +523,14 @@ impl<'a> uart::Transmit<'a> for Usart<'a> {
 
 impl uart::Configure for Usart<'_> {
     fn configure(&self, params: uart::Parameters) -> Result<(), kernel::ErrorCode> {
+        // `hil::uart`: *"`Err(INVAL)`: Impossible parameters (e.g. a
+        // `Parameters::baud_rate` of 0)."* Without this the divisor
+        // calculation below divides by zero and takes the kernel down, from a
+        // call the HIL documents as returning an error.
+        if params.baud_rate == 0 {
+            return Err(kernel::ErrorCode::INVAL);
+        }
+
         // Get the clock frequency that feeds this USART
         // It must have been provided with `set_clock` at this point
         let Some(clock_frequency) = self.clock.get() else {

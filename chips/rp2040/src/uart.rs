@@ -598,6 +598,14 @@ impl DeferredCallClient for Uart<'_> {
 
 impl Configure for Uart<'_> {
     fn configure(&self, params: Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(INVAL)`: Impossible parameters (e.g. a
+        // `Parameters::baud_rate` of 0)."* Without this the divisor
+        // calculation below divides by zero and takes the kernel down, from a
+        // call the HIL documents as returning an error.
+        if params.baud_rate == 0 {
+            return Err(ErrorCode::INVAL);
+        }
+
         self.disable();
         self.registers.uartlcr_h.modify(UARTLCR_H::FEN::CLEAR);
 
