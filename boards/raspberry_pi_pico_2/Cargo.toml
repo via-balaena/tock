@@ -29,6 +29,14 @@ uart_contract_test = []
 # a jumper is expected between them. Implies the above. WITHOUT THE WIRE THE
 # TEST HANGS, which is why it is not the default.
 uart_contract_test_pads = ["uart_contract_test"]
+# Run the hil::spi conformance test at boot on SPI0 (GP4 MISO, GP5 CSn,
+# GP6 SCK, GP7 MOSI) and print the result. Cannot be gated: no emulated
+# board in the tree exposes SPI.
+spi_contract_test = []
+# The same, expecting MOSI (GP7) jumpered to MISO (GP4), which adds the
+# clause that the bytes read back are the bytes written. Implies the above.
+# WITHOUT THE WIRE MISO FLOATS and that clause fails rather than hangs.
+spi_contract_test_loopback = ["spi_contract_test"]
 
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }

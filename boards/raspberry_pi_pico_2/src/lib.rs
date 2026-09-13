@@ -415,6 +415,56 @@ pub unsafe fn setup(
         contract.run();
     }
 
+    // The `hil::spi` conformance test, on SPI0. The six guarantees audited on
+    // 2026-09-13 each found a divergence, so a driver passing is worth
+    // knowing rather than assumed. Unlike the uart one this cannot be gated:
+    // no emulated board in the tree exposes SPI.
+    //
+    // GP4 MISO, GP5 CSn, GP6 SCK, GP7 MOSI -- the wiring the rp2350-spi-bench
+    // harness used. With `spi_contract_test_loopback`, MOSI is expected to be
+    // jumpered to MISO; without the wire MISO floats, and only the clause
+    // that compares the bytes read back fails.
+    #[cfg(feature = "spi_contract_test")]
+    {
+        use capsules_core::test::spi_contract::TestSpiContract;
+        use kernel::hil::spi::SpiMaster;
+        use kernel::hil::spi::cs::{ActiveLow, IntoChipSelect};
+
+        let spi_miso = peripherals.pins.get_pin(RPGpio::GPIO4);
+        let spi_csn = peripherals.pins.get_pin(RPGpio::GPIO5);
+        let spi_clk = peripherals.pins.get_pin(RPGpio::GPIO6);
+        let spi_mosi = peripherals.pins.get_pin(RPGpio::GPIO7);
+        spi_miso.set_function(GpioFunction::SPI);
+        // Software chip select: the driver drives this through SIO, not the
+        // PL022's own CS.
+        spi_csn.make_output();
+        spi_clk.set_function(GpioFunction::SPI);
+        spi_mosi.set_function(GpioFunction::SPI);
+
+        let test_spi = &peripherals.spi0;
+        let _ = test_spi.init();
+        let _ = test_spi.specify_chip_select(IntoChipSelect::<_, ActiveLow>::into_cs(spi_csn));
+        let _ = test_spi.set_rate(1_000_000);
+
+        let spi_write = static_init!([u8; 8], [0; 8]);
+        let spi_read = static_init!([u8; 8], [0; 8]);
+        let spi_spare = static_init!([u8; 8], [0; 8]);
+
+        #[cfg(not(feature = "spi_contract_test_loopback"))]
+        let spi_contract = static_init!(
+            TestSpiContract<rp2350::spi::Spi>,
+            TestSpiContract::new(test_spi, spi_write, spi_read, spi_spare)
+        );
+        #[cfg(feature = "spi_contract_test_loopback")]
+        let spi_contract = static_init!(
+            TestSpiContract<rp2350::spi::Spi>,
+            TestSpiContract::new_loopback(test_spi, spi_write, spi_read, spi_spare)
+        );
+
+        SpiMaster::set_client(test_spi, spi_contract);
+        spi_contract.run();
+    }
+
     // PROCESS CONSOLE
     let process_printer = components::process_printer::ProcessPrinterTextComponent::new()
         .finalize(components::process_printer_text_component_static!());

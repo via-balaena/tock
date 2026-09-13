@@ -546,6 +546,17 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> SpiMaster<'a> for Spi<'a, C, 
     }
 
     fn write_byte(&self, out_val: u8) -> Result<(), ErrorCode> {
+        // `hil::spi`: *"`Err(OFF)`: the SPI bus is powered down."* Without
+        // this the wait below never ends: `SSPSR.TFE` cannot become set while
+        // `SSPCR1.SSE` is clear, and `is_busy()` reports SOFTWARE state
+        // (`transfers != SPI_IDLE`), so it answers "not busy" for a bus that
+        // is not even enabled. `enable()` is only called from
+        // `read_write_bytes`, so any byte call before the first transfer hung
+        // the kernel.
+        if !self.registers.sspcr1.is_set(SSPCR1::SSE) {
+            return Err(ErrorCode::OFF);
+        }
+
         if !self.is_busy() {
             while !self.registers.sspsr.is_set(SSPSR::TFE) {}
 
@@ -562,6 +573,11 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> SpiMaster<'a> for Spi<'a, C, 
     }
 
     fn read_write_byte(&self, val: u8) -> Result<u8, ErrorCode> {
+        // See `write_byte`: the wait below cannot end on a disabled bus.
+        if !self.registers.sspcr1.is_set(SSPCR1::SSE) {
+            return Err(ErrorCode::OFF);
+        }
+
         if !self.is_busy() {
             self.write_byte(val)?;
 
