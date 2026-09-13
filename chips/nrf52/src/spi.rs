@@ -421,15 +421,21 @@ impl<'a> hil::spi::SpiMaster<'a> for SPIM<'a> {
     }
 
     fn write_byte(&self, _val: u8) -> Result<(), ErrorCode> {
-        unimplemented!("SPI: Use `read_write_bytes()` instead.");
+        // Not implemented here -- use `read_write_bytes()`. `hil::spi`
+        // documents this call as answering `Err(FAIL)` for "other failure",
+        // so say that rather than taking the kernel down from a call the
+        // contract says returns a `Result`.
+        Err(ErrorCode::FAIL)
     }
 
     fn read_byte(&self) -> Result<u8, ErrorCode> {
-        unimplemented!("SPI: Use `read_write_bytes()` instead.");
+        // See `write_byte`.
+        Err(ErrorCode::FAIL)
     }
 
     fn read_write_byte(&self, _val: u8) -> Result<u8, ErrorCode> {
-        unimplemented!("SPI: Use `read_write_bytes()` instead.");
+        // See `write_byte`.
+        Err(ErrorCode::FAIL)
     }
 
     // Tell the SPI peripheral what to use as a chip select pin.
