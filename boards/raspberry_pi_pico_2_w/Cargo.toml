@@ -29,6 +29,7 @@ uart_contract_test = ["raspberry_pi_pico_2/uart_contract_test"]
 uart_contract_test_pads = ["raspberry_pi_pico_2/uart_contract_test_pads"]
 spi_contract_test = ["raspberry_pi_pico_2/spi_contract_test"]
 spi_contract_test_loopback = ["raspberry_pi_pico_2/spi_contract_test_loopback"]
+gpio_contract_test = ["raspberry_pi_pico_2/gpio_contract_test"]
 
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }

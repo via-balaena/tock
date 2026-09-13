@@ -1403,12 +1403,14 @@ impl<'a> hil::gpio::Interrupt<'a> for RPGpioPin<'a> {
         let interrupt_bank_no = self.pin / 8;
         let l_low_reg_no = (self.pin * 4) % 32;
         let current_val = self.gpio_registers.interrupt_proc[0].status[interrupt_bank_no].get();
-        (current_val
-            & (1 << l_low_reg_no)
-            & (1 << (l_low_reg_no + 1))
-            & (1 << (l_low_reg_no + 2))
-            & (1 << (l_low_reg_no + 3)))
-            != 0
+
+        // Each pin owns FOUR bits in this register -- LEVEL_LOW,
+        // LEVEL_HIGH, EDGE_LOW, EDGE_HIGH -- starting at `pin * 4`.
+        // This ANDed the four single-bit masks TOGETHER, and no two
+        // distinct bits are ever both set in one mask, so the whole
+        // expression was unconditionally zero: `is_pending()` could
+        // never answer true. The mask wanted is the 4-bit field.
+        (current_val & (0b1111 << l_low_reg_no)) != 0
     }
 
     fn enable_interrupts(&self, mode: hil::gpio::InterruptEdge) {

@@ -37,6 +37,12 @@ spi_contract_test = []
 # clause that the bytes read back are the bytes written. Implies the above.
 # WITHOUT THE WIRE MISO FLOATS and that clause fails rather than hangs.
 spi_contract_test_loopback = ["spi_contract_test"]
+# Run the hil::gpio conformance test at boot on GP20 (output) and GP21
+# (input). EXPECTS THOSE TWO WIRED TOGETHER -- the same jumper the uart pads
+# test uses. Without it the input floats and the round-trip clauses report
+# nonsense rather than hanging. Mutually exclusive with
+# uart_contract_test_pads, which muxes the same pins to UART1.
+gpio_contract_test = []
 
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }

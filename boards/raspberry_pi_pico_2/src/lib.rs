@@ -465,6 +465,28 @@ pub unsafe fn setup(
         spi_contract.run();
     }
 
+    // The `hil::gpio` conformance test, on GP20 (output) and GP21 (input),
+    // which the bench has wired together. The return-value guarantees were
+    // audited by reading on 2026-09-13 and found clean across all sixteen
+    // implementations -- plausibly because GPIO is the most exercised HIL in
+    // the tree. What reading cannot check is whether the pin did the thing,
+    // and that is what the wire is for.
+    #[cfg(feature = "gpio_contract_test")]
+    {
+        use capsules_core::test::gpio_contract::TestGpioContract;
+        use kernel::hil::gpio::Interrupt;
+
+        let out_pin = peripherals.pins.get_pin(RPGpio::GPIO20);
+        let in_pin = peripherals.pins.get_pin(RPGpio::GPIO21);
+
+        let gpio_contract = static_init!(
+            TestGpioContract<RPGpioPin, RPGpioPin>,
+            TestGpioContract::new(out_pin, in_pin)
+        );
+        Interrupt::set_client(in_pin, gpio_contract);
+        gpio_contract.run();
+    }
+
     // PROCESS CONSOLE
     let process_printer = components::process_printer::ProcessPrinterTextComponent::new()
         .finalize(components::process_printer_text_component_static!());
