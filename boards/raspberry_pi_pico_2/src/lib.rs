@@ -354,9 +354,6 @@ pub unsafe fn setup(
         // The transmit phase needs a working peripheral: `configure` ends by
         // setting UARTEN, TXE and RXE, and without it a transmit fills the
         // FIFO and never drains, so the test would hang rather than fail.
-        // Nothing is wired to UART1's pins; the bytes go nowhere, which is
-        // fine because the clause under test is that the transfer completes
-        // and calls back.
         let _ = kernel::hil::uart::Configure::configure(
             test_uart,
             kernel::hil::uart::Parameters {
@@ -367,10 +364,22 @@ pub unsafe fn setup(
                 hw_flow_control: false,
             },
         );
+        // Put UART1 into internal loopback so what it transmits arrives on
+        // its own receive path. This is the peripheral's own diagnostic mode
+        // (`UARTCR.LBE`, datasheet 12.1.3.2.6), and the loop sits ahead of
+        // the pads -- so UART1's pins stay unconfigured and drive nothing,
+        // and no jumper is needed on a board whose pins are all spoken for.
+        // It lets the test check what was carried, not only what was
+        // reported; it says nothing about the pads or the pin mux.
+        //
+        // Set after `configure`, which only ever read-modify-writes UARTCR
+        // and so would preserve the bit either way.
+        test_uart.set_loopback(true);
+
         let test_buffer = static_init!([u8; 64], [0; 64]);
         let contract = static_init!(
             TestUartContract<rp2350::uart::Uart>,
-            TestUartContract::new(test_uart, test_buffer)
+            TestUartContract::new_loopback(test_uart, test_buffer)
         );
         kernel::hil::uart::Receive::set_receive_client(test_uart, contract);
         kernel::hil::uart::Transmit::set_transmit_client(test_uart, contract);

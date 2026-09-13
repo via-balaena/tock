@@ -39,9 +39,22 @@
 //!    another asserted on an uninitialized UART; both took the board down
 //!    on a call documented as returning an error.
 //!
+//! 8. With `new_loopback`, the clauses that need the bytes to come back:
+//!    a completed receive reports `Ok(())`, reports the length it was
+//!    given, reports `Error::None`, and **the bytes received match the
+//!    bytes sent**. Everything above this line checks what a driver
+//!    *reported*; only this checks what it *carried*.
+//!
 //! Checks 1 to 5 are synchronous. Check 6 needs the callback, so the test
-//! continues there rather than at the end of `run`, and check 7 runs last
-//! because a UART that accepts a word transmit starts one.
+//! continues there rather than at the end of `run`. Check 8 replaces the
+//! plain transmit phase when loopback is in use, and check 7 runs last in
+//! either case, because a UART that accepts a word transmit starts one.
+//!
+//! Arranging the loopback is the caller's job -- see `new_loopback`. A chip
+//! may have an internal loopback bit (the PL011's `UARTCR.LBE`, which
+//! rp2350 exposes as `set_loopback`), or a board may have TX wired to RX.
+//! An internal loop sits ahead of the pads, so it checks the driver and the
+//! peripheral's datapath but says nothing about the pads or the pin mux.
 //!
 //! What this cannot check: that a client may start a new operation from
 //! inside a completion callback without being refused. That one needs a
@@ -49,6 +62,11 @@
 //! question rather than something a capsule can arrange for itself. It is
 //! the defect verified separately on silicon; see
 //! `learning/bench/uart-abort-silicon` in the notes repository.
+//!
+//! Nor can it check the word-width truncation the HIL states -- that `0x18f`
+//! goes out as `0x8f` in 8N1 and `0x0f` in 7N1 -- because changing the width
+//! needs `Configure`, and the bound here is `UartData` so that the same test
+//! runs against a `UartDevice` from the mux, which has no `Configure`.
 
 use crate::test::capsule_test::{CapsuleTest, CapsuleTestClient, CapsuleTestError};
 use core::cell::Cell;
@@ -57,10 +75,15 @@ use kernel::debug;
 use kernel::hil::uart;
 use kernel::utilities::cells::{OptionalCell, TakeCell};
 
-/// Bytes the transmit phase sends. Short, because nothing is necessarily
-/// listening -- the point is that the transfer completes and calls back,
-/// not what arrives at the other end.
+/// Bytes the transmit phase sends. Short, because without loopback nothing
+/// is necessarily listening -- the point is then that the transfer completes
+/// and calls back, not what arrives at the other end.
 const TX_LEN: usize = 4;
+
+/// What the loopback phase sends. Alternating bits, then all-clear and
+/// all-set, so a word truncated to seven bits, a stuck bit, or a reversed
+/// bit order each show up as a mismatch instead of passing by luck.
+const PATTERN: [u8; TX_LEN] = [0x55, 0xaa, 0x00, 0xff];
 
 /// Which stage the asynchronous part of the test is in.
 #[derive(Clone, Copy, PartialEq)]
@@ -71,6 +94,9 @@ enum Stage {
     AwaitingAbortCallback,
     /// A real transmit is in flight; its callback is required.
     AwaitingTransmit,
+    /// One byte is in flight, expected to arrive on this UART's own receive
+    /// path. The receive callback drives the next one.
+    AwaitingLoopback,
     /// Finished, one way or the other.
     Done,
 }
@@ -84,17 +110,44 @@ pub struct TestUartContract<'a, U: uart::UartData<'a> + 'a> {
     failures: Cell<usize>,
     checks: Cell<usize>,
     stage: Cell<Stage>,
+    /// Whether the caller has put this UART into loopback, so that what is
+    /// transmitted arrives on its own receive path.
+    loopback: bool,
+    /// Which byte of `PATTERN` the loopback phase is on. One byte is in
+    /// flight at a time; see `start_loopback` for why.
+    lb_index: Cell<usize>,
+    /// What has come back so far, compared against `PATTERN` at the end.
+    received: Cell<[u8; TX_LEN]>,
     client: OptionalCell<&'static dyn CapsuleTestClient>,
 }
 
 impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
     pub fn new(uart: &'a U, buffer: &'static mut [u8]) -> Self {
+        Self::build(uart, buffer, false)
+    }
+
+    /// The same test, plus the clauses that can only be checked when what is
+    /// transmitted comes back on the same UART's receive path.
+    ///
+    /// **The caller is responsible for arranging that**, because nothing in
+    /// `hil::uart` can: a chip may offer an internal loopback bit, or the
+    /// board may have TX wired to RX. If neither is true, the loopback phase
+    /// will simply never call back and the test will never report -- which is
+    /// why it is a separate constructor rather than something inferred.
+    pub fn new_loopback(uart: &'a U, buffer: &'static mut [u8]) -> Self {
+        Self::build(uart, buffer, true)
+    }
+
+    fn build(uart: &'a U, buffer: &'static mut [u8], loopback: bool) -> Self {
         Self {
             uart,
             buffer: TakeCell::new(buffer),
             failures: Cell::new(0),
             checks: Cell::new(0),
             stage: Cell::new(Stage::Idle),
+            loopback,
+            lb_index: Cell::new(0),
+            received: Cell::new([0; TX_LEN]),
             client: OptionalCell::empty(),
         }
     }
@@ -275,6 +328,64 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
         }
     }
 
+    /// Send one byte of `PATTERN` and arm a receive for it. With the UART
+    /// in loopback it arrives on this same UART, and the receive callback
+    /// sends the next one.
+    ///
+    /// **One byte at a time, and the next is sent only once the previous has
+    /// arrived.** The rp2350 UART runs with its FIFOs disabled -- `configure`
+    /// clears `FEN`, and has to, because the driver's receive path tests
+    /// `RXFF` (FIFO *full*), which with FIFOs enabled would need 32 queued
+    /// bytes to ever fire. So the receive side holds exactly one byte.
+    /// Sending four back to back overruns it: measured on silicon as
+    /// `UARTRIS` bit 10 (OE) set with `RXFE` still 1 and `RXIM` still armed
+    /// -- the byte is lost, no further receive interrupt is raised, and the
+    /// test waits forever.
+    ///
+    /// The receive is armed before the transmit, because a byte that arrives
+    /// with no buffer posted is dropped.
+    fn start_loopback(&self, rx_buf: &'static mut [u8]) {
+        self.lb_index.set(0);
+        self.send_one(rx_buf);
+    }
+
+    /// Arm a one-byte receive and transmit the pattern byte at `lb_index`.
+    fn send_one(&self, rx_buf: &'static mut [u8]) {
+        let i = self.lb_index.get();
+        let tx_buf = match self.buffer.take() {
+            Some(b) => b,
+            None => {
+                self.check(false, "the loopback phase needs a second buffer");
+                self.finish();
+                return;
+            }
+        };
+
+        if let Err((e, _b)) = self.uart.receive_buffer(rx_buf, 1) {
+            self.check(
+                false,
+                "receive_buffer() on an idle UART must start a receive",
+            );
+            debug!("uart-contract: loopback receive refused with {:?}", e);
+            self.buffer.replace(tx_buf);
+            self.finish();
+            return;
+        }
+
+        tx_buf[0] = PATTERN[i];
+        self.stage.set(Stage::AwaitingLoopback);
+
+        if let Err((e, b)) = self.uart.transmit_buffer(tx_buf, 1) {
+            self.check(
+                false,
+                "transmit_buffer() on an idle UART must start a transmit",
+            );
+            debug!("uart-contract: loopback transmit refused with {:?}", e);
+            self.buffer.replace(b);
+            self.finish();
+        }
+    }
+
     /// Start a real transfer and check the clauses only a completed one
     /// reaches: that `Ok(())` is followed by a callback returning the
     /// buffer, and that a second transmit meanwhile is refused.
@@ -327,25 +438,67 @@ impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> 
     fn received_buffer(
         &self,
         rx_buffer: &'static mut [u8],
-        _rx_len: usize,
+        rx_len: usize,
         rval: Result<(), ErrorCode>,
-        _error: uart::Error,
+        error: uart::Error,
     ) {
-        if self.stage.get() != Stage::AwaitingAbortCallback {
-            return;
+        match self.stage.get() {
+            Stage::AwaitingAbortCallback => {
+                // The clause is that a cancelled receive calls back and hands
+                // the buffer over. Arriving here at all is the check; `rval`
+                // should say it was cancelled.
+                self.check(
+                    true,
+                    "a cancelled receive must call back and return the buffer",
+                );
+                self.check(
+                    rval == Err(ErrorCode::CANCEL),
+                    "a cancelled receive reports Err(CANCEL)",
+                );
+                if self.loopback {
+                    self.start_loopback(rx_buffer);
+                } else {
+                    self.start_transmit(rx_buffer);
+                }
+            }
+            Stage::AwaitingLoopback => {
+                // A byte this test sent, arriving back on the same UART.
+                // Everything here is a clause no test without loopback can
+                // reach. The per-byte clauses are checked on the first byte
+                // only, so the report stays one line per clause rather than
+                // one per byte.
+                let i = self.lb_index.get();
+                if i == 0 {
+                    self.check(rval == Ok(()), "a completed receive reports Ok(())");
+                    self.check(
+                        rx_len == 1,
+                        "a completed receive reports the length it was given",
+                    );
+                    self.check(
+                        error == uart::Error::None,
+                        "a receive that succeeded reports Error::None",
+                    );
+                }
+
+                let mut got = self.received.get();
+                got[i] = rx_buffer[0];
+                self.received.set(got);
+
+                if i + 1 < TX_LEN {
+                    self.lb_index.set(i + 1);
+                    self.send_one(rx_buffer);
+                } else {
+                    let matched = got == PATTERN;
+                    self.check(matched, "the bytes received match the bytes sent");
+                    if !matched {
+                        debug!("uart-contract:   sent {:?} got {:?}", PATTERN, got);
+                    }
+                    self.check_word_methods();
+                    self.finish();
+                }
+            }
+            _ => {}
         }
-        // The clause is that a cancelled receive calls back and hands the
-        // buffer over. Arriving here at all is the check; `rval` should say
-        // it was cancelled.
-        self.check(
-            true,
-            "a cancelled receive must call back and return the buffer",
-        );
-        self.check(
-            rval == Err(ErrorCode::CANCEL),
-            "a cancelled receive reports Err(CANCEL)",
-        );
-        self.start_transmit(rx_buffer);
     }
 }
 
@@ -359,30 +512,50 @@ impl<'a, U: uart::UartData<'a>> uart::TransmitClient for TestUartContract<'a, U>
 
     fn transmitted_buffer(
         &self,
-        _tx_buffer: &'static mut [u8],
+        tx_buffer: &'static mut [u8],
         tx_len: usize,
         rval: Result<(), ErrorCode>,
     ) {
-        if self.stage.get() != Stage::AwaitingTransmit {
-            // No transmit was outstanding, so this is a callback from a call
-            // that answered Err -- which the documentation forbids.
-            self.check(
-                false,
-                "transmit_buffer() that answered Err must not call back",
-            );
-            return;
+        match self.stage.get() {
+            Stage::AwaitingTransmit => {
+                self.check(
+                    true,
+                    "a completed transmit must call back and return the buffer",
+                );
+                self.check(rval == Ok(()), "a completed transmit reports Ok(())");
+                self.check(
+                    tx_len == TX_LEN,
+                    "a completed transmit reports the length it was given",
+                );
+                self.check_word_methods();
+                self.finish();
+            }
+            Stage::AwaitingLoopback => {
+                // Checked on the first byte only; after that this callback
+                // exists to hand the buffer back so the receive callback can
+                // send the next byte.
+                if self.lb_index.get() == 0 {
+                    self.check(
+                        true,
+                        "a completed transmit must call back and return the buffer",
+                    );
+                    self.check(rval == Ok(()), "a completed transmit reports Ok(())");
+                    self.check(
+                        tx_len == 1,
+                        "a completed transmit reports the length it was given",
+                    );
+                }
+                self.buffer.replace(tx_buffer);
+            }
+            _ => {
+                // No transmit was outstanding, so this is a callback from a
+                // call that answered Err -- which the documentation forbids.
+                self.check(
+                    false,
+                    "transmit_buffer() that answered Err must not call back",
+                );
+            }
         }
-        self.check(
-            true,
-            "a completed transmit must call back and return the buffer",
-        );
-        self.check(rval == Ok(()), "a completed transmit reports Ok(())");
-        self.check(
-            tx_len == TX_LEN,
-            "a completed transmit reports the length it was given",
-        );
-        self.check_word_methods();
-        self.finish();
     }
 }
 

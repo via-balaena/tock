@@ -419,6 +419,32 @@ impl<'a> Uart<'a> {
         self.registers.uartcr.modify(UARTCR::UARTEN::CLEAR);
     }
 
+    /// Feed this UART's transmit path back into its own receive path, inside
+    /// the peripheral.
+    ///
+    /// The datasheet documents this for exactly this purpose, in section
+    /// 12.1.3.2.6 "System and diagnostic loopback testing": *"To perform
+    /// loopback testing for UART data, set the Loop Back Enable (LBE) bit to
+    /// 1 in the Control Register, UARTCR. Data transmitted on UARTTXD is
+    /// received on the UARTRXD input."* `UARTCR.LBE`'s own description adds
+    /// the condition: *"If this bit is set to 1, and the SIRTEST bit is set
+    /// to 0, the UARTTXD path is fed through to the UARTRXD path."* SIRTEST
+    /// lives in the test register and resets to 0, so this bit alone is
+    /// enough.
+    ///
+    /// The loop is internal, ahead of the pads, so a UART in loopback needs
+    /// no pin configuration and drives nothing on the board. That makes it
+    /// the way to check a UART's data path on a board whose pins are all
+    /// spoken for -- but it also means it says nothing about the pads, the
+    /// pin mux, or anything electrical.
+    pub fn set_loopback(&self, enabled: bool) {
+        if enabled {
+            self.registers.uartcr.modify(UARTCR::LBE::SET);
+        } else {
+            self.registers.uartcr.modify(UARTCR::LBE::CLEAR);
+        }
+    }
+
     pub fn enable_transmit_interrupt(&self) {
         self.registers.uartimsc.modify(UARTIMSC::TXIM::SET);
     }
