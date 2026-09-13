@@ -34,13 +34,29 @@ COMMENT = re.compile(r"^\s*(?:///|//!|//)")
 MENTION = re.compile(r"Err\(([A-Z][A-Z0-9_]{2,})\)")
 
 
+# Anchored on the brace, not on a substring. `pub enum ErrorCode` is a prefix
+# of `pub enum ErrorCodeRenamed`, so a plain `in` test survives the enum being
+# renamed out from under it and then extracts variants from whatever followed
+# -- which is how this function first passed a test designed to break it.
+ENUM = re.compile(r"pub enum ErrorCode\s*\{")
+
+# A floor on the count, so a regex that matches the enum but not its variants
+# reports a broken check rather than an empty set that vacuously agrees with
+# every name it is asked about.
+MIN_VARIANTS = 8
+
+
 def error_code_variants():
     src = (ROOT / "kernel" / "src" / "errorcode.rs").read_text(encoding="utf-8")
-    if "pub enum ErrorCode" not in src:
+    match = ENUM.search(src)
+    if not match:
         return None
-    body = src.split("pub enum ErrorCode", 1)[1]
-    body = body[: body.index("\n}")]
-    return set(re.findall(r"^\s+([A-Z][A-Z0-9]*)\s*=", body, re.M))
+    body = src[match.end():]
+    end = body.find("\n}")
+    if end < 0:
+        return None
+    found = set(re.findall(r"^\s+([A-Z][A-Z0-9]*)\s*=", body[:end], re.M))
+    return found if len(found) >= MIN_VARIANTS else None
 
 
 def main():
