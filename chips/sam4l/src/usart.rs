@@ -902,20 +902,28 @@ impl<'a> uart::Receive<'a> for USART<'a> {
         if rx_len > rx_buffer.len() {
             return Err((ErrorCode::SIZE, rx_buffer));
         }
-        let usart = &USARTRegManager::new(self);
-
-        // enable RX
-        self.enable_rx(usart);
-        self.enable_rx_error_interrupts(usart);
-        self.usart_rx_state.set(USARTStateRX::DMA_Receiving);
-        // set up dma transfer and start reception
-        if let Some(dma) = self.rx_dma.get() {
-            dma.enable();
-            self.rx_len.set(rx_len);
-            dma.do_transfer(self.rx_dma_peripheral, rx_buffer, rx_len);
-            Ok(())
+        // A receive is already outstanding. Without this the DMA transfer
+        // below would be started over the previous one, whose owner would
+        // never get a callback. `receive_automatic` below answers
+        // `Err(BUSY)` in the same situation, in the same shape.
+        if self.usart_rx_state.get() != USARTStateRX::Idle {
+            Err((ErrorCode::BUSY, rx_buffer))
         } else {
-            Err((ErrorCode::OFF, rx_buffer))
+            let usart = &USARTRegManager::new(self);
+
+            // enable RX
+            self.enable_rx(usart);
+            self.enable_rx_error_interrupts(usart);
+            self.usart_rx_state.set(USARTStateRX::DMA_Receiving);
+            // set up dma transfer and start reception
+            if let Some(dma) = self.rx_dma.get() {
+                dma.enable();
+                self.rx_len.set(rx_len);
+                dma.do_transfer(self.rx_dma_peripheral, rx_buffer, rx_len);
+                Ok(())
+            } else {
+                Err((ErrorCode::OFF, rx_buffer))
+            }
         }
     }
 
