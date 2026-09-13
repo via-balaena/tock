@@ -351,6 +351,22 @@ pub unsafe fn setup(
         // Most of the divergences the audit found live in chip drivers
         // rather than in the virtualizer.
         let test_uart = &peripherals.uart1;
+        // The transmit phase needs a working peripheral: `configure` ends by
+        // setting UARTEN, TXE and RXE, and without it a transmit fills the
+        // FIFO and never drains, so the test would hang rather than fail.
+        // Nothing is wired to UART1's pins; the bytes go nowhere, which is
+        // fine because the clause under test is that the transfer completes
+        // and calls back.
+        let _ = kernel::hil::uart::Configure::configure(
+            test_uart,
+            kernel::hil::uart::Parameters {
+                baud_rate: 115200,
+                width: kernel::hil::uart::Width::Eight,
+                stop_bits: kernel::hil::uart::StopBits::One,
+                parity: kernel::hil::uart::Parity::None,
+                hw_flow_control: false,
+            },
+        );
         let test_buffer = static_init!([u8; 64], [0; 64]);
         let contract = static_init!(
             TestUartContract<rp2350::uart::Uart>,

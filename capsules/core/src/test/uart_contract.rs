@@ -51,6 +51,11 @@ use kernel::debug;
 use kernel::hil::uart;
 use kernel::utilities::cells::{OptionalCell, TakeCell};
 
+/// Bytes the transmit phase sends. Short, because nothing is necessarily
+/// listening -- the point is that the transfer completes and calls back,
+/// not what arrives at the other end.
+const TX_LEN: usize = 4;
+
 /// Which stage the asynchronous part of the test is in.
 #[derive(Clone, Copy, PartialEq)]
 enum Stage {
@@ -58,6 +63,8 @@ enum Stage {
     Idle,
     /// A receive is outstanding and has been aborted; a callback is required.
     AwaitingAbortCallback,
+    /// A real transmit is in flight; its callback is required.
+    AwaitingTransmit,
     /// Finished, one way or the other.
     Done,
 }
@@ -192,11 +199,14 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
                             "receive_buffer() while one is outstanding must answer Err(BUSY)",
                         );
                     }
-                    Err((e, _returned)) => {
+                    Err((e, returned)) => {
                         self.check(
                             e == ErrorCode::BUSY,
                             "receive_buffer() while one is outstanding must answer Err(BUSY)",
                         );
+                        // Keep it; the transmit phase needs a second buffer
+                        // to check that a second transmit is refused.
+                        self.buffer.put(Some(returned));
                     }
                 }
 
@@ -228,12 +238,59 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
             }
         }
     }
+
+    /// Start a real transfer and check the clauses only a completed one
+    /// reaches: that `Ok(())` is followed by a callback returning the
+    /// buffer, and that a second transmit meanwhile is refused.
+    ///
+    /// This is also the only part of the test that makes the peripheral
+    /// raise an interrupt. Everything before it exercises the driver's own
+    /// bookkeeping, which is why it passes on a chip whose interrupt is not
+    /// routed at all.
+    fn start_transmit(&self, buffer: &'static mut [u8]) {
+        for (i, b) in buffer.iter_mut().enumerate().take(TX_LEN) {
+            *b = b'a' + (i as u8);
+        }
+        match self.uart.transmit_buffer(buffer, TX_LEN) {
+            Ok(()) => {
+                self.stage.set(Stage::AwaitingTransmit);
+                // A second transmit while that one is in flight must be
+                // refused rather than replace it.
+                if let Some(spare) = self.buffer.take() {
+                    match self.uart.transmit_buffer(spare, TX_LEN) {
+                        Ok(()) => self.check(
+                            false,
+                            "transmit_buffer() while one is outstanding must answer Err(BUSY)",
+                        ),
+                        Err((e, returned)) => {
+                            self.check(
+                                e == ErrorCode::BUSY,
+                                "transmit_buffer() while one is outstanding must answer Err(BUSY)",
+                            );
+                            self.buffer.put(Some(returned));
+                        }
+                    }
+                }
+                // The callback finishes the test. If it never arrives the
+                // test simply never reports, which is the signal that a
+                // completed transfer did not call back.
+            }
+            Err((e, _b)) => {
+                self.check(
+                    false,
+                    "transmit_buffer() on an idle UART must start a transmit",
+                );
+                debug!("uart-contract: transmit_buffer refused with {:?}", e);
+                self.finish();
+            }
+        }
+    }
 }
 
 impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> {
     fn received_buffer(
         &self,
-        _rx_buffer: &'static mut [u8],
+        rx_buffer: &'static mut [u8],
         _rx_len: usize,
         rval: Result<(), ErrorCode>,
         _error: uart::Error,
@@ -252,7 +309,7 @@ impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> 
             rval == Err(ErrorCode::CANCEL),
             "a cancelled receive reports Err(CANCEL)",
         );
-        self.finish();
+        self.start_transmit(rx_buffer);
     }
 }
 
@@ -260,15 +317,28 @@ impl<'a, U: uart::UartData<'a>> uart::TransmitClient for TestUartContract<'a, U>
     fn transmitted_buffer(
         &self,
         _tx_buffer: &'static mut [u8],
-        _tx_len: usize,
-        _rval: Result<(), ErrorCode>,
+        tx_len: usize,
+        rval: Result<(), ErrorCode>,
     ) {
-        // Nothing in this test starts a transmit that completes; a callback
-        // here means an implementation called back from a rejected call.
+        if self.stage.get() != Stage::AwaitingTransmit {
+            // No transmit was outstanding, so this is a callback from a call
+            // that answered Err -- which the documentation forbids.
+            self.check(
+                false,
+                "transmit_buffer() that answered Err must not call back",
+            );
+            return;
+        }
         self.check(
-            false,
-            "transmit_buffer() that answered Err must not call back",
+            true,
+            "a completed transmit must call back and return the buffer",
         );
+        self.check(rval == Ok(()), "a completed transmit reports Ok(())");
+        self.check(
+            tx_len == TX_LEN,
+            "a completed transmit reports the length it was given",
+        );
+        self.finish();
     }
 }
 
