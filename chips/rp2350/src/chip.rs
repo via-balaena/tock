@@ -215,6 +215,10 @@ impl InterruptService for Rp2350DefaultPeripherals<'_> {
                 self.uart0.handle_interrupt();
                 true
             }
+            interrupts::UART1_IRQ => {
+                self.uart1.handle_interrupt();
+                true
+            }
             _ => false,
         }
     }
