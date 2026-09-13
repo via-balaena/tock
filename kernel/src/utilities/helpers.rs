@@ -109,6 +109,15 @@ macro_rules! create_capability {
 /// This macro can only be used in a context that is allowed to use `unsafe`.
 /// Specifically, an internal `allow(unsafe_code)` directive will conflict with
 /// any `forbid(unsafe_code)` at the crate or block level.
+///
+/// ```compile_fail
+/// # use kernel::capabilities::ProcessManagementCapability;
+/// # use kernel::create_typed_capability;
+/// #[forbid(unsafe_code)]
+/// fn untrusted_fn() {
+///     create_typed_capability!(cap, UntrustedCap: ProcessManagementCapability);
+/// }
+/// ```
 #[macro_export]
 macro_rules! create_typed_capability {
     ($var:ident, $type:ident: $($T:path),+ $(,)?) => {
@@ -198,6 +207,17 @@ macro_rules! create_typed_capability {
 /// This macro can only be used in a context that is allowed to use `unsafe`.
 /// Specifically, an internal `allow(unsafe_code)` directive will conflict with
 /// any `forbid(unsafe_code)` at the crate or block level.
+///
+/// ```compile_fail
+/// # use kernel::capabilities::ProcessManagementCapability;
+/// # use kernel::define_capability_type;
+/// #[forbid(unsafe_code)]
+/// mod untrusted {
+///     kernel::define_capability_type!(
+///         UntrustedCap: kernel::capabilities::ProcessManagementCapability
+///     );
+/// }
+/// ```
 #[macro_export]
 macro_rules! define_capability_type {
     ($type:ident: $($T:path),+ $(,)?) => {
@@ -252,6 +272,22 @@ macro_rules! define_capability_type {
 ///
 /// This macro invokes an `unsafe` function. Callers must wrap use of this
 /// macro in `unsafe` to assert they are trusted to mint a capability.
+///
+/// Note this is gated by a different mechanism from the macros above: those
+/// carry an internal `allow(unsafe_code)` that collides with a `forbid`, while
+/// this one is refused because the caller's own `unsafe` block is.
+///
+/// ```compile_fail
+/// # use kernel::{define_capability_type, mint_defined_capability};
+/// kernel::define_capability_type!(
+///     UntrustedCap: kernel::capabilities::ProcessManagementCapability
+/// );
+///
+/// #[forbid(unsafe_code)]
+/// fn untrusted_fn() -> UntrustedCap {
+///     unsafe { mint_defined_capability!(UntrustedCap) }
+/// }
+/// ```
 // Note: Ultimately, this is just a wrapper around a function call, and does
 // not _need_ to be in a macro per se. However, minting capabilities is a
 // highly sensitive operation, and encapsulating this in a macro helps code
