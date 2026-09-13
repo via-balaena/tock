@@ -27,6 +27,11 @@ capsules-core = { path = "../../capsules/core" }
 capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
 
+[features]
+# Run the hil::uart conformance test at boot and print the result. This
+# board has one UART, so the test shares the console's mux.
+uart_contract_test = []
+
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
 

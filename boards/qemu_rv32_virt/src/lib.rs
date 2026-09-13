@@ -775,6 +775,33 @@ pub unsafe fn start() -> (
         ),
     };
 
+    // Run the `hil::uart` conformance test. The QEMU virt machine has a
+    // single UART and the console owns it, so this runs against a
+    // `UartDevice` on the console's mux rather than against
+    // `qemu_virt_chip`'s driver directly. That makes it a second platform
+    // for the virtualizer's clauses -- which is where the word-transmit
+    // wedge found on 2026-09-13 lived -- rather than new coverage of a chip
+    // driver.
+    //
+    // The transmit phase puts four bytes on the console's own output, which
+    // appear as noise in the log. That is the cost of sharing the line.
+    #[cfg(feature = "uart_contract_test")]
+    {
+        use capsules_core::test::uart_contract::TestUartContract;
+        use capsules_core::virtualizers::virtual_uart::UartDevice;
+
+        let test_device = static_init!(UartDevice, UartDevice::new(uart_mux, true));
+        test_device.setup();
+        let test_buffer = static_init!([u8; 64], [0; 64]);
+        let contract = static_init!(
+            TestUartContract<UartDevice>,
+            TestUartContract::new(test_device, test_buffer)
+        );
+        kernel::hil::uart::Receive::set_receive_client(test_device, contract);
+        kernel::hil::uart::Transmit::set_transmit_client(test_device, contract);
+        contract.run();
+    }
+
     debug!("QEMU RISC-V 32-bit \"virt\" machine, initialization complete.");
 
     // This board dynamically discovers VirtIO devices like a randomness source
