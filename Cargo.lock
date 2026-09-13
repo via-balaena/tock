@@ -1447,7 +1447,7 @@ dependencies = [
 
 [[package]]
 name = "raspberry_pi_pico_2_w"
-version = "0.2.3-dev"
+version = "0.2.4-dev"
 dependencies = [
  "capsules-core",
  "capsules-extra",
