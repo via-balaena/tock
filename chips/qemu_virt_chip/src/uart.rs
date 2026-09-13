@@ -495,6 +495,14 @@ impl<'a> hil::uart::Receive<'a> for Uart16550<'a> {
             return Err((ErrorCode::SIZE, rx_buffer));
         }
 
+        // A receive is already outstanding. Without this the buffer below
+        // would be replaced and the previous one dropped, so its owner would
+        // never get a callback. `transmit_buffer` above already answers
+        // `Err(BUSY)` in the same situation.
+        if self.rx_buffer.is_some() {
+            return Err((ErrorCode::BUSY, rx_buffer));
+        }
+
         // Store the receive buffer and byte count. We cannot call into the
         // generic receive routine here, as the client callback needs to be
         // called from another call stack. Hence simply enable interrupts here.

@@ -367,6 +367,13 @@ impl<'a, A: hil::time::Alarm<'a>> uart::Receive<'a> for SeggerRtt<'a, A> {
             return Err((ErrorCode::SIZE, buffer));
         }
 
+        // A receive is already outstanding. Without this the buffer below
+        // would be replaced and the previous one dropped, so its owner would
+        // never get a callback.
+        if self.rx_client_buffer.is_some() {
+            return Err((ErrorCode::BUSY, buffer));
+        }
+
         self.rx_client_buffer.put(Some(buffer));
         self.rx_len.set(len);
         self.rx_cursor.set(0);

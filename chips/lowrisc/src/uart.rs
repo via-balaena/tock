@@ -394,6 +394,14 @@ impl<'a> hil::uart::Receive<'a> for Uart<'a> {
             return Err((ErrorCode::SIZE, rx_buffer));
         }
 
+        // A receive is already outstanding. Without this the buffer below
+        // would be replaced and the previous one dropped, so its owner
+        // would never get a callback. `transmit_buffer` above already
+        // answers `Err(BUSY)` in the same situation.
+        if self.rx_buffer.is_some() {
+            return Err((ErrorCode::BUSY, rx_buffer));
+        }
+
         self.enable_rx_interrupt();
 
         self.rx_buffer.replace(rx_buffer);
@@ -422,6 +430,14 @@ impl<'a> hil::uart::ReceiveAdvanced<'a> for Uart<'a> {
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
         if rx_len == 0 || rx_len > rx_buffer.len() {
             return Err((ErrorCode::SIZE, rx_buffer));
+        }
+
+        // A receive is already outstanding. Without this the buffer below
+        // would be replaced and the previous one dropped, so its owner would
+        // never get a callback. `transmit_buffer` above already answers
+        // `Err(BUSY)` in the same situation.
+        if self.rx_buffer.is_some() {
+            return Err((ErrorCode::BUSY, rx_buffer));
         }
 
         self.rx_buffer.replace(rx_buffer);

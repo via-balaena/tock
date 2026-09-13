@@ -464,6 +464,12 @@ impl<'a> hil::uart::Receive<'a> for Uart<'a> {
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
         if rx_len == 0 || rx_len > rx_buffer.len() {
             Err((ErrorCode::SIZE, rx_buffer))
+        } else if self.rx_buffer.is_some() {
+            // A receive is already outstanding. Without this the buffer would
+            // be replaced and the previous one dropped, so its owner would
+            // never get a callback. `transmit_buffer` above already answers
+            // `Err(BUSY)` in the same situation.
+            Err((ErrorCode::BUSY, rx_buffer))
         } else {
             // Save the buffer so we can keep sending it.
             self.rx_buffer.replace(rx_buffer);
