@@ -310,6 +310,7 @@ ci-runner-github-build:\
 	ci-job-compilation\
 	ci-job-msrv\
 	ci-job-debug-support-targets\
+	ci-job-elf-check\
 	ci-job-collect-artifacts
 	$(call banner,CI-Runner: GitHub build runner DONE)
 
@@ -471,6 +472,19 @@ ci-job-debug-support-targets:
 	@TOCK_CARGO_FLAGS="--config $(DENY_WARNINGS_CARGO_CONFIG)" $(MAKE) -C boards/nordic/nrf52dk lst
 	@TOCK_CARGO_FLAGS="--config $(DENY_WARNINGS_CARGO_CONFIG)" $(MAKE) -C boards/nordic/nrf52dk debug
 	@TOCK_CARGO_FLAGS="--config $(DENY_WARNINGS_CARGO_CONFIG)" $(MAKE) -C boards/nordic/nrf52dk debug-lst
+
+define ci_job_elf_check
+	$(call banner,CI-Job: ELF Loadability)
+	# Every board's ELF is checked for segments that claim file content
+	# for uninitialized memory. Such a file makes a loader copy bytes
+	# that do not exist, and flashing tools reject it.
+	@tools/ci/check-elf-loadable.py
+endef
+
+.PHONY: ci-job-elf-check
+ci-job-elf-check: ci-job-compilation
+	$(call ci_job_elf_check)
+
 
 .PHONY: ci-job-collect-artifacts
 ci-job-collect-artifacts: ci-job-compilation
