@@ -5,6 +5,9 @@
 //! Helper library for converting numbers to enums.
 
 // copied from https://github.com/andersk/enum_primitive-rs which did not with with nostd out of box
+
+// Casting between integers and enums requires no unsafe operations.
+#![forbid(unsafe_code)]
 #![no_std]
 pub mod cast;
 
