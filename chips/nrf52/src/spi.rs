@@ -375,7 +375,15 @@ impl<'a> hil::spi::SpiMaster<'a> for SPIM<'a> {
             return Err((ErrorCode::INVAL, tx_buf, rx_buf));
         }
 
-        debug_assert!(!self.busy.get());
+        // `hil::spi`: *"`Err(BUSY)`: the SPI bus is busy with a prior
+        // `read_write_bytes` operation whose callback hasn't been called
+        // yet."* This was a `debug_assert!`, which states the invariant and
+        // enforces nothing in a release build -- and a release build then
+        // runs on to `tx_buf.replace(..)`, silently discarding the
+        // outstanding buffers and the callback owed for them.
+        if self.busy.get() {
+            return Err((ErrorCode::BUSY, tx_buf, rx_buf));
+        }
         debug_assert!(self.tx_buf.is_none());
         debug_assert!(self.rx_buf.is_none());
 

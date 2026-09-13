@@ -1242,6 +1242,14 @@ impl<'a> SpiMaster<'a> for Iom<'a> {
             return Err((ErrorCode::INVAL, write_buffer, read_buffer));
         }
 
+        // `hil::spi`: *"`Err(BUSY)`: the SPI bus is busy with a prior
+        // `read_write_bytes` operation whose callback hasn't been called
+        // yet."* Starting a second transfer over the first loses the first's
+        // buffers and the callback that was promised for them.
+        if self.is_busy() {
+            return Err((ErrorCode::BUSY, write_buffer, read_buffer));
+        }
+
         let (write_len, read_len) = if let Some(rb) = read_buffer.as_ref() {
             let min = write_buffer.len().min(rb.len());
             (min, min)

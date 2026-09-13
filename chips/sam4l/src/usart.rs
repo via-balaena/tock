@@ -1115,7 +1115,13 @@ impl<'a> spi::SpiMaster<'a> for USART<'a> {
     }
 
     fn is_busy(&self) -> bool {
-        false
+        // `hil::spi`: *"Return whether the SPI peripheral is busy with a
+        // `read_write_bytes` operation."* This answered a constant `false`,
+        // so no client could ever learn the bus was in use. In SPI mode the
+        // DMA states below belong to this peripheral alone, so they are the
+        // honest answer.
+        self.usart_tx_state.get() != USARTStateTX::Idle
+            || self.usart_rx_state.get() != USARTStateRX::Idle
     }
 
     fn read_write_bytes(
@@ -1140,6 +1146,12 @@ impl<'a> spi::SpiMaster<'a> for USART<'a> {
         };
         if transfer_len == 0 {
             return Err((ErrorCode::INVAL, write_buffer, read_buffer));
+        }
+
+        // See `is_busy`: a second transfer started over the first loses the
+        // first's buffers and the callback promised for them.
+        if spi::SpiMaster::is_busy(self) {
+            return Err((ErrorCode::BUSY, write_buffer, read_buffer));
         }
 
         let usart = &USARTRegManager::new(self);
