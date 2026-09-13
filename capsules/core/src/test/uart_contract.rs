@@ -89,6 +89,13 @@ const TX_LEN: usize = 4;
 /// bit order each show up as a mismatch instead of passing by luck.
 const PATTERN: [u8; TX_LEN] = [0x55, 0xaa, 0x00, 0xff];
 
+/// A word with bit 7 set, and what it must become once the UART is
+/// configured for seven-bit words. `hil::uart` states the rule on
+/// `transmit_buffer`: *"The word width is determined by the UART
+/// configuration, truncating any more significant bits."*
+const WIDE_WORD: u8 = 0xc5;
+const WIDE_WORD_IN_SEVEN_BITS: u8 = 0x45;
+
 /// Which stage the asynchronous part of the test is in.
 #[derive(Clone, Copy, PartialEq)]
 enum Stage {
@@ -101,6 +108,8 @@ enum Stage {
     /// One byte is in flight, expected to arrive on this UART's own receive
     /// path. The receive callback drives the next one.
     AwaitingLoopback,
+    /// A seven-bit word is in flight, expected back with its top bit gone.
+    AwaitingWidth,
     /// Finished, one way or the other.
     Done,
 }
@@ -117,6 +126,10 @@ pub struct TestUartContract<'a, U: uart::UartData<'a> + 'a> {
     /// Whether the caller has put this UART into loopback, so that what is
     /// transmitted arrives on its own receive path.
     loopback: bool,
+    /// The configurable end of this UART, when the board has one to hand.
+    /// The test's own bound is `UartData`, so that the same test runs against
+    /// a `UartDevice` from the mux -- which has no `Configure`.
+    configure: OptionalCell<&'static dyn uart::Configure>,
     /// Which byte of `PATTERN` the loopback phase is on. One byte is in
     /// flight at a time; see `start_loopback` for why.
     lb_index: Cell<usize>,
@@ -150,6 +163,7 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
             checks: Cell::new(0),
             stage: Cell::new(Stage::Idle),
             loopback,
+            configure: OptionalCell::empty(),
             lb_index: Cell::new(0),
             received: Cell::new([0; TX_LEN]),
             client: OptionalCell::empty(),
@@ -252,7 +266,11 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
     /// so a request for zero is integer division by zero and takes the kernel
     /// down -- from a call the HIL documents as returning an error, made from
     /// a capsule.
-    pub fn check_configure(&self, configure: &dyn uart::Configure) {
+    pub fn check_configure(&self, configure: &'static dyn uart::Configure) {
+        // Kept for the width phase, which needs to change the word size and
+        // put it back.
+        self.configure.set(configure);
+
         let impossible = uart::Parameters {
             baud_rate: 0,
             width: uart::Width::Eight,
@@ -267,6 +285,75 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
             answer == Err(ErrorCode::INVAL),
             "configure() with a baud rate of 0 must answer Err(INVAL)",
         );
+    }
+
+    /// Reconfigure this UART for `width`, keeping everything else as the
+    /// board set it.
+    fn set_width(&self, width: uart::Width) -> bool {
+        self.configure
+            .map(|c| {
+                c.configure(uart::Parameters {
+                    baud_rate: 115200,
+                    width,
+                    stop_bits: uart::StopBits::One,
+                    parity: uart::Parity::None,
+                    hw_flow_control: false,
+                }) == Ok(())
+            })
+            .unwrap_or(false)
+    }
+
+    /// Send one word too wide for the configured width and see it come back
+    /// truncated.
+    ///
+    /// *"Each byte in `tx_buffer` is a UART transfer word of 8 or fewer bits.
+    /// The word width is determined by the UART configuration, truncating any
+    /// more significant bits. E.g., `0x18f` transmitted in 8N1 will be sent
+    /// as `0x8f` and in 7N1 will be sent as `0x0f`."*
+    ///
+    /// This needs both a `Configure` handle and a loopback, which is why the
+    /// test could not reach it before: with nothing listening, what went out
+    /// on the wire was unobservable, and the mux the test also runs against
+    /// has no `Configure` at all.
+    fn start_width_check(&self, rx_buf: &'static mut [u8]) {
+        let tx_buf = match self.buffer.take() {
+            Some(b) => b,
+            None => {
+                self.check(false, "the width phase needs a second buffer");
+                self.finish();
+                return;
+            }
+        };
+
+        if !self.set_width(uart::Width::Seven) {
+            self.check(false, "configure() must accept a seven-bit word width");
+            self.buffer.replace(tx_buf);
+            self.finish();
+            return;
+        }
+
+        if let Err((_e, b)) = self.uart.receive_buffer(rx_buf, 1) {
+            self.check(
+                false,
+                "receive_buffer() on an idle UART must start a receive",
+            );
+            self.buffer.replace(tx_buf);
+            let _ = b;
+            self.finish();
+            return;
+        }
+
+        tx_buf[0] = WIDE_WORD;
+        self.stage.set(Stage::AwaitingWidth);
+
+        if let Err((_e, b)) = self.uart.transmit_buffer(tx_buf, 1) {
+            self.check(
+                false,
+                "transmit_buffer() on an idle UART must start a transmit",
+            );
+            self.buffer.replace(b);
+            self.finish();
+        }
     }
 
     fn finish(&self) {
@@ -578,10 +665,37 @@ impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> 
                     if !matched {
                         debug!("uart-contract:   sent {:?} got {:?}", PATTERN, got);
                     }
-                    self.reentrant_receive(rx_buffer);
-                    self.check_word_methods();
-                    self.finish();
+                    if self.configure.is_some() {
+                        self.start_width_check(rx_buffer);
+                    } else {
+                        self.reentrant_receive(rx_buffer);
+                        self.check_word_methods();
+                        self.finish();
+                    }
                 }
+            }
+            Stage::AwaitingWidth => {
+                let got = rx_buffer[0];
+                self.check(
+                    got == WIDE_WORD_IN_SEVEN_BITS,
+                    "a word wider than the configured width is truncated",
+                );
+                if got != WIDE_WORD_IN_SEVEN_BITS {
+                    debug!(
+                        "uart-contract:   sent {:#04x} in 7N1, expected {:#04x}, got {:#04x}",
+                        WIDE_WORD, WIDE_WORD_IN_SEVEN_BITS, got
+                    );
+                }
+
+                // Put the width back before anything else uses this UART.
+                self.check(
+                    self.set_width(uart::Width::Eight),
+                    "configure() must accept an eight-bit word width",
+                );
+
+                self.reentrant_receive(rx_buffer);
+                self.check_word_methods();
+                self.finish();
             }
             _ => {}
         }
@@ -632,6 +746,11 @@ impl<'a, U: uart::UartData<'a>> uart::TransmitClient for TestUartContract<'a, U>
                         "a completed transmit reports the length it was given",
                     );
                 }
+                self.buffer.replace(tx_buffer);
+            }
+            Stage::AwaitingWidth => {
+                // The receive callback drives this phase; this one exists to
+                // take the buffer back.
                 self.buffer.replace(tx_buffer);
             }
             // The re-entrant clause may leave one transfer in flight on
