@@ -180,7 +180,8 @@ pub trait Transmit<'a> {
     ///   controller because it is set up for SPI.
     /// - `Err(BUSY)`: the UART is already transmitting and has not made a
     ///   transmission callback yet.
-    /// - `Err(FAIL)`: not supported, or some other error.
+    /// - `Err(NOSUPPORT)`: this UART cannot transmit a single word.
+    /// - `Err(FAIL)`: some other error.
     fn transmit_word(&self, word: u32) -> Result<(), ErrorCode>;
 
     /// Abort an outstanding call to `transmit_word` or `transmit_buffer`.
@@ -255,7 +256,8 @@ pub trait Receive<'a> {
     ///   controller because it is set up for SPI.
     /// - `Err(BUSY)`: the UART is already receiving and has not made a
     ///   reception callback yet.
-    /// - `Err(FAIL)`: not supported or some other error.
+    /// - `Err(NOSUPPORT)`: this UART cannot receive a single word.
+    /// - `Err(FAIL)`: some other error.
     fn receive_word(&self) -> Result<(), ErrorCode>;
 
     /// Abort any ongoing receive transfers and return what has been received.

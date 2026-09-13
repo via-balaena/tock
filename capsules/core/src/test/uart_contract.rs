@@ -34,8 +34,14 @@
 //!    implementation set a state nothing ever read, stranding the buffer and
 //!    leaving the UART unusable for the life of the board.
 //!
+//! 7. The single-word methods answer one of the codes the HIL enumerates,
+//!    rather than panicking. One driver answered `unimplemented!()` and
+//!    another asserted on an uninitialized UART; both took the board down
+//!    on a call documented as returning an error.
+//!
 //! Checks 1 to 5 are synchronous. Check 6 needs the callback, so the test
-//! finishes there rather than at the end of `run`.
+//! continues there rather than at the end of `run`, and check 7 runs last
+//! because a UART that accepts a word transmit starts one.
 //!
 //! What this cannot check: that a client may start a new operation from
 //! inside a completion callback without being refused. That one needs a
@@ -103,6 +109,36 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
             self.failures.set(self.failures.get() + 1);
             debug!("uart-contract: FAIL {}", clause);
         }
+    }
+
+    /// The single-word methods. No UART driver in the tree implements these
+    /// -- every one of the twenty-six answers an error -- so what is worth
+    /// checking is that the error is one the HIL actually enumerates, and
+    /// that asking does not take the board down. One driver used to answer
+    /// with `unimplemented!()` and another asserted, both of which reach
+    /// this check as a panic rather than a failure.
+    ///
+    /// These run last because a UART that *does* accept a word transmit
+    /// starts one, and that would disturb the checks before it.
+    fn check_word_methods(&self) {
+        fn enumerated(r: Result<(), ErrorCode>) -> bool {
+            matches!(
+                r,
+                Ok(())
+                    | Err(ErrorCode::OFF)
+                    | Err(ErrorCode::BUSY)
+                    | Err(ErrorCode::NOSUPPORT)
+                    | Err(ErrorCode::FAIL)
+            )
+        }
+        self.check(
+            enumerated(self.uart.transmit_word(b'z' as u32)),
+            "transmit_word() must answer a code the HIL enumerates",
+        );
+        self.check(
+            enumerated(self.uart.receive_word()),
+            "receive_word() must answer a code the HIL enumerates",
+        );
     }
 
     fn finish(&self) {
@@ -314,6 +350,13 @@ impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> 
 }
 
 impl<'a, U: uart::UartData<'a>> uart::TransmitClient for TestUartContract<'a, U> {
+    fn transmitted_word(&self, rval: Result<(), ErrorCode>) {
+        // Only reachable from a UART that accepted `transmit_word`, which
+        // nothing in the tree does. Report it rather than let the trait's
+        // empty default swallow it.
+        debug!("uart-contract: note transmitted_word({:?})", rval);
+    }
+
     fn transmitted_buffer(
         &self,
         _tx_buffer: &'static mut [u8],
@@ -338,6 +381,7 @@ impl<'a, U: uart::UartData<'a>> uart::TransmitClient for TestUartContract<'a, U>
             tx_len == TX_LEN,
             "a completed transmit reports the length it was given",
         );
+        self.check_word_methods();
         self.finish();
     }
 }
