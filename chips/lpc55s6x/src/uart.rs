@@ -543,14 +543,12 @@ ID [
 enum UARTStateTX {
     Idle,
     Transmitting,
-    AbortRequested,
 }
 
 #[derive(Copy, Clone, PartialEq)]
 enum UARTStateRX {
     Idle,
     Receiving,
-    AbortRequested,
 }
 
 const USART0_BASE: StaticRef<UsartRegisters> =
@@ -942,7 +940,19 @@ impl<'a> Transmit<'a> for Uart<'a> {
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
         if self.tx_status.get() != UARTStateTX::Idle {
             self.disable_all_tx_interrupts();
-            self.tx_status.set(UARTStateTX::AbortRequested);
+            // Idle before the callback, as the completion path in
+            // `handle_interrupt` does, so a client that starts a new
+            // transmit from inside `transmitted_buffer` is not refused.
+            self.tx_status.set(UARTStateTX::Idle);
+
+            // Return the buffer here. Disabling the interrupts above means
+            // `handle_interrupt` will not run again for this transfer, so
+            // this is the only remaining opportunity to hand it back.
+            self.tx_client.map(|client| {
+                self.tx_buffer.take().map(|buf| {
+                    client.transmitted_buffer(buf, self.tx_position.get(), Err(ErrorCode::CANCEL));
+                });
+            });
 
             Err(ErrorCode::BUSY)
         } else {
@@ -991,7 +1001,25 @@ impl<'a> Receive<'a> for Uart<'a> {
     fn receive_abort(&self) -> Result<(), ErrorCode> {
         if self.rx_status.get() != UARTStateRX::Idle {
             self.disable_receive_interrupt();
-            self.rx_status.set(UARTStateRX::AbortRequested);
+            // Idle before the callback, as the completion path in
+            // `handle_interrupt` does, so a client that starts a new receive
+            // from inside `received_buffer` is not refused. `MuxUart` does
+            // exactly that after an abort.
+            self.rx_status.set(UARTStateRX::Idle);
+
+            // Return the buffer here, with however much was received.
+            // Disabling the interrupt above means `handle_interrupt` will not
+            // run again for this transfer.
+            self.rx_client.map(|client| {
+                self.rx_buffer.take().map(|buf| {
+                    client.received_buffer(
+                        buf,
+                        self.rx_position.get(),
+                        Err(ErrorCode::CANCEL),
+                        hil::uart::Error::Aborted,
+                    );
+                });
+            });
 
             Err(ErrorCode::BUSY)
         } else {
