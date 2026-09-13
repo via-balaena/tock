@@ -363,6 +363,18 @@ impl<'a> hil::spi::SpiMaster<'a> for SPIM<'a> {
             Option<SubSliceMut<'static, u8>>,
         ),
     > {
+        // `hil::spi`: *"`Err(INVAL)`: length is 0."* Without this the driver
+        // starts a zero-length transfer and still answers `Ok(())`, which
+        // promises a callback the hardware has no reason to raise. The bus is
+        // then left busy for every other client, with nothing to end it.
+        let transfer_len = match &rx_buf {
+            Some(rb) => tx_buf.len().min(rb.len()),
+            None => tx_buf.len(),
+        };
+        if transfer_len == 0 {
+            return Err((ErrorCode::INVAL, tx_buf, rx_buf));
+        }
+
         debug_assert!(!self.busy.get());
         debug_assert!(self.tx_buf.is_none());
         debug_assert!(self.rx_buf.is_none());

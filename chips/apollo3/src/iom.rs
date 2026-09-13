@@ -1230,6 +1230,18 @@ impl<'a> SpiMaster<'a> for Iom<'a> {
             Option<SubSliceMut<'static, u8>>,
         ),
     > {
+        // `hil::spi`: *"`Err(INVAL)`: length is 0."* Without this the driver
+        // starts a zero-length transfer and still answers `Ok(())`, which
+        // promises a callback the hardware has no reason to raise. The bus is
+        // then left busy for every other client, with nothing to end it.
+        let transfer_len = match &read_buffer {
+            Some(rb) => write_buffer.len().min(rb.len()),
+            None => write_buffer.len(),
+        };
+        if transfer_len == 0 {
+            return Err((ErrorCode::INVAL, write_buffer, read_buffer));
+        }
+
         let (write_len, read_len) = if let Some(rb) = read_buffer.as_ref() {
             let min = write_buffer.len().min(rb.len());
             (min, min)
