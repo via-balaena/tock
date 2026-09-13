@@ -700,6 +700,13 @@ impl<'a> spi::SpiSlave<'a> for SpiHw<'a> {
             Option<&'static mut [u8]>,
         ),
     > {
+        // `hil::spi`: *"`Err(INVAL)`: the `len` parameter is 0."* This path
+        // does not reach the guard on `SpiMaster::read_write_bytes`: it
+        // delegates to the inherent one instead.
+        if len == 0 {
+            return Err((ErrorCode::INVAL, write_buffer, read_buffer));
+        }
+
         let write_buffer = write_buffer.map(|b| {
             let mut buf: SubSliceMut<u8> = b.into();
             if buf.len() > len {
@@ -723,6 +730,17 @@ impl<'a> spi::SpiSlave<'a> for SpiHw<'a> {
     }
 
     fn set_polarity(&self, polarity: ClockPolarity) -> Result<(), ErrorCode> {
+        // `hil::spi`: *"`Err(BUSY)`: the SPI bus is busy with a
+        // `read_write_bytes` operation whose callback hasn't been called
+        // yet."* Reconfiguring mid-transfer corrupts the bytes in flight, and
+        // answering `Ok(())` tells the caller it did not.
+        //
+        // Nothing above absorbs this: `SpiSlaveDevice` in the virtualizer is
+        // a pure pass-through, unlike its controller-side counterpart, which
+        // stores the configuration and applies it only between operations.
+        if self.transfers_in_progress.get() != 0 {
+            return Err(ErrorCode::BUSY);
+        }
         self.set_polarity(polarity);
         Ok(())
     }
@@ -732,6 +750,10 @@ impl<'a> spi::SpiSlave<'a> for SpiHw<'a> {
     }
 
     fn set_phase(&self, phase: ClockPhase) -> Result<(), ErrorCode> {
+        // See `set_polarity`.
+        if self.transfers_in_progress.get() != 0 {
+            return Err(ErrorCode::BUSY);
+        }
         self.set_phase(phase);
         Ok(())
     }
