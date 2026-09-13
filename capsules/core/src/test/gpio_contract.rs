@@ -42,28 +42,15 @@
 
 use crate::test::capsule_test::{CapsuleTest, CapsuleTestClient, CapsuleTestError};
 use core::cell::Cell;
-use kernel::ErrorCode;
 use kernel::debug;
 use kernel::hil::gpio;
 use kernel::utilities::cells::OptionalCell;
-
-#[derive(Clone, Copy, PartialEq)]
-enum Stage {
-    Idle,
-    /// A rising edge has been armed and the output driven high.
-    AwaitingRising,
-    /// A rising-edge interrupt is armed and the output has gone LOW, which
-    /// must not fire it.
-    ExpectingSilence,
-    Done,
-}
 
 pub struct TestGpioContract<'a, O: gpio::Pin, I: gpio::InterruptPin<'a>> {
     out: &'a O,
     input: &'a I,
     failures: Cell<usize>,
     checks: Cell<usize>,
-    stage: Cell<Stage>,
     fired: Cell<usize>,
     client: OptionalCell<&'static dyn CapsuleTestClient>,
 }
@@ -76,7 +63,6 @@ impl<'a, O: gpio::Pin, I: gpio::InterruptPin<'a>> TestGpioContract<'a, O, I> {
             input,
             failures: Cell::new(0),
             checks: Cell::new(0),
-            stage: Cell::new(Stage::Idle),
             fired: Cell::new(0),
             client: OptionalCell::empty(),
         }
@@ -93,7 +79,6 @@ impl<'a, O: gpio::Pin, I: gpio::InterruptPin<'a>> TestGpioContract<'a, O, I> {
     }
 
     fn finish(&self) {
-        self.stage.set(Stage::Done);
         let (n, bad) = (self.checks.get(), self.failures.get());
         if bad == 0 {
             debug!("gpio-contract: {} clauses, all kept", n);
