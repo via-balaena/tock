@@ -995,6 +995,15 @@ impl<'a> uart::Transmit<'a> for USART<'a> {
 
 impl uart::Configure for USART<'_> {
     fn configure(&self, parameters: uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* This driver does not select the word
+        // width, so the only width it can honestly promise is the one it
+        // delivers. Accepting the request and sending a different width puts
+        // wrong bytes on the wire and tells the caller nothing.
+        if parameters.width != uart::Width::Eight {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+
         if self.usart_mode.get() != UsartMode::Uart {
             return Err(ErrorCode::OFF);
         }

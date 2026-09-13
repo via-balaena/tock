@@ -196,6 +196,15 @@ impl<F: DmaFence> VirtIODeviceDriver for VirtIOConsole<'_, F> {
 
 impl<F: DmaFence> hil::uart::Configure for VirtIOConsole<'_, F> {
     fn configure(&self, _params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* This driver does not select the word
+        // width, so the only width it can honestly promise is the one it
+        // delivers. Accepting the request and sending a different width puts
+        // wrong bytes on the wire and tells the caller nothing.
+        if _params.width != hil::uart::Width::Eight {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+
         // A virtio console has no physical line to configure (no baud
         // rate, parity, stop bits, etc.); accept any configuration.
         Ok(())

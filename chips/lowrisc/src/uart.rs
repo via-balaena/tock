@@ -319,6 +319,15 @@ impl<'a> Uart<'a> {
 
 impl hil::uart::Configure for Uart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* This driver does not select the word
+        // width, so the only width it can honestly promise is the one it
+        // delivers. Accepting the request and sending a different width puts
+        // wrong bytes on the wire and tells the caller nothing.
+        if params.width != hil::uart::Width::Eight {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+
         let regs = self.registers;
         // We can set the baud rate.
         self.set_baud_rate(params.baud_rate)?;
