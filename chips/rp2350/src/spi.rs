@@ -13,12 +13,15 @@
 
 use crate::clocks::Clocks;
 use crate::gpio::RPGpioPin;
-use kernel::utilities::StaticRef;
+use kernel::mmio;
 use rp2xxx::spi::SpiRegisters;
 
-const SPI0_BASE: StaticRef<SpiRegisters> = unsafe { StaticRef::at(0x40080000) };
+mmio! {
+    safety: "RP2350 datasheet address map; SPI0 confirmed on silicon by a PL022 loopback, SPI1 not exercised";
 
-const SPI1_BASE: StaticRef<SpiRegisters> = unsafe { StaticRef::at(0x40088000) };
+    SPI0_BASE: SpiRegisters = 0x40080000,
+    SPI1_BASE: SpiRegisters = 0x40088000,
+}
 
 /// The shared PL022 driver, with this chip's clocks and GPIO pins filled in.
 pub type Spi<'a> = rp2xxx::spi::Spi<'a, Clocks, RPGpioPin<'a>>;

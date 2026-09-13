@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright OxidOS Automotive 2025.
 
+use kernel::mmio;
 use kernel::utilities::StaticRef;
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable};
 use kernel::utilities::registers::{ReadWrite, register_bitfields, register_structs};
@@ -85,8 +86,11 @@ COUNT [
 ]
 ];
 
-const XOSC_BASE: StaticRef<XoscRegisters> = unsafe { StaticRef::at(0x40048000) };
+mmio! {
+    safety: "RP2350 datasheet address map";
 
+    XOSC_BASE: XoscRegisters = 0x40048000,
+}
 pub struct Xosc {
     registers: StaticRef<XoscRegisters>,
 }

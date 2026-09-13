@@ -10,6 +10,7 @@ use kernel::hil::uart::ReceiveClient;
 use kernel::hil::uart::{
     Configure, Parameters, Parity, Receive, StopBits, Transmit, TransmitClient, Width,
 };
+use kernel::mmio;
 use kernel::utilities::StaticRef;
 use kernel::utilities::cells::{OptionalCell, TakeCell};
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeable};
@@ -340,9 +341,12 @@ enum UARTStateRX {
     AbortRequested,
 }
 
-const UART0_BASE: StaticRef<UartRegisters> = unsafe { StaticRef::at(0x40070000) };
+mmio! {
+    safety: "RP2350 datasheet address map";
 
-const UART1_BASE: StaticRef<UartRegisters> = unsafe { StaticRef::at(0x40078000) };
+    UART0_BASE: UartRegisters = 0x40070000,
+    UART1_BASE: UartRegisters = 0x40078000,
+}
 
 pub struct Uart<'a> {
     registers: StaticRef<UartRegisters>,

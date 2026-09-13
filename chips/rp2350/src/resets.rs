@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright OxidOS Automotive 2025.
 
+use kernel::mmio;
 use kernel::utilities::StaticRef;
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeable};
 use kernel::utilities::registers::{FieldValue, ReadWrite, register_bitfields, register_structs};
@@ -200,8 +201,11 @@ RESET_DONE [
     ADC OFFSET(0) NUMBITS(1) []
 ]
 ];
-const RESETS_BASE: StaticRef<ResetsRegisters> = unsafe { StaticRef::at(0x40020000) };
+mmio! {
+    safety: "RP2350 datasheet address map";
 
+    RESETS_BASE: ResetsRegisters = 0x40020000,
+}
 pub enum Peripheral {
     Adc,
     BusController,
