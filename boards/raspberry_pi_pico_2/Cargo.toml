@@ -24,6 +24,11 @@ capsules-system = { path = "../../capsules/system" }
 # Run the hil::uart conformance test at boot and print the result.
 # Off by default: it costs about 4 KB of text and prints on every boot.
 uart_contract_test = []
+# The same test, but looped through the pads instead of inside the
+# peripheral: GP20 (UART1 TX) and GP21 (UART1 RX) are muxed to the UART and
+# a jumper is expected between them. Implies the above. WITHOUT THE WIRE THE
+# TEST HANGS, which is why it is not the default.
+uart_contract_test_pads = ["uart_contract_test"]
 
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }

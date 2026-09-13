@@ -364,17 +364,42 @@ pub unsafe fn setup(
                 hw_flow_control: false,
             },
         );
-        // Put UART1 into internal loopback so what it transmits arrives on
-        // its own receive path. This is the peripheral's own diagnostic mode
-        // (`UARTCR.LBE`, datasheet 12.1.3.2.6), and the loop sits ahead of
-        // the pads -- so UART1's pins stay unconfigured and drive nothing,
-        // and no jumper is needed on a board whose pins are all spoken for.
-        // It lets the test check what was carried, not only what was
-        // reported; it says nothing about the pads or the pin mux.
+        // Close the loop so the test can check what was carried, not only
+        // what was reported. Two ways, and they cover different things.
+        //
+        // By default, the peripheral's own diagnostic mode: `UARTCR.LBE`,
+        // datasheet 12.1.3.2.6. The loop sits ahead of the pads, so UART1's
+        // pins stay unconfigured and drive nothing, and no jumper is needed
+        // on a board whose pins are already spoken for. It says nothing
+        // about the pads or the pin mux.
         //
         // Set after `configure`, which only ever read-modify-writes UARTCR
         // and so would preserve the bit either way.
+        #[cfg(not(feature = "uart_contract_test_pads"))]
         test_uart.set_loopback(true);
+
+        // With `uart_contract_test_pads`, the loop runs out of the chip and
+        // back in over a jumper, which is the only way to exercise the pads
+        // and the function mux. GP20 is UART1 TX and GP21 is UART1 RX at
+        // FUNCSEL 0x02 (checked against the RP2350 datasheet's GPIO20_CTRL
+        // and GPIO21_CTRL tables). `LBE` is deliberately left clear: with it
+        // set the bytes would never reach a pad and the wire would prove
+        // nothing.
+        //
+        // This is conditional compilation for the one reason AGENTS.md
+        // allows it -- the alternative is a board that hangs at boot unless
+        // a particular wire is present.
+        #[cfg(feature = "uart_contract_test_pads")]
+        {
+            peripherals
+                .pins
+                .get_pin(RPGpio::GPIO20)
+                .set_function(GpioFunction::UART);
+            peripherals
+                .pins
+                .get_pin(RPGpio::GPIO21)
+                .set_function(GpioFunction::UART);
+        }
 
         let test_buffer = static_init!([u8; 64], [0; 64]);
         let contract = static_init!(
