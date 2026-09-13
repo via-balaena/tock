@@ -79,6 +79,17 @@ impl uart::TransmitClient for MuxUart<'_> {
         });
         self.do_next_op();
     }
+
+    /// Without this, a completed word transmit lands on the trait's empty
+    /// default method: the client that asked for it never hears back and
+    /// `inflight` never clears, so the mux stops dispatching.
+    fn transmitted_word(&self, rcode: Result<(), ErrorCode>) {
+        self.inflight.map(move |device| {
+            self.inflight.clear();
+            device.transmitted_word(rcode);
+        });
+        self.do_next_op();
+    }
 }
 
 impl uart::ReceiveClient for MuxUart<'_> {
@@ -240,9 +251,17 @@ impl<'a> MuxUart<'a> {
         if self.inflight.is_none() {
             let mnode = self.devices.iter().find(|node| node.operation.is_some());
             mnode.map(|node| {
-                node.tx_buffer.take().map(|buf| {
-                    node.operation.take().map(move |op| match op {
-                        Operation::Transmit { len } => match self.uart.transmit_buffer(buf, len) {
+                // The operation is consumed either way, so it is cleared
+                // before the work is dispatched. Clearing it afterwards, or
+                // only on the path that needs a buffer, leaves a node whose
+                // operation never clears -- and because this search always
+                // returns the *first* node with work pending, such a node
+                // stops the mux dispatching for itself and for every node
+                // behind it in the list.
+                let op = node.operation.take();
+                match op {
+                    Some(Operation::Transmit { len }) => match node.tx_buffer.take() {
+                        Some(buf) => match self.uart.transmit_buffer(buf, len) {
                             Ok(()) => {
                                 self.inflight.set(node);
                             }
@@ -253,17 +272,26 @@ impl<'a> MuxUart<'a> {
                                 });
                             }
                         },
-                        Operation::TransmitWord { word } => {
-                            let rcode = self.uart.transmit_word(word);
-                            if rcode != Ok(()) {
-                                node.tx_client.map(|client| {
-                                    node.transmitting.set(false);
-                                    client.transmitted_word(rcode);
-                                });
-                            }
+                        // A `Transmit` is only ever set together with the
+                        // buffer it names, so this cannot happen. Release
+                        // the node rather than leave it transmitting
+                        // forever; there is no buffer to call back with.
+                        None => node.transmitting.set(false),
+                    },
+                    // A word transmit carries no buffer.
+                    Some(Operation::TransmitWord { word }) => match self.uart.transmit_word(word) {
+                        Ok(()) => {
+                            self.inflight.set(node);
                         }
-                    });
-                });
+                        Err(ecode) => {
+                            node.tx_client.map(|client| {
+                                node.transmitting.set(false);
+                                client.transmitted_word(Err(ecode));
+                            });
+                        }
+                    },
+                    None => {}
+                }
             });
         }
     }
