@@ -63,6 +63,7 @@ impl QemuRv32VirtDefaultPeripherals<'_> {
 
     pub fn init(&'static self) {
         kernel::deferred_call::DeferredCallClient::register(&self.pflash);
+        kernel::deferred_call::DeferredCallClient::register(&self.uart0);
     }
 }
 

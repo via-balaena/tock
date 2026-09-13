@@ -55,6 +55,14 @@ impl QemuRv64VirtDefaultPeripherals<'_> {
             ],
         }
     }
+
+    /// Register the deferred calls this chip's peripherals rely on.
+    ///
+    /// `Uart16550` needs one to deliver the callback an aborted transfer is
+    /// owed; without this its aborts answer `Err` and nothing ever follows.
+    pub fn init(&'static self) {
+        kernel::deferred_call::DeferredCallClient::register(&self.uart0);
+    }
 }
 
 impl InterruptService for QemuRv64VirtDefaultPeripherals<'_> {

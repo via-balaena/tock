@@ -293,6 +293,7 @@ pub unsafe fn start() -> (
         QemuRv64VirtDefaultPeripherals,
         QemuRv64VirtDefaultPeripherals::new(),
     );
+    peripherals.init();
 
     // Create a shared UART channel for the console and for kernel
     // debug over the provided memory-mapped 16550-compatible

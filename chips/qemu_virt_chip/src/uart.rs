@@ -7,6 +7,7 @@
 use core::cell::Cell;
 
 use kernel::ErrorCode;
+use kernel::deferred_call::{DeferredCall, DeferredCallClient};
 use kernel::hil;
 use kernel::utilities::StaticRef;
 use kernel::utilities::cells::{OptionalCell, TakeCell};
@@ -214,6 +215,12 @@ pub struct Uart16550<'a> {
     rx_buffer: TakeCell<'static, [u8]>,
     rx_len: Cell<usize>,
     rx_index: Cell<usize>,
+    /// An abort was requested and the client is owed its buffer back. The
+    /// HIL requires a callback for any abort that answers `Err`, and this
+    /// hardware cannot produce one on its own.
+    tx_abort: Cell<bool>,
+    rx_abort: Cell<bool>,
+    deferred_call: DeferredCall,
 }
 
 impl<'a> Uart16550<'a> {
@@ -238,6 +245,9 @@ impl<'a> Uart16550<'a> {
             rx_buffer: TakeCell::empty(),
             rx_len: Cell::new(0),
             rx_index: Cell::new(0),
+            tx_abort: Cell::new(false),
+            rx_abort: Cell::new(false),
+            deferred_call: DeferredCall::new(),
         }
     }
 }
@@ -439,8 +449,10 @@ impl<'a> hil::uart::Transmit<'a> for Uart16550<'a> {
         tx_data: &'static mut [u8],
         tx_len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
+        // `hil::uart`: *`Err(SIZE)`: `tx_len` is larger than the passed
+        // slice.* `INVAL` is not among the codes this call may answer.
         if tx_len > tx_data.len() {
-            return Err((ErrorCode::INVAL, tx_data));
+            return Err((ErrorCode::SIZE, tx_data));
         }
 
         if self.tx_buffer.is_some() {
@@ -470,7 +482,17 @@ impl<'a> hil::uart::Transmit<'a> for Uart16550<'a> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
-        Err(ErrorCode::FAIL)
+        // Nothing outstanding: the HIL requires `Ok(())` and no callback.
+        if self.tx_buffer.is_none() {
+            return Ok(());
+        }
+
+        self.regs
+            .ier
+            .modify(IER::TransmitterHoldingRegisterEmpty::CLEAR);
+        self.tx_abort.set(true);
+        self.deferred_call.set();
+        Err(ErrorCode::BUSY)
     }
 
     fn transmit_word(&self, _word: u32) -> Result<(), ErrorCode> {
@@ -517,13 +539,69 @@ impl<'a> hil::uart::Receive<'a> for Uart16550<'a> {
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
-        // Currently unsupported as we'd like to avoid using deferred
-        // calls. Needs to be migrated to the new UART HIL anyways.
-        Err(ErrorCode::FAIL)
+        // Nothing outstanding: the HIL requires `Ok(())` and no callback.
+        if self.rx_buffer.is_none() {
+            return Ok(());
+        }
+
+        self.regs.ier.modify(IER::ReceivedDataAvailable::CLEAR);
+        self.rx_abort.set(true);
+        self.deferred_call.set();
+        Err(ErrorCode::BUSY)
     }
 
     fn receive_word(&self) -> Result<(), ErrorCode> {
         // Currently unsupported.
         Err(ErrorCode::FAIL)
+    }
+}
+
+/// Deliver the callback an aborted transfer is owed.
+///
+/// `Err` from either abort promises a callback, and this hardware raises no
+/// interrupt for a transfer that was stopped rather than finished, so the
+/// callback has to come from somewhere. Before this existed both aborts
+/// answered `Err(FAIL)` unconditionally and no callback ever followed: a
+/// `UartDevice` on the mux that aborted a receive stayed in `Aborting` until
+/// unrelated traffic arrived on the shared line, and was then handed that
+/// data and told the receive had succeeded.
+impl DeferredCallClient for Uart16550<'_> {
+    fn handle_deferred_call(&self) {
+        if self.rx_abort.get() {
+            self.rx_abort.set(false);
+            // `take` may find nothing if the receive completed between the
+            // abort and this call, in which case the client already has its
+            // buffer and is owed nothing.
+            if let Some(buffer) = self.rx_buffer.take() {
+                // "`rx_len` contains how many words were received."
+                let received = self.rx_index.get();
+                self.rx_index.set(0);
+                self.rx_len.set(0);
+                self.rx_client.map(move |client| {
+                    client.received_buffer(
+                        buffer,
+                        received,
+                        Err(ErrorCode::CANCEL),
+                        hil::uart::Error::Aborted,
+                    )
+                });
+            }
+        }
+
+        if self.tx_abort.get() {
+            self.tx_abort.set(false);
+            if let Some(buffer) = self.tx_buffer.take() {
+                let transmitted = self.tx_index.get();
+                self.tx_index.set(0);
+                self.tx_len.set(0);
+                self.tx_client.map(move |client| {
+                    client.transmitted_buffer(buffer, transmitted, Err(ErrorCode::CANCEL))
+                });
+            }
+        }
+    }
+
+    fn register(&'static self) {
+        self.deferred_call.register(self);
     }
 }
