@@ -1031,9 +1031,13 @@ impl<'a> uart::ReceiveAdvanced<'a> for USART<'a> {
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
         if self.usart_rx_state.get() != USARTStateRX::Idle {
             Err((ErrorCode::BUSY, rx_buffer))
+        } else if len > rx_buffer.len() {
+            // `hil::uart` documents `Err(SIZE)` here. Clamping instead told a
+            // caller the full length had been started when it had not.
+            Err((ErrorCode::SIZE, rx_buffer))
         } else {
             let usart = &USARTRegManager::new(self);
-            let length = cmp::min(len, rx_buffer.len());
+            let length = len;
 
             // enable RX
             self.enable_rx(usart);
