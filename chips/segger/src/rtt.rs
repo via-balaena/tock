@@ -248,6 +248,13 @@ impl<'a, A: hil::time::Alarm<'a>> uart::Transmit<'a> for SeggerRtt<'a, A> {
         tx_data: &'static mut [u8],
         tx_len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
+        // The copy below reads `tx_data[i]` for every `i` in `0..tx_len`, so a
+        // length past the end of the slice would index out of bounds rather
+        // than be reported. `hil::uart` documents `Err(SIZE)` for this.
+        if tx_len > tx_data.len() {
+            return Err((ErrorCode::SIZE, tx_data));
+        }
+
         if self.config.is_some() {
             self.config.map(|config| {
                 // Copy the incoming data into the buffer. Once we increment
@@ -353,6 +360,13 @@ impl<'a, A: hil::time::Alarm<'a>> uart::Receive<'a> for SeggerRtt<'a, A> {
         buffer: &'static mut [u8],
         len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
+        // `rx_len` bounds the write cursor when the alarm fires, and the
+        // cursor indexes this slice, so a length past its end would index out
+        // of bounds. `hil::uart` documents `Err(SIZE)` for this.
+        if len > buffer.len() {
+            return Err((ErrorCode::SIZE, buffer));
+        }
+
         self.rx_client_buffer.put(Some(buffer));
         self.rx_len.set(len);
         self.rx_cursor.set(0);
