@@ -320,6 +320,18 @@ impl<'a> Uart<'a> {
 impl hil::uart::Configure for Uart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
         // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* There is no code in this driver for
+        // the settings below, so it cannot deliver anything but the default.
+        // Accepting the request and sending something else puts wrong bytes
+        // on the wire and tells the caller nothing.
+        if params.stop_bits != hil::uart::StopBits::One {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+        if params.hw_flow_control {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
         // satisfy this configuration."* This driver does not select the word
         // width, so the only width it can honestly promise is the one it
         // delivers. Accepting the request and sending a different width puts

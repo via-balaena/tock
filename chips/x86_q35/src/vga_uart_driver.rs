@@ -18,7 +18,9 @@ use crate::vga::Vga;
 use core::{cell::Cell, cmp};
 use kernel::ErrorCode;
 use kernel::deferred_call::{DeferredCall, DeferredCallClient};
-use kernel::hil::uart::{Configure, Parameters, Receive, ReceiveClient, Transmit, TransmitClient};
+use kernel::hil::uart::{
+    Configure, Parameters, Parity, Receive, ReceiveClient, StopBits, Transmit, TransmitClient,
+};
 use kernel::utilities::cells::TakeCell;
 use tock_cells::optional_cell::OptionalCell;
 
@@ -120,7 +122,22 @@ impl<'a> Receive<'a> for VgaText<'a> {
 
 // Configure for Vga
 impl Configure for VgaText<'_> {
-    fn configure(&self, _params: Parameters) -> Result<(), ErrorCode> {
+    fn configure(&self, params: Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* There is no code in this driver for
+        // the settings below, so it cannot deliver anything but the default.
+        // Accepting the request and sending something else puts wrong bytes
+        // on the wire and tells the caller nothing.
+        if params.parity != Parity::None {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+        if params.stop_bits != StopBits::One {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+        if params.hw_flow_control {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+
         Ok(())
     }
 }

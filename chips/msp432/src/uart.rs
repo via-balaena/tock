@@ -141,6 +141,18 @@ impl dma::DmaClient for Uart<'_> {
 
 impl hil::uart::Configure for Uart<'_> {
     fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* There is no code in this driver for
+        // the settings below, so it cannot deliver anything but the default.
+        // Accepting the request and sending something else puts wrong bytes
+        // on the wire and tells the caller nothing.
+        if params.stop_bits != hil::uart::StopBits::One {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+        if params.hw_flow_control {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+
         // `hil::uart`: *"`Err(INVAL)`: Impossible parameters (e.g. a
         // `Parameters::baud_rate` of 0)."* Without this the divisor
         // calculation below divides by zero and takes the kernel down, from a

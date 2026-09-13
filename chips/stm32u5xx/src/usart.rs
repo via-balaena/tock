@@ -524,6 +524,18 @@ impl<'a> uart::Transmit<'a> for Usart<'a> {
 impl uart::Configure for Usart<'_> {
     fn configure(&self, params: uart::Parameters) -> Result<(), kernel::ErrorCode> {
         // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* There is no code in this driver for
+        // the settings below, so it cannot deliver anything but the default.
+        // Accepting the request and sending something else puts wrong bytes
+        // on the wire and tells the caller nothing.
+        if params.parity != uart::Parity::None {
+            return Err(kernel::ErrorCode::NOSUPPORT);
+        }
+        if params.hw_flow_control {
+            return Err(kernel::ErrorCode::NOSUPPORT);
+        }
+
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
         // satisfy this configuration."* This driver does not select the word
         // width, so the only width it can honestly promise is the one it
         // delivers. Accepting the request and sending a different width puts

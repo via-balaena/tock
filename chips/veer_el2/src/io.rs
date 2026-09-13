@@ -34,7 +34,22 @@ impl Default for SemihostUart<'_> {
 }
 
 impl hil::uart::Configure for SemihostUart<'_> {
-    fn configure(&self, _params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+    fn configure(&self, params: hil::uart::Parameters) -> Result<(), ErrorCode> {
+        // `hil::uart`: *"`Err(ENOSUPPORT)`: The underlying UART cannot
+        // satisfy this configuration."* There is no code in this driver for
+        // the settings below, so it cannot deliver anything but the default.
+        // Accepting the request and sending something else puts wrong bytes
+        // on the wire and tells the caller nothing.
+        if params.parity != hil::uart::Parity::None {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+        if params.stop_bits != hil::uart::StopBits::One {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+        if params.hw_flow_control {
+            return Err(ErrorCode::NOSUPPORT);
+        }
+
         Ok(())
     }
 }
