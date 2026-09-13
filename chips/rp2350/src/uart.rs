@@ -183,7 +183,13 @@ UARTIFLS [
         FIFO_7_8 = 0b100,
     ],
     /// Transmit interrupt FIFO level select. The trigger points for the transmit interrupt are as follows: b000 = Transmit FIFO becomes <= 1 / 8 full b001 = Transmit FIFO becomes <= 1 / 4 full b010 = Transmit FIFO becomes <= 1 / 2 full b011 = Transmit FIFO becomes <= 3 / 4 full b100 = Transmit FIFO becomes <= 7 / 8 full b101-b111 = reserved.
-    TXIFLSEL OFFSET(0) NUMBITS(3) []
+    TXIFLSEL OFFSET(0) NUMBITS(3) [
+        FIFO_1_8 = 0b000,
+        FIFO_1_4 = 0b001,
+        FIFO_1_2 = 0b010,
+        FIFO_3_4 = 0b011,
+        FIFO_7_8 = 0b100,
+    ]
 ],
 UARTIMSC [
     /// Overrun error interrupt mask. A read returns the current mask for the UARTOEINTR interrupt. On a write of 1, the mask of the UARTOEINTR interrupt is set. A write of 0 clears the mask.
@@ -331,6 +337,11 @@ UARTPCELLID3 [
 enum UARTStateTX {
     Idle,
     Transmitting,
+    /// Every byte is in the transmit FIFO and the completion callback is
+    /// still owed. See `transmit_buffer`: a transfer that fits entirely in
+    /// the FIFO gets no transmit interrupt, so its callback comes from a
+    /// deferred call instead.
+    CompletePending,
     AbortRequested,
 }
 
@@ -445,7 +456,20 @@ impl<'a> Uart<'a> {
         }
     }
 
+    /// Arm the transmit interrupt, which fires when the transmit FIFO drains
+    /// to the trigger level.
+    ///
+    /// The trigger is an eighth of the FIFO -- four entries of thirty-two --
+    /// so the handler has four byte-times of runway to refill before the line
+    /// would go idle.
+    ///
+    /// **This interrupt is an edge, not a level.** The PL011 raises it on a
+    /// downward crossing of the trigger level, so a FIFO that was never above
+    /// the trigger never produces one. Arm it only when `fill_fifo` stopped
+    /// because the FIFO was full; a transfer that fit entirely completes from
+    /// a deferred call instead.
     pub fn enable_transmit_interrupt(&self) {
+        self.registers.uartifls.modify(UARTIFLS::TXIFLSEL::FIFO_1_8);
         self.registers.uartimsc.modify(UARTIMSC::TXIM::SET);
     }
 
@@ -455,20 +479,11 @@ impl<'a> Uart<'a> {
 
     /// Enable the receive interrupt, and the receive timeout with it.
     ///
-    /// `RTIM` matters only once `FEN` is set: the receive interrupt then
-    /// fires at the trigger level (an eighth of the FIFO, set here), and a
-    /// transfer shorter than that would otherwise never be delivered. The
-    /// timeout fires when bytes are waiting and the line has gone idle,
-    /// which is what makes a short receive complete.
-    ///
-    /// `FEN` is still cleared by `configure`. Turning it on is worth doing --
-    /// it is what would make the receive side deeper than one byte -- but it
-    /// also changes when the TRANSMIT interrupt fires, from "holding register
-    /// empty" to "below the transmit trigger level", and the transmit handler
-    /// currently acts only when `TXFE` is set. With the FIFOs on it would see
-    /// an interrupt it does not service and leave it asserted. That is a
-    /// change to the path every RP2 board's console runs through, so it is
-    /// not bundled in here.
+    /// `RTIM` is what makes a short receive complete. With `FEN` set the
+    /// receive interrupt fires at the trigger level -- an eighth of the FIFO,
+    /// four entries, set here -- so a transfer shorter than that would never
+    /// be delivered on `RXIM` alone. The timeout fires when bytes are waiting
+    /// and the line has gone idle, which covers it.
     pub fn enable_receive_interrupt(&self) {
         self.registers.uartifls.modify(UARTIFLS::RXIFLSEL::FIFO_1_8);
 
@@ -493,30 +508,52 @@ impl<'a> Uart<'a> {
     }
 
     pub fn handle_interrupt(&self) {
-        if self.registers.uartimsc.is_set(UARTIMSC::TXIM) {
-            if self.registers.uartfr.is_set(UARTFR::TXFE) {
-                if self.tx_status.get() == UARTStateTX::Idle {
-                    kernel::debug!("No data to transmit");
-                } else if self.tx_status.get() == UARTStateTX::Transmitting {
+        // The transmit interrupt. Gated on the RAW status, not on `TXFE`.
+        //
+        // `TXFE` is "the transmit FIFO is empty", which was a serviceable
+        // stand-in only while `FEN` was clear and the FIFO was one location
+        // deep. With the FIFOs on, this interrupt fires when the level falls
+        // to the trigger -- four entries -- and `TXFE` is still clear. The
+        // handler would do nothing, and because the PL011 holds the transmit
+        // interrupt until it is either cleared or written back above the
+        // trigger level, it would then re-enter forever.
+        if self.registers.uartimsc.is_set(UARTIMSC::TXIM)
+            && self.registers.uartris.is_set(UARTRIS::TXRIS)
+        {
+            // Acknowledge before refilling, so that an edge produced by this
+            // refill draining is not cleared along with the one being
+            // serviced.
+            self.registers.uarticr.write(UARTICR::TXIC::SET);
+
+            if self.tx_status.get() == UARTStateTX::Transmitting {
+                self.fill_fifo();
+                if self.tx_position.get() >= self.tx_len.get() {
+                    // Every byte is in the FIFO. This is a callback from an
+                    // interrupt, so it is issued here rather than deferred.
                     self.disable_transmit_interrupt();
-                    if self.tx_position.get() < self.tx_len.get() {
-                        self.fill_fifo();
-                        self.enable_transmit_interrupt();
-                    }
-                    // Transmission is done
-                    else {
-                        self.tx_status.set(UARTStateTX::Idle);
-                        self.tx_client.map(|client| {
-                            self.tx_buffer.take().map(|buf| {
-                                client.transmitted_buffer(buf, self.tx_position.get(), Ok(()));
-                            });
+                    self.tx_status.set(UARTStateTX::Idle);
+                    self.tx_client.map(|client| {
+                        self.tx_buffer.take().map(|buf| {
+                            client.transmitted_buffer(buf, self.tx_position.get(), Ok(()));
                         });
-                    }
+                    });
                 }
+            } else {
+                // Nothing outstanding: an interrupt left armed by an abort,
+                // or a completion already owed to a deferred call.
+                self.disable_transmit_interrupt();
             }
         }
 
         if self.registers.uartimsc.is_set(UARTIMSC::RXIM) {
+            // Acknowledge the receive and timeout edges BEFORE draining. If a
+            // byte lands during the drain the flag re-asserts and the handler
+            // runs again; clearing afterwards would instead discard the edge
+            // belonging to a byte that arrived after the loop last looked.
+            self.registers
+                .uarticr
+                .write(UARTICR::RXIC::SET + UARTICR::RTIC::SET);
+
             // Drain while the receive FIFO is NOT EMPTY, rather than while it
             // is FULL.
             //
@@ -531,9 +568,9 @@ impl<'a> Uart<'a> {
             // still 1 and the receive stalled for good.
             //
             // `RXFE` clear means at least one byte is waiting, which is true
-            // whether or not the FIFOs are on, so this is correct for both.
-            // Turning `FEN` on is a separate change; see the note on
-            // `enable_receive_interrupt`.
+            // whether or not the FIFOs are on. With `FEN` now set by
+            // `configure`, testing `RXFF` would need 32 queued bytes and
+            // would essentially never fire.
             while !self.registers.uartfr.is_set(UARTFR::RXFE)
                 && self.rx_status.get() == UARTStateRX::Receiving
             {
@@ -562,17 +599,13 @@ impl<'a> Uart<'a> {
                     });
                 }
             }
-
-            // A receive timeout says bytes are waiting that did not reach the
-            // trigger level. Acknowledge it whether or not it is unmasked, so
-            // it cannot sit asserted.
-            self.registers.uarticr.write(UARTICR::RTIC::SET);
         }
 
         // An overrun: a byte arrived with nowhere to put it and was dropped.
-        // The receive side is one location deep while `FEN` is clear, so
-        // anything arriving before this handler runs is overwritten in the
-        // shift register and gone.
+        // With `FEN` set the receive side is thirty-two deep, so reaching
+        // this now takes a burst that outruns the handler by a whole FIFO
+        // rather than by a single byte. It is still reachable, and a dropped
+        // byte is still a hole in the client's buffer.
         //
         // This is checked as its own interrupt rather than as a flag on a
         // drained character, because in the case that matters there IS no
@@ -696,8 +729,19 @@ impl<'a> Uart<'a> {
         }
         self.registers.uartlcr_h.modify(UARTLCR_H::BRK::CLEAR);
 
-        // FIFO is not precise enough for receive
-        self.registers.uartlcr_h.modify(UARTLCR_H::FEN::CLEAR);
+        // Enable the FIFOs: thirty-two entries each way, against one
+        // location each way with `FEN` clear.
+        //
+        // The receive side is why this matters. One location deep means any
+        // byte arriving before the handler runs is overwritten and gone --
+        // measured on silicon before this was set, four bytes sent back to
+        // back into internal loopback left `UARTRIS` bit 10 (OE) asserted
+        // with the receive stalled for good.
+        //
+        // Both interrupt paths are written for it: the receive drain tests
+        // `RXFE` rather than `RXFF`, and the transmit path treats its
+        // interrupt as the edge it is. See `enable_transmit_interrupt`.
+        self.registers.uartlcr_h.modify(UARTLCR_H::FEN::SET);
 
         // Enable uart and transmit
         self.registers
@@ -727,6 +771,17 @@ impl DeferredCallClient for Uart<'_> {
             self.tx_client.map(|client| {
                 self.tx_buffer.take().map(|buf| {
                     client.transmitted_buffer(buf, self.tx_position.get(), Err(ErrorCode::CANCEL));
+                });
+            });
+        } else if self.tx_status.get() == UARTStateTX::CompletePending {
+            // A transfer that fit entirely in the transmit FIFO. No interrupt
+            // is coming for it -- see `transmit_buffer` -- so the completion
+            // is owed from here. Idle before the callback, for the same
+            // reason as the abort paths.
+            self.tx_status.set(UARTStateTX::Idle);
+            self.tx_client.map(|client| {
+                self.tx_buffer.take().map(|buf| {
+                    client.transmitted_buffer(buf, self.tx_position.get(), Ok(()));
                 });
             });
         }
@@ -830,8 +885,19 @@ impl Configure for Uart<'_> {
         }
         self.registers.uartlcr_h.modify(UARTLCR_H::BRK::CLEAR);
 
-        // FIFO is not precise enough for receive
-        self.registers.uartlcr_h.modify(UARTLCR_H::FEN::CLEAR);
+        // Enable the FIFOs: thirty-two entries each way, against one
+        // location each way with `FEN` clear.
+        //
+        // The receive side is why this matters. One location deep means any
+        // byte arriving before the handler runs is overwritten and gone --
+        // measured on silicon before this was set, four bytes sent back to
+        // back into internal loopback left `UARTRIS` bit 10 (OE) asserted
+        // with the receive stalled for good.
+        //
+        // Both interrupt paths are written for it: the receive drain tests
+        // `RXFE` rather than `RXFF`, and the transmit path treats its
+        // interrupt as the edge it is. See `enable_transmit_interrupt`.
+        self.registers.uartlcr_h.modify(UARTLCR_H::FEN::SET);
 
         // Enable uart and transmit
         self.registers
@@ -862,8 +928,29 @@ impl<'a> Transmit<'a> for Uart<'a> {
                 self.tx_position.set(0);
                 self.tx_len.set(tx_len);
                 self.tx_status.set(UARTStateTX::Transmitting);
-                self.enable_transmit_interrupt();
+
+                // Drop any edge left over from an earlier transfer before
+                // filling, so the crossing this fill goes on to produce is
+                // not cleared along with it.
+                self.registers.uarticr.write(UARTICR::TXIC::SET);
                 self.fill_fifo();
+
+                if self.tx_position.get() < self.tx_len.get() {
+                    // `fill_fifo` stopped because the FIFO is full, which is
+                    // above the trigger level, so it is certain to cross the
+                    // trigger going down and raise the interrupt.
+                    self.enable_transmit_interrupt();
+                } else {
+                    // The whole transfer fit. The transmit interrupt is an
+                    // edge on a downward crossing of the trigger level, and a
+                    // FIFO that never went above the trigger never crosses
+                    // it: for a transfer shorter than the free space there is
+                    // no interrupt to wait for. Owe the callback to a
+                    // deferred call -- this is a downcall, so it cannot be
+                    // issued from here.
+                    self.tx_status.set(UARTStateTX::CompletePending);
+                    self.deferred_call.set();
+                }
                 Ok(())
             } else {
                 Err((ErrorCode::SIZE, tx_buffer))
