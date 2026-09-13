@@ -198,6 +198,47 @@ impl<'a, U: uart::UartData<'a>> TestUartContract<'a, U> {
         );
     }
 
+    /// Start a transmit from inside a completion callback.
+    ///
+    /// *"A call to [`Transmit::transmit_word`] or [`Transmit::transmit_buffer`]
+    /// made within this callback SHOULD NOT return `Err(BUSY)`. When this
+    /// callback is made the UART should be ready to receive another call."*
+    ///
+    /// A driver that issues the callback before clearing its own state
+    /// refuses the very call the contract invites. That is not theoretical:
+    /// six chip drivers had it on the receive side, and on a mux it killed
+    /// the process console -- an application read and the console stopped
+    /// receiving at the same moment, verified on RP2350 silicon.
+    ///
+    /// The stage is closed first, so a driver that accepts the call and then
+    /// calls back again is ignored rather than counted as a stray callback.
+    fn reentrant_transmit(&self, buffer: &'static mut [u8]) {
+        const CLAUSE: &str = "transmit_buffer() from inside its own callback must not answer BUSY";
+        self.stage.set(Stage::Done);
+        match self.uart.transmit_buffer(buffer, 1) {
+            Ok(()) => {
+                self.check(true, CLAUSE);
+                // Nothing is waiting on it; leave the driver idle.
+                let _ = self.uart.transmit_abort();
+            }
+            Err((e, _b)) => self.check(e != ErrorCode::BUSY, CLAUSE),
+        }
+    }
+
+    /// The same clause on the receive side, which is the half that has
+    /// actually been seen to break.
+    fn reentrant_receive(&self, buffer: &'static mut [u8]) {
+        const CLAUSE: &str = "receive_buffer() from inside its own callback must not answer BUSY";
+        self.stage.set(Stage::Done);
+        match self.uart.receive_buffer(buffer, 1) {
+            Ok(()) => {
+                self.check(true, CLAUSE);
+                let _ = self.uart.receive_abort();
+            }
+            Err((e, _b)) => self.check(e != ErrorCode::BUSY, CLAUSE),
+        }
+    }
+
     fn finish(&self) {
         self.stage.set(Stage::Done);
         let (n, bad) = (self.checks.get(), self.failures.get());
@@ -507,6 +548,7 @@ impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> 
                     if !matched {
                         debug!("uart-contract:   sent {:?} got {:?}", PATTERN, got);
                     }
+                    self.reentrant_receive(rx_buffer);
                     self.check_word_methods();
                     self.finish();
                 }
@@ -541,6 +583,7 @@ impl<'a, U: uart::UartData<'a>> uart::TransmitClient for TestUartContract<'a, U>
                     tx_len == TX_LEN,
                     "a completed transmit reports the length it was given",
                 );
+                self.reentrant_transmit(tx_buffer);
                 self.check_word_methods();
                 self.finish();
             }
@@ -561,6 +604,9 @@ impl<'a, U: uart::UartData<'a>> uart::TransmitClient for TestUartContract<'a, U>
                 }
                 self.buffer.replace(tx_buffer);
             }
+            // The re-entrant clause may leave one transfer in flight on
+            // purpose. Once the test has closed, a callback is expected.
+            Stage::Done => {}
             _ => {
                 // No transmit was outstanding, so this is a callback from a
                 // call that answered Err -- which the documentation forbids.
