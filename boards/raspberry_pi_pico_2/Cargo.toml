@@ -20,6 +20,11 @@ capsules-core = { path = "../../capsules/core" }
 capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
 
+[features]
+# Run the hil::uart conformance test at boot and print the result.
+# Off by default: it costs about 4 KB of text and prints on every boot.
+uart_contract_test = []
+
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
 

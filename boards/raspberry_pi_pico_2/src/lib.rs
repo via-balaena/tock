@@ -335,6 +335,29 @@ pub unsafe fn setup(
     )
     .finalize(components::debug_writer_component_static!());
 
+    #[cfg(feature = "uart_contract_test")]
+    // Run the hil::uart conformance test against a device on this mux.
+    //
+    // An audit on 2026-09-13 read seven of the guarantees `hil::uart` states
+    // against all twenty-six implementations in the tree and found every one
+    // of them violated somewhere. This executes the clauses at boot instead
+    // of leaving them as prose. Results print through `debug!` above.
+    {
+        use capsules_core::test::uart_contract::TestUartContract;
+        use capsules_core::virtualizers::virtual_uart::UartDevice;
+
+        let test_device = static_init!(UartDevice, UartDevice::new(uart_mux, true));
+        test_device.setup();
+        let test_buffer = static_init!([u8; 64], [0; 64]);
+        let contract = static_init!(
+            TestUartContract<UartDevice>,
+            TestUartContract::new(test_device, test_buffer)
+        );
+        kernel::hil::uart::Receive::set_receive_client(test_device, contract);
+        kernel::hil::uart::Transmit::set_transmit_client(test_device, contract);
+        contract.run();
+    }
+
     // PROCESS CONSOLE
     let process_printer = components::process_printer::ProcessPrinterTextComponent::new()
         .finalize(components::process_printer_text_component_static!());

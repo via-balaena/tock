@@ -23,6 +23,10 @@ raspberry_pi_pico_2 = { path = "../raspberry_pi_pico_2" }
 # Exports the firmware blobs
 tock-firmware-cyw43 = { git = "https://github.com/tock/firmware.git" }
 
+[features]
+# Forwarded to the shared board crate; see its Cargo.toml for the cost.
+uart_contract_test = ["raspberry_pi_pico_2/uart_contract_test"]
+
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
 
