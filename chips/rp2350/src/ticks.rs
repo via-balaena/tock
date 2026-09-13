@@ -134,8 +134,7 @@ RISCV_COUNT [
     RISCV_COUNT OFFSET(0) NUMBITS(9) []
 ]
 ];
-const TICKS_BASE: StaticRef<TicksRegisters> =
-    unsafe { StaticRef::new(0x40108000 as *const TicksRegisters) };
+const TICKS_BASE: StaticRef<TicksRegisters> = unsafe { StaticRef::at(0x40108000) };
 
 pub struct Ticks {
     registers: StaticRef<TicksRegisters>,

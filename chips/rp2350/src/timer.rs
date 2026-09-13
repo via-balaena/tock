@@ -165,8 +165,7 @@ INTS [
 ]
 ];
 
-const TIMER0_BASE: StaticRef<TimerRegisters> =
-    unsafe { StaticRef::new(0x400B0000 as *const TimerRegisters) };
+const TIMER0_BASE: StaticRef<TimerRegisters> = unsafe { StaticRef::at(0x400B0000) };
 
 pub struct RPTimer<'a> {
     registers: StaticRef<TimerRegisters>,

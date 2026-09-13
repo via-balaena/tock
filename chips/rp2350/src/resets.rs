@@ -200,8 +200,7 @@ RESET_DONE [
     ADC OFFSET(0) NUMBITS(1) []
 ]
 ];
-const RESETS_BASE: StaticRef<ResetsRegisters> =
-    unsafe { StaticRef::new(0x40020000 as *const ResetsRegisters) };
+const RESETS_BASE: StaticRef<ResetsRegisters> = unsafe { StaticRef::at(0x40020000) };
 
 pub enum Peripheral {
     Adc,
