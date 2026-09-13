@@ -899,7 +899,10 @@ impl<'a> uart::Receive<'a> for USART<'a> {
         rx_buffer: &'static mut [u8],
         rx_len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
-        if rx_len > rx_buffer.len() {
+        // Zero is refused with the oversized case. It is not a documented
+        // error, but a zero-length DMA never completes, so the callback
+        // promised by `Ok(())` could never come. See `receive_automatic`.
+        if rx_len == 0 || rx_len > rx_buffer.len() {
             return Err((ErrorCode::SIZE, rx_buffer));
         }
         // A receive is already outstanding. Without this the DMA transfer
@@ -1056,9 +1059,16 @@ impl<'a> uart::ReceiveAdvanced<'a> for USART<'a> {
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
         if self.usart_rx_state.get() != USARTStateRX::Idle {
             Err((ErrorCode::BUSY, rx_buffer))
-        } else if len > rx_buffer.len() {
+        } else if len == 0 || len > rx_buffer.len() {
             // `hil::uart` documents `Err(SIZE)` here. Clamping instead told a
             // caller the full length had been started when it had not.
+            //
+            // Zero is refused as well. It is not a documented error, but a
+            // zero-length DMA never completes, so the callback promised by
+            // `Ok(())` could never come -- and for `receive_automatic` the
+            // timeout cannot rescue it either, since that deliberately does
+            // not fire until a byte has arrived. lowrisc, the only other
+            // `ReceiveAdvanced`, already refuses zero on both calls.
             Err((ErrorCode::SIZE, rx_buffer))
         } else {
             let usart = &USARTRegManager::new(self);
