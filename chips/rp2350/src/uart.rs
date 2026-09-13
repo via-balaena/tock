@@ -453,14 +453,34 @@ impl<'a> Uart<'a> {
         self.registers.uartimsc.modify(UARTIMSC::TXIM::CLEAR);
     }
 
+    /// Enable the receive interrupt, and the receive timeout with it.
+    ///
+    /// `RTIM` matters only once `FEN` is set: the receive interrupt then
+    /// fires at the trigger level (an eighth of the FIFO, set here), and a
+    /// transfer shorter than that would otherwise never be delivered. The
+    /// timeout fires when bytes are waiting and the line has gone idle,
+    /// which is what makes a short receive complete.
+    ///
+    /// `FEN` is still cleared by `configure`. Turning it on is worth doing --
+    /// it is what would make the receive side deeper than one byte -- but it
+    /// also changes when the TRANSMIT interrupt fires, from "holding register
+    /// empty" to "below the transmit trigger level", and the transmit handler
+    /// currently acts only when `TXFE` is set. With the FIFOs on it would see
+    /// an interrupt it does not service and leave it asserted. That is a
+    /// change to the path every RP2 board's console runs through, so it is
+    /// not bundled in here.
     pub fn enable_receive_interrupt(&self) {
         self.registers.uartifls.modify(UARTIFLS::RXIFLSEL::FIFO_1_8);
 
-        self.registers.uartimsc.modify(UARTIMSC::RXIM::SET);
+        self.registers
+            .uartimsc
+            .modify(UARTIMSC::RXIM::SET + UARTIMSC::RTIM::SET);
     }
 
     pub fn disable_receive_interrupt(&self) {
-        self.registers.uartimsc.modify(UARTIMSC::RXIM::CLEAR);
+        self.registers
+            .uartimsc
+            .modify(UARTIMSC::RXIM::CLEAR + UARTIMSC::RTIM::CLEAR);
     }
 
     fn uart_is_writable(&self) -> bool {
@@ -497,38 +517,55 @@ impl<'a> Uart<'a> {
         }
 
         if self.registers.uartimsc.is_set(UARTIMSC::RXIM) {
-            if self.registers.uartfr.is_set(UARTFR::RXFF) {
+            // Drain while the receive FIFO is NOT EMPTY, rather than while it
+            // is FULL.
+            //
+            // `RXFF` is "receive FIFO full", and testing it is why `configure`
+            // has to clear `FEN`: with the FIFOs enabled it would take 32
+            // queued bytes to ever fire. With them disabled "full" means one
+            // byte, which is the only reason the old test worked at all, and
+            // it left the receive side one byte deep -- anything arriving
+            // faster than the handler runs is dropped with no indication.
+            // Measured on silicon: four bytes sent back to back into internal
+            // loopback left `UARTRIS` bit 10 (OE, overrun) set with `RXFE`
+            // still 1 and the receive stalled for good.
+            //
+            // `RXFE` clear means at least one byte is waiting, which is true
+            // whether or not the FIFOs are on, so this is correct for both.
+            // Turning `FEN` on is a separate change; see the note on
+            // `enable_receive_interrupt`.
+            while !self.registers.uartfr.is_set(UARTFR::RXFE)
+                && self.rx_status.get() == UARTStateRX::Receiving
+            {
                 let byte = self.registers.uartdr.get() as u8;
 
-                self.disable_receive_interrupt();
-                if self.rx_status.get() == UARTStateRX::Receiving {
-                    if self.rx_position.get() < self.rx_len.get() {
-                        self.rx_buffer.map(|buf| {
-                            buf[self.rx_position.get()] = byte;
-                            self.rx_position.replace(self.rx_position.get() + 1);
-                        });
-                    }
-                    if self.rx_position.get() == self.rx_len.get() {
-                        // reception done
-                        self.rx_status.replace(UARTStateRX::Idle);
-                    } else {
-                        self.enable_receive_interrupt();
-                    }
-                    // notify client if transfer is done
-                    if self.rx_status.get() == UARTStateRX::Idle {
-                        self.rx_client.map(|client| {
-                            if let Some(buf) = self.rx_buffer.take() {
-                                client.received_buffer(
-                                    buf,
-                                    self.rx_len.get(),
-                                    Ok(()),
-                                    hil::uart::Error::None,
-                                );
-                            }
-                        });
-                    }
+                if self.rx_position.get() < self.rx_len.get() {
+                    self.rx_buffer.map(|buf| {
+                        buf[self.rx_position.get()] = byte;
+                        self.rx_position.replace(self.rx_position.get() + 1);
+                    });
+                }
+
+                if self.rx_position.get() == self.rx_len.get() {
+                    self.rx_status.replace(UARTStateRX::Idle);
+                    self.disable_receive_interrupt();
+                    self.rx_client.map(|client| {
+                        if let Some(buf) = self.rx_buffer.take() {
+                            client.received_buffer(
+                                buf,
+                                self.rx_len.get(),
+                                Ok(()),
+                                hil::uart::Error::None,
+                            );
+                        }
+                    });
                 }
             }
+
+            // A receive timeout says bytes are waiting that did not reach the
+            // trigger level. Acknowledge it whether or not it is unmasked, so
+            // it cannot sit asserted.
+            self.registers.uarticr.write(UARTICR::RTIC::SET);
         }
     }
 
