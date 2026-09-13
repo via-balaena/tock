@@ -140,3 +140,102 @@ impl<T> Deref for StaticRef<T> {
         unsafe { self.ptr.as_ref() }
     }
 }
+
+/// Declare a chip's memory mapped register blocks, stating once where the
+/// addresses come from.
+///
+/// A base address is the most repeated `unsafe` in Tock: 364 of the tree's
+/// 1,414 unjustified `unsafe` sites are a `StaticRef` constructed from a
+/// literal address, across 30 chip crates. Every one of them makes the same
+/// claim, so writing it out 364 times is the wrong shape. This states it once
+/// per block of declarations, and **will not expand without it**.
+///
+/// ```
+/// # use kernel::mmio;
+/// # use kernel::utilities::registers::ReadWrite;
+/// #[repr(C)]
+/// pub struct TimerRegisters {
+///     control: ReadWrite<u32>,
+/// }
+///
+/// mmio! {
+///     safety: "RP2350 datasheet section 12.6, table 1151";
+///
+///     /// The always-on timer.
+///     pub TIMER0: TimerRegisters = 0x400B_0000,
+/// }
+/// ```
+///
+/// The `safety:` argument is required. Declaring an address without saying
+/// where it came from does not compile:
+///
+/// ```compile_fail
+/// # use kernel::mmio;
+/// # use kernel::utilities::registers::ReadWrite;
+/// #[repr(C)]
+/// pub struct TimerRegisters {
+///     control: ReadWrite<u32>,
+/// }
+///
+/// mmio! {
+///     pub TIMER0: TimerRegisters = 0x400B_0000,
+/// }
+/// ```
+///
+/// Alignment is still checked by [`StaticRef::at`], through the macro:
+///
+/// ```compile_fail
+/// # use kernel::mmio;
+/// # use kernel::utilities::registers::ReadWrite;
+/// #[repr(C)]
+/// pub struct TimerRegisters {
+///     control: ReadWrite<u32>,
+/// }
+///
+/// mmio! {
+///     safety: "invented, and it does not matter: the address is misaligned";
+///     pub TIMER0: TimerRegisters = 0x400B_0002,
+/// }
+/// ```
+///
+/// # What this does and does not establish
+///
+/// It does not make the declaration safe. Two clauses of [`StaticRef::at`]'s
+/// contract cannot be checked by anything -- that the address really is the
+/// register block named, and that it outlives the program -- and those are
+/// exactly what the `safety:` argument is for. What it removes is the option
+/// of not saying.
+#[macro_export]
+macro_rules! mmio {
+    (
+        safety: $why:literal;
+        $(
+            $(#[$attr:meta])*
+            $vis:vis $name:ident : $t:ty = $addr:literal
+        ),+ $(,)?
+    ) => {
+        $(
+            $(#[$attr])*
+            #[doc = concat!("\n\nAddress provenance: ", $why)]
+            $vis const $name: $crate::utilities::StaticRef<$t> =
+                // SAFETY: alignment and non-null are checked by `StaticRef::at`
+                // during const evaluation. The two clauses no compiler can
+                // check -- that this address is the block named, and that it is
+                // valid for the program duration -- are discharged by the
+                // `safety:` argument this macro requires.
+                unsafe { $crate::utilities::StaticRef::at($addr) };
+        )+
+    };
+
+    // Anything else is almost always a missing `safety:`. Say so, rather than
+    // leaving the reader with "no rules expected this token".
+    ($($rest:tt)*) => {
+        compile_error!(
+            "mmio! requires a `safety:` argument naming where the addresses \
+             come from, before the declarations:\n\n    \
+             mmio! {\n        \
+             safety: \"RP2350 datasheet section 12.6\";\n\n        \
+             pub TIMER0: TimerRegisters = 0x400B_0000,\n    }"
+        );
+    };
+}

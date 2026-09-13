@@ -6,6 +6,7 @@ use cortexm33::support::with_interrupts_disabled;
 use kernel::ErrorCode;
 use kernel::hil;
 use kernel::hil::time::{Alarm, Ticks, Ticks32, Time};
+use kernel::mmio;
 use kernel::utilities::StaticRef;
 use kernel::utilities::cells::OptionalCell;
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeable};
@@ -165,8 +166,11 @@ INTS [
 ]
 ];
 
-const TIMER0_BASE: StaticRef<TimerRegisters> = unsafe { StaticRef::at(0x400B0000) };
+mmio! {
+    safety: "RP2350 datasheet address map";
 
+    TIMER0_BASE: TimerRegisters = 0x400B0000,
+}
 pub struct RPTimer<'a> {
     registers: StaticRef<TimerRegisters>,
     client: OptionalCell<&'a dyn hil::time::AlarmClient>,

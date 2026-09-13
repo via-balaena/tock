@@ -5,6 +5,7 @@
 use enum_primitive::cast::FromPrimitive;
 use enum_primitive::enum_from_primitive;
 use kernel::hil;
+use kernel::mmio;
 use kernel::utilities::StaticRef;
 use kernel::utilities::cells::OptionalCell;
 use kernel::utilities::registers::{
@@ -1161,9 +1162,13 @@ TMDS_POP_DOUBLE_L2 [
     TMDS_POP_DOUBLE_L2 OFFSET(0) NUMBITS(32) []
 ]
 ];
-const GPIO_BASE: StaticRef<GpioRegisters> = unsafe { StaticRef::at(0x40028000) };
-const GPIO_PAD_BASE: StaticRef<GpioPadRegisters> = unsafe { StaticRef::at(0x40038000) };
-const SIO_BASE: StaticRef<SIORegisters> = unsafe { StaticRef::at(0xD0000000) };
+mmio! {
+    safety: "RP2350 datasheet address map; SIO reads confirmed over SWD";
+
+    GPIO_BASE: GpioRegisters = 0x40028000,
+    GPIO_PAD_BASE: GpioPadRegisters = 0x40038000,
+    SIO_BASE: SIORegisters = 0xD0000000,
+}
 
 pub struct RPPins<'a> {
     pub pins: [RPGpioPin<'a>; 30],

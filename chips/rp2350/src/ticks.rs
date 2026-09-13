@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright OxidOS Automotive 2025.
 
+use kernel::mmio;
 use kernel::utilities::StaticRef;
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable};
 use kernel::utilities::registers::{ReadOnly, ReadWrite, register_bitfields, register_structs};
@@ -134,8 +135,11 @@ RISCV_COUNT [
     RISCV_COUNT OFFSET(0) NUMBITS(9) []
 ]
 ];
-const TICKS_BASE: StaticRef<TicksRegisters> = unsafe { StaticRef::at(0x40108000) };
+mmio! {
+    safety: "RP2350 datasheet address map";
 
+    TICKS_BASE: TicksRegisters = 0x40108000,
+}
 pub struct Ticks {
     registers: StaticRef<TicksRegisters>,
 }

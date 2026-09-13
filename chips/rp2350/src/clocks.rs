@@ -3,6 +3,7 @@
 // Copyright OxidOS Automotive 2025.
 
 use core::cell::Cell;
+use kernel::mmio;
 use kernel::utilities::StaticRef;
 use kernel::utilities::registers::{
     ReadOnly, ReadWrite,
@@ -860,9 +861,13 @@ pub enum Clock {
     Adc = 9,
 }
 
-const CLOCKS_BASE: StaticRef<ClocksRegisters> = unsafe { StaticRef::at(0x40010000) };
-const PLL_SYS_BASE: StaticRef<PllRegisters> = unsafe { StaticRef::at(0x40050000) };
-const PLL_USB_BASE: StaticRef<PllRegisters> = unsafe { StaticRef::at(0x40058000) };
+mmio! {
+    safety: "RP2350 datasheet address map";
+
+    CLOCKS_BASE: ClocksRegisters = 0x40010000,
+    PLL_SYS_BASE: PllRegisters = 0x40050000,
+    PLL_USB_BASE: PllRegisters = 0x40058000,
+}
 
 pub enum PllClock {
     Sys = 0,
