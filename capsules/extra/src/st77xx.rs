@@ -805,10 +805,16 @@ impl<'a, A: Alarm<'a>, B: Bus<'a, BusAddr8>, P: Pin> screen::Screen<'a> for ST77
         continue_write: bool,
     ) -> Result<(), ErrorCode> {
         if self.status.get() == Status::Idle {
-            // Data is provided as RGB565 ( RRRRR GGG | GGG BBBBB ), but the device expects it to come over the bus in little endian, so ( GGG BBBBB | RRRRR GGG ).
+            // Data arrives as RGB565 with the high byte first
+            // ( RRRRR GGG | GGG BBBBB ). Some controllers want it the other way
+            // round on the bus ( GGG BBBBB | RRRRR GGG ) and some want it as
+            // it came, so which one this is belongs to the screen rather than
+            // to the format -- see `ST77XXScreen::swap_pixel_bytes`.
             // TODO(alevy): replace `chunks_mut` wit `array_chunks` when stable.
-            for pair in data.as_mut_slice().chunks_mut(2) {
-                pair.swap(0, 1);
+            if self.screen.swap_pixel_bytes {
+                for pair in data.as_mut_slice().chunks_mut(2) {
+                    pair.swap(0, 1);
+                }
             }
 
             self.setup_command.set(false);
@@ -1271,6 +1277,16 @@ pub struct ST77XXScreen {
     default_height: usize,
     inverted: bool,
 
+    /// Whether the two bytes of each RGB565 pixel go out low byte first.
+    ///
+    /// A property of the controller, not of the format: `hil::screen` fixes
+    /// the channel widths of [`ScreenPixelFormat::RGB_565`] and says nothing
+    /// about byte order, so the driver has to know. The ST7735 and ST7789
+    /// families want the low byte first, which is why this was unconditional
+    /// here for years; the ST7796 wants the buffer as the caller supplied it,
+    /// and with the swap applied a blue fill came out green.
+    swap_pixel_bytes: bool,
+
     /// This function allows the translation of the image
     /// as some screen implementations might have off screen
     /// pixels for some of the rotations
@@ -1283,6 +1299,7 @@ impl ST77XXScreen {
         default_width: usize,
         default_height: usize,
         inverted: bool,
+        swap_pixel_bytes: bool,
         offset: fn(rotation: ScreenRotation) -> (usize, usize),
     ) -> Self {
         Self {
@@ -1290,6 +1307,7 @@ impl ST77XXScreen {
             default_width,
             default_height,
             inverted,
+            swap_pixel_bytes,
             offset,
         }
     }
@@ -1300,6 +1318,9 @@ pub const ST7735: ST77XXScreen = ST77XXScreen {
     default_width: 128,
     default_height: 160,
     inverted: false,
+    // Unchanged: this family wants the low byte first, which is what the
+    // driver did unconditionally before this became a per-screen property.
+    swap_pixel_bytes: true,
     offset: |_| (0, 0),
 };
 
@@ -1308,6 +1329,7 @@ pub const ST7789H2: ST77XXScreen = ST77XXScreen {
     default_width: 240,
     default_height: 240,
     inverted: true,
+    swap_pixel_bytes: true,
     offset: |rotation| match rotation {
         ScreenRotation::Rotated180 => (0, 80),
         ScreenRotation::Rotated270 => (80, 0),
@@ -1320,6 +1342,7 @@ pub const LS016B8UY: ST77XXScreen = ST77XXScreen {
     default_width: 240,
     default_height: 240,
     inverted: false,
+    swap_pixel_bytes: true,
     offset: |_| (0, 0),
 };
 
@@ -1352,5 +1375,11 @@ pub const ST7796: ST77XXScreen = ST77XXScreen {
     default_width: 480,
     default_height: 320,
     inverted: true,
+    // NOT swapped, unlike every other screen in this file. This controller
+    // takes RGB565 high byte first, which is the order the caller supplies,
+    // so the swap the others need corrupts it: with it applied a blue fill
+    // (0x001F) went out as 0x1F00 and the panel showed green. Measured on the
+    // glass, which is the only place it could have been.
+    swap_pixel_bytes: false,
     offset: |_| (0, 0),
 };

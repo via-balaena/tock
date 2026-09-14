@@ -116,6 +116,13 @@ pub enum ScreenPixelFormat {
     RGB_332 = 1,
     /// Pixels encoded as 5-bit red channel, 6-bit green channel, 5-bit blue
     /// channel.
+    ///
+    /// Two bytes per pixel, **high byte first**: `RRRRRGGG GGGBBBBB`. That is
+    /// what every caller in this tree supplies and what the drivers assume of
+    /// them, but it had never been written down -- and a driver that puts the
+    /// bytes on its bus the other way round, as several controllers require,
+    /// looks identical from here. `st77xx` carries the swap as a property of
+    /// the screen for exactly that reason.
     RGB_565 = 2,
     /// Pixels encoded as 8-bit red channel, 8-bit green channel, 8-bit blue
     /// channel.
