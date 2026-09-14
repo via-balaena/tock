@@ -553,27 +553,38 @@ impl Scb<'_> {
         if self.registers.intr_tx.is_set(INTR_TX::UART_DONE) {
             self.disable_tx_interrupts();
             self.registers.intr_tx.modify(INTR_TX::UART_DONE::SET);
-            // SAFETY: When a transmit is started, length is set to a non-zero value.
-            if self.tx_length.get().is_none() {
+            // No length means no transmit is outstanding, so this interrupt is
+            // not one to complete. `transmit_uart_async` sets the two together
+            // and they are cleared together below.
+            let Some(tx_length) = self.tx_length.get() else {
                 return;
-            }
-            let tx_length = self.tx_length.get().unwrap().get();
+            };
+            let tx_length = tx_length.get();
             if tx_length == self.tx_position.get() + 1 {
                 self.tx_length.clear();
-                // SAFETY: When a transmit is started, a buffer is passed.
                 self.tx_client.map(|client| {
-                    client.transmitted_buffer(self.tx_buffer.take().unwrap(), tx_length, Ok(()))
+                    self.tx_buffer.take().map(|buffer| {
+                        client.transmitted_buffer(buffer, tx_length, Ok(()));
+                    });
                 });
             } else {
                 let current_position = self.tx_position.get();
-                // SAFETY: Because of the if condition, current_position + 1 < buffer.len().
-                self.tx_buffer.map(|buffer| {
-                    self.registers.tx_fifo_wr.write(
-                        TX_FIFO_WR::DATA.val(*buffer.get(current_position + 1).unwrap() as u32),
-                    )
-                });
-                self.tx_position.set(current_position + 1);
-                self.enable_tx_interrupts();
+                // In range: `tx_length` was checked against the buffer when the
+                // transfer started, and this branch runs only while
+                // `current_position + 1 < tx_length`. Said with `get` rather
+                // than an index, because the cost of being wrong here is the
+                // board going down from inside an interrupt handler.
+                let next = self
+                    .tx_buffer
+                    .map(|buffer| buffer.get(current_position + 1).copied())
+                    .flatten();
+                if let Some(byte) = next {
+                    self.registers
+                        .tx_fifo_wr
+                        .write(TX_FIFO_WR::DATA.val(byte as u32));
+                    self.tx_position.set(current_position + 1);
+                    self.enable_tx_interrupts();
+                }
             }
         }
         if self.registers.intr_rx.is_set(INTR_RX::NOT_EMPTY) {
@@ -582,12 +593,25 @@ impl Scb<'_> {
             self.registers.intr_rx.modify(INTR_RX::NOT_EMPTY::SET);
             // If no rx_buffer is set, then no reception is pending. Simply discard the received
             // byte.
-            if let Some(rx_buffer) = self.rx_buffer.take() {
+            //
+            // Nested rather than a tuple pattern: both halves of a tuple are
+            // evaluated before it is matched, so `(rx_length.get(),
+            // rx_buffer.take())` would take the buffer even when there is no
+            // length, and drop it when the pattern failed.
+            if let Some(rx_length) = self.rx_length.get() {
+                let rx_length = rx_length.get();
+                let Some(rx_buffer) = self.rx_buffer.take() else {
+                    return;
+                };
                 let mut current_position = self.rx_position.get();
-                rx_buffer[current_position] = byte;
+                // In range for the same reason the transmit side is: `rx_length`
+                // was checked against the buffer when the receive started and
+                // this runs only while `current_position < rx_length`. An index
+                // that is wrong here takes the board down from an interrupt.
+                if let Some(slot) = rx_buffer.get_mut(current_position) {
+                    *slot = byte;
+                }
                 current_position += 1;
-                // SAFETY: When a read is started, rx_length is set to a non-zero value.
-                let rx_length = self.rx_length.get().unwrap().get();
                 if current_position == rx_length {
                     self.rx_length.clear();
                     self.rx_client.map(|client| {
@@ -705,9 +729,14 @@ impl Scb<'_> {
         } else {
             match NonZeroUsize::new(buffer_len) {
                 Some(tx_length) => {
+                    // `buffer_len >= 1` and `buffer.len() >= buffer_len` were
+                    // both checked above, so there is a first byte.
+                    let Some(first) = buffer.first().copied() else {
+                        return Err((ErrorCode::SIZE, buffer));
+                    };
                     self.registers
                         .tx_fifo_wr
-                        .write(TX_FIFO_WR::DATA.val(*buffer.get(0).unwrap() as u32));
+                        .write(TX_FIFO_WR::DATA.val(first as u32));
                     self.tx_buffer.put(Some(buffer));
                     self.tx_length.set(tx_length);
                     self.tx_position.set(0);
