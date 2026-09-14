@@ -51,6 +51,20 @@ pub const BUFFER_SIZE: usize = 24;
 pub struct Command {
     pub id: u8,
     pub parameters: Option<&'static [u8]>,
+    /// Milliseconds to wait after this command, with one exception:
+    /// **255 is a sentinel meaning 500 ms**, not 255 ms.
+    ///
+    /// The mapping lives in `do_next_op`, which applies it at both of its
+    /// delay sites -- two call levels away from every table that sets this
+    /// field. The type says `u8` milliseconds and 255 of the 256 values
+    /// mean that; the last one does not.
+    ///
+    /// **Read the mapping, never the constant.** Raising a delay from 150
+    /// to 255 buys 500 ms rather than the 255 it reads as, and dropping
+    /// 255 to 254 loses almost half a second. Summing an init sequence by
+    /// eye gets the wrong answer for the same reason:
+    /// [`ST7796_INIT_SEQUENCE`] costs 870 ms, and `SLEEP_OUT`'s 255 is
+    /// 500 of that.
     pub delay: u8,
 }
 
@@ -63,7 +77,9 @@ const NOP: Command = Command {
 const SW_RESET: Command = Command {
     id: 0x01,
     parameters: None,
-    delay: 150, // 255?
+    // Not 255: that is the 500 ms sentinel, not a 255 ms delay. See
+    // `Command::delay`.
+    delay: 150,
 };
 
 const SLEEP_IN: Command = Command {
