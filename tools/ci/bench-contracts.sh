@@ -136,7 +136,18 @@ sleep 1
 if [ "$recipe" = pico ]; then
   ~/flash-tock.sh /tmp/bench-under-test.elf 0x10090000 0x40000 >/dev/null 2>&1
 else
-  openocd -c "source [find board/stm32f3discovery.cfg]; init; reset halt; flash write_image erase /tmp/bench-under-test.elf; verify_image /tmp/bench-under-test.elf; reset; shutdown" >/dev/null 2>&1
+  # CONNECT UNDER RESET. A plain attach worked for months and then stopped:
+  # "init mode failed (unable to connect to the target)", with the ST-LINK
+  # enumerated and the target powered at 2.89 V. Whatever the running kernel
+  # does, the debugger cannot attach to it while it runs -- and the runner
+  # reports that as "the test did not report", which is a stall, which is what
+  # a missing callback also looks like. Two Discovery rows failed that way and
+  # neither had anything to do with the code under test.
+  #
+  # Holding SRST across the attach sidesteps it entirely: the core is halted
+  # before it executes anything. Why the old recipe stopped working is NOT
+  # established.
+  openocd -c "source [find board/stm32f3discovery.cfg]; reset_config srst_only srst_nogate connect_assert_srst; init; reset halt; flash write_image erase /tmp/bench-under-test.elf; verify_image /tmp/bench-under-test.elf; reset run; shutdown" >/dev/null 2>&1
 fi
 wait \$capture_pid
 cat "\$cap"
