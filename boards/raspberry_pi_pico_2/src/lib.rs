@@ -590,18 +590,27 @@ pub unsafe fn setup(
     // array that can exclude a set belongs in the component, and that is a
     // change to a macro every board shares.
     //
-    // 31.25 MHz, and that number is measured rather than chosen. Filling the
-    // panel three times over takes 1625 ms at 8 MHz and 401 ms at 31.25 --
-    // 4.05x for 3.9x the clock, so up to there the write path is clock-bound.
-    // Above it nothing improves: 62.5 MHz (the PL022's maximum, which
-    // `set_rate` refused until today) gives 400 ms, and quadrupling the write
-    // buffer to 16 KiB gives 390. Something other than the clock or the chunk
-    // size caps this at about 2.3 MB/s and has not been found yet.
+    // 62.5 MHz, the PL022's maximum, and measured rather than chosen.
     //
-    // So this asks for the fastest rate that buys anything, and no more --
-    // the part is unidentified, an ILI9486 would be out of spec well below
-    // here, and a clock that cannot be seen to help is not worth the risk.
-    // 125 MHz / (2 * 2) lands exactly, with no rounding.
+    // This was 31.25 for a while, because above it nothing improved: 62.5 gave
+    // the same time to the millisecond, and so did quadrupling the write
+    // buffer. That cap has since been found and removed. It was the FIFO --
+    // eight entries, so a FIFO-fed write costs an interrupt dispatch every
+    // eight bytes, and that cost does not shrink when the clock rises. With
+    // SPI0 on a DMA channel the clock matters again: 128,000 bytes take 34 ms
+    // here against 57 at 31.25, which is 3.73 MB/s against 2.21.
+    //
+    // The old comment here reasoned that "a clock that cannot be seen to help
+    // is not worth the risk". That was sound while the cap was unexplained and
+    // is simply false now.
+    //
+    // The part is still unidentified and an ILI9486 would be out of spec well
+    // below here, so this rests on observation rather than a datasheet: the
+    // panel was read at 62.5 MHz and shows the same picture it did at 31.25 --
+    // no tearing, no speckle, no wrong colours. If a future panel of this kit
+    // misbehaves, this line is the first thing to halve.
+    //
+    // 125 MHz / (2 * 1) lands exactly, with no rounding.
     // Give SPI0 a DMA channel for bulk writes.
     //
     // Without this the panel caps at about 2.21 MB/s and stops improving
@@ -645,7 +654,7 @@ pub unsafe fn setup(
         let bus = components::bus::SpiMasterBusComponent::new(
             mux_spi,
             IntoChipSelect::<_, ActiveLow>::into_cs(spi_cs),
-            31_250_000,
+            62_500_000,
             kernel::hil::spi::ClockPhase::SampleLeading,
             kernel::hil::spi::ClockPolarity::IdleLow,
         )
