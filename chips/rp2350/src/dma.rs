@@ -31,6 +31,11 @@ use kernel::utilities::cells::OptionalCell;
 use kernel::utilities::registers::interfaces::{Readable, Writeable};
 use kernel::utilities::registers::{FieldValue, ReadWrite, register_bitfields, register_structs};
 
+// Re-exported so a board can name a pacer without depending on the shared
+// crate directly: the type is defined once where both chips can use it, and
+// each chip that has the peripheral re-exports it.
+pub use rp2xxx::dma::{DmaPacer, PeripheralDma};
+
 /// The RP2350 has 16 DMA channels, four more than the RP2040.
 pub const NUM_CHANNELS: usize = 16;
 
@@ -153,7 +158,15 @@ register_bitfields![u32,
             /// Select PIO2's RX FIFO 2 as TREQ
             SelectPIO2SRXFIFO2AsTREQ = 22,
             /// Select PIO2's RX FIFO 3 as TREQ
-            SelectPIO2SRXFIFO3AsTREQ = 23
+            SelectPIO2SRXFIFO3AsTREQ = 23,
+            /// Select SPI0's transmit FIFO as TREQ
+            SelectSPI0STXAsTREQ = 24,
+            /// Select SPI0's receive FIFO as TREQ
+            SelectSPI0SRXAsTREQ = 25,
+            /// Select SPI1's transmit FIFO as TREQ
+            SelectSPI1STXAsTREQ = 26,
+            /// Select SPI1's receive FIFO as TREQ
+            SelectSPI1SRXAsTREQ = 27
         ],
         CHAIN_TO OFFSET(13) NUMBITS(4) [],
         RING_SEL OFFSET(12) NUMBITS(1) [],
@@ -222,13 +235,20 @@ impl From<DataSize> for FieldValue<u32, CTRL_TRIG::Register> {
 /// Which peripheral FIFO paces a transfer.
 ///
 /// The DREQ numbers for PIO0 and PIO1 are the same as the RP2040's; PIO2 is
-/// appended at 16 to 23. Every non-PIO DREQ moves up by eight on this chip,
-/// which does not reach here because only PIO FIFOs are named.
+/// appended at 16 to 23. **Every non-PIO DREQ therefore moves up by eight on
+/// this chip** -- `SPI0_TX` is 16 on the RP2040 and 24 here (RP2350 datasheet,
+/// Table 1146). That is why [`rp2xxx::dma::DmaPacer`] names peripherals and
+/// each chip maps the name to its own number.
 pub enum DmaPeripheral {
     /// The RX FIFO of one state machine.
     PioRxFifo(pio::PIONumber, pio::SMNumber),
     /// The TX FIFO of one state machine.
     PioTxFifo(pio::PIONumber, pio::SMNumber),
+    /// An SPI block's transmit or receive FIFO.
+    Spi0Tx,
+    Spi0Rx,
+    Spi1Tx,
+    Spi1Rx,
 }
 
 impl From<DmaPeripheral> for FieldValue<u32, CTRL_TRIG::Register> {
@@ -260,11 +280,16 @@ impl From<DmaPeripheral> for FieldValue<u32, CTRL_TRIG::Register> {
             DmaPeripheral::PioRxFifo(PIO2, SM1) => CTRL_TRIG::TREQ_SEL::SelectPIO2SRXFIFO1AsTREQ,
             DmaPeripheral::PioRxFifo(PIO2, SM2) => CTRL_TRIG::TREQ_SEL::SelectPIO2SRXFIFO2AsTREQ,
             DmaPeripheral::PioRxFifo(PIO2, SM3) => CTRL_TRIG::TREQ_SEL::SelectPIO2SRXFIFO3AsTREQ,
+            DmaPeripheral::Spi0Tx => CTRL_TRIG::TREQ_SEL::SelectSPI0STXAsTREQ,
+            DmaPeripheral::Spi0Rx => CTRL_TRIG::TREQ_SEL::SelectSPI0SRXAsTREQ,
+            DmaPeripheral::Spi1Tx => CTRL_TRIG::TREQ_SEL::SelectSPI1STXAsTREQ,
+            DmaPeripheral::Spi1Rx => CTRL_TRIG::TREQ_SEL::SelectSPI1SRXAsTREQ,
         }
     }
 }
 
 /// Which of the four DMA interrupts a channel is routed to.
+#[derive(Copy, Clone)]
 pub enum Irq {
     Irq0,
     Irq1,
@@ -350,6 +375,26 @@ impl<'a> Dma<'a> {
     fn enable_interrupt(&self, channel: Channel, irq: Irq) {
         let reg = self.enable_register(irq);
         reg.set(reg.get() | 1 << (channel as usize));
+
+        // Setting the block's own enable is not sufficient. The kernel sleeps
+        // in WFI between tasks, and on a Cortex-M a pending interrupt whose
+        // NVIC line is disabled does not wake it. `Chip::init` disables every
+        // line and `service_pending_interrupts` re-enables one only *after*
+        // servicing it, so a channel whose completion is the only thing that
+        // could wake the kernel is never serviced at all -- the transfer
+        // finishes, `INTR` and `INTS0` both assert, and nothing runs.
+        //
+        // Measured exactly that way: a 32,000 byte transfer to SPI0 completed
+        // with `TRANS_COUNT` at zero and `INTS0` bit 1 set, while the driver
+        // waiting on it never saw a completion. `timer.rs` enables its own
+        // line for this reason and says so.
+        cortexm33::nvic::Nvic::new(match irq {
+            Irq::Irq0 => crate::interrupts::DMA_IRQ_0,
+            Irq::Irq1 => crate::interrupts::DMA_IRQ_1,
+            Irq::Irq2 => crate::interrupts::DMA_IRQ_2,
+            Irq::Irq3 => crate::interrupts::DMA_IRQ_3,
+        })
+        .enable();
     }
 
     fn disable_interrupt(&self, channel: Channel, irq: Irq) {
@@ -657,5 +702,36 @@ mod tests {
         // reach MODE here.
         let written = (TRANS_COUNT::COUNT.val(0x1000_0001) + TRANS_COUNT::MODE::Normal).value;
         assert_eq!(written >> 28, 0);
+    }
+}
+
+impl rp2xxx::dma::PeripheralDma for DmaChannel<'_> {
+    fn write_bytes_to_peripheral(
+        &self,
+        src: u32,
+        dst: u32,
+        len: u32,
+        pacer: rp2xxx::dma::DmaPacer,
+    ) {
+        use rp2xxx::dma::DmaPacer;
+
+        // Addresses and length first: CTRL_TRIG is the trigger register, so
+        // writing it is what starts the transfer.
+        self.set_read_addr(src);
+        self.set_write_addr(dst);
+        self.set_len(len);
+
+        let treq = match pacer {
+            DmaPacer::Spi0Tx => DmaPeripheral::Spi0Tx,
+            DmaPacer::Spi0Rx => DmaPeripheral::Spi0Rx,
+            DmaPacer::Spi1Tx => DmaPeripheral::Spi1Tx,
+            DmaPacer::Spi1Rx => DmaPeripheral::Spi1Rx,
+        };
+
+        self.enable(treq, DataSize::Byte, Transfer::MemoryToPeripheral, false);
+    }
+
+    fn set_dma_client(&self, client: &'static dyn rp2xxx::dma::DmaChannelClient) {
+        self.set_client(client);
     }
 }
