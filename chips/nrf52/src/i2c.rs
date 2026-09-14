@@ -256,6 +256,14 @@ impl<'a> hil::i2c::I2CMaster<'a> for TWI<'a> {
             return Err((hil::i2c::Error::Size, data));
         }
 
+        // `buf.replace` below drops whatever is already there. Both master
+        // completion paths in `handle_interrupt` take it, so `is_some` is
+        // exactly "a transfer is outstanding" -- and without this a second
+        // one lost the first buffer and its callback.
+        if self.buf.is_some() {
+            return Err((hil::i2c::Error::Busy, data));
+        }
+
         self.registers
             .address_0
             .write(ADDRESS::ADDRESS.val(addr as u32));
@@ -293,6 +301,14 @@ impl<'a> hil::i2c::I2CMaster<'a> for TWI<'a> {
             return Err((hil::i2c::Error::Size, data));
         }
 
+        // `buf.replace` below drops whatever is already there. Both master
+        // completion paths in `handle_interrupt` take it, so `is_some` is
+        // exactly "a transfer is outstanding" -- and without this a second
+        // one lost the first buffer and its callback.
+        if self.buf.is_some() {
+            return Err((hil::i2c::Error::Busy, data));
+        }
+
         self.registers
             .address_0
             .write(ADDRESS::ADDRESS.val(addr as u32));
@@ -322,6 +338,14 @@ impl<'a> hil::i2c::I2CMaster<'a> for TWI<'a> {
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
         if len > buffer.len() {
             return Err((hil::i2c::Error::Size, buffer));
+        }
+
+        // `buf.replace` below drops whatever is already there. Both master
+        // completion paths in `handle_interrupt` take it, so `is_some` is
+        // exactly "a transfer is outstanding" -- and without this a second
+        // one lost the first buffer and its callback.
+        if self.buf.is_some() {
+            return Err((hil::i2c::Error::Busy, buffer));
         }
 
         self.registers

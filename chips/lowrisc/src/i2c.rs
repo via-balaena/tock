@@ -309,6 +309,13 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2c<'a> {
             return Err((hil::i2c::Error::Size, data));
         }
 
+        // `buffer.replace` below drops whatever is already there. With no
+        // check, a second transfer lost the first buffer and the
+        // `command_complete` that was the only way back to its owner.
+        if self.buffer.is_some() {
+            return Err((hil::i2c::Error::Busy, data));
+        }
+
         let regs = self.registers;
 
         // Set the FIFO depth and reset the FIFO
@@ -360,6 +367,13 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2c<'a> {
             return Err((hil::i2c::Error::Size, data));
         }
 
+        // `buffer.replace` below drops whatever is already there. With no
+        // check, a second transfer lost the first buffer and the
+        // `command_complete` that was the only way back to its owner.
+        if self.buffer.is_some() {
+            return Err((hil::i2c::Error::Busy, data));
+        }
+
         let regs = self.registers;
 
         // Set the FIFO depth and reset the FIFO
@@ -399,6 +413,13 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2c<'a> {
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
         if len > buffer.len() {
             return Err((hil::i2c::Error::Size, buffer));
+        }
+
+        // `buffer.replace` below drops whatever is already there. With no
+        // check, a second transfer lost the first buffer and the
+        // `command_complete` that was the only way back to its owner.
+        if self.buffer.is_some() {
+            return Err((hil::i2c::Error::Busy, buffer));
         }
 
         let regs = self.registers;
