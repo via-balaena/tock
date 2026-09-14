@@ -96,6 +96,8 @@ pub struct Platform {
     gpio: &'static GpioDriver,
     #[cfg(feature = "kit_display")]
     screen: &'static capsules_extra::screen::screen::Screen<'static>,
+    #[cfg(feature = "kit_input")]
+    buttons: &'static capsules_core::button::Button<'static, RPGpioPin<'static>>,
 }
 
 impl SyscallDriverLookup for Platform {
@@ -109,6 +111,8 @@ impl SyscallDriverLookup for Platform {
             capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
             #[cfg(feature = "kit_display")]
             capsules_extra::screen::screen::DRIVER_NUM => f(Some(self.screen)),
+            #[cfg(feature = "kit_input")]
+            capsules_core::button::DRIVER_NUM => f(Some(self.buttons)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -696,6 +700,42 @@ pub unsafe fn setup(
         kernel::hil::screen::Screen::set_client(tft, fill);
     }
 
+    // The kit's two buttons, GP14 and GP15, both active-low with pull-ups:
+    // resting HIGH and pulled to ground when held. That was measured on this
+    // board, not read off the silkscreen -- holding each one takes its pin
+    // low, and a resting button is indistinguishable from any unconnected pin,
+    // so it has to be held to be seen.
+    //
+    // Two buttons is what the hardware has. The kit's other input is the
+    // joystick on GP26/GP27, which is an ADC pair rather than a button and is
+    // a separate driver.
+    //
+    // KNOWN HAZARD, the same one `kit_display` carries above: GP14 and GP15
+    // stay in the userspace GPIO array with this feature on, so an app can
+    // reconfigure a pin out from under the button capsule -- drive it as an
+    // output, or change its pull. Both hazards have one fix, a pin array that
+    // can exclude a set, and it belongs in the shared GPIO component.
+    #[cfg(feature = "kit_input")]
+    let buttons = components::button::ButtonComponent::new(
+        board_kernel,
+        capsules_core::button::DRIVER_NUM,
+        components::button_component_helper!(
+            RPGpioPin<'static>,
+            (
+                peripherals.pins.get_pin(RPGpio::GPIO14),
+                kernel::hil::gpio::ActivationMode::ActiveLow,
+                kernel::hil::gpio::FloatingState::PullUp
+            ),
+            (
+                peripherals.pins.get_pin(RPGpio::GPIO15),
+                kernel::hil::gpio::ActivationMode::ActiveLow,
+                kernel::hil::gpio::FloatingState::PullUp
+            )
+        ),
+        create_capability!(capabilities::MemoryAllocationCapability),
+    )
+    .finalize(components::button_component_static!(RPGpioPin<'static>));
+
     let platform = Platform {
         ipc: kernel::ipc::IPC::new(
             board_kernel,
@@ -707,6 +747,8 @@ pub unsafe fn setup(
         gpio,
         #[cfg(feature = "kit_display")]
         screen,
+        #[cfg(feature = "kit_input")]
+        buttons,
         scheduler,
         systick: cortexm33::systick::SysTick::new_with_calibration(125_000_000),
     };

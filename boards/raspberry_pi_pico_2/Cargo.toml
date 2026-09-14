@@ -59,6 +59,10 @@ kit_display = []
 # TAKES THE SCREEN CLIENT BACK from the syscall driver, so userspace sees no
 # display in this build. Implies kit_display.
 kit_display_test = ["kit_display"]
+# The kit's two buttons, GP14 and GP15. Active-low with pull-ups, measured on
+# the board. Off by default: a board without this kit has nothing on those
+# pins, and the capsule would report two buttons that never change.
+kit_input = []
 
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
