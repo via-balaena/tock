@@ -169,9 +169,16 @@ impl<'a> I2c<'a> {
 
             // Check if we can send the last byte
             if regs.status.read(STATUS::FMTFULL) == 0 && data_pushed == (len - 1) {
-                // Send the last byte with the stop signal
-                regs.fdata
-                    .write(FDATA::FBYTE.val(*buf.get(len).unwrap_or(&0) as u32) + FDATA::STOP::SET);
+                // Send the last byte with the stop signal.
+                //
+                // The index is `len - 1`. It was `len`, one past the last byte
+                // the caller asked to send: the loop above covers `0..len-1`,
+                // so byte `len - 1` was never written and `buf[len]` went out
+                // in its place -- or, whenever `len` is the whole buffer, the
+                // `unwrap_or(&0)` sent a zero and hid it.
+                regs.fdata.write(
+                    FDATA::FBYTE.val(*buf.get(len - 1).unwrap_or(&0) as u32) + FDATA::STOP::SET,
+                );
 
                 data_pushed = len;
             }
@@ -217,9 +224,16 @@ impl<'a> I2c<'a> {
 
             // Check if we can send the last byte
             if regs.status.read(STATUS::FMTFULL) == 0 && data_pushed == (len - 1) {
-                // Send the last byte with the stop signal
-                regs.fdata
-                    .write(FDATA::FBYTE.val(*buf.get(len).unwrap_or(&0) as u32) + FDATA::STOP::SET);
+                // Send the last byte with the stop signal.
+                //
+                // The index is `len - 1`. It was `len`, one past the last byte
+                // the caller asked to send: the loop above covers `0..len-1`,
+                // so byte `len - 1` was never written and `buf[len]` went out
+                // in its place -- or, whenever `len` is the whole buffer, the
+                // `unwrap_or(&0)` sent a zero and hid it.
+                regs.fdata.write(
+                    FDATA::FBYTE.val(*buf.get(len - 1).unwrap_or(&0) as u32) + FDATA::STOP::SET,
+                );
 
                 data_pushed = len;
             }
@@ -291,6 +305,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2c<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         let regs = self.registers;
 
         // Set the FIFO depth and reset the FIFO
@@ -338,6 +356,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2c<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         let regs = self.registers;
 
         // Set the FIFO depth and reset the FIFO
@@ -375,6 +397,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2c<'a> {
         buffer: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > buffer.len() {
+            return Err((hil::i2c::Error::Size, buffer));
+        }
+
         let regs = self.registers;
 
         // Set the FIFO depth and reset the FIFO
