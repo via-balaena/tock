@@ -73,12 +73,30 @@ def main():
     bad = 0
     for name, start, end in PAIRS:
         blocks = {}
+        missing = {}
         for chip, path in FILES.items():
             got, why = extract(path, start, end)
             if got is None:
+                missing[chip] = why
+            else:
+                blocks[chip] = got
+
+        # Missing in ONE file is not a broken check, it is the divergence
+        # itself: somebody edited one driver and not the other, and the marker
+        # went with the edit. Saying "no such marker" there would send a reader
+        # looking for a bug in this script.
+        if len(missing) == 1:
+            gone = next(iter(missing))
+            kept = next(c for c in FILES if c not in missing)
+            bad += 1
+            print(f"  DIVERGED {name}: present in {kept}, GONE from {gone}")
+            print(f"           {missing[gone]}")
+            print("           One driver was changed and the other was not.")
+            continue
+        if missing:
+            for why in missing.values():
                 print(f"  BROKEN  {name}: {why}")
-                return 2
-            blocks[chip] = got
+            return 2
 
         a, b = blocks["rp2040"], blocks["rp2350"]
         if a == b:
