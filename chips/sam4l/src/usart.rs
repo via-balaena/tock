@@ -645,7 +645,13 @@ impl<'a> USART<'a> {
 
         if status.is_set(ChannelStatus::TIMEOUT) && mask.is_set(Interrupt::TIMEOUT) {
             self.disable_rx_timeout(usart);
-            self.abort_rx(usart, Ok(()), uart::Error::Aborted);
+            // The interbyte timeout ended a `receive_automatic` short of the
+            // length asked for. `hil::uart` reserves `Ok(())` for a full
+            // buffer and documents `Err(SIZE)` for a partial one, carrying
+            // the count that did arrive. Answering `Ok(())` here said the
+            // buffer was full when it was not; lowrisc, the only other
+            // `ReceiveAdvanced`, has always answered `Err(SIZE)`.
+            self.abort_rx(usart, Err(ErrorCode::SIZE), uart::Error::None);
         } else if status.is_set(ChannelStatus::TXEMPTY) && mask.is_set(Interrupt::TXEMPTY) {
             self.disable_tx_empty_interrupt(usart);
             self.disable_tx(usart);

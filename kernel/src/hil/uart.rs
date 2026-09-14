@@ -428,6 +428,21 @@ pub trait ReceiveAdvanced<'a>: Receive<'a> {
     /// - `Err(BUSY)`: the UART is already receiving and has not made a
     ///   reception callback yet.
     /// - `Err(SIZE)`: `rx_len` is larger than the passed slice.
+    ///
+    /// ### The callback
+    ///
+    /// Two things can end the receive, and
+    /// [`ReceiveClient::received_buffer`] says which:
+    ///
+    /// - The buffer filled: `Ok(())`, with `rx_len` equal to the length that
+    ///   was asked for.
+    /// - The interbyte timeout expired first: `Err(SIZE)`, with `rx_len` the
+    ///   number of words that did arrive. That is what `received_buffer`
+    ///   already documents `Err(SIZE)` to mean, and for this call it is the
+    ///   ordinary outcome rather than a fault -- it is how the caller learns
+    ///   where the message ended. `Ok(())` is reserved for a full buffer, as
+    ///   it is on [`Receive::receive_buffer`], so a caller need not compare
+    ///   `rx_len` against its own request to tell the two apart.
     fn receive_automatic(
         &self,
         rx_buffer: &'static mut [u8],
