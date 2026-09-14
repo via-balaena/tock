@@ -98,6 +98,8 @@ pub struct Platform {
     screen: &'static capsules_extra::screen::screen::Screen<'static>,
     #[cfg(feature = "kit_input")]
     buttons: &'static capsules_core::button::Button<'static, RPGpioPin<'static>>,
+    #[cfg(feature = "kit_input")]
+    adc: &'static capsules_core::adc::AdcVirtualized<'static>,
 }
 
 impl SyscallDriverLookup for Platform {
@@ -113,6 +115,8 @@ impl SyscallDriverLookup for Platform {
             capsules_extra::screen::screen::DRIVER_NUM => f(Some(self.screen)),
             #[cfg(feature = "kit_input")]
             capsules_core::button::DRIVER_NUM => f(Some(self.buttons)),
+            #[cfg(feature = "kit_input")]
+            capsules_core::adc::DRIVER_NUM => f(Some(self.adc)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -774,6 +778,66 @@ pub unsafe fn setup(
     )
     .finalize(components::button_component_static!(RPGpioPin<'static>));
 
+    // THE JOYSTICK, which is the other half of the kit's input: two analogue
+    // axes on GP26 and GP27, and no click button (GP11 was checked and is not
+    // one). Two buttons alone cannot play anything that needs to move and
+    // turn, which is what this is for.
+    //
+    // The pads have to leave digital mode before the converter can use them,
+    // and the ADC driver is the wrong place for it -- a pad belongs to GPIO.
+    // Reset for PADS_BANK0 is 0x116 (RP2350 datasheet 9.11, table 853): ISO
+    // set, PDE set, SCHMITT set, DRIVE 4mA, IE clear. The pull-down is the one
+    // that matters: across an analogue source it is the lower leg of a
+    // divider, so the reading stays plausible while never reaching either
+    // rail -- the failure that gets diagnosed as a bad sensor rather than as a
+    // pad.
+    //
+    // The order is the one the C SDK's `adc_gpio_init` uses and each step is
+    // load-bearing: `set_function` clears ISO and points no digital peripheral
+    // at the pin, `PullNone` clears PDE, `deactivate_pads` clears IE and sets
+    // OD. Drop any one and the pad still reads, just wrongly.
+    //
+    // Channel 2 (GP28) is wired here because the pad work is identical and
+    // the kit leaves it free. Channel 3 is NOT: it is GP29, the CYW43439's
+    // gSPI clock on the W board, and sampling it would take the pad off the
+    // radio. The temperature sensor on channel 4 needs the chip's own
+    // calibration constants, which is a separate claim to check.
+    //
+    // SAME HAZARD as the buttons and the display above: GP26-GP28 stay in the
+    // userspace GPIO array, so an app can drive one as an output while another
+    // samples it -- a short through the pad driver that neither driver can see
+    // to refuse. One fix for all three: a pin array that can exclude a set.
+    #[cfg(feature = "kit_input")]
+    let adc = {
+        use kernel::hil::gpio::Configure;
+
+        for pin in [RPGpio::GPIO26, RPGpio::GPIO27, RPGpio::GPIO28] {
+            let pin = peripherals.pins.get_pin(pin);
+            pin.set_function(rp2350::gpio::GpioFunction::NULL);
+            pin.set_floating_state(kernel::hil::gpio::FloatingState::PullNone);
+            pin.deactivate_pads();
+        }
+
+        peripherals.adc.init();
+
+        let adc_mux = components::adc::AdcMuxComponent::new(&peripherals.adc)
+            .finalize(components::adc_mux_component_static!(rp2350::adc::Adc));
+
+        let adc_0 = components::adc::AdcComponent::new(adc_mux, rp2350::adc::Channel::Channel0)
+            .finalize(components::adc_component_static!(rp2350::adc::Adc));
+        let adc_1 = components::adc::AdcComponent::new(adc_mux, rp2350::adc::Channel::Channel1)
+            .finalize(components::adc_component_static!(rp2350::adc::Adc));
+        let adc_2 = components::adc::AdcComponent::new(adc_mux, rp2350::adc::Channel::Channel2)
+            .finalize(components::adc_component_static!(rp2350::adc::Adc));
+
+        components::adc::AdcVirtualComponent::new(
+            board_kernel,
+            capsules_core::adc::DRIVER_NUM,
+            create_capability!(capabilities::MemoryAllocationCapability),
+        )
+        .finalize(components::adc_syscall_component_helper!(adc_0, adc_1, adc_2))
+    };
+
     let platform = Platform {
         ipc: kernel::ipc::IPC::new(
             board_kernel,
@@ -787,6 +851,8 @@ pub unsafe fn setup(
         screen,
         #[cfg(feature = "kit_input")]
         buttons,
+        #[cfg(feature = "kit_input")]
+        adc,
         scheduler,
         systick: cortexm33::systick::SysTick::new_with_calibration(125_000_000),
     };
