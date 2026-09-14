@@ -393,22 +393,34 @@ impl<'a> I2c<'a, '_> {
         self.state.set(State::Idle);
     }
 
+    /// `Ok(())` if a new transfer may start now.
+    ///
+    /// `Uninitialized` was an `assert!`, so calling any transfer method before
+    /// `enable()` took the board down on a call `hil::i2c` documents as
+    /// returning an error.
+    fn ready_for_transfer(&self) -> Result<(), hil::i2c::Error> {
+        match self.state.get() {
+            State::Uninitialized => Err(hil::i2c::Error::NotSupported),
+            State::Idle => Ok(()),
+            _ => Err(hil::i2c::Error::Busy),
+        }
+    }
+
     fn write_then_read(
         &self,
         addr: u8,
         write_len: usize,
         read_len: usize,
     ) -> Result<(), hil::i2c::Error> {
-        let state = self.state.get();
-        assert!(state != State::Uninitialized);
-        if state != State::Idle {
-            return Err(hil::i2c::Error::Busy);
-        }
+        self.ready_for_transfer()?;
 
         // Synopsys hw accepts start/stop flags alongside data items in the same
-        // FIFO word, so no 0 byte transfers.
+        // FIFO word, so no 0 byte transfers. That was an `assert!` too, and a
+        // zero length reaches here straight from a syscall argument.
+        if write_len < 1 {
+            return Err(hil::i2c::Error::NotSupported);
+        }
         let write_len = write_len as i32;
-        assert!(write_len >= 1);
 
         self.addr.set(addr);
         self.rw_index.set(0);
@@ -513,14 +525,14 @@ impl<'a> I2c<'a, '_> {
     }
 
     fn read(&self, addr: u8, len: usize) -> Result<(), hil::i2c::Error> {
-        let state = self.state.get();
-        assert!(state != State::Uninitialized);
-        if state != State::Idle {
-            return Err(hil::i2c::Error::Busy);
-        }
+        self.ready_for_transfer()?;
 
+        // As in `write_then_read`: no zero-byte transfers, and this was an
+        // `assert!`.
+        if len < 1 {
+            return Err(hil::i2c::Error::NotSupported);
+        }
         let len = len as i32;
-        assert!(len >= 1);
 
         self.addr.set(addr);
         self.read_len.set(len);
@@ -691,6 +703,17 @@ impl<'c> hil::i2c::I2CMaster<'c> for I2c<'_, 'c> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
+        // `put` discards whatever `buf` already holds. Checking after it
+        // meant a busy controller lost the in-flight buffer -- and with it
+        // the callback that was going to return it -- before answering
+        // `Err(Busy)` about the new one.
+        if let Err(error) = self.ready_for_transfer() {
+            return Err((error, data));
+        }
         self.buf.put(Some(data));
 
         if let Err(error) = self.write_then_read(addr, write_len, read_len) {
@@ -707,6 +730,10 @@ impl<'c> hil::i2c::I2CMaster<'c> for I2c<'_, 'c> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         // Setting read_len to 0 will result in having just a write
         self.write_read(addr, data, len, 0)
     }
@@ -717,6 +744,17 @@ impl<'c> hil::i2c::I2CMaster<'c> for I2c<'_, 'c> {
         buffer: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > buffer.len() {
+            return Err((hil::i2c::Error::Size, buffer));
+        }
+
+        // `put` discards whatever `buf` already holds. Checking after it
+        // meant a busy controller lost the in-flight buffer -- and with it
+        // the callback that was going to return it -- before answering
+        // `Err(Busy)` about the new one.
+        if let Err(error) = self.ready_for_transfer() {
+            return Err((error, buffer));
+        }
         self.buf.put(Some(buffer));
 
         if let Err(error) = self.read(addr, len) {
