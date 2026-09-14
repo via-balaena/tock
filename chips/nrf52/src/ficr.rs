@@ -411,6 +411,21 @@ impl Ficr {
         }
     }
 
+    /// How many pages of code flash this part has.
+    ///
+    /// `CODESIZE` is read-only and set at the factory, so this is the honest
+    /// bound for a page number on any nRF52 variant -- 128 pages on a 52832,
+    /// 256 on a 52840 -- without the flash driver carrying a constant per
+    /// part it cannot check.
+    pub fn code_page_count(&self) -> usize {
+        self.registers.codesize.read(CodeSize::CODESIZE) as usize
+    }
+
+    /// The size of one page of code flash, in bytes.
+    pub fn code_page_size(&self) -> usize {
+        self.registers.codepagesize.read(CodePageSize::CODEPAGESIZE) as usize
+    }
+
     pub fn id(&self) -> [u8; 8] {
         let lo = self.registers.deviceid0.read(DeviceId0::DEVICEID);
         let hi = self.registers.deviceid1.read(DeviceId1::DEVICEID);

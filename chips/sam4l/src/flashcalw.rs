@@ -562,6 +562,13 @@ impl FLASHCALW {
     }
 
     /// FLASH properties.
+    /// Whether this part has `page_num`, with the clock already enabled.
+    ///
+    /// Negative is rejected as well as too large: see `write_page`.
+    fn page_exists(&self, page_num: i32) -> bool {
+        page_num >= 0 && (page_num as u32) < self.get_flash_size() / PAGE_SIZE
+    }
+
     fn get_flash_size(&self) -> u32 {
         let flash_sizes = [
             4, 8, 16, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 2048,
@@ -818,6 +825,16 @@ impl FLASHCALW {
         // Enable clock in case it's off.
         pm::enable_clock(self.ahb_clock);
 
+        // The page number reaches `issue_command` as an `i32`. A page past the
+        // end of flash is bad enough; one large enough to come out NEGATIVE is
+        // worse, because `issue_command` only writes PAGEN when the number is
+        // `>= 0` -- so the command would run against whatever page was last in
+        // the register, erasing or writing one the caller never named. The
+        // count comes from the FLASHCALW's own FPR, via `get_flash_size`.
+        if !self.page_exists(page_num) {
+            return Err((ErrorCode::INVAL, data));
+        }
+
         match self.current_state.get() {
             FlashState::Unconfigured => self.configure(),
             FlashState::Ready => {}
@@ -837,6 +854,11 @@ impl FLASHCALW {
     fn erase_page(&self, page_num: i32) -> Result<(), ErrorCode> {
         // Enable AHB clock (in case it was off).
         pm::enable_clock(self.ahb_clock);
+
+        // As in `write_page` above.
+        if !self.page_exists(page_num) {
+            return Err(ErrorCode::INVAL);
+        }
 
         match self.current_state.get() {
             FlashState::Unconfigured => self.configure(),

@@ -51,6 +51,16 @@ use kernel::{ErrorCode, hil};
 
 const PAGE_SIZE: usize = 32;
 
+/// The last page this driver can address.
+///
+/// Every transfer here puts the byte address on the wire as two bytes --
+/// `(address >> 8)` then `address & 0xff` -- which is the AT24C32/64 word
+/// address format. A page whose byte address does not fit in sixteen bits is
+/// not refused by that encoding, it is silently truncated, so the access
+/// lands on a different page and the call reports success. The part's real
+/// size may be smaller still; this is the bound the driver can prove.
+const MAX_PAGES: usize = (u16::MAX as usize + 1) / PAGE_SIZE;
+
 pub struct EEPROMPage(pub [u8; PAGE_SIZE]);
 
 impl Default for EEPROMPage {
@@ -232,6 +242,9 @@ impl hil::flash::Flash for AT24C<'_> {
         page_number: usize,
         buf: &'static mut Self::Page,
     ) -> Result<(), (ErrorCode, &'static mut Self::Page)> {
+        if page_number >= MAX_PAGES {
+            return Err((ErrorCode::INVAL, buf));
+        }
         self.read_sector(page_number, buf)
     }
 
@@ -240,10 +253,16 @@ impl hil::flash::Flash for AT24C<'_> {
         page_number: usize,
         buf: &'static mut Self::Page,
     ) -> Result<(), (ErrorCode, &'static mut Self::Page)> {
+        if page_number >= MAX_PAGES {
+            return Err((ErrorCode::INVAL, buf));
+        }
         self.write_sector(page_number, buf)
     }
 
     fn erase_page(&self, page_number: usize) -> Result<(), ErrorCode> {
+        if page_number >= MAX_PAGES {
+            return Err(ErrorCode::INVAL);
+        }
         self.erase_sector(page_number)
     }
 }

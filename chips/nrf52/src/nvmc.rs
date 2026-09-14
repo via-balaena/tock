@@ -6,6 +6,7 @@
 //!
 //! Used in order read and write to internal flash.
 
+use crate::ficr;
 use core::cell::Cell;
 use core::ops::{Index, IndexMut};
 use kernel::ErrorCode;
@@ -381,6 +382,27 @@ impl<C: hil::flash::Client<Self>> hil::flash::HasClient<'static, C> for Nvmc {
     }
 }
 
+impl Nvmc {
+    /// `Ok(())` if this part actually has `page_number`.
+    ///
+    /// `read_range`, `write_page` and `erase_page_helper` each build an
+    /// address out of the page number and use it directly -- `(page_number *
+    /// PAGE_SIZE) as *const u32`, and the write path goes through the same
+    /// arithmetic -- so a page past the end of flash is a read or a write
+    /// somewhere that is not flash.
+    ///
+    /// The count comes from `FICR.CODESIZE`, which the factory sets, so this
+    /// is right on every nRF52 variant without the driver carrying a constant
+    /// per part that nothing could check.
+    fn check_page(&self, page_number: usize) -> Result<(), ErrorCode> {
+        if page_number < ficr::Ficr::new().code_page_count() {
+            Ok(())
+        } else {
+            Err(ErrorCode::INVAL)
+        }
+    }
+}
+
 impl hil::flash::Flash for Nvmc {
     type Page = NrfPage;
 
@@ -389,6 +411,9 @@ impl hil::flash::Flash for Nvmc {
         page_number: usize,
         buf: &'static mut Self::Page,
     ) -> Result<(), (ErrorCode, &'static mut Self::Page)> {
+        if let Err(error) = self.check_page(page_number) {
+            return Err((error, buf));
+        }
         self.read_range(page_number, buf)
     }
 
@@ -397,10 +422,14 @@ impl hil::flash::Flash for Nvmc {
         page_number: usize,
         buf: &'static mut Self::Page,
     ) -> Result<(), (ErrorCode, &'static mut Self::Page)> {
+        if let Err(error) = self.check_page(page_number) {
+            return Err((error, buf));
+        }
         self.write_page(page_number, buf)
     }
 
     fn erase_page(&self, page_number: usize) -> Result<(), ErrorCode> {
+        self.check_page(page_number)?;
         self.erase_page(page_number)
     }
 }

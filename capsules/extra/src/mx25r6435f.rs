@@ -69,6 +69,15 @@ pub const RX_BUF_LEN: usize = PAGE_SIZE as usize + 4;
 
 const SPI_SPEED: u32 = 8000000;
 pub const SECTOR_SIZE: u32 = 4096;
+
+/// How many sectors the part has.
+///
+/// The datasheet quoted in the module documentation above gives the capacity
+/// as "8,388,608 x 8 internally" -- 8 MiB, which at `SECTOR_SIZE` is 2048
+/// sectors. A sector number past that is addressed on the wire like any
+/// other; the chip ignores the high bits, so the write lands on a sector the
+/// caller never named while the call reports success.
+pub const SECTOR_COUNT: u32 = 2048;
 pub const PAGE_SIZE: u32 = 256;
 
 /// This is a wrapper around a u8 array that is sized to a single page for the
@@ -649,6 +658,9 @@ impl<
         page_number: usize,
         buf: &'static mut Self::Page,
     ) -> Result<(), (ErrorCode, &'static mut Self::Page)> {
+        if page_number >= SECTOR_COUNT as usize {
+            return Err((ErrorCode::INVAL, buf));
+        }
         self.read_sector(page_number as u32, buf)
     }
 
@@ -657,10 +669,16 @@ impl<
         page_number: usize,
         buf: &'static mut Self::Page,
     ) -> Result<(), (ErrorCode, &'static mut Self::Page)> {
+        if page_number >= SECTOR_COUNT as usize {
+            return Err((ErrorCode::INVAL, buf));
+        }
         self.write_sector(page_number as u32, buf)
     }
 
     fn erase_page(&self, page_number: usize) -> Result<(), ErrorCode> {
+        if page_number >= SECTOR_COUNT as usize {
+            return Err(ErrorCode::INVAL);
+        }
         self.erase_sector(page_number as u32)
     }
 }
