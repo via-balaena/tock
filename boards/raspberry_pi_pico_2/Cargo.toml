@@ -29,6 +29,7 @@ uart_contract_test = []
 # a jumper is expected between them. Implies the above. WITHOUT THE WIRE THE
 # TEST HANGS, which is why it is not the default.
 uart_contract_test_pads = ["uart_contract_test"]
+uart_contract_test_unconfigured = ["uart_contract_test"]
 # Run the hil::spi conformance test at boot on SPI0 (GP4 MISO, GP5 CSn,
 # GP6 SCK, GP7 MOSI) and print the result. Cannot be gated: no emulated
 # board in the tree exposes SPI.

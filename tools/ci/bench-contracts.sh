@@ -28,7 +28,7 @@ BENCH="${BENCH_HOST:-jon@192.168.60.110}"
 # runs at 950 kHz and writes plus verifies the whole image, which takes far
 # longer -- a single global budget fails one or wastes time on the other.
 PICO_SECONDS="${PICO_SECONDS:-12}"
-STLINK_SECONDS="${STLINK_SECONDS:-40}"
+STLINK_SECONDS="${STLINK_SECONDS:-60}"
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root" || exit 2
@@ -40,12 +40,24 @@ note() { printf '        %s\n' "$*"; }
 broken=0
 silent=0
 
-# board | feature | target triple | binary | tty | marker | flash recipe
+# board | feature | target triple | binary | tty | marker | flash recipe | expect
+#
+# `expect` is `kept` for a run that must report every clause held, or
+# `broken:<n>` for one that must report exactly n broken. The second is not a
+# tolerated failure: it is a POSITIVE CONTROL. A clause that only ever passes
+# has never been tested, and a guard that fires on no run in the suite can be
+# deleted without anything noticing.
 RUNS=(
-  "raspberry_pi_pico_2_w|uart_contract_test_pads|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico"
-  "raspberry_pi_pico_2_w|spi_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|spi-contract|pico"
-  "raspberry_pi_pico_2_w|gpio_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|gpio-contract|pico"
-  "stm32f3discovery|uart_contract_test|thumbv7em-none-eabi|stm32f3discovery|/dev/ttyACM1|uart-contract|stlink"
+  "raspberry_pi_pico_2_w|uart_contract_test_pads|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|kept"
+  "raspberry_pi_pico_2_w|spi_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|spi-contract|pico|kept"
+  "raspberry_pi_pico_2_w|gpio_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|gpio-contract|pico|kept"
+  "stm32f3discovery|uart_contract_test|thumbv7em-none-eabi|stm32f3discovery|/dev/ttyACM1|uart-contract|stlink|kept"
+  # The Err(OFF) control: the board skips configure(), so UART1 is never
+  # enabled. Unguarded this stalled dead after nine clauses with the buffer
+  # stranded, which the runner could only report as silence. Guarded it
+  # refuses with OFF and says so. Exactly one clause may break -- the one that
+  # asks an unconfigured UART to start a receive.
+  "raspberry_pi_pico_2_w|uart_contract_test_unconfigured|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|broken:1"
 )
 
 printf 'hil conformance on the bench (%s)\n' "$BENCH"
@@ -58,7 +70,7 @@ if [ "$?" -ne 0 ]; then
 fi
 
 for spec in "${RUNS[@]}"; do
-  IFS='|' read -r board feature triple binary tty marker recipe <<< "$spec"
+  IFS='|' read -r board feature triple binary tty marker recipe expect <<< "$spec"
   label="$board/$feature"
   if [ "$recipe" = pico ]; then budget="$PICO_SECONDS"; else budget="$STLINK_SECONDS"; fi
 
@@ -122,13 +134,26 @@ REMOTE
     silent=$((silent + 1)); continue
   fi
 
-  if printf '%s\n' "$verdict" | command grep -q 'all kept'; then
-    pass "$label" "${verdict#*: }"
+  if [ "$expect" = kept ]; then
+    if printf '%s\n' "$verdict" | command grep -q 'all kept'; then
+      pass "$label" "${verdict#*: }"
+    else
+      fail "$label" "${verdict#*: }"
+      printf '%s\n' "$console" | command grep "$marker: FAIL" \
+        | sed "s/^$marker: FAIL/        broken:/"
+      broken=$((broken + 1))
+    fi
   else
-    fail "$label" "${verdict#*: }"
-    printf '%s\n' "$console" | command grep "$marker: FAIL" \
-      | sed "s/^$marker: FAIL/        broken:/"
-    broken=$((broken + 1))
+    # A control run. The wanted count must appear; "all kept" here means the
+    # guard under test stopped firing, which is a failure, not a success.
+    want="${expect#broken:} BROKEN"
+    if printf '%s\n' "$verdict" | command grep -q "$want"; then
+      pass "$label" "${verdict#*: } (control: expected $want)"
+    else
+      fail "$label" "${verdict#*: } -- expected $want"
+      note "this run exists to FAIL in a specific way; it no longer does"
+      broken=$((broken + 1))
+    fi
   fi
 done
 

@@ -27,6 +27,7 @@ tock-firmware-cyw43 = { git = "https://github.com/tock/firmware.git" }
 # Forwarded to the shared board crate; see its Cargo.toml for the cost.
 uart_contract_test = ["raspberry_pi_pico_2/uart_contract_test"]
 uart_contract_test_pads = ["raspberry_pi_pico_2/uart_contract_test_pads"]
+uart_contract_test_unconfigured = ["raspberry_pi_pico_2/uart_contract_test_unconfigured"]
 spi_contract_test = ["raspberry_pi_pico_2/spi_contract_test"]
 spi_contract_test_loopback = ["raspberry_pi_pico_2/spi_contract_test_loopback"]
 gpio_contract_test = ["raspberry_pi_pico_2/gpio_contract_test"]

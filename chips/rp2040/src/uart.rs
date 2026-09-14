@@ -756,6 +756,24 @@ impl<'a> Transmit<'a> for Uart<'a> {
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
         if self.tx_status.get() == UARTStateTX::Idle {
             if tx_len <= tx_buffer.len() {
+                // `hil::uart`: *"`Err(OFF)`: The underlying hardware is not
+                // available, perhaps because it has not been initialized."*
+                //
+                // Measured on an rp2350, which is the same block: with the
+                // peripheral disabled, this answered `Ok(())`, filled a FIFO
+                // that cannot drain, and the transmit interrupt never fired.
+                // The caller waits for a callback that cannot come, with its
+                // buffer stranded -- worse than a refusal, because it has no
+                // way to find out. `is_configured` already existed here and
+                // no HIL entry point consulted it.
+                //
+                // After the length check, not before: `Err(SIZE)` is wrong in
+                // every hardware state and is the caller's bug to fix, while
+                // `Err(OFF)` is a state that may clear.
+                if !self.is_configured() {
+                    return Err((ErrorCode::OFF, tx_buffer));
+                }
+
                 self.tx_buffer.put(Some(tx_buffer));
                 self.tx_position.set(0);
                 self.tx_len.set(tx_len);
@@ -801,6 +819,24 @@ impl<'a> Receive<'a> for Uart<'a> {
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
         if self.rx_status.get() == UARTStateRX::Idle {
             if rx_len <= rx_buffer.len() {
+                // `hil::uart`: *"`Err(OFF)`: The underlying hardware is not
+                // available, perhaps because it has not been initialized."*
+                //
+                // Measured on an rp2350, which is the same block: with the
+                // peripheral disabled, this answered `Ok(())`, filled a FIFO
+                // that cannot drain, and the receive interrupt never fired.
+                // The caller waits for a callback that cannot come, with its
+                // buffer stranded -- worse than a refusal, because it has no
+                // way to find out. `is_configured` already existed here and
+                // no HIL entry point consulted it.
+                //
+                // After the length check, not before: `Err(SIZE)` is wrong in
+                // every hardware state and is the caller's bug to fix, while
+                // `Err(OFF)` is a state that may clear.
+                if !self.is_configured() {
+                    return Err((ErrorCode::OFF, rx_buffer));
+                }
+
                 self.rx_buffer.put(Some(rx_buffer));
                 self.rx_position.set(0);
                 self.rx_len.set(rx_len);

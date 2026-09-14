@@ -922,8 +922,34 @@ impl<'a> Transmit<'a> for Uart<'a> {
         tx_buffer: &'static mut [u8],
         tx_len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
+        // `hil::uart`: *"`Err(OFF)`: The underlying hardware is not
+        // available, perhaps because it has not been initialized."*
+        //
+        // Measured on silicon before this was here: with `UARTEN` clear,
+        // `transmit_buffer` answered `Ok(())`, `fill_fifo` wrote into a FIFO
+        // that cannot drain, and the transmit interrupt never fired. The
+        // conformance test stopped dead after nine clauses with its buffer
+        // stranded -- a promise of a callback that could not be kept, which
+        // is worse than a refusal because the caller has no way to find out.
+        //
+        // The predicate was already here. `is_configured` was written for the
+        // panic handler and no HIL entry point consulted it.
+        // ORDER: after the length check, not before it.
+        //
+        // `hil::uart` lists `Err(OFF)` first but states no precedence, and the
+        // tree does not agree -- litex answers OFF first, sam4l and stm32u5xx
+        // answer it after SIZE and BUSY. So this is a choice, and it has a
+        // consequence that was measured: with OFF first, the conformance
+        // test's two SIZE clauses became unanswerable on an unconfigured UART.
+        // `Err(SIZE)` is a property of the arguments alone -- wrong in every
+        // hardware state, and the caller's bug to fix -- while `Err(OFF)` is a
+        // state that may clear. Answer the permanent one first.
         if self.tx_status.get() == UARTStateTX::Idle {
             if tx_len <= tx_buffer.len() {
+                if !self.is_configured() {
+                    return Err((ErrorCode::OFF, tx_buffer));
+                }
+
                 self.tx_buffer.put(Some(tx_buffer));
                 self.tx_position.set(0);
                 self.tx_len.set(tx_len);
@@ -988,8 +1014,14 @@ impl<'a> Receive<'a> for Uart<'a> {
         rx_buffer: &'static mut [u8],
         rx_len: usize,
     ) -> Result<(), (ErrorCode, &'static mut [u8])> {
+        // See `transmit_buffer`: the same promise, the same measurement, and
+        // the same ordering choice.
         if self.rx_status.get() == UARTStateRX::Idle {
             if rx_len <= rx_buffer.len() {
+                if !self.is_configured() {
+                    return Err((ErrorCode::OFF, rx_buffer));
+                }
+
                 self.rx_buffer.put(Some(rx_buffer));
                 self.rx_position.set(0);
                 self.rx_len.set(rx_len);

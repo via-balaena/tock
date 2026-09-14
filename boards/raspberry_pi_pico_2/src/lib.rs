@@ -354,6 +354,7 @@ pub unsafe fn setup(
         // The transmit phase needs a working peripheral: `configure` ends by
         // setting UARTEN, TXE and RXE, and without it a transmit fills the
         // FIFO and never drains, so the test would hang rather than fail.
+        #[cfg(not(feature = "uart_contract_test_unconfigured"))]
         let _ = kernel::hil::uart::Configure::configure(
             test_uart,
             kernel::hil::uart::Parameters {
