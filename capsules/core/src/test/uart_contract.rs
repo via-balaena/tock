@@ -90,15 +90,18 @@ use kernel::utilities::cells::{OptionalCell, TakeCell};
 /// and calls back, not what arrives at the other end.
 const TX_LEN: usize = 4;
 
-/// What the loopback phase sends. Alternating bits, then all-clear and
-/// all-set, so a word truncated to seven bits, a stuck bit, or a reversed
-/// bit order each show up as a mismatch instead of passing by luck.
+/// What the loopback phase sends.
+///
+/// Alternating bits, then all-clear and all-set, so a word truncated to seven
+/// bits, a stuck bit, or a reversed bit order each show up as a mismatch
+/// instead of passing by luck.
 const PATTERN: [u8; TX_LEN] = [0x55, 0xaa, 0x00, 0xff];
 
-/// A word with bit 7 set, and what it must become once the UART is
-/// configured for seven-bit words. `hil::uart` states the rule on
-/// `transmit_buffer`: *"The word width is determined by the UART
-/// configuration, truncating any more significant bits."*
+/// A word with bit 7 set, and what it must become in seven-bit mode.
+///
+/// `hil::uart` states the rule on `transmit_buffer`: *"The word width is
+/// determined by the UART configuration, truncating any more significant
+/// bits."*
 const WIDE_WORD: u8 = 0xc5;
 const WIDE_WORD_IN_SEVEN_BITS: u8 = 0x45;
 
