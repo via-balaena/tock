@@ -26,8 +26,14 @@
 //!    clamped or indexed past the end instead; one panicked.
 //! 2. `Err(SIZE)` when `rx_len` exceeds the slice. Same three.
 //! 3. `transmit_abort()` with nothing outstanding returns `Ok(())`. Eleven
-//!    implementations answered `Err` unconditionally.
-//! 4. `receive_abort()` with nothing outstanding returns `Ok(())`. Seven did.
+//!    implementations answered `Err` unconditionally, which also breaks the
+//!    other half of the clause -- any `Err` promises a callback, and an idle
+//!    UART has none to make, so the caller waits for its buffer forever. All
+//!    eleven are guarded now, and `tools/ci/check-uart-abort-idle.py` fails
+//!    the build if an abort body loses the ability to answer `Ok(())` again.
+//! 4. `receive_abort()` with nothing outstanding returns `Ok(())`. Ten did
+//!    not, sam4l among them -- forty-nine lines from a `transmit_abort` in the
+//!    same impl that was already guarded correctly.
 //! 5. `Err(BUSY)` when a receive is already outstanding. Six implementations
 //!    silently replaced the outstanding buffer, losing it and its callback.
 //! 6. A cancelled receive still calls back, returning the buffer. One
