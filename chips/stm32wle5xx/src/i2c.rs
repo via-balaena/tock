@@ -511,6 +511,10 @@ impl<'a> i2c::I2CMaster<'a> for I2C<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((Error::Size, data));
+        }
+
         if self.status.get() == I2CStatus::Idle {
             self.status.set(I2CStatus::WritingReading);
             self.slave_address.set(addr);
@@ -530,6 +534,10 @@ impl<'a> i2c::I2CMaster<'a> for I2C<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((Error::Size, data));
+        }
+
         if self.status.get() == I2CStatus::Idle {
             self.status.set(I2CStatus::Writing);
             self.slave_address.set(addr);
@@ -548,6 +556,10 @@ impl<'a> i2c::I2CMaster<'a> for I2C<'a> {
         buffer: &'static mut [u8],
         len: usize,
     ) -> Result<(), (Error, &'static mut [u8])> {
+        if len > buffer.len() {
+            return Err((Error::Size, buffer));
+        }
+
         if self.status.get() == I2CStatus::Idle {
             self.status.set(I2CStatus::Reading);
             self.slave_address.set(addr);

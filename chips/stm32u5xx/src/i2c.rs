@@ -1001,6 +1001,10 @@ impl<'a> I2CMaster<'a> for I2c<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (i2c::Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((Error::Size, data));
+        }
+
         // Ensure the driver is enabled (which implies it's also initialized)
         if !self.enabled.get() {
             return Err((Error::NotSupported, data));
@@ -1035,6 +1039,10 @@ impl<'a> I2CMaster<'a> for I2c<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((Error::Size, data));
+        }
+
         // Ensure the driver is enabled (which implies it's also initialized)
         if !self.enabled.get() {
             return Err((Error::NotSupported, data));
@@ -1068,6 +1076,10 @@ impl<'a> I2CMaster<'a> for I2c<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (i2c::Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((Error::Size, data));
+        }
+
         // Ensure the driver is enabled (which implies it's also initialized)
         if !self.enabled.get() {
             return Err((Error::NotSupported, data));

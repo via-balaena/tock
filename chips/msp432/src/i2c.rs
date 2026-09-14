@@ -295,6 +295,10 @@ impl<'a> i2c::I2CMaster<'a> for I2c<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((Error::Size, data));
+        }
+
         if self.mode.get() != OperatingMode::Idle {
             // Module is busy or not activated
             return Err((Error::Busy, data));
@@ -333,6 +337,10 @@ impl<'a> i2c::I2CMaster<'a> for I2c<'a> {
         buffer: &'static mut [u8],
         len: usize,
     ) -> Result<(), (Error, &'static mut [u8])> {
+        if len > buffer.len() {
+            return Err((Error::Size, buffer));
+        }
+
         if self.mode.get() != OperatingMode::Idle {
             // Module is busy or not activated
             return Err((Error::Busy, buffer));
@@ -369,6 +377,10 @@ impl<'a> i2c::I2CMaster<'a> for I2c<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((Error::Size, data));
+        }
+
         if self.mode.get() != OperatingMode::Idle {
             // Module is busy or not activated
             return Err((Error::Busy, data));

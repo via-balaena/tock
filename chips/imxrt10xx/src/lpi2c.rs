@@ -733,6 +733,10 @@ impl<'a> i2c::I2CMaster<'a> for Lpi2c<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (i2c::Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((i2c::Error::Size, data));
+        }
+
         if self.status.get() == Lpi2cStatus::Idle {
             self.reset();
             self.status.set(Lpi2cStatus::WritingReading);
@@ -754,6 +758,10 @@ impl<'a> i2c::I2CMaster<'a> for Lpi2c<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (i2c::Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((i2c::Error::Size, data));
+        }
+
         if self.status.get() == Lpi2cStatus::Idle {
             self.reset();
             self.status.set(Lpi2cStatus::Writing);
@@ -774,6 +782,10 @@ impl<'a> i2c::I2CMaster<'a> for Lpi2c<'a> {
         buffer: &'static mut [u8],
         len: usize,
     ) -> Result<(), (i2c::Error, &'static mut [u8])> {
+        if len > buffer.len() {
+            return Err((i2c::Error::Size, buffer));
+        }
+
         if self.status.get() == Lpi2cStatus::Idle {
             self.reset();
             self.status.set(Lpi2cStatus::Reading);

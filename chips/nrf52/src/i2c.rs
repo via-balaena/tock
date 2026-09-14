@@ -252,6 +252,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for TWI<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         self.registers
             .address_0
             .write(ADDRESS::ADDRESS.val(addr as u32));
@@ -285,6 +289,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for TWI<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         self.registers
             .address_0
             .write(ADDRESS::ADDRESS.val(addr as u32));
@@ -312,6 +320,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for TWI<'a> {
         buffer: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > buffer.len() {
+            return Err((hil::i2c::Error::Size, buffer));
+        }
+
         self.registers
             .address_0
             .write(ADDRESS::ADDRESS.val(addr as u32));

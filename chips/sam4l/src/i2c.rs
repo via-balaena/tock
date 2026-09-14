@@ -1393,6 +1393,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2CHw<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         I2CHw::write(
             self,
             addr,
@@ -1408,6 +1412,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2CHw<'a> {
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         I2CHw::read(
             self,
             addr,
@@ -1424,6 +1432,10 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2CHw<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (hil::i2c::Error, &'static mut [u8])> {
+        if write_len > data.len() || read_len > data.len() {
+            return Err((hil::i2c::Error::Size, data));
+        }
+
         I2CHw::write_read(self, addr, data, write_len, read_len)
     }
 }
