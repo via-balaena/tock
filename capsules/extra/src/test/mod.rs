@@ -16,6 +16,7 @@ pub mod hmac_sha256;
 pub mod hmac_sha512;
 pub mod kv_system;
 pub mod md5;
+pub mod screen_fill;
 pub mod sha1;
 pub mod sha224;
 pub mod sha256;

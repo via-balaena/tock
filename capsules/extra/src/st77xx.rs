@@ -1221,6 +1221,50 @@ const LS016B8UY_INIT_SEQUENCE: [SendCommand; 23] = default_parameters_sequence!(
     &IDLE_OFF
 );
 
+/******** ST7796 *********/
+
+/// 16 bits per pixel, RGB565, on both the RGB and the MCU interface.
+///
+/// The shared `COLMOD` above sends `0x05`, which sets only the MCU half. This
+/// panel was brought up with `0x55` and that is what is known to work on it.
+/// `0x05` has not been tried on it, so this does not assume they are
+/// interchangeable here.
+const ST7796_COLMOD: Command = Command {
+    id: 0x3A,
+    parameters: Some(&[0x55]),
+    delay: 0,
+};
+
+/// `MV` to exchange the axes, and `BGR` because this panel exchanges red and
+/// blue.
+///
+/// Both halves were measured rather than assumed. `BGR`: filling the primaries
+/// gave yellow back as cyan and cyan back as yellow, while white, green,
+/// magenta and black were unmoved -- exactly the set that survives swapping two
+/// channels. `MV`: the kit mounts the panel landscape, and with this set the
+/// addressable area is 480 across by 320 down, which is what
+/// `ST7796::default_width` and `default_height` below report.
+const ST7796_MADCTL: Command = Command {
+    id: 0x36,
+    parameters: Some(&[0x28]),
+    delay: 0,
+};
+
+/// The sequence that lit this panel, and nothing more.
+///
+/// Six commands. The other families in this file send twenty-odd, configuring
+/// porches, gamma and power rails; none of that was needed here and none of it
+/// has been tried, so none of it is here. A shorter sequence that is known to
+/// work beats a longer one copied from a vendor header.
+const ST7796_INIT_SEQUENCE: [SendCommand; 6] = crate::default_parameters_sequence!(
+    &SW_RESET,
+    &SLEEP_OUT,
+    &ST7796_COLMOD,
+    &ST7796_MADCTL,
+    &INVON,
+    &DISPLAY_ON
+);
+
 pub struct ST77XXScreen {
     init_sequence: &'static [SendCommand],
     default_width: usize,
@@ -1276,5 +1320,37 @@ pub const LS016B8UY: ST77XXScreen = ST77XXScreen {
     default_width: 240,
     default_height: 240,
     inverted: false,
+    offset: |_| (0, 0),
+};
+
+/// A 320x480 IPS panel, addressed landscape.
+///
+/// **The part has not been identified and cannot be over this bus.** ILI9488 is
+/// ruled out -- it cannot do 16bpp over SPI and this panel draws two-byte
+/// pixels -- which leaves ILI9486 and ST7796, and they are indistinguishable
+/// here: same init, same addressing, same geometry. The board this was brought
+/// up on does not wire the controller's MISO through, so no ID register can be
+/// read: every byte of every ID command came back `0xff` at four clock rates,
+/// on a panel that was demonstrably awake and taking commands.
+///
+/// So the name is a choice, not a measurement. What *is* measured is
+/// everything below it.
+///
+/// `default_width` is 480 and `default_height` 320 because
+/// [`ST7796_MADCTL`] sets `MV`: the controller is already in landscape by the
+/// time the first pixel is addressed, so the driver must describe it that way
+/// or every write lands rotated. The geometry was established by addressing
+/// markers at each candidate edge and leaving them on screen rather than
+/// timing them -- the marker at 440-479 never appeared, the one at 280-319
+/// did, and the other axis reached 480.
+///
+/// `inverted` is true for the same reason it is on `ST7789H2`: the sequence
+/// sends `INVON` at init because this is an IPS panel and needs it, so a later
+/// `display_invert_on` means `INVOFF`.
+pub const ST7796: ST77XXScreen = ST77XXScreen {
+    init_sequence: &ST7796_INIT_SEQUENCE,
+    default_width: 480,
+    default_height: 320,
+    inverted: true,
     offset: |_| (0, 0),
 };

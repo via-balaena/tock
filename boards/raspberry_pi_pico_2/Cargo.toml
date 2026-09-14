@@ -50,6 +50,16 @@ i2c_contract_test = []
 # uart_contract_test_pads, which muxes the same pins to UART1.
 gpio_contract_test = []
 
+# Drive the breadboard kit's 320x480 TFT on SPI0 and expose it to userspace
+# through the screen syscall driver. GP2 SCLK, GP3 MOSI, GP5 CS, GP6 DC,
+# GP7 RST. Off by default: a bare Pico 2 has nothing on those pins. MUTUALLY
+# EXCLUSIVE with spi_contract_test, which puts SPI0 on GP4-GP7.
+kit_display = []
+# Fill the kit's panel from the kernel at boot and print the write rate.
+# TAKES THE SCREEN CLIENT BACK from the syscall driver, so userspace sees no
+# display in this build. Implies kit_display.
+kit_display_test = ["kit_display"]
+
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
 

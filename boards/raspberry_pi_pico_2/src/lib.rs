@@ -94,6 +94,8 @@ pub struct Platform {
         VirtualMuxAlarm<'static, rp2350::timer::RPTimer<'static>>,
     >,
     gpio: &'static GpioDriver,
+    #[cfg(feature = "kit_display")]
+    screen: &'static capsules_extra::screen::screen::Screen<'static>,
 }
 
 impl SyscallDriverLookup for Platform {
@@ -105,6 +107,8 @@ impl SyscallDriverLookup for Platform {
             capsules_core::console::DRIVER_NUM => f(Some(self.console)),
             capsules_core::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
+            #[cfg(feature = "kit_display")]
+            capsules_extra::screen::screen::DRIVER_NUM => f(Some(self.screen)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -556,6 +560,128 @@ pub unsafe fn setup(
     let scheduler = components::sched::round_robin::RoundRobinComponent::new(processes)
         .finalize(components::round_robin_component_static!(NUM_PROCS));
 
+    // The breadboard kit's TFT, on SPI0.
+    //
+    // GP2 SCLK, GP3 MOSI, GP5 CS, GP6 DC, GP7 RST -- the kit's silkscreen, and
+    // each label lands on the matching SPI0 function. GP4 is the panel's MISO
+    // and is deliberately left alone: the kit does not wire the controller's
+    // output through, which is why the part cannot be identified over this bus
+    // and why the variant's name is a choice rather than a measurement.
+    //
+    // Feature-gated because a bare Pico 2 or Pico 2 W has nothing on those
+    // pins. MUTUALLY EXCLUSIVE with `spi_contract_test`, which puts SPI0 on
+    // GP4-GP7 and would fight this over DC and RST.
+    //
+    // 31.25 MHz, and that number is measured rather than chosen. Filling the
+    // panel three times over takes 1625 ms at 8 MHz and 401 ms at 31.25 --
+    // 4.05x for 3.9x the clock, so up to there the write path is clock-bound.
+    // Above it nothing improves: 62.5 MHz (the PL022's maximum, which
+    // `set_rate` refused until today) gives 400 ms, and quadrupling the write
+    // buffer to 16 KiB gives 390. Something other than the clock or the chunk
+    // size caps this at about 2.3 MB/s and has not been found yet.
+    //
+    // So this asks for the fastest rate that buys anything, and no more --
+    // the part is unidentified, an ILI9486 would be out of spec well below
+    // here, and a clock that cannot be seen to help is not worth the risk.
+    // 125 MHz / (2 * 2) lands exactly, with no rounding.
+    #[cfg(feature = "kit_display")]
+    let tft = {
+        use kernel::hil::spi::cs::{ActiveLow, IntoChipSelect};
+
+        let spi_clk = peripherals.pins.get_pin(RPGpio::GPIO2);
+        let spi_mosi = peripherals.pins.get_pin(RPGpio::GPIO3);
+        let spi_cs = peripherals.pins.get_pin(RPGpio::GPIO5);
+        spi_clk.set_function(GpioFunction::SPI);
+        spi_mosi.set_function(GpioFunction::SPI);
+        // Software chip select, as the SPI conformance test does: the panel
+        // needs CS held across a command and its parameters together, which
+        // the PL022's own chip select does not promise.
+        spi_cs.make_output();
+
+        let mux_spi = components::spi::SpiMuxComponent::new(&peripherals.spi0)
+            .finalize(components::spi_mux_component_static!(rp2350::spi::Spi));
+
+        let bus = components::bus::SpiMasterBusComponent::new(
+            mux_spi,
+            IntoChipSelect::<_, ActiveLow>::into_cs(spi_cs),
+            31_250_000,
+            kernel::hil::spi::ClockPhase::SampleLeading,
+            kernel::hil::spi::ClockPolarity::IdleLow,
+        )
+        .finalize(components::spi_bus_component_static!(rp2350::spi::Spi));
+
+        let tft = components::st77xx::ST77XXComponent::new(
+            mux_alarm,
+            bus,
+            Some(peripherals.pins.get_pin(RPGpio::GPIO6)),
+            Some(peripherals.pins.get_pin(RPGpio::GPIO7)),
+            &capsules_extra::st77xx::ST7796,
+        )
+        .finalize(components::st77xx_component_static!(
+            // bus type
+            capsules_extra::bus::SpiMasterBus<
+                'static,
+                capsules_core::virtualizers::virtual_spi::VirtualSpiMasterDevice<
+                    'static,
+                    rp2350::spi::Spi<'static>,
+                >,
+            >,
+            // timer type
+            RPTimer,
+            // pin type
+            RPGpioPin,
+        ));
+
+        let _ = tft.init();
+        tft
+    };
+
+    #[cfg(feature = "kit_display")]
+    let screen = components::screen::ScreenComponent::new(
+        board_kernel,
+        capsules_extra::screen::screen::DRIVER_NUM,
+        tft,
+        Some(tft),
+        create_capability!(capabilities::MemoryAllocationCapability),
+    )
+    .finalize(components::screen_component_static!(57600));
+
+    // Fill the panel from the kernel and report how fast it managed it.
+    //
+    // This TAKES THE CLIENT BACK from the screen syscall driver built just
+    // above, so a build with this feature drives the panel from the kernel and
+    // userspace sees nothing. That is the point: it is the only way to tell a
+    // panel that came up from a driver that merely returned `Ok(())`, and the
+    // rate it reports is what decides what can be built on the display.
+    #[cfg(feature = "kit_display_test")]
+    {
+        use capsules_extra::test::screen_fill::TestScreenFill;
+
+        let fill_buffer = static_init!([u8; 4096], [0; 4096]);
+        let fill = static_init!(
+            TestScreenFill<
+                capsules_extra::st77xx::ST77XX<
+                    'static,
+                    VirtualMuxAlarm<'static, RPTimer<'static>>,
+                    capsules_extra::bus::SpiMasterBus<
+                        'static,
+                        capsules_core::virtualizers::virtual_spi::VirtualSpiMasterDevice<
+                            'static,
+                            rp2350::spi::Spi<'static>,
+                        >,
+                    >,
+                    RPGpioPin<'static>,
+                >,
+                RPTimer<'static>,
+            >,
+            TestScreenFill::new(tft, &peripherals.timer0, fill_buffer)
+        );
+        // No `run()` here: `init` above is asynchronous and the driver calls
+        // `screen_is_ready` when it has finished, which is where the test
+        // starts itself.
+        kernel::hil::screen::Screen::set_client(tft, fill);
+    }
+
     let platform = Platform {
         ipc: kernel::ipc::IPC::new(
             board_kernel,
@@ -565,6 +691,8 @@ pub unsafe fn setup(
         console,
         alarm,
         gpio,
+        #[cfg(feature = "kit_display")]
+        screen,
         scheduler,
         systick: cortexm33::systick::SysTick::new_with_calibration(125_000_000),
     };
