@@ -294,10 +294,29 @@ impl uart::ReceiveClient for Nrf51822Serialization<'_> {
         &self,
         buffer: &'static mut [u8],
         rx_len: usize,
-        _rcode: Result<(), ErrorCode>,
+        rcode: Result<(), ErrorCode>,
         _error: uart::Error,
     ) {
         self.rx_buffer.replace(buffer);
+
+        // `Ok(())` is a full buffer, and `Err(SIZE)` is the interbyte timeout
+        // ending a `receive_automatic` short of one -- the ordinary outcome
+        // here, since a serialization message is shorter than the buffer.
+        //
+        // Anything else means the words in the buffer are not the words that
+        // were sent: a framing, parity, break or overrun error, which chip
+        // drivers report per character in the same callback that carries the
+        // data. Both were ignored, so a malformed character reached the app as
+        // a good one. `rcode` alone separates a bad read from a good one;
+        // `error` only says which kind it was. Drop what arrived and re-arm
+        // instead -- a sender that still wants those bytes will send again.
+        if !matches!(rcode, Ok(()) | Err(ErrorCode::SIZE)) {
+            self.rx_buffer.take().map(|buffer| {
+                let len = buffer.len();
+                let _ = self.uart.receive_automatic(buffer, len, 250);
+            });
+            return;
+        }
 
         // By default we continuously receive on UART. However, if we receive
         // and the active app is no longer existent, then we stop receiving.
