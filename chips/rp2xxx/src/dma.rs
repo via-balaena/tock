@@ -20,6 +20,41 @@ pub trait DmaChannelClient {
     fn transfer_done(&self);
 }
 
+/// A peripheral whose DREQ can pace a channel, named rather than numbered.
+///
+/// The DREQ *numbers* are chip specific -- `SPI0_TX` is 16 on the RP2040 and
+/// 24 on the RP2350, because the RP2350 has a third PIO block ahead of it in
+/// the table. So the name lives here, where drivers can use it, and each chip
+/// maps it to its own value. A driver that passed the number instead would be
+/// correct on one chip and silently wrong on the other.
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum DmaPacer {
+    Spi0Tx,
+    Spi0Rx,
+    Spi1Tx,
+    Spi1Rx,
+}
+
+/// A channel that can stream bytes from memory into a peripheral's data
+/// register, paced by that peripheral.
+///
+/// Deliberately separate from [`DmaChannel`] and deliberately object safe: a
+/// driver holds one of these behind a `dyn` reference so that DMA is optional.
+/// A peripheral driver with no channel wired keeps whatever path it had.
+pub trait PeripheralDma {
+    /// Stream `len` bytes from `src` into the register at `dst`, one byte per
+    /// DREQ from `pacer`. `src` advances, `dst` does not.
+    ///
+    /// The client's `transfer_done` fires when the last byte has been handed
+    /// to the peripheral, which is **not** when the peripheral has finished
+    /// sending it -- a caller that must wait for the wire has its own way to
+    /// do that.
+    fn write_bytes_to_peripheral(&self, src: u32, dst: u32, len: u32, pacer: DmaPacer);
+
+    /// Who to tell when the transfer finishes.
+    fn set_dma_client(&self, client: &'static dyn DmaChannelClient);
+}
+
 /// One DMA channel, as a driver above it needs to see one.
 ///
 /// The two transfer methods name a PIO FIFO rather than taking a peripheral

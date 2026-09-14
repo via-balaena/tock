@@ -22,6 +22,8 @@ use kernel::utilities::StaticRef;
 use kernel::utilities::cells::MapCell;
 use kernel::utilities::cells::OptionalCell;
 use kernel::utilities::leasable_buffer::SubSliceMut;
+
+use crate::dma::{DmaChannelClient, DmaPacer, PeripheralDma};
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeable};
 use kernel::utilities::registers::{ReadOnly, ReadWrite, register_bitfields, register_structs};
 
@@ -253,7 +255,21 @@ pub struct Spi<'a, C: PeripheralClock, P: hil::gpio::Output> {
 
     transfers: Cell<u8>,
     active_after: Cell<bool>,
+
+    /// The channel that streams bulk writes, if a board wired one, and which
+    /// DREQ paces it. Without it every path below is unchanged.
+    dma: OptionalCell<(&'static dyn PeripheralDma, DmaPacer)>,
 }
+
+/// Shorter writes stay on the interrupt path. Arming a channel costs four
+/// register writes plus a completion interrupt, which only pays once a
+/// transfer is longer than the FIFO can absorb in a couple of refills. The
+/// panel's commands are a handful of bytes each and stay where they were;
+/// its pixel writes are tens of thousands and are what this exists for.
+const MIN_DMA_LEN: usize = 64;
+
+/// Offset of `SSPDR` within the block, which is where a channel writes.
+const SSPDR_OFFSET: u32 = 0x008;
 
 impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
     /// Create a driver for the SPI block at `registers`.
@@ -277,7 +293,31 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
 
             transfers: Cell::new(SPI_IDLE),
             active_after: Cell::new(false),
+
+            dma: OptionalCell::empty(),
         }
+    }
+
+    /// Give this block a DMA channel to stream bulk writes through.
+    ///
+    /// Optional by design. Without it, writes go byte by byte through the
+    /// transmit interrupt, which is correct but caps throughput well below
+    /// the wire: the FIFO is eight entries, so every eight bytes costs an
+    /// interrupt dispatch, and measurements on an RP2350 showed throughput
+    /// stop improving above about 31 MHz because of it.
+    ///
+    /// `pacer` must name this block's transmit DREQ. Passing another block's
+    /// would leave the channel waiting on a peripheral that is not sending.
+    pub fn set_dma(&self, dma: &'static dyn PeripheralDma, pacer: DmaPacer) {
+        self.dma.set((dma, pacer));
+    }
+
+    /// Whether a bulk write can go through a channel rather than the FIFO.
+    fn dma_eligible(&self, len: usize, reading: bool) -> bool {
+        // Read paths stay on the interrupt path: they need the receive FIFO
+        // drained in step with the transmit side, which is a second channel
+        // and a second completion, and nothing here reads in bulk.
+        !reading && len >= MIN_DMA_LEN && self.dma.is_some()
     }
 
     fn enable(&self) {
@@ -395,6 +435,8 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
                     .set(self.transfers.get() | SPI_READ_IN_PROGRESS);
             }
 
+            let reading = read_buffer.is_some();
+
             read_buffer.map(|buf| {
                 self.rx_buffer.replace(buf);
                 self.len.set(len);
@@ -402,12 +444,32 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
                 self.registers.sspimsc.modify(SSPIMSC::RXIM::SET);
             });
 
-            write_buffer.map(|buf| {
-                self.tx_buffer.replace(buf);
+            if let Some(buf) = write_buffer {
                 self.len.set(len);
-                self.tx_position.set(0);
-                self.registers.sspimsc.modify(SSPIMSC::TXIM::SET);
-            });
+                match self.dma.get().filter(|_| self.dma_eligible(len, reading)) {
+                    Some((dma, pacer)) => {
+                        let src = buf.as_slice().as_ptr() as u32;
+                        let dst = core::ptr::addr_of!(*self.registers) as u32 + SSPDR_OFFSET;
+
+                        // The channel owns the feeding now, so the transmit
+                        // interrupt must not also write bytes. Parking the
+                        // position at the end leaves the handler's terminal
+                        // check -- FIFO empty and shifter idle -- as the only
+                        // thing it still does, which is what ends the
+                        // transfer either way.
+                        self.tx_position.set(len);
+                        self.tx_buffer.replace(buf);
+
+                        self.registers.sspdmacr.modify(SSPDMACR::TXDMAE::SET);
+                        dma.write_bytes_to_peripheral(src, dst, len as u32, pacer);
+                    }
+                    None => {
+                        self.tx_buffer.replace(buf);
+                        self.tx_position.set(0);
+                        self.registers.sspimsc.modify(SSPIMSC::TXIM::SET);
+                    }
+                }
+            }
 
             Ok(())
         } else {
@@ -672,5 +734,20 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> SpiMaster<'a> for Spi<'a, C, 
     }
     fn release_low(&self) {
         self.active_after.set(false);
+    }
+}
+
+impl<C: PeripheralClock, P: hil::gpio::Output> DmaChannelClient for Spi<'_, C, P> {
+    /// The channel has handed the last byte to the transmit FIFO.
+    ///
+    /// That is not the end of the transfer: the shifter still has up to eight
+    /// bytes to put on the wire, and the chip select must not be released
+    /// until it has. So this stops the DMA request and re-arms the transmit
+    /// interrupt, whose terminal check -- FIFO empty and block not busy -- is
+    /// the same ending a FIFO-fed transfer takes. One completion path, not
+    /// two.
+    fn transfer_done(&self) {
+        self.registers.sspdmacr.modify(SSPDMACR::TXDMAE::CLEAR);
+        self.registers.sspimsc.modify(SSPIMSC::TXIM::SET);
     }
 }

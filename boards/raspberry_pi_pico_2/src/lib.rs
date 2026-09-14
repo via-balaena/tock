@@ -602,6 +602,29 @@ pub unsafe fn setup(
     // the part is unidentified, an ILI9486 would be out of spec well below
     // here, and a clock that cannot be seen to help is not worth the risk.
     // 125 MHz / (2 * 2) lands exactly, with no rounding.
+    // Give SPI0 a DMA channel for bulk writes.
+    //
+    // Without this the panel caps at about 2.21 MB/s and stops improving
+    // above roughly 31 MHz: the PL022's FIFO is eight entries, so every
+    // eight bytes costs an interrupt dispatch, and that cost does not
+    // shrink when the clock rises. Measured four ways -- 7.8, 15.6, 31.25
+    // and 62.5 MHz -- and the last two are identical to the millisecond
+    // while the divider registers differ, which is what says the clock is
+    // not the limit.
+    //
+    // Channel 1, because the Pico 2 W's radio takes channel 0 in its own
+    // main.rs and this block is shared by both boards.
+    use rp2350::dma::PeripheralDma;
+    let spi_dma = static_init!(
+        rp2350::dma::DmaChannel<'static>,
+        peripherals.dma.channel(rp2350::dma::Channel::Ch1)
+    );
+    spi_dma.enable_interrupt(rp2350::dma::Irq::Irq0);
+    spi_dma.set_dma_client(&peripherals.spi0);
+    peripherals
+        .spi0
+        .set_dma(spi_dma, rp2350::dma::DmaPacer::Spi0Tx);
+
     #[cfg(feature = "kit_display")]
     let tft = {
         use kernel::hil::spi::cs::{ActiveLow, IntoChipSelect};
