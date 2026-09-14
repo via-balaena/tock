@@ -92,6 +92,26 @@ impl Sub for ScreenRotation {
 }
 
 /// How pixels are encoded for the screen.
+///
+/// **These discriminants are wire values, and renumbering one breaks every
+/// app.** `capsules_extra::screen` hands them to userspace as bare integers --
+/// command 14 returns `pixel_format as u32` and command 25 the same -- so an
+/// app asks for "2" and means RGB565. Nothing on that path translates, and
+/// nothing checks a version.
+///
+/// They have drifted once already. `0b514e01e` (2024-09-03) inserted
+/// `RGB_4BIT` into the middle of this enum while it still had implicit
+/// discriminants, which moved `RGB_565` from 2 to 3 with nothing in the diff
+/// saying so. It stayed 3 for eleven months, until `35ca7fa07` (2025-08-04)
+/// pinned every value explicitly and put the newcomers at 5 and 6 so that
+/// 0..=4 went back to what they had been. That the numbering is right today is
+/// the result of someone tidying up, not of anything enforcing it.
+///
+/// So: append new formats at the next free number. Never insert, never
+/// reorder, and change an existing variant's meaning only knowing that every
+/// app built against the old meaning is now wrong on the glass -- which is
+/// what `ARGB_8888` becoming `BGRA_8888` at index 4 did in `3773b4a03`, for a
+/// good reason, and which no length check anywhere can detect.
 #[derive(Copy, Clone, PartialEq)]
 #[repr(usize)]
 #[allow(non_camel_case_types)]
