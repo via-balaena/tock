@@ -351,6 +351,45 @@ pub unsafe fn setup(
         // Most of the divergences the audit found live in chip drivers
         // rather than in the virtualizer.
         let test_uart = &peripherals.uart1;
+
+        // With `uart_contract_test_pads`, the loop runs out of the chip and
+        // back in over a jumper, which is the only way to exercise the pads
+        // and the function mux. GP20 is UART1 TX and GP21 is UART1 RX at
+        // FUNCSEL 0x02 (checked against the RP2350 datasheet's GPIO20_CTRL
+        // and GPIO21_CTRL tables). `LBE` is deliberately left clear: with it
+        // set the bytes would never reach a pad and the wire would prove
+        // nothing.
+        //
+        // This is conditional compilation for the one reason AGENTS.md
+        // allows it -- the alternative is a board that hangs at boot unless
+        // a particular wire is present.
+        //
+        // BEFORE `configure`, and that ordering is load-bearing. `configure`
+        // ends by setting `RXE`, so doing it first leaves a LIVE receiver
+        // watching a pin that is still a GPIO; muxing the pad under it then
+        // looks like a start bit and the PL011 latches a character. Measured
+        // on silicon, the same build both ways:
+        //
+        //     pads after  configure   UARTFR.RXFE 0, UARTRIS 0x280, 3/3 FAIL
+        //     pads before configure   UARTFR.RXFE 1, UARTRIS 0x000, 4/4 pass
+        //
+        // `UARTRIS` 0x280 is bits 9 and 7 -- break and framing error -- which
+        // is what a half-formed character looks like. With the FIFOs on it
+        // waits in the receive FIFO and is handed to the first client that
+        // asks, which showed up as the loopback pattern arriving rotated by
+        // one: sent 55 aa 00 ff, got 00 55 aa 00.
+        #[cfg(feature = "uart_contract_test_pads")]
+        {
+            peripherals
+                .pins
+                .get_pin(RPGpio::GPIO20)
+                .set_function(GpioFunction::UART);
+            peripherals
+                .pins
+                .get_pin(RPGpio::GPIO21)
+                .set_function(GpioFunction::UART);
+        }
+
         // The transmit phase needs a working peripheral: `configure` ends by
         // setting UARTEN, TXE and RXE, and without it a transmit fills the
         // FIFO and never drains, so the test would hang rather than fail.
@@ -378,29 +417,6 @@ pub unsafe fn setup(
         // and so would preserve the bit either way.
         #[cfg(not(feature = "uart_contract_test_pads"))]
         test_uart.set_loopback(true);
-
-        // With `uart_contract_test_pads`, the loop runs out of the chip and
-        // back in over a jumper, which is the only way to exercise the pads
-        // and the function mux. GP20 is UART1 TX and GP21 is UART1 RX at
-        // FUNCSEL 0x02 (checked against the RP2350 datasheet's GPIO20_CTRL
-        // and GPIO21_CTRL tables). `LBE` is deliberately left clear: with it
-        // set the bytes would never reach a pad and the wire would prove
-        // nothing.
-        //
-        // This is conditional compilation for the one reason AGENTS.md
-        // allows it -- the alternative is a board that hangs at boot unless
-        // a particular wire is present.
-        #[cfg(feature = "uart_contract_test_pads")]
-        {
-            peripherals
-                .pins
-                .get_pin(RPGpio::GPIO20)
-                .set_function(GpioFunction::UART);
-            peripherals
-                .pins
-                .get_pin(RPGpio::GPIO21)
-                .set_function(GpioFunction::UART);
-        }
 
         let test_buffer = static_init!([u8; 64], [0; 64]);
         let contract = static_init!(
