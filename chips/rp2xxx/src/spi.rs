@@ -606,7 +606,17 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> SpiMaster<'a> for Spi<'a, C, 
         }
 
         let mut prescale = 0;
-        let mut postdiv = 0;
+        // Not zero. The loop below scans postdiv downwards and stops at the
+        // first value whose rate clears the target; when NOTHING clears it the
+        // answer is 1, the fastest the divider goes, not "no answer".
+        //
+        // Starting at 0 made `set_rate(freq_in / 2)` -- the PL022's own
+        // maximum, and the only rate that reaches it -- fall out of the loop
+        // untouched and return `Err(INVAL)`. Asking a peripheral for exactly
+        // what it can do was the one request it refused. The pico-sdk's
+        // `spi_set_baudrate`, which this is a port of, lets its loop run out
+        // with `postdiv == 1` for the same reason.
+        let mut postdiv = 1;
 
         for p in (2..254).step_by(2) {
             if (freq_in as u64) < (((p + 2) * 256) as u64 * baudrate as u64) {
