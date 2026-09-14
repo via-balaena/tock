@@ -898,6 +898,30 @@ unsafe fn start() -> (
         contract.run();
     }
 
+    // The `hil::flash` conformance test.
+    //
+    // **It erases and writes page 120.** That is inside the region this board
+    // already hands to userspace for nonvolatile storage -- 0x08038000 for
+    // 0x8000, which at this chip's 2 KiB pages is 112 through 127 -- so the
+    // test destroys only what an app using storage would already overwrite.
+    // The kernel lives far below it. `past_end` is 128, one past the last page
+    // of this part's 256 KiB.
+    #[cfg(feature = "flash_contract_test")]
+    {
+        use capsules_core::test::flash_contract::TestFlashContract;
+
+        let page = static_init!(
+            stm32f303xc::flash::StmF303Page,
+            stm32f303xc::flash::StmF303Page::default()
+        );
+        let contract = static_init!(
+            TestFlashContract<stm32f303xc::flash::Flash>,
+            TestFlashContract::new(&peripherals.flash, 120, 128, page)
+        );
+        kernel::hil::flash::HasClient::set_client(&peripherals.flash, contract);
+        contract.run();
+    }
+
     debug!("Initialization complete. Entering main loop");
 
     // These symbols are defined in the linker script.

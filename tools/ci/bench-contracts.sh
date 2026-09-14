@@ -63,6 +63,13 @@ RUNS=(
   # controller, not because it needs the bench's jumper.
   "raspberry_pi_pico_2_w|i2c_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|i2c-contract|pico|kept"
   "stm32f3discovery|uart_contract_test|thumbv7em-none-eabi|stm32f3discovery|/dev/ttyACM1|uart-contract|stlink|kept"
+  # THIS ONE ERASES AND WRITES PAGE 120 on the Discovery. That page is inside
+  # the region the board already hands to userspace for nonvolatile storage
+  # (0x08038000 for 0x8000, which at 2 KiB pages is 112..127), so it destroys
+  # only what an app using storage would already overwrite. Clause 6 reports
+  # rather than judges: whether this chip accepts a write over un-erased flash
+  # is the thing `hil::flash` deliberately does not settle.
+  "stm32f3discovery|flash_contract_test|thumbv7em-none-eabi|stm32f3discovery|/dev/ttyACM1|flash-contract|stlink|kept"
   # The Err(OFF) control: the board skips configure(), so UART1 is never
   # enabled. Unguarded this stalled dead after nine clauses with the buffer
   # stranded, which the runner could only report as silence. Guarded it

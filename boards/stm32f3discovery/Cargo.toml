@@ -24,6 +24,10 @@ capsules-system = { path = "../../capsules/system" }
 # USART1 carries the console over the ST-LINK virtual COM port; USART2 has
 # its clock and NVIC enabled and is otherwise unused.
 uart_contract_test = []
+# Run the hil::flash conformance test at boot and print the result.
+# IT ERASES AND WRITES PAGE 120, which is inside the region this board already
+# gives userspace for nonvolatile storage. Off by default for that reason.
+flash_contract_test = []
 
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }
