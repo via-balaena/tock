@@ -162,7 +162,16 @@ impl<'a> Screen<'a> {
                     self.current_process.set(process_id);
                     let r = self.call_screen(command, process_id);
                     if r != Ok(()) {
+                        // Clear `pending_command` as well as the current
+                        // process. It was set just above, and the error is
+                        // returned to the app right here rather than through a
+                        // callback -- so nothing else will ever clear it, and
+                        // every later command from this app answers BUSY for
+                        // the life of the process.
                         self.current_process.clear();
+                        let _ = self.apps.enter(process_id, |app, _| {
+                            app.pending_command = false;
+                        });
                     }
                     CommandReturn::from(r)
                 } else {
@@ -327,7 +336,11 @@ impl<'a> Screen<'a> {
             if start_command {
                 match self.call_screen(command, process_id) {
                     Err(err) => {
-                        self.current_process.clear();
+                        // `schedule_callback` takes `current_process`, so
+                        // clearing it first made the call a no-op: the app was
+                        // never told its command failed AND `pending_command`
+                        // stayed set, which answers BUSY forever. Let the
+                        // callback take it.
                         self.schedule_callback(kernel::errorcode::into_statuscode(Err(err)), 0, 0);
                     }
                     Ok(()) => {
