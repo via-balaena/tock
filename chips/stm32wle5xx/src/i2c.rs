@@ -556,7 +556,10 @@ impl<'a> i2c::I2CMaster<'a> for I2C<'a> {
             self.start_read();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, buffer))
+            // `write` and `write_read` above answer `Error::Busy` for this
+            // exact condition; only `read` said `ArbitrationLost`, which is a
+            // bus event and reaches userspace as `RESERVE`, not `BUSY`.
+            Err((Error::Busy, buffer))
         }
     }
 }

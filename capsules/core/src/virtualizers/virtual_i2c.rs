@@ -248,6 +248,14 @@ impl<'a, I: i2c::I2CMaster<'a>, S: i2c::SMBusMaster<'a>> ListNode<'a, I2CDevice<
     }
 }
 
+// Every `else` arm in the three impls below answers `Error::Busy`. They said
+// `Error::ArbitrationLost`, which `hil::i2c` documents as *"the state of the
+// data line does not correspond to the data driven onto it ... a
+// higher-priority transmission is in progress by a different master"* -- a bus
+// event, not a device that already has a request outstanding, which is
+// `Error::Busy`'s own description. The two do not even reach userspace as the
+// same code: `RESERVE` against `BUSY`, so an app retrying on a busy device
+// never saw the code that tells it to.
 impl<'a, I: i2c::I2CMaster<'a>> i2c::I2CDevice for I2CDevice<'a, I> {
     fn enable(&self) {
         if !self.enabled.get() {
@@ -275,7 +283,7 @@ impl<'a, I: i2c::I2CMaster<'a>> i2c::I2CDevice for I2CDevice<'a, I> {
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, data))
+            Err((Error::Busy, data))
         }
     }
 
@@ -286,7 +294,7 @@ impl<'a, I: i2c::I2CMaster<'a>> i2c::I2CDevice for I2CDevice<'a, I> {
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, data))
+            Err((Error::Busy, data))
         }
     }
 
@@ -301,7 +309,7 @@ impl<'a, I: i2c::I2CMaster<'a>> i2c::I2CDevice for I2CDevice<'a, I> {
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, buffer))
+            Err((Error::Busy, buffer))
         }
     }
 }
@@ -382,7 +390,7 @@ impl<'a, I: i2c::I2CMaster<'a>, S: i2c::SMBusMaster<'a>> i2c::I2CDevice for SMBu
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, data))
+            Err((Error::Busy, data))
         }
     }
 
@@ -393,7 +401,7 @@ impl<'a, I: i2c::I2CMaster<'a>, S: i2c::SMBusMaster<'a>> i2c::I2CDevice for SMBu
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, data))
+            Err((Error::Busy, data))
         }
     }
 
@@ -408,7 +416,7 @@ impl<'a, I: i2c::I2CMaster<'a>, S: i2c::SMBusMaster<'a>> i2c::I2CDevice for SMBu
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, buffer))
+            Err((Error::Busy, buffer))
         }
     }
 }
@@ -428,7 +436,7 @@ impl<'a, I: i2c::I2CMaster<'a>, S: i2c::SMBusMaster<'a>> i2c::SMBusDevice
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, data))
+            Err((Error::Busy, data))
         }
     }
 
@@ -443,7 +451,7 @@ impl<'a, I: i2c::I2CMaster<'a>, S: i2c::SMBusMaster<'a>> i2c::SMBusDevice
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, data))
+            Err((Error::Busy, data))
         }
     }
 
@@ -458,7 +466,7 @@ impl<'a, I: i2c::I2CMaster<'a>, S: i2c::SMBusMaster<'a>> i2c::SMBusDevice
             self.mux.do_next_op();
             Ok(())
         } else {
-            Err((Error::ArbitrationLost, buffer))
+            Err((Error::Busy, buffer))
         }
     }
 }
