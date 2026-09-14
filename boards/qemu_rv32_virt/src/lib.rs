@@ -229,6 +229,28 @@ pub unsafe fn start() -> (
     >();
 
     // Set up memory protection immediately after setting the trap handler, to
+    // The kernel's MMIO window, and the one number on this board that decides
+    // whether `hil::flash` can be tested at all.
+    //
+    // 512 MiB from zero reaches 0x1fffffff. QEMU's `virt` machine puts its two
+    // pflash banks at 0x20000000 and 0x22000000 -- the first byte past the end
+    // of this region. So a kernel read of pflash takes a load access fault,
+    // and `chips/qemu_virt_chip`'s driver has never been able to touch the
+    // device it was written for. That is almost certainly why no board, here
+    // or upstream, has ever instantiated it.
+    //
+    // Measured, not guessed: `-d int` shows `cause:5 tval:0x20000000
+    // desc=fault_load` as the FIRST exception, on the driver's first read.
+    //
+    // The conformance-test build takes 1 GiB instead, which covers both banks
+    // and still stops at 0x40000000, far below DRAM at 0x80000000. The shipped
+    // board keeps the tighter window: widening the kernel's reach for every
+    // build, to serve a test that is off by default, is the wrong trade.
+    #[cfg(not(feature = "flash_contract_test"))]
+    const MMIO_REGION_SIZE: usize = 0x20000000;
+    #[cfg(feature = "flash_contract_test")]
+    const MMIO_REGION_SIZE: usize = 0x40000000;
+
     // ensure that much of the board initialization routine runs with ePMP
     // protection.
     let epmp = rv32i::pmp::kernel_protection_mml_epmp::KernelProtectionMMLEPMP::new(
@@ -249,7 +271,7 @@ pub unsafe fn start() -> (
         rv32i::pmp::kernel_protection_mml_epmp::MMIORegion(
             rv32i::pmp::NAPOTRegionSpec::from_start_size(
                 core::ptr::null::<u8>(), // start
-                0x20000000,              // size
+                MMIO_REGION_SIZE,
             )
             .unwrap(),
         ),
@@ -799,6 +821,60 @@ pub unsafe fn start() -> (
         );
         kernel::hil::uart::Receive::set_receive_client(test_device, contract);
         kernel::hil::uart::Transmit::set_transmit_client(test_device, contract);
+        contract.run();
+    }
+
+    // The `hil::flash` conformance test.
+    //
+    // `chips/qemu_virt_chip` has carried this driver since upstream added it,
+    // and `qemu_rv32_virt_chip::pflash` already specialises it for this
+    // machine -- the base address, the sector size, the page type, all of it.
+    // **No board has ever instantiated it**, here or upstream. So the one
+    // `hil::flash` implementation in the tree that an emulator can run was the
+    // one nothing ran, and the audit of that HIL had to go to the bench.
+    //
+    // Wiring it puts the flash contract in `gates.sh all`. That matters more
+    // than the usual "one more platform": the other eight implementations all
+    // need silicon, so without this there is no way to gate this HIL at all.
+    //
+    // QEMU reserves the pflash windows whether or not a `-drive if=pflash` is
+    // attached -- confirmed on the installed v11.1.1 with `info mtree`, which
+    // shows `virt.flash0` and `virt.flash1` mapped under `-bios none`. Tock
+    // boots from DRAM via `-bios`, so nothing else touches either bank, and
+    // with no drive behind it the contents do not outlive the process.
+    #[cfg(feature = "flash_contract_test")]
+    {
+        use capsules_core::test::flash_contract::TestFlashContract;
+        use qemu_rv32_virt_chip::pflash::{
+            PFLASH0_BASE, PFLASH0_SECTOR_WORDS, PFLASH0_WORDS, Pflash0, PflashPage,
+        };
+
+        let flash = static_init!(Pflash0, Pflash0::new(PFLASH0_BASE));
+        kernel::deferred_call::DeferredCallClient::register(flash);
+
+        // The page is 256 KiB, this device's erase sector. Building it the way
+        // every other board builds a page -- `static_init!(PflashPage,
+        // PflashPage::default())` -- materialises that value and copies it in,
+        // and the temporary lands on the kernel's 32 KiB stack. It faults
+        // immediately: `mcause` 7, a store access fault, at `0x801fff80`,
+        // which is just below the bottom of `.stack`. Nothing is printed,
+        // because nothing has reached the first flush.
+        //
+        // `static_buf!` hands back the uninitialised storage instead, and no
+        // copy is needed to make it usable.
+        let page: &'static mut PflashPage = {
+            let buf = kernel::static_buf!(PflashPage);
+            // SAFETY: `PflashPage` is a plain `[u8; _]`, so every bit pattern
+            // of that storage is a valid value of it. The test overwrites the
+            // whole page with a read before it looks at any of it, so what the
+            // bytes are to begin with does not matter either.
+            unsafe { buf.assume_init_mut() }
+        };
+        let contract = static_init!(
+            TestFlashContract<Pflash0>,
+            TestFlashContract::new(flash, 0, PFLASH0_WORDS / PFLASH0_SECTOR_WORDS, page)
+        );
+        kernel::hil::flash::HasClient::set_client(flash, contract);
         contract.run();
     }
 

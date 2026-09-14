@@ -31,6 +31,10 @@ capsules-system = { path = "../../capsules/system" }
 # Run the hil::uart conformance test at boot and print the result. This
 # board has one UART, so the test shares the console's mux.
 uart_contract_test = []
+# Run the hil::flash conformance test at boot against the machine's second
+# pflash bank (virt.flash1 at 0x22000000). Nothing else on this board or in
+# QEMU uses that bank, and its contents do not persist without a `-drive`.
+flash_contract_test = []
 
 [build-dependencies]
 tock_build_scripts = { path = "../build_scripts" }

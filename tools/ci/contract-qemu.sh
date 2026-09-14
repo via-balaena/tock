@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Run the `hil::uart` conformance test under QEMU and read its verdict.
+# Run a HIL conformance test under QEMU and read its verdict.
 #
-#   uart-contract-qemu.sh [rv32|q35]      (default: rv32)
+#   contract-qemu.sh [rv32|q35] [uart|flash]     (default: rv32 uart)
 #
 # The test is a kernel test that prints at boot, so this needs neither apps nor
 # tockloader nor QMP -- which is why it is not part of `qemu-virt-ci-runner`,
@@ -27,7 +27,14 @@
 set -uo pipefail
 
 PLATFORM="${1:-rv32}"
-BOOT_SECONDS="${BOOT_SECONDS:-10}"
+TEST="${2:-uart}"
+# The flash test erases and rewrites a 256 KiB sector through QEMU's pflash
+# command interface, a word at a time. It finishes inside 15s on this machine;
+# the uart one takes a couple of seconds.
+case "$TEST" in
+  flash) BOOT_SECONDS="${BOOT_SECONDS:-25}" ;;
+  *)     BOOT_SECONDS="${BOOT_SECONDS:-10}" ;;
+esac
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root" || exit 2
@@ -52,7 +59,24 @@ case "$PLATFORM" in
     ;;
 esac
 
-printf 'uart contract, %s under qemu\n' "$BOARD"
+case "$TEST" in
+  uart) ;;
+  flash)
+    # Only the rv32 machine has a flash device Tock can drive: QEMU's `virt`
+    # reserves two pflash banks, and `chips/qemu_virt_chip` has a driver for
+    # them. The q35 board has no `hil::flash` implementation at all.
+    if [ "$PLATFORM" != rv32 ]; then
+      fail "the flash contract only runs on rv32 -- q35 has no hil::flash"
+      exit 2
+    fi
+    ;;
+  *)
+    fail "unknown test '$TEST' -- expected uart or flash"
+    exit 2
+    ;;
+esac
+
+printf '%s contract, %s under qemu\n' "$TEST" "$BOARD"
 
 command -v "$QEMU" > /dev/null 2>&1
 if [ "$?" -ne 0 ]; then
@@ -72,9 +96,9 @@ fi
 # Note also that `cargo build` writes the bare binary, while the `.elf` beside
 # it is written by `make`. Booting the wrong one prints nothing, which reads
 # exactly like a test that did not run.
-build_dir="target/uart-contract-$PLATFORM"
+build_dir="target/$TEST-contract-$PLATFORM"
 build_output="$(cd "boards/$BOARD" && cargo build --release \
-  --features uart_contract_test --target-dir "../../$build_dir" 2>&1)"
+  --features "${TEST}_contract_test" --target-dir "../../$build_dir" 2>&1)"
 build_status="$?"
 if [ "$build_status" -ne 0 ]; then
   fail "the board did not build"
@@ -94,10 +118,10 @@ fi
 # `grep -c` and not `grep -q`: under `set -o pipefail` a `-q` exits on the
 # first match, `strings` dies of SIGPIPE, and the pipeline reports 141 -- so a
 # successful match reads as a failure. Count first, test the count after.
-marker_count="$(strings "$kernel" | grep -c 'uart-contract:')"
+marker_count="$(strings "$kernel" | grep -c "$TEST-contract:")"
 if [ "$marker_count" -eq 0 ]; then
   fail "$kernel does not contain the conformance test"
-  note "built without --features uart_contract_test, or a stale artifact"
+  note "built without --features ${TEST}_contract_test, or a stale artifact"
   exit 2
 fi
 
@@ -139,21 +163,21 @@ else
     -kernel "$kernel" < /dev/null 2>&1)"
 fi
 
-verdict="$(printf '%s\n' "$console" | grep -m1 'uart-contract: [0-9]* clauses')"
+verdict="$(printf '%s\n' "$console" | grep -m1 "$TEST-contract: [0-9]* clauses")"
 
 if [ -z "$verdict" ]; then
   fail "the test did not report within ${BOOT_SECONDS}s"
   note "a stall is how a missing callback shows up: the test simply never"
   note "finishes. Treat this as broken, not as absent."
-  printf '%s\n' "$console" | grep 'uart-contract:' | head -20
+  printf '%s\n' "$console" | grep "$TEST-contract:" | head -20
   exit 2
 fi
 
 if printf '%s\n' "$verdict" | grep -q 'all kept'; then
-  printf '  pass  %s\n' "${verdict#uart-contract: }"
+  printf '  pass  %s\n' "${verdict#"$TEST-contract: "}"
   exit 0
 fi
 
-fail "${verdict#uart-contract: }"
-printf '%s\n' "$console" | grep 'uart-contract: FAIL' | sed 's/^uart-contract: FAIL/        broken:/'
+fail "${verdict#"$TEST-contract: "}"
+printf '%s\n' "$console" | grep "$TEST-contract: FAIL" | sed "s/^$TEST-contract: FAIL/        broken:/"
 exit 1
