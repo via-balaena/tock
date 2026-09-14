@@ -53,6 +53,11 @@ pub struct Parameters {
 }
 
 /// The type of error encountered during UART transaction.
+///
+/// This travels on a receive callback and nowhere else:
+/// [`ReceiveClient::received_buffer`] and [`ReceiveClient::received_word`] take
+/// one, [`TransmitClient`]'s methods do not. Every variant therefore describes
+/// something that happened to a receive.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Error {
     /// No error occurred and the command completed successfully
@@ -67,13 +72,15 @@ pub enum Error {
     /// Overrun error during receive
     OverrunError,
 
-    /// Repeat call of transmit or receive before initial command complete
-    RepeatCallError,
-
     /// UART hardware was reset
     ResetError,
 
-    /// UART hardware was disconnected
+    /// A break condition was seen: the line was held at the space level for
+    /// longer than one word, which frames no character.
+    ///
+    /// This is a signalling event on the wire, not a disconnection. A sender
+    /// may raise it deliberately, and a receiver watching a pin that has not
+    /// been muxed to the UART yet sees one as the pin's level settles.
     BreakError,
 
     /// Read or write was aborted early
@@ -219,7 +226,10 @@ pub trait Receive<'a> {
     /// Receive `rx_len` bytes into `rx_buffer`.
     ///
     /// If this function returns `Ok(())`, there will be a callback to the
-    /// [`ReceiveClient::received_buffer`] when the receive is complete.
+    /// [`ReceiveClient::received_buffer`] when the receive is complete. If it
+    /// returns `Err()` the receive did not start and no callback will be made,
+    /// which is why a refused repeat call can only be reported here and never
+    /// through the [`Error`] on a later callback.
     ///
     /// Each byte in `rx_buffer` will be a UART transfer word of 8 or fewer
     /// bits. The width is determined by the UART configuration. Clients that
