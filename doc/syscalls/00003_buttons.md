@@ -84,5 +84,5 @@ main file.
 
 ## Allow
 
-Unused for the LED driver. Will always return `ENOSUPPORT`.
+Unused for the LED driver. Will always return `NOSUPPORT`.
 

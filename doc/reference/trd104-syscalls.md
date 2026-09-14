@@ -669,10 +669,10 @@ addition to the expected failure variant (if different than `Failure`).
 --------------------------
 
 Command Identifier 0 provides an existence check for drivers. Command
-Identifier 0 MUST return either `Success` or `Failure` with `ENODEVICE`.
+Identifier 0 MUST return either `Success` or `Failure` with `NODEVICE`.
 `Success` indicates that the driver is present and the userspace process can
 issue system calls to it. If the driver is not accessible, Command Identifier 0
-returns `Failure` with an error code of `ENODEVICE`. A driver may be not
+returns `Failure` with an error code of `NODEVICE`. A driver may be not
 accessible because the kernel does not have it, the process does not have the
 required permissions to use it, or other reasons.
 

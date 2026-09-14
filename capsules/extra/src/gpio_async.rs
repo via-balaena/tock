@@ -54,7 +54,7 @@ pub struct GPIOAsync<'a, Port: hil::gpio_async::Port> {
     /// from multiple apps. Hence, this variable, which tracks a configuration
     /// while it is in flight and notifies the correct process that their
     /// configuration has succeeded. In the rare case where two apps attempt
-    /// concurrent configuration requests, the later app will receive `EBUSY`.
+    /// concurrent configuration requests, the later app will receive `BUSY`.
     /// A retry loop should be sufficient for most apps to handle this rare
     /// case.
     configuring_process: OptionalCell<ProcessId>,
