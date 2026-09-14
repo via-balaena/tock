@@ -171,6 +171,27 @@ impl uart::ReceiveClient for MuxUart<'_> {
                             read_pending = true;
                             next_read_len = cmp::min(next_read_len, device.rx_len.get());
                         }
+                    } else if rcode.is_err() {
+                        // The underlying receive FAILED and this client still
+                        // has words outstanding. Falling through to the "more
+                        // to read" arm below would put its buffer back and
+                        // leave it waiting, which discards the error: the
+                        // client sees a read that never finishes and never
+                        // fails, and nothing anywhere records why.
+                        //
+                        // `hil::uart` is explicit that a failed reception
+                        // calls back with `Err(FAIL)` and a specific `Error`.
+                        // `rx_len` is the count that actually arrived, which
+                        // is `position` -- what this device had accumulated
+                        // before the failure, not what it asked for.
+                        device.state.set(UartDeviceReceiveState::Idle);
+                        device.received_buffer(rxbuf, position, rcode, error);
+                        // A client may start a new receive from inside its
+                        // callback, exactly as in the completed-read arm.
+                        if device.state.get() == UartDeviceReceiveState::Receiving {
+                            read_pending = true;
+                            next_read_len = cmp::min(next_read_len, device.rx_len.get());
+                        }
                     } else {
                         device.rx_buffer.replace(rxbuf);
                         next_read_len = cmp::min(next_read_len, remaining);
