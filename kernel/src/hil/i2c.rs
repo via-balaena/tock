@@ -28,6 +28,14 @@ pub enum Error {
     /// from the receive register.
     Overrun,
 
+    /// A length argument is larger than the buffer it indexes.
+    ///
+    /// A fault in the call, not on the bus: nothing was transmitted, and
+    /// retrying without changing the length will fail the same way. Distinct
+    /// from [`Error::Overrun`], which is a receive register overflowing
+    /// during a transfer that did start.
+    Size,
+
     /// The requested operation wasn't supported.
     NotSupported,
 
@@ -40,7 +48,7 @@ impl From<Error> for ErrorCode {
         match val {
             Error::AddressNak | Error::DataNak => ErrorCode::NOACK,
             Error::ArbitrationLost => ErrorCode::RESERVE,
-            Error::Overrun => ErrorCode::SIZE,
+            Error::Overrun | Error::Size => ErrorCode::SIZE,
             Error::NotSupported => ErrorCode::NOSUPPORT,
             Error::Busy => ErrorCode::BUSY,
         }
@@ -54,6 +62,7 @@ impl Display for Error {
             Error::DataNak => "I2C Data Not Acknowledged",
             Error::ArbitrationLost => "I2C Bus Arbitration Lost",
             Error::Overrun => "I2C receive overrun",
+            Error::Size => "I2C length is larger than the buffer",
             Error::NotSupported => "I2C/SMBus command not supported",
             Error::Busy => "I2C/SMBus is busy",
         };
@@ -69,10 +78,53 @@ pub enum SlaveTransmissionType {
 }
 
 /// Interface for an I2C Master hardware driver.
+///
+/// # The transfer contract
+///
+/// [`I2CMaster::write_read`], [`I2CMaster::write`] and [`I2CMaster::read`] are
+/// asynchronous and share one contract.
+///
+/// On `Ok(())` the transfer has started and
+/// [`I2CHwMasterClient::command_complete`] will be called once with the
+/// buffer. On `Err((error, buffer))` the transfer did not start, the buffer
+/// comes back inside the error, and **there will be no callback** -- the
+/// caller owns the buffer again as soon as the call returns.
+///
+/// Every implementation may return these, and no others:
+///
+/// - [`Error::Busy`]: a transfer is already outstanding. An implementation
+///   MUST refuse rather than accept: it holds one buffer, so starting a
+///   second transfer loses the first buffer and the callback that would have
+///   returned it.
+/// - [`Error::Size`]: a length argument is larger than the buffer it indexes.
+///   MUST be checked before the buffer is handed to the hardware. Two of
+///   these drivers program a DMA engine with the length, where a length past
+///   the buffer is read or written outside anything Rust can see.
+/// - [`Error::NotSupported`]: this hardware cannot do the operation at all --
+///   a controller with no DMA where the driver needs it, or one that has not
+///   been enabled.
+///
+/// Errors detected once the transfer is under way -- [`Error::AddressNak`],
+/// [`Error::DataNak`], [`Error::ArbitrationLost`], [`Error::Overrun`] --
+/// arrive in the callback, not here.
 pub trait I2CMaster<'a> {
+    /// Set the client that receives every [`I2CHwMasterClient::command_complete`].
     fn set_master_client(&self, master_client: &'a dyn I2CHwMasterClient);
+
+    /// Enable the hardware. A transfer started while disabled may return
+    /// [`Error::NotSupported`].
     fn enable(&self);
+
+    /// Disable the hardware, releasing whatever power or clock it holds.
     fn disable(&self);
+
+    /// Write `write_len` bytes from `data` to `addr`, then read `read_len`
+    /// bytes back into `data` starting at index 0, with a repeated start
+    /// between the two.
+    ///
+    /// Both lengths index `data`, so both must be no larger than it; the read
+    /// overwrites the bytes just written. See the trait documentation for what
+    /// the return values mean.
     fn write_read(
         &self,
         addr: u8,
@@ -80,12 +132,20 @@ pub trait I2CMaster<'a> {
         write_len: usize,
         read_len: usize,
     ) -> Result<(), (Error, &'static mut [u8])>;
+
+    /// Write `len` bytes from `data` to `addr`.
+    ///
+    /// See the trait documentation for what the return values mean.
     fn write(
         &self,
         addr: u8,
         data: &'static mut [u8],
         len: usize,
     ) -> Result<(), (Error, &'static mut [u8])>;
+
+    /// Read `len` bytes from `addr` into `buffer`.
+    ///
+    /// See the trait documentation for what the return values mean.
     fn read(
         &self,
         addr: u8,
@@ -184,8 +244,15 @@ pub trait I2CMasterSlave<'a>: I2CMaster<'a> + I2CSlave<'a> {}
 
 /// Client interface for capsules that use I2CMaster devices.
 pub trait I2CHwMasterClient {
-    /// Called when an I2C command completed. The `error` denotes whether the command completed
-    /// successfully or if an error occurred.
+    /// Called when an I2C command completed.
+    ///
+    /// `buffer` is always the buffer passed to the call that started the
+    /// transfer, whatever `status` says -- this is the only way it comes back
+    /// once a call has returned `Ok(())`.
+    ///
+    /// `status` is `Ok(())` if the transfer completed, or the [`Error`] that
+    /// ended it. The length is not reported: a transfer that did not move
+    /// every byte it was given is an error, not a short success.
     fn command_complete(&self, buffer: &'static mut [u8], status: Result<(), Error>);
 }
 
@@ -217,6 +284,13 @@ pub trait I2CHwSlaveClient {
 /// Higher-level interface for I2C Master commands that wraps in the I2C
 /// address. It gives an interface for communicating with a specific I2C
 /// device.
+///
+/// The transfer contract is [`I2CMaster`]'s, with the address already bound:
+/// `Ok(())` promises one [`I2CClient::command_complete`], `Err` returns the
+/// buffer and promises no callback, and the same three errors may be
+/// returned. A virtualized device adds no new ones -- a second transfer on a
+/// device that already has one outstanding is [`Error::Busy`], the same as it
+/// is on the hardware underneath.
 pub trait I2CDevice {
     fn enable(&self);
     fn disable(&self);
