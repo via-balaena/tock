@@ -34,6 +34,7 @@ Exit 0 if every body can answer both, 1 if one cannot, 2 if the scan found too
 few bodies to have run at all.
 """
 
+import importlib.util
 import pathlib
 import re
 import sys
@@ -46,75 +47,14 @@ ABORT = re.compile(r"\bfn\s+(transmit_abort|receive_abort)\s*\(")
 # writing. A scan that finds far fewer has stopped matching, not been fixed.
 FLOOR = 30
 
-
-def mask(src):
-    """Return `src` with comment and string bodies blanked, length preserved.
-
-    Brace counting and the `Err`/`Ok` search both run on this, so a brace in a
-    comment cannot end a body early and a quoted `Err(` cannot stand in for a
-    real one. The rule is about what the code returns, not what it says.
-    """
-    out = list(src)
-    i, n = 0, len(src)
-    while i < n:
-        c = src[i]
-        if c == "/" and i + 1 < n and src[i + 1] == "/":
-            while i < n and src[i] != "\n":
-                out[i] = " "
-                i += 1
-        elif c == "/" and i + 1 < n and src[i + 1] == "*":
-            depth = 1
-            out[i] = out[i + 1] = " "
-            i += 2
-            while i < n and depth:
-                if src[i : i + 2] == "/*":
-                    depth += 1
-                    out[i] = out[i + 1] = " "
-                    i += 2
-                elif src[i : i + 2] == "*/":
-                    depth -= 1
-                    out[i] = out[i + 1] = " "
-                    i += 2
-                else:
-                    if src[i] != "\n":
-                        out[i] = " "
-                    i += 1
-        elif c in "\"'":
-            # A lifetime (`&'static`) is an apostrophe with no closing quote.
-            if c == "'" and re.match(r"'[A-Za-z_][A-Za-z0-9_]*\b(?!')", src[i:]):
-                i += 1
-                continue
-            quote = c
-            i += 1
-            while i < n and src[i] != quote:
-                if src[i] == "\\":
-                    out[i] = " "
-                    i += 1
-                if i < n:
-                    if src[i] != "\n":
-                        out[i] = " "
-                    i += 1
-            i += 1
-        else:
-            i += 1
-    return "".join(out)
-
-
-def body_at(masked, start):
-    """The text between the braces of the function beginning at `start`."""
-    open_at = masked.find("{", start)
-    if open_at < 0:
-        return None
-    depth, i = 0, open_at
-    while i < len(masked):
-        if masked[i] == "{":
-            depth += 1
-        elif masked[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return masked[open_at + 1 : i]
-        i += 1
-    return None
+# `mask` and `body_at` are shared with check-i2c-length-guard.py; the file name
+# has a dash, so it is loaded by path rather than imported by name.
+_spec = importlib.util.spec_from_file_location(
+    "rust_source", pathlib.Path(__file__).with_name("rust_source.py")
+)
+_rs = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_rs)
+mask, body_at = _rs.mask, _rs.body_at
 
 
 def main():
