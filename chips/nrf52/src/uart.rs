@@ -734,6 +734,14 @@ impl<'a> uart::Transmit<'a> for Uarte<'a> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
+        // `hil::uart`: with nothing outstanding an abort answers `Ok(())`
+        // and makes no callback. Any `Err` promises one that cannot come.
+        if !self.registers.tx_dma_pending() {
+            return Ok(());
+        }
+        // A transfer already handed to the hardware cannot be recalled,
+        // which is what `Err(FAIL)` documents: it completes and calls
+        // back as usual.
         Err(ErrorCode::FAIL)
     }
 }

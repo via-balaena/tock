@@ -88,6 +88,14 @@ impl<'a> hil::uart::Transmit<'a> for SemihostUart<'a> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
+        // `hil::uart`: with nothing outstanding an abort answers `Ok(())`
+        // and makes no callback. Any `Err` promises one that cannot come.
+        if self.tx_buffer.is_none() {
+            return Ok(());
+        }
+        // A transfer already handed to the hardware cannot be recalled,
+        // which is what `Err(FAIL)` documents: it completes and calls
+        // back as usual.
         Err(ErrorCode::FAIL)
     }
 }
@@ -105,7 +113,9 @@ impl<'a> hil::uart::Receive<'a> for SemihostUart<'a> {
         Err(ErrorCode::FAIL)
     }
     fn receive_abort(&self) -> Result<(), ErrorCode> {
-        Err(ErrorCode::FAIL)
+        // `receive_buffer` never accepts one, so there is never a receive
+        // outstanding and the HIL's answer is always `Ok(())`.
+        Ok(())
     }
 }
 

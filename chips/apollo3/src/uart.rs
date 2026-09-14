@@ -473,6 +473,14 @@ impl<'a> hil::uart::Transmit<'a> for Uart<'a> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
+        // `hil::uart`: with nothing outstanding an abort answers `Ok(())`
+        // and makes no callback. Any `Err` promises one that cannot come.
+        if self.tx_buffer.is_none() {
+            return Ok(());
+        }
+        // A transfer already handed to the hardware cannot be recalled,
+        // which is what `Err(FAIL)` documents: it completes and calls
+        // back as usual.
         Err(ErrorCode::FAIL)
     }
 
@@ -514,6 +522,13 @@ impl<'a> hil::uart::Receive<'a> for Uart<'a> {
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
+        // As in `transmit_abort`: nothing outstanding, so `Ok(())`.
+        if self.rx_buffer.is_none() {
+            return Ok(());
+        }
+        // A transfer already handed to the hardware cannot be recalled,
+        // which is what `Err(FAIL)` documents: it completes and calls
+        // back as usual.
         Err(ErrorCode::FAIL)
     }
 

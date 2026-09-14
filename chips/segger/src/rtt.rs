@@ -298,7 +298,13 @@ impl<'a, A: hil::time::Alarm<'a>> uart::Transmit<'a> for SeggerRtt<'a, A> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
-        Ok(())
+        // The alarm started by `transmit_buffer` still owes the client a
+        // callback, and `Ok(())` here says none is coming. `Err(FAIL)` is
+        // the code for a transfer that cannot be cancelled synchronously.
+        if self.tx_client_buffer.is_none() {
+            return Ok(());
+        }
+        Err(ErrorCode::FAIL)
     }
 }
 
@@ -404,7 +410,11 @@ impl<'a, A: hil::time::Alarm<'a>> uart::Receive<'a> for SeggerRtt<'a, A> {
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
-        Ok(())
+        // As in `transmit_abort`: the pending alarm will call back.
+        if self.rx_client_buffer.is_none() {
+            return Ok(());
+        }
+        Err(ErrorCode::FAIL)
     }
 }
 

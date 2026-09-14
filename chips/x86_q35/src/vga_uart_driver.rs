@@ -93,7 +93,15 @@ impl<'a> Transmit<'a> for VgaText<'a> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
-        Err(ErrorCode::NOSUPPORT)
+        // `hil::uart`: with nothing outstanding an abort answers `Ok(())`
+        // and makes no callback. Any `Err` promises one that cannot come.
+        if self.pending_buf.is_none() {
+            return Ok(());
+        }
+        // A transfer already handed to the hardware cannot be recalled,
+        // which is what `Err(FAIL)` documents: it completes and calls
+        // back as usual.
+        Err(ErrorCode::FAIL)
     }
 }
 
@@ -116,7 +124,9 @@ impl<'a> Receive<'a> for VgaText<'a> {
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
-        Err(ErrorCode::NOSUPPORT)
+        // `receive_buffer` never accepts one, so there is never a receive
+        // outstanding and the HIL's answer is always `Ok(())`.
+        Ok(())
     }
 }
 

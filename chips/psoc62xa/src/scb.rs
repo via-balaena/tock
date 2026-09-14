@@ -761,7 +761,15 @@ impl<'a> Transmit<'a> for Scb<'a> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
-        Err(ErrorCode::NOSUPPORT)
+        // `hil::uart`: with nothing outstanding an abort answers `Ok(())`
+        // and makes no callback. Any `Err` promises one that cannot come.
+        if self.tx_buffer.is_none() {
+            return Ok(());
+        }
+        // A transfer already handed to the hardware cannot be recalled,
+        // which is what `Err(FAIL)` documents: it completes and calls
+        // back as usual. `NOSUPPORT` is not a code this call may answer.
+        Err(ErrorCode::FAIL)
     }
 }
 
@@ -783,7 +791,11 @@ impl<'a> Receive<'a> for Scb<'a> {
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
-        Err(ErrorCode::NOSUPPORT)
+        // As in `transmit_abort`: nothing outstanding, so `Ok(())`.
+        if self.rx_buffer.is_none() {
+            return Ok(());
+        }
+        Err(ErrorCode::FAIL)
     }
 }
 

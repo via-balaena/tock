@@ -269,8 +269,14 @@ impl<'a, F: DmaFence> hil::uart::Transmit<'a> for VirtIOConsole<'a, F> {
     }
 
     fn transmit_abort(&self) -> Result<(), ErrorCode> {
+        // `hil::uart`: with nothing outstanding an abort answers `Ok(())`
+        // and makes no callback. Any `Err` promises one that cannot come.
+        if !self.tx_pending.get() {
+            return Ok(());
+        }
         // Once submitted to the virtqueue, a transmission cannot be
-        // synchronously cancelled.
+        // synchronously cancelled, which is what `Err(FAIL)` documents: it
+        // completes and calls back as usual.
         Err(ErrorCode::FAIL)
     }
 }
@@ -305,8 +311,12 @@ impl<'a, F: DmaFence> hil::uart::Receive<'a> for VirtIOConsole<'a, F> {
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
-        // Unsupported: the one-byte scratch buffer may already be posted
-        // to the device and cannot be synchronously reclaimed.
+        // As in `transmit_abort`: nothing outstanding, so `Ok(())`.
+        if self.rx_buffer.is_none() {
+            return Ok(());
+        }
+        // The one-byte scratch buffer may already be posted to the device
+        // and cannot be synchronously reclaimed.
         Err(ErrorCode::FAIL)
     }
 }

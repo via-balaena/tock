@@ -931,6 +931,12 @@ impl<'a> uart::Receive<'a> for USART<'a> {
     }
 
     fn receive_abort(&self) -> Result<(), ErrorCode> {
+        // `abort_rx` only acts in `DMA_Receiving`, so from `Idle` this
+        // answered `Err(BUSY)` -- a promise of a `CANCEL` callback -- and
+        // then made none. `transmit_abort` below already guards this way.
+        if self.usart_rx_state.get() == USARTStateRX::Idle {
+            return Ok(());
+        }
         let usart = &USARTRegManager::new(self);
         self.disable_rx_timeout(usart);
         self.abort_rx(usart, Err(ErrorCode::CANCEL), uart::Error::Aborted);
