@@ -2,10 +2,10 @@
 """Hold the two RP2 UART drivers' overrun handler identical.
 
 `chips/rp2040/src/uart.rs` and `chips/rp2350/src/uart.rs` are separate files
-driving the same Arm PL011. The overrun report was written and MEASURED on an
-rp2350 -- a burst that used to stall for ever and say nothing now ends the
-receive with `Error::OverrunError` -- and then copied to the rp2040, where
-there is no board here to run it on.
+driving the same Arm PL011. Two of their receive blocks were written and
+MEASURED on an rp2350 -- the overrun report, and the per-character framing,
+break and parity errors the PL011 carries in `UARTDR` bits 8 to 10 -- and then
+copied to the rp2040, where there is no board here to run them on.
 
 That copy is the entire warrant for the rp2040 half. It is a claim about two
 files, so it can be checked instead of asserted, and it is exactly the kind of
@@ -26,11 +26,20 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 # name | start marker | end marker
+#
+# Each entry is a block that was written and MEASURED on an rp2350 and then
+# copied to the rp2040, where there is no board to run it on. Add one whenever
+# that happens again: the copy is the warrant, so the copy is what to pin.
 PAIRS = [
     (
         "overrun handler",
         "if self.registers.uartris.is_set(UARTRIS::OERIS)",
         "fn fill_fifo",
+    ),
+    (
+        "per-character receive errors",
+        "let flaw = if data.is_set(UARTDR::BE)",
+        "if self.rx_position.get() < self.rx_len.get()",
     ),
 ]
 
