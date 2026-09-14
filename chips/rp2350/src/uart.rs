@@ -448,6 +448,20 @@ impl<'a> Uart<'a> {
     /// the way to check a UART's data path on a board whose pins are all
     /// spoken for -- but it also means it says nothing about the pads, the
     /// pin mux, or anything electrical.
+    /// Hold the transmit line in the break condition, or release it.
+    ///
+    /// `UARTLCR_H.BRK`. With `set_loopback` on this is a deterministic way to
+    /// put a break character into this UART's own receive FIFO, which is the
+    /// only way to exercise the receive-error path without a second device
+    /// and a deliberately wrong baud rate.
+    pub fn set_break(&self, enabled: bool) {
+        if enabled {
+            self.registers.uartlcr_h.modify(UARTLCR_H::BRK::SET);
+        } else {
+            self.registers.uartlcr_h.modify(UARTLCR_H::BRK::CLEAR);
+        }
+    }
+
     pub fn set_loopback(&self, enabled: bool) {
         if enabled {
             self.registers.uartcr.modify(UARTCR::LBE::SET);
@@ -576,6 +590,53 @@ impl<'a> Uart<'a> {
             {
                 let data = self.registers.uartdr.extract();
                 let byte = data.read(UARTDR::DATA) as u8;
+
+                // The PL011 carries the receive errors ON THE CHARACTER, in
+                // the same read that produced it: `UARTDR` bits 8 to 10. This
+                // extracted the word and threw them away, so a character the
+                // hardware had already flagged as malformed was handed to the
+                // client as data, indistinguishable from a good one.
+                //
+                // Measured, by holding the line in break with `set_break`
+                // inside the internal loopback:
+                //
+                //     before   got [0, 85, 170, 0], Ok(()), Error::None
+                //     after    Err(FAIL) with BreakError, 0 of 4 words
+                //
+                // The break character is a `0x00` like any other. Nothing
+                // downstream could have told them apart.
+                //
+                // Break first, then framing, then parity -- a break sets both
+                // BE and FE, being a character with no stop bit, so testing FE
+                // first would report every break as a framing error.
+                let flaw = if data.is_set(UARTDR::BE) {
+                    Some(hil::uart::Error::BreakError)
+                } else if data.is_set(UARTDR::FE) {
+                    Some(hil::uart::Error::FramingError)
+                } else if data.is_set(UARTDR::PE) {
+                    Some(hil::uart::Error::ParityError)
+                } else {
+                    None
+                };
+
+                if let Some(error) = flaw {
+                    self.registers
+                        .uarticr
+                        .write(UARTICR::BEIC::SET + UARTICR::FEIC::SET + UARTICR::PEIC::SET);
+                    self.rx_status.replace(UARTStateRX::Idle);
+                    self.disable_receive_interrupt();
+                    self.rx_client.map(|client| {
+                        if let Some(buf) = self.rx_buffer.take() {
+                            client.received_buffer(
+                                buf,
+                                self.rx_position.get(),
+                                Err(ErrorCode::FAIL),
+                                error,
+                            );
+                        }
+                    });
+                    break;
+                }
 
                 if self.rx_position.get() < self.rx_len.get() {
                     self.rx_buffer.map(|buf| {

@@ -639,6 +639,16 @@ impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for TestUartContract<'a, U> 
                     error == uart::Error::None,
                     "a receive that succeeded reports Error::None",
                 );
+                // Say what actually came back when it is not what was wanted.
+                // A clause name tells you which sentence broke; this tells you
+                // what the driver said instead, which is where the next hour
+                // goes if it is missing.
+                if rval != Ok(()) || error != uart::Error::None {
+                    debug!(
+                        "uart-contract:   receive answered {:?} with {:?}, {} of {} words",
+                        rval, error, rx_len, TX_LEN
+                    );
+                }
 
                 let matched = rx_buffer[..TX_LEN] == PATTERN;
                 self.check(matched, "the bytes received match the bytes sent");
