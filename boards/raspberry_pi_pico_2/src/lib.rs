@@ -572,6 +572,20 @@ pub unsafe fn setup(
     // pins. MUTUALLY EXCLUSIVE with `spi_contract_test`, which puts SPI0 on
     // GP4-GP7 and would fight this over DC and RST.
     //
+    // KNOWN HAZARD, not fixed: GP2, GP3, GP5, GP6 and GP7 stay in the board's
+    // userspace GPIO array even with this feature on, so an app can drive the
+    // capsule's DC and RST from under it, or mux the SPI pins back to SIO. The
+    // kit's own raw-SPI apps do exactly that -- it is how the panel was
+    // brought up before this existed -- so the two paths can run on one kernel
+    // and fight.
+    //
+    // The array is built by `components::gpio_component_helper!` in each board
+    // crate, and the macro does not accept `#[cfg]` on its arms: gating the
+    // five pins means two whole invocations differing by five lines, in two
+    // crates, which is a worse thing to maintain than this comment. A pin
+    // array that can exclude a set belongs in the component, and that is a
+    // change to a macro every board shares.
+    //
     // 31.25 MHz, and that number is measured rather than chosen. Filling the
     // panel three times over takes 1625 ms at 8 MHz and 401 ms at 31.25 --
     // 4.05x for 3.9x the clock, so up to there the write path is clock-bound.
