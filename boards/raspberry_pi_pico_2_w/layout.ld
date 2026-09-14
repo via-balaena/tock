@@ -17,7 +17,12 @@ MEMORY
      total that boards/raspberry_pi_pico_w gives itself for the same blobs,
      less the 1K bootloader block, which moves prog up to 0x10090000. */
   rom (rx)  : ORIGIN = 0x10000400, LENGTH = 575K
-  prog (rx) : ORIGIN = 0x10090000, LENGTH = 256K
+  /* All the flash the part has left. The RP2350 maps flash for execute in
+     place, and a Tock process may read its own flash slice, so data carried
+     inside an app's TBF is addressable without a copy -- which is how a WAD
+     reaches Doom. 256K was enough for code; data needs the rest.
+     0x10090000 to the 4 MiB end at 0x10400000 is 0x370000. */
+  prog (rx) : ORIGIN = 0x10090000, LENGTH = 3520K
   ram (rwx) : ORIGIN = 0x20000000, LENGTH = 520K
 }
 

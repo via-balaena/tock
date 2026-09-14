@@ -28,7 +28,10 @@ MEMORY
   /* boot from Flash */
   bootloader (rx) : ORIGIN = 0x10000000, LENGTH = 1024
   rom (rx)  : ORIGIN = 0x10000400, LENGTH = 255K
-  prog (rx) : ORIGIN = 0x10040000, LENGTH = 256K
+  /* See the Pico 2 W's layout for why this is the whole remainder: an app
+     may read its own flash slice in place, so bulk data rides in the TBF.
+     0x10040000 to the 4 MiB end at 0x10400000 is 0x3C0000. */
+  prog (rx) : ORIGIN = 0x10040000, LENGTH = 3840K
   ram (rwx) : ORIGIN = 0x20000000, LENGTH = 520K
 }
 
