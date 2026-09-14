@@ -4,6 +4,8 @@
 
 //! SyscallDriver for an I2C Master interface.
 
+use core::cmp;
+
 use enum_primitive::enum_from_primitive;
 
 use kernel::grant::{AllowRoCount, AllowRwCount, Grant, GrantKernelData, UpcallCount};
@@ -72,6 +74,28 @@ impl<'a, I: i2c::I2CMaster<'a>> I2CMasterDriver<'a, I> {
             .and_then(|buffer| {
                 buffer.enter(|app_buffer| {
                     self.buf.take().map_or(Err(ErrorCode::NOMEM), |buffer| {
+                        // `wlen` and `rlen` arrive from `command()` as raw
+                        // syscall arguments and are used to index both slices
+                        // below. Indexing past either one panics, so without
+                        // this an app takes the board down with a single
+                        // command -- asking to write more than the kernel's
+                        // 64-byte buffer holds, or more than it allowed.
+                        //
+                        // `i2c_master_slave_driver` already guards the same
+                        // spot by clamping, with a comment from 2021 saying
+                        // that leaves userspace no feedback. This one can
+                        // answer: `operation` has an error to return, and
+                        // `Err(SIZE)` is what a length past its slice means
+                        // everywhere else in the tree.
+                        if wlen > buffer.len()
+                            || rlen > buffer.len()
+                            || wlen > app_buffer.len()
+                            || rlen > app_buffer.len()
+                        {
+                            self.buf.put(Some(buffer));
+                            return Err(ErrorCode::SIZE);
+                        }
+
                         app_buffer[..wlen].copy_to_slice(&mut buffer[..wlen]);
 
                         let read_len = if rlen == 0 {
@@ -199,7 +223,15 @@ impl<'a, I: i2c::I2CMaster<'a>> i2c::I2CHwMasterClient for I2CMasterDriver<'a, I
                         .get_readwrite_processbuffer(rw_allow::BUFFER)
                         .and_then(|app_buffer| {
                             app_buffer.mut_enter(|app_buffer| {
-                                app_buffer[..read_len].copy_from_slice(&buffer[..read_len]);
+                                // `read_len` was checked against the buffer
+                                // the app had allowed when the transfer
+                                // started. It may have allowed a shorter one
+                                // since, and this runs from an interrupt, so
+                                // indexing past it would panic the kernel
+                                // with no syscall to blame. Copy what fits.
+                                let len =
+                                    cmp::min(read_len, cmp::min(app_buffer.len(), buffer.len()));
+                                app_buffer[..len].copy_from_slice(&buffer[..len]);
                             })
                         });
                 }
