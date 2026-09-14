@@ -504,6 +504,30 @@ pub unsafe fn setup(
         gpio_contract.run();
     }
 
+    // The `hil::i2c` conformance test. Every clause it runs is a rejection
+    // the driver must make before the buffer reaches the hardware, so it
+    // needs no I2C device, no pull-ups and no pads muxed -- which is what
+    // makes it runnable here at all, and is why it does not collide with the
+    // uart, spi or gpio tests over pins. The clauses that need a bus are
+    // named in the test's own module documentation as what it cannot check.
+    //
+    // `check_uninitialized` runs FIRST, deliberately: it is the clause about
+    // a controller that has not been brought up, and `init` below brings this
+    // one up.
+    #[cfg(feature = "i2c_contract_test")]
+    {
+        use capsules_core::test::i2c_contract::TestI2cContract;
+
+        let i2c_buffer = static_init!([u8; 8], [0; 8]);
+        let i2c_contract = static_init!(
+            TestI2cContract<rp2350::i2c::I2c>,
+            TestI2cContract::new(&peripherals.i2c0, i2c_buffer)
+        );
+        i2c_contract.check_uninitialized();
+        peripherals.i2c0.init(100_000);
+        i2c_contract.run();
+    }
+
     // PROCESS CONSOLE
     let process_printer = components::process_printer::ProcessPrinterTextComponent::new()
         .finalize(components::process_printer_text_component_static!());

@@ -57,6 +57,11 @@ RUNS=(
   "raspberry_pi_pico_2_w|uart_contract_test_pads|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|kept"
   "raspberry_pi_pico_2_w|spi_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|spi-contract|pico|kept"
   "raspberry_pi_pico_2_w|gpio_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|gpio-contract|pico|kept"
+  # Needs no wiring at all: every clause is a rejection the driver must make
+  # before the buffer reaches the hardware, so no device and no pull-ups. It
+  # runs here rather than in `all` only because nothing emulated has an I2C
+  # controller, not because it needs the bench's jumper.
+  "raspberry_pi_pico_2_w|i2c_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|i2c-contract|pico|kept"
   "stm32f3discovery|uart_contract_test|thumbv7em-none-eabi|stm32f3discovery|/dev/ttyACM1|uart-contract|stlink|kept"
   # The Err(OFF) control: the board skips configure(), so UART1 is never
   # enabled. Unguarded this stalled dead after nine clauses with the buffer

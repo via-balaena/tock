@@ -19,7 +19,7 @@ use kernel::mmio;
 use rp2xxx::i2c::I2cRegisters;
 
 mmio! {
-    safety: "RP2350 datasheet 12.2.17, 'List of registers': I2C0_BASE and I2C1_BASE. NOT exercised on silicon -- no I2C device on the bench";
+    safety: "RP2350 datasheet 12.2.17, 'List of registers'. I2C0 CONFIRMED ON SILICON: IC_COMP_TYPE at 0x400900fc reads 0x44570140, the Synopsys signature the datasheet documents. I2C1 not exercised";
 
     I2C0_BASE: I2cRegisters = 0x40090000,
     I2C1_BASE: I2cRegisters = 0x40098000,

@@ -38,6 +38,11 @@ spi_contract_test = []
 # clause that the bytes read back are the bytes written. Implies the above.
 # WITHOUT THE WIRE MISO FLOATS and that clause fails rather than hangs.
 spi_contract_test_loopback = ["spi_contract_test"]
+# Run the hil::i2c conformance test at boot on I2C0 and print the result.
+# Needs NO wiring: every clause is a rejection the driver must make before
+# the buffer reaches the hardware, so no device, no pull-ups, no pads muxed,
+# and no collision with the other three tests over pins.
+i2c_contract_test = []
 # Run the hil::gpio conformance test at boot on GP20 (output) and GP21
 # (input). EXPECTS THOSE TWO WIRED TOGETHER -- the same jumper the uart pads
 # test uses. Without it the input floats and the round-trip clauses report

@@ -7,6 +7,7 @@ pub mod alarm_edge_cases;
 pub mod capsule_test;
 pub mod double_grant_entry;
 pub mod gpio_contract;
+pub mod i2c_contract;
 pub mod random_alarm;
 pub mod random_timer;
 pub mod rng;
