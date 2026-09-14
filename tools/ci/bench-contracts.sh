@@ -43,10 +43,16 @@ silent=0
 # board | feature | target triple | binary | tty | marker | flash recipe | expect
 #
 # `expect` is `kept` for a run that must report every clause held, or
-# `broken:<n>` for one that must report exactly n broken. The second is not a
-# tolerated failure: it is a POSITIVE CONTROL. A clause that only ever passes
-# has never been tested, and a guard that fires on no run in the suite can be
-# deleted without anything noticing.
+# `broken:<text>` for one that must report exactly one broken clause whose
+# name contains <text>. The second is not a tolerated failure: it is a
+# POSITIVE CONTROL. A clause that only ever passes has never been tested, and
+# a guard that fires on no run in the suite can be deleted without anything
+# noticing.
+#
+# It names the CLAUSE, not a count, and that is not fussiness. Removing one of
+# the two Err(OFF) guards to check this control still produced "1 BROKEN" --
+# a different clause, from the other guard, and the control passed anyway. A
+# count is satisfied by the wrong failure.
 RUNS=(
   "raspberry_pi_pico_2_w|uart_contract_test_pads|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|kept"
   "raspberry_pi_pico_2_w|spi_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|spi-contract|pico|kept"
@@ -57,7 +63,7 @@ RUNS=(
   # stranded, which the runner could only report as silence. Guarded it
   # refuses with OFF and says so. Exactly one clause may break -- the one that
   # asks an unconfigured UART to start a receive.
-  "raspberry_pi_pico_2_w|uart_contract_test_unconfigured|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|broken:1"
+  "raspberry_pi_pico_2_w|uart_contract_test_unconfigured|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|broken:receive_buffer() on an idle UART"
 )
 
 printf 'hil conformance on the bench (%s)\n' "$BENCH"
@@ -144,14 +150,20 @@ REMOTE
       broken=$((broken + 1))
     fi
   else
-    # A control run. The wanted count must appear; "all kept" here means the
-    # guard under test stopped firing, which is a failure, not a success.
-    want="${expect#broken:} BROKEN"
-    if printf '%s\n' "$verdict" | command grep -q "$want"; then
-      pass "$label" "${verdict#*: } (control: expected $want)"
+    # A control run. Exactly one clause must break, and it must be the named
+    # one: "all kept" means the guard stopped firing, and a different clause
+    # means something else broke and the control proved nothing.
+    want="${expect#broken:}"
+    count="$(printf '%s\n' "$console" | command grep -c "$marker: FAIL")"
+    named="$(printf '%s\n' "$console" | command grep -c "$marker: FAIL.*$want")"
+    if [ "$count" -eq 1 ] && [ "$named" -eq 1 ]; then
+      pass "$label" "${verdict#*: } (control: $want)"
     else
-      fail "$label" "${verdict#*: } -- expected $want"
-      note "this run exists to FAIL in a specific way; it no longer does"
+      fail "$label" "${verdict#*: } -- wanted exactly 1 broken, \"$want\""
+      note "this run exists to FAIL in one specific way; $count clause(s) broke,"
+      note "$named of them the expected one. The control proved nothing."
+      printf '%s\n' "$console" | command grep "$marker: FAIL" \
+        | sed "s/^$marker: FAIL/        broken:/"
       broken=$((broken + 1))
     fi
   fi
