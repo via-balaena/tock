@@ -214,7 +214,7 @@ unsafe fn get_peripherals() -> (
     let resets = static_init!(rp2350::resets::Resets, rp2350::resets::Resets::new());
     let peripherals = static_init!(
         Rp2350DefaultPeripherals,
-        Rp2350DefaultPeripherals::new(clocks)
+        Rp2350DefaultPeripherals::new(clocks, resets)
     );
     (peripherals, clocks, resets)
 }

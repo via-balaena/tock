@@ -1,27 +1,29 @@
 // Licensed under the Apache License, Version 2.0 or the MIT License.
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// Copyright Tock Contributors 2022.
+// Copyright Tock Contributors 2026.
 
-//! I2C0 and I2C1 on the RP2040.
+//! I2C0 and I2C1 on the RP2350.
 //!
 //! The driver itself lives in the `rp2xxx` crate, shared with the other RP2
-//! chip: both fit the same Synopsys DW_apb_i2c at the same register offsets.
-//! What is specific to this chip is here -- the base addresses -- along with
-//! the `SystemClock` impl in `clocks.rs` and the `ResetLine` handle from
-//! `resets.rs`.
+//! chip: both fit the same Synopsys DW_apb_i2c, and every register offset the
+//! driver declares appears at the same place in Table 1055 of this chip's
+//! datasheet as in Table 464 of the RP2040's. What is specific to this chip is
+//! here -- the base addresses -- along with the `SystemClock` impl in
+//! `clocks.rs` and the `ResetLine` handle from `resets.rs`.
 //!
-//! Ref: 4.3 "I2C" in the RP2040 datasheet.
+//! Ref: 12.2 "I2C" in the RP2350 datasheet.
 
 use crate::clocks::Clocks;
 use crate::resets::{Peripheral, PeripheralReset, Resets};
-use kernel::utilities::StaticRef;
+use kernel::mmio;
 use rp2xxx::i2c::I2cRegisters;
 
-const I2C0_BASE: StaticRef<I2cRegisters> =
-    unsafe { StaticRef::new(0x40044000 as *const I2cRegisters) };
+mmio! {
+    safety: "RP2350 datasheet 12.2.17, 'List of registers': I2C0_BASE and I2C1_BASE. NOT exercised on silicon -- no I2C device on the bench";
 
-const I2C1_BASE: StaticRef<I2cRegisters> =
-    unsafe { StaticRef::new(0x40048000 as *const I2cRegisters) };
+    I2C0_BASE: I2cRegisters = 0x40090000,
+    I2C1_BASE: I2cRegisters = 0x40098000,
+}
 
 const I2C0_RESET: &[Peripheral] = &[Peripheral::I2c0];
 const I2C1_RESET: &[Peripheral] = &[Peripheral::I2c1];

@@ -1417,3 +1417,11 @@ impl rp2xxx::PeripheralClock for Clocks {
         self.get_frequency(Clock::Peripheral)
     }
 }
+
+/// The I2C controller is synchronous to `clk_sys`, so the shared driver needs
+/// this one too. See [`rp2xxx::SystemClock`].
+impl rp2xxx::SystemClock for Clocks {
+    fn system_frequency(&self) -> u32 {
+        self.get_frequency(Clock::System)
+    }
+}

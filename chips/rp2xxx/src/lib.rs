@@ -32,6 +32,7 @@
 
 pub mod adc;
 pub mod dma;
+pub mod i2c;
 pub mod pads;
 pub mod pio;
 pub mod pio_gspi;
@@ -46,4 +47,30 @@ pub mod spi;
 pub trait PeripheralClock {
     /// The frequency of `clk_peri`, in Hz.
     fn peripheral_frequency(&self) -> u32;
+}
+
+/// Access to the system clock, `clk_sys`.
+///
+/// Separate from [`PeripheralClock`] for the same reason it exists at all, and
+/// because which one a peripheral runs from is a fact about the peripheral:
+/// the PL022 in `spi` is paced by `clk_peri`, while the I2C controller is
+/// synchronous to `clk_sys`, as the datasheet says in as many words.
+pub trait SystemClock {
+    /// The frequency of `clk_sys`, in Hz.
+    fn system_frequency(&self) -> u32;
+}
+
+/// One peripheral's reset line.
+///
+/// Both chips gate a peripheral behind a reset the driver must release before
+/// touching it, and both name their peripherals with an enum of their own. A
+/// shared driver therefore cannot hold the reset controller -- it holds this,
+/// a handle the chip crate has already pointed at the right line, so nothing
+/// here carries an index into a table of peripherals.
+pub trait ResetLine {
+    /// Hold the peripheral in reset.
+    fn reset(&self);
+
+    /// Release it, returning once the hardware reports it ready.
+    fn unreset(&self);
 }

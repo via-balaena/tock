@@ -155,7 +155,7 @@ impl Rp2040DefaultPeripherals<'_> {
         Self {
             adc: adc::new_adc(),
             dma: dma::Dma::new(),
-            i2c0: i2c::I2c::new_i2c0(clocks, resets),
+            i2c0: i2c::new_i2c0(clocks, resets),
             pins: RPPins::new(),
             pio0: crate::pio::new_pio0(),
             pio1: crate::pio::new_pio1(),

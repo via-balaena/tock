@@ -11,9 +11,11 @@ use kernel::platform::chip::InterruptService;
 use crate::clocks::Clocks;
 use crate::dma;
 use crate::gpio::{RPPins, SIO};
+use crate::i2c;
 use crate::interrupts;
 use crate::pio::{Pio, PioInterrupt};
 use crate::pwm;
+use crate::resets::Resets;
 use crate::spi;
 use crate::ticks::Ticks;
 use crate::timer::RPTimer;
@@ -123,6 +125,11 @@ impl<I: InterruptService> Chip for Rp2350<'_, I> {
 pub struct Rp2350DefaultPeripherals<'a> {
     pub adc: crate::adc::Adc<'a>,
     pub dma: dma::Dma<'a>,
+    /// I2C0. I2C1 exists on this chip and is not held here, for the reason
+    /// `pio0` gives below: nothing drives it yet, and each controller carries
+    /// a client cell, a buffer cell and six more cells of transfer state.
+    /// `i2c::new_i2c1` builds one when a board wants it.
+    pub i2c0: i2c::I2c<'a, 'a>,
     pub pins: RPPins<'a>,
     /// PIO0. PIO1 and PIO2 exist on this chip and are not held here, because
     /// nothing drives them yet: each holds four state machines, and each of
@@ -139,10 +146,11 @@ pub struct Rp2350DefaultPeripherals<'a> {
 }
 
 impl Rp2350DefaultPeripherals<'_> {
-    pub fn new(clocks: &'static Clocks) -> Self {
+    pub fn new(clocks: &'static Clocks, resets: &'static Resets) -> Self {
         Self {
             adc: crate::adc::new_adc(),
             dma: dma::Dma::new(),
+            i2c0: i2c::new_i2c0(clocks, resets),
             pins: RPPins::new(),
             pio0: crate::pio::new_pio0(),
             pwm: pwm::Pwm::new(clocks),
@@ -205,6 +213,10 @@ impl InterruptService for Rp2350DefaultPeripherals<'_> {
             }
             interrupts::SIO_IRQ_FIFO => {
                 self.sio.handle_proc_interrupt(self.sio.get_processor());
+                true
+            }
+            interrupts::I2C0_IRQ => {
+                self.i2c0.handle_interrupt();
                 true
             }
             interrupts::SPI0_IRQ => {

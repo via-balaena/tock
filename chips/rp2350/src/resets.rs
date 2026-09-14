@@ -401,3 +401,34 @@ impl Resets {
         self.registers.wdsel.set(value);
     }
 }
+
+/// One peripheral's reset line, as a shared driver needs to see it.
+///
+/// `Resets::reset` takes a `&'static [Peripheral]` so it can release several
+/// at once; a driver releases exactly one, which is what this holds. The
+/// peripheral is named, never indexed -- the driver never learns that there is
+/// a table.
+pub struct PeripheralReset<'a> {
+    resets: &'a Resets,
+    peripheral: &'static [Peripheral],
+}
+
+impl rp2xxx::ResetLine for PeripheralReset<'_> {
+    fn reset(&self) {
+        self.resets.reset(self.peripheral);
+    }
+
+    fn unreset(&self) {
+        self.resets.unreset(self.peripheral, true);
+    }
+}
+
+impl Resets {
+    /// A handle to the reset line of one peripheral.
+    pub fn line(&self, peripheral: &'static [Peripheral]) -> PeripheralReset<'_> {
+        PeripheralReset {
+            resets: self,
+            peripheral,
+        }
+    }
+}
