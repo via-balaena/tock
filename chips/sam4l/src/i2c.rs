@@ -559,6 +559,21 @@ pub struct I2CHw<'a> {
     slave_client: Cell<Option<&'a dyn hil::i2c::I2CHwSlaveClient>>,
     on_deck: Cell<Option<(DMAPeripheral, usize)>>,
 
+    /// Whether a master transfer is outstanding.
+    ///
+    /// `hil::i2c` requires `Error::Busy` while one is, because this driver --
+    /// like every other -- can only have one buffer in flight: accepting a
+    /// second transfer reprograms the DMA over the first, losing that buffer
+    /// and the `command_complete` that was the only way back to its owner.
+    ///
+    /// It has to be tracked rather than asked. The buffer lives in the DMA
+    /// channel, and `DMAChannel::is_enabled` is not the question: the
+    /// completion paths below call `abort_transfer` and never `disable`, so
+    /// the channel reads as enabled from the first transfer to the end of
+    /// time. A flag that is set where a transfer starts and cleared where one
+    /// ends says what `is_enabled` cannot.
+    master_busy: Cell<bool>,
+
     slave_enabled: Cell<bool>,
     my_slave_address: Cell<u8>,
     slave_read_buffer: TakeCell<'static, [u8]>,
@@ -652,6 +667,7 @@ impl<'a> I2CHw<'a> {
             master_client: Cell::new(None),
             slave_client: Cell::new(None),
             on_deck: Cell::new(None),
+            master_busy: Cell::new(false),
 
             slave_enabled: Cell::new(false),
             my_slave_address: Cell::new(0),
@@ -784,6 +800,18 @@ impl<'a> I2CHw<'a> {
             None
         };
 
+        // Everything below tears the transfer down -- `cmdr` and `ncmdr`
+        // cleared, every interrupt disabled -- and only hands the buffer back
+        // inside `err`. So an interrupt with none of the four causes this
+        // driver enables used to end the transfer and strand the buffer in the
+        // DMA with no callback, which is the one way a caller loses it for
+        // good. Not shown to be reachable, since those four are the only
+        // sources `setup_transfer` ever enables; left alone rather than
+        // completed with an error nobody can name.
+        let Some(err) = err else {
+            return;
+        };
+
         let on_deck = self.on_deck.get();
         self.on_deck.set(None);
         match on_deck {
@@ -795,24 +823,32 @@ impl<'a> I2CHw<'a> {
                     twim.registers.ncmdr.set(0);
                     self.disable_interrupts(twim);
 
-                    if err.is_some() {
-                        // enable, reset, disable
-                        twim.registers.cr.write(Control::MEN::SET);
-                        twim.registers.cr.write(Control::SWRST::SET);
-                        twim.registers.cr.write(Control::MDIS::SET);
-                    }
+                    // enable, reset, disable.
+                    //
+                    // Unconditional, and it always was: this read
+                    // `if err.is_some()` when `err` was an `Option`, which
+                    // `Some(Ok(()))` satisfies, so a successful completion
+                    // reset the peripheral too. The early return above is now
+                    // the only way to arrive without a cause.
+                    twim.registers.cr.write(Control::MEN::SET);
+                    twim.registers.cr.write(Control::SWRST::SET);
+                    twim.registers.cr.write(Control::MDIS::SET);
                 }
 
-                err.map(|err| {
-                    self.master_client.get().map(|client| {
-                        let buf = self.dma.and_then(|dma| {
-                            let b = dma.abort_transfer();
-                            self.dma.set(dma);
-                            b
-                        });
-                        buf.map(|buf| {
-                            client.command_complete(buf, err);
-                        });
+                // Idle before the callback, not after: `hil::i2c` lets a
+                // client start the next transfer from inside
+                // `command_complete`, and clearing this afterwards would
+                // refuse it with `Busy`.
+                self.master_busy.set(false);
+
+                self.master_client.get().map(|client| {
+                    let buf = self.dma.and_then(|dma| {
+                        let b = dma.abort_transfer();
+                        self.dma.set(dma);
+                        b
+                    });
+                    buf.map(|buf| {
+                        client.command_complete(buf, err);
                     });
                 });
             }
@@ -832,28 +868,28 @@ impl<'a> I2CHw<'a> {
                         twim.registers.ncmdr.set(0);
                         self.disable_interrupts(twim);
 
-                        if err.is_some() {
-                            // enable, reset, disable
-                            twim.registers.cr.write(Control::MEN::SET);
-                            twim.registers.cr.write(Control::SWRST::SET);
-                            twim.registers.cr.write(Control::MDIS::SET);
-                        }
+                        // enable, reset, disable -- unconditional for the
+                        // same reason as the branch above.
+                        twim.registers.cr.write(Control::MEN::SET);
+                        twim.registers.cr.write(Control::SWRST::SET);
+                        twim.registers.cr.write(Control::MDIS::SET);
 
                         twim.registers.rhr.read(ReceiveHolding::RXDATA) as u8
                     };
 
-                    err.map(|err| {
-                        self.master_client.get().map(|client| {
-                            let buf = self.dma.and_then(|dma| {
-                                let b = dma.abort_transfer();
-                                self.dma.set(dma);
-                                b
-                            });
-                            buf.map(|buf| {
-                                // Save the already read byte.
-                                buf[0] = the_byte;
-                                client.command_complete(buf, err);
-                            });
+                    // As in the branch above: idle before the callback.
+                    self.master_busy.set(false);
+
+                    self.master_client.get().map(|client| {
+                        let buf = self.dma.and_then(|dma| {
+                            let b = dma.abort_transfer();
+                            self.dma.set(dma);
+                            b
+                        });
+                        buf.map(|buf| {
+                            // Save the already read byte.
+                            buf[0] = the_byte;
+                            client.command_complete(buf, err);
                         });
                     });
                 } else {
@@ -1366,6 +1402,13 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2CHw<'a> {
         twim.registers.cr.write(Control::SWRST::SET);
         twim.registers.cr.write(Control::MDIS::SET);
 
+        // The software reset above ended anything that was in flight, so
+        // nothing is outstanding whatever happened before. Clearing here and
+        // nowhere else is deliberate: `disable` does not reset the peripheral,
+        // and clearing there would let the next transfer reprogram the DMA
+        // over a buffer that is still in it.
+        self.master_busy.set(false);
+
         // Init the bus speed
         self.set_bus_speed(twim);
 
@@ -1397,13 +1440,23 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2CHw<'a> {
             return Err((hil::i2c::Error::Size, data));
         }
 
-        I2CHw::write(
+        // See `master_busy`: the DMA holds the buffer, so a second transfer
+        // started here would reprogram it over the first and lose it.
+        if self.master_busy.get() {
+            return Err((hil::i2c::Error::Busy, data));
+        }
+
+        let started = I2CHw::write(
             self,
             addr,
             Command::START::StartCondition + Command::STOP::SendStop,
             data,
             len,
-        )
+        );
+        if started.is_ok() {
+            self.master_busy.set(true);
+        }
+        started
     }
 
     fn read(
@@ -1416,13 +1469,23 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2CHw<'a> {
             return Err((hil::i2c::Error::Size, data));
         }
 
-        I2CHw::read(
+        // See `master_busy`: the DMA holds the buffer, so a second transfer
+        // started here would reprogram it over the first and lose it.
+        if self.master_busy.get() {
+            return Err((hil::i2c::Error::Busy, data));
+        }
+
+        let started = I2CHw::read(
             self,
             addr,
             Command::START::StartCondition + Command::STOP::SendStop,
             data,
             len,
-        )
+        );
+        if started.is_ok() {
+            self.master_busy.set(true);
+        }
+        started
     }
 
     fn write_read(
@@ -1436,7 +1499,17 @@ impl<'a> hil::i2c::I2CMaster<'a> for I2CHw<'a> {
             return Err((hil::i2c::Error::Size, data));
         }
 
-        I2CHw::write_read(self, addr, data, write_len, read_len)
+        // See `master_busy`: the DMA holds the buffer, so a second transfer
+        // started here would reprogram it over the first and lose it.
+        if self.master_busy.get() {
+            return Err((hil::i2c::Error::Busy, data));
+        }
+
+        let started = I2CHw::write_read(self, addr, data, write_len, read_len);
+        if started.is_ok() {
+            self.master_busy.set(true);
+        }
+        started
     }
 }
 
