@@ -38,24 +38,64 @@ impl<'a, const NUM_PINS: usize> Pwm<'a, NUM_PINS> {
         }
     }
 
+    /// Whether `processid` may use `pin`.
+    ///
+    /// True when nothing holds the pin, when this process already holds it,
+    /// or when **the process that held it no longer exists** -- in which case
+    /// the claim is reclaimed and the output stopped on the way past.
+    ///
+    /// That last case is the one this used to get wrong. A process that dies
+    /// while driving a pin never reaches command 2, so its `ProcessId` stayed
+    /// in `active_process` and every later claimant was refused `RESERVE`
+    /// forever -- including the same application restarted, which is given a
+    /// new `ProcessId`. The pin also kept running at whatever duty cycle it
+    /// was left at, which for anything that moves is the worse half.
+    ///
+    /// **Reclaiming is lazy**: it happens when someone next asks for the pin,
+    /// not when the owner dies, because a capsule only learns of a death by
+    /// trying to enter the grant. A device that must stop within a bounded
+    /// time cannot rely on this and needs a capsule of its own with a
+    /// callback to check liveness from -- an alarm, or its own completion
+    /// interrupt.
     pub fn claim_pin(&self, processid: ProcessId, pin: usize) -> bool {
-        // Attempt to get the app that is using the pin.
         self.active_process[pin].map_or(true, |id| {
-            // If the app is empty, that means that there is no app currently using this pin,
-            // therefore the pin could be usable by the new app
             if id == processid {
-                // The same app is trying to access the pin it has access to, valid
-                true
-            } else {
-                // An app is trying to access another app's pin, invalid
-                false
+                // The same app coming back to a pin it holds.
+                return true;
+            }
+
+            // Another process holds it. Whether that is a genuine refusal or
+            // a stale claim depends on whether that process still exists.
+            // Both errors, as `adc.rs` checks both: `NoSuchApp` is a process
+            // that is gone, `InactiveApp` one that cannot run again.
+            match self.apps.enter(id, |_, _| {}) {
+                Ok(()) => false,
+                Err(kernel::process::Error::NoSuchApp)
+                | Err(kernel::process::Error::InactiveApp) => {
+                    let _ = self.release_pin(pin);
+                    true
+                }
+                // Anything else is not evidence that the owner is gone, so
+                // refuse: leaving a pin claimed is recoverable, handing a
+                // running output to a second process is not.
+                Err(_) => false,
             }
         })
     }
 
-    pub fn release_pin(&self, pin: usize) {
-        // Release the claimed pin so that it can now be used by another process.
+    /// Release `pin` and stop its output.
+    ///
+    /// Stopping is part of releasing rather than a separate step the caller
+    /// has to remember. A released pin that is still driven is exactly the
+    /// state a dead owner used to leave behind, and the name would be a lie.
+    ///
+    /// The claim is cleared even if `stop` fails: a pin that cannot be
+    /// stopped is a problem, but one that also cannot be claimed again is a
+    /// worse one.
+    pub fn release_pin(&self, pin: usize) -> Result<(), ErrorCode> {
+        let stopped = self.pwm_pins[pin].stop();
         self.active_process[pin].clear();
+        stopped
     }
 }
 
@@ -136,9 +176,8 @@ impl<const NUM_PINS: usize> SyscallDriver for Pwm<'_, NUM_PINS> {
                         // If there is no active app, the pwm pin isn't in use.
                         CommandReturn::failure(ErrorCode::OFF)
                     } else {
-                        // Release the pin and stop pwm output.
-                        self.release_pin(pin);
-                        self.pwm_pins[pin].stop().into()
+                        // Releasing is what stops the output.
+                        self.release_pin(pin).into()
                     }
                 }
             }
