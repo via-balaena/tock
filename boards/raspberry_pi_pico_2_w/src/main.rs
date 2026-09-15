@@ -95,7 +95,7 @@ impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for Ras
     type ProcessFault = ();
     type Scheduler = raspberry_pi_pico_2::SchedulerInUse;
     type SchedulerTimer = cortexm33::systick::SysTick;
-    type WatchDog = ();
+    type WatchDog = rp2350::watchdog::Watchdog;
     type ContextSwitchCallback = ();
 
     fn syscall_driver_lookup(&self) -> &Self::SyscallDriverLookup {
@@ -114,7 +114,7 @@ impl KernelResources<Rp2350<'static, Rp2350DefaultPeripherals<'static>>> for Ras
         &self.base.systick
     }
     fn watchdog(&self) -> &Self::WatchDog {
-        &()
+        self.base.watchdog
     }
     fn context_switch_callback(&self) -> &Self::ContextSwitchCallback {
         &()

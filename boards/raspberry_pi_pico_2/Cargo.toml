@@ -60,6 +60,10 @@ nvic_wake_probe = []
 # ENTROPY CLIENT BACK from the rng syscall driver, so userspace has no
 # randomness in this build.
 trng_test = []
+# Hang the kernel loop two seconds after boot, so the watchdog has to reset
+# the board. Proves the whole path: the tick generator, PSM_WDSEL, and the
+# kernel's own tickle. The board then resets in a loop, on purpose.
+watchdog_probe = []
 
 # Drive the breadboard kit's 320x480 TFT on SPI0 and expose it to userspace
 # through the screen syscall driver. GP2 SCLK, GP3 MOSI, GP5 CS, GP6 DC,

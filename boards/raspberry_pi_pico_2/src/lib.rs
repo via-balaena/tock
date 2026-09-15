@@ -39,6 +39,8 @@ use rp2350::{BASE_VECTORS, xosc};
 mod flash_bootloader;
 #[cfg(feature = "nvic_wake_probe")]
 pub mod nvic_wake_probe;
+#[cfg(feature = "watchdog_probe")]
+pub mod watchdog_probe;
 
 // Manually setting the boot header section that contains the FCB header
 //
@@ -93,6 +95,10 @@ pub struct Platform {
     pub scheduler: &'static SchedulerInUse,
     /// The scheduler timer, for `KernelResources::scheduler_timer`.
     pub systick: cortexm33::systick::SysTick,
+    /// The watchdog, for `KernelResources::watchdog`. The kernel loop calls
+    /// `setup` once and `tickle` every pass, so naming it here is the whole
+    /// of enabling it.
+    pub watchdog: &'static rp2350::watchdog::Watchdog,
     alarm: &'static capsules_core::alarm::AlarmDriver<
         'static,
         VirtualMuxAlarm<'static, rp2350::timer::RPTimer<'static>>,
@@ -918,6 +924,14 @@ pub unsafe fn setup(
         trng_test.run();
     }
 
+    // Say why the board started. `REASON.TIMER` survives the reset the
+    // watchdog causes, so this is the difference between "something hung" and
+    // "someone plugged it in" -- and it is what makes `watchdog_probe`
+    // readable without a debugger attached.
+    if peripherals.watchdog.caused_last_reset() {
+        kernel::debug!("watchdog: the last reset was mine");
+    }
+
     let platform = Platform {
         ipc: kernel::ipc::IPC::new(
             board_kernel,
@@ -936,7 +950,27 @@ pub unsafe fn setup(
         adc,
         scheduler,
         systick: cortexm33::systick::SysTick::new_with_calibration(125_000_000),
+        watchdog: &peripherals.watchdog,
     };
+
+    // Prove the watchdog by hanging the kernel loop on purpose.
+    #[cfg(feature = "watchdog_probe")]
+    {
+        use crate::watchdog_probe::WatchdogProbe;
+        use kernel::hil::time::Alarm;
+
+        let probe_alarm = static_init!(
+            VirtualMuxAlarm<'static, RPTimer<'static>>,
+            VirtualMuxAlarm::new(mux_alarm)
+        );
+        probe_alarm.setup();
+        let probe = static_init!(
+            WatchdogProbe<'static, VirtualMuxAlarm<'static, RPTimer<'static>>>,
+            WatchdogProbe::new(probe_alarm, 2000)
+        );
+        Alarm::set_alarm_client(probe_alarm, probe);
+        probe.arm();
+    }
 
     (board_kernel, platform, peripherals, mux_alarm, chip)
 }
