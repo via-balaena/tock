@@ -1505,9 +1505,9 @@ impl<B: PioBlock, N: InterruptLine> Pio<B, N> {
         // kernel sleeps is not a `wfi` wake-up event. See `crate::nvic`.
         //
         // Only on the way up, and the line is never disabled on the way down:
-        // the other seven sources on this line may still be enabled, and
-        // `interrupt_source_bits` has just cleared this one's own bit, which
-        // is what stops it.
+        // the other eleven sources in `InterruptSources` may still be enabled
+        // on this line, and `interrupt_source_bits` has just cleared this
+        // one's own bit, which is what stops it.
         if enabled {
             self.nvic[interrupt as usize].enable();
         }
