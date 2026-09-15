@@ -704,7 +704,7 @@ pub unsafe fn setup(
     // RAM the app cannot have, on a board where Doom fits or does not by less
     // than that. An app that writes more than this in one call gets an error,
     // not a truncated picture.
-    .finalize(components::screen_component_static!(6400));
+    .finalize(components::screen_component_static!(12800));
 
     // Fill the panel from the kernel and report how fast it managed it.
     //
