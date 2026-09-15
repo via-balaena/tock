@@ -25,21 +25,25 @@ use rp2xxx::adc::AdcRegisters;
 /// Enable the ADC's NVIC line.
 ///
 /// Setting `INTE::FIFO` in the block is NOT sufficient, and this is the second
-/// driver on this chip to need saying so -- see `enable_interrupt` in
-/// `dma.rs`. The kernel sleeps in WFI whenever no process is runnable, and on
-/// a Cortex-M a pending interrupt whose NVIC line is disabled does not wake
-/// it. `Chip::init` disables every line and `service_pending_interrupts`
-/// re-enables one only AFTER servicing it, so a conversion completing while
-/// the kernel is asleep is never serviced, the process waiting on its upcall
-/// never runs again, and the system sleeps forever.
+/// driver on this chip to need saying so -- see `enable_interrupt` in `dma.rs`.
+/// The kernel sleeps in WFI whenever no process is runnable, and on a Cortex-M
+/// a pending interrupt whose NVIC line is disabled does not wake it.
+/// `Chip::init` disables every line, so until something enables this one a
+/// conversion that is the only thing left to wake the kernel never does.
 ///
-/// What makes it nasty is that it is INTERMITTENT. While anything else keeps
-/// the kernel awake the pending bit is polled and serviced normally and the
-/// converter looks perfect -- thousands of conversions, no errors -- until the
-/// one that completes in the gap. Measured on a Pico 2 W: Doom ran for a
-/// minute or two, then stopped with no error, no output, the process still
-/// Yielded, and the core in WFI where the debugger reports it as "in unknown
-/// state when halt was requested".
+/// The line heals itself as soon as the kernel is awake for any other reason.
+/// `next_pending_with_mask` reads ISPR and never ISER (`arch/cortex-m/src/
+/// nvic.rs`), so the poll path sees a pending-but-disabled source, services it,
+/// and `service_pending_interrupts` calls `enable()` afterwards. That bounds
+/// the hazard to the first interrupt this source raises, and makes it fatal
+/// only when nothing else is running to do the waking.
+///
+/// Measured on a Pico 2 W: Doom ran for a minute or two, then stopped with no
+/// error, no output, the process still Yielded, and the core in WFI where the
+/// debugger reports "target was in unknown state when halt was requested".
+/// Adding this call fixed it. Why the stop took a minute rather than arriving
+/// on the first conversion is NOT explained by the paragraph above and has not
+/// been isolated.
 ///
 /// Must be called AFTER `Chip::init()`, which disables every line.
 pub fn enable_nvic() {

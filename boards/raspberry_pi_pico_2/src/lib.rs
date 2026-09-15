@@ -820,8 +820,9 @@ pub unsafe fn setup(
 
         peripherals.adc.init();
 
-        // The block's own interrupt enable is not enough: without this the
-        // kernel can sleep through a completed conversion and never wake. See
+        // The block's own interrupt enable is not enough: without this, a
+        // conversion that is the only thing left to wake the kernel never
+        // does. See
         // `rp2350::adc::enable_nvic`. Safe here because `ChipHw::init()`, which
         // disables every line, has already run far above.
         rp2350::adc::enable_nvic();
