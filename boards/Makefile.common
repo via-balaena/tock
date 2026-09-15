@@ -200,6 +200,16 @@ SIZE_FLAGS ?=
 # `boards/cargo/deny_warnings.toml`.
 TOCK_CARGO_FLAGS ?=
 
+# `FEATURES` is not read by this build system, and a board's cargo features
+# are easy to reach for by that name. Setting it used to build with no
+# features at all and say nothing -- the kernel comes out smaller, the board
+# boots, and whatever the feature was supposed to switch on is simply absent.
+# Fail loudly instead.
+ifneq ($(FEATURES),)
+  $(error FEATURES is not used here. Pass cargo features as \
+    TOCK_CARGO_FLAGS="--features a,b")
+endif
+
 # Additional flags that can be passed to print_tock_memory_usage.py via an
 # environment variable. By default, pass an empty string.
 PTMU_ARGS ?=
