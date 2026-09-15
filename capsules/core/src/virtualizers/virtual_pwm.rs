@@ -32,7 +32,6 @@ use kernel::utilities::cells::OptionalCell;
 pub struct MuxPwm<'a, P: hil::pwm::Pwm> {
     pwm: &'a P,
     devices: List<'a, PwmPinUser<'a, P>>,
-    inflight: OptionalCell<&'a PwmPinUser<'a, P>>,
 }
 
 impl<'a, P: hil::pwm::Pwm> MuxPwm<'a, P> {
@@ -40,60 +39,37 @@ impl<'a, P: hil::pwm::Pwm> MuxPwm<'a, P> {
         MuxPwm {
             pwm,
             devices: List::new(),
-            inflight: OptionalCell::empty(),
         }
     }
 
-    /// If we are not currently doing anything, scan the list of devices for
-    /// one with an outstanding operation and run that.
+    /// Run every operation that is waiting.
+    ///
+    /// There is no such thing as an operation in flight here. `hil::pwm::Pwm`
+    /// is synchronous -- `start` and `stop` return a `Result` and the HIL has
+    /// no completion callback at all -- so a pending operation can always be
+    /// carried out immediately.
+    ///
+    /// This used to keep an `inflight` slot: the first user to start claimed
+    /// it, and while it was held every OTHER user's operation was left in its
+    /// cell and never run, while `PwmPinUser::start` went on answering
+    /// `Ok(())`. One PWM pin at a time, silently. Nothing noticed because
+    /// every board in the tree drives a buzzer and a mux with one user never
+    /// contends; on a board with two it cost a working output and reported
+    /// nothing. Confirmed on RP2350 silicon by register read -- the starved
+    /// channel had its TOP, divider and compare correctly programmed with
+    /// `CSR.EN` clear.
     fn do_next_op(&self) {
-        if self.inflight.is_none() {
-            let mnode = self.devices.iter().find(|node| node.operation.is_some());
-            mnode.map(|node| {
-                let started = node.operation.take().is_some_and(|operation| {
-                    match operation {
-                        Operation::Simple {
-                            frequency_hz,
-                            duty_cycle,
-                        } => {
-                            let _ = self.pwm.start(&node.pin, frequency_hz, duty_cycle);
-                            true
-                        }
-                        Operation::Stop => {
-                            // Can't stop if nothing is running
-                            false
-                        }
-                    }
-                });
-                if started {
-                    self.inflight.set(node);
-                } else {
-                    // Keep looking for something to do.
-                    self.do_next_op();
+        for node in self.devices.iter() {
+            node.operation.take().map(|operation| match operation {
+                Operation::Simple {
+                    frequency_hz,
+                    duty_cycle,
+                } => {
+                    let _ = self.pwm.start(&node.pin, frequency_hz, duty_cycle);
                 }
-            });
-        } else {
-            // We are running so we do whatever the inflight user wants, if
-            // there is some command there.
-            self.inflight.map(|node| {
-                node.operation.take().map(|operation| {
-                    match operation {
-                        Operation::Simple {
-                            frequency_hz,
-                            duty_cycle,
-                        } => {
-                            // Changed some parameter.
-                            let _ = self.pwm.start(&node.pin, frequency_hz, duty_cycle);
-                        }
-                        Operation::Stop => {
-                            // Ok we got a stop.
-                            let _ = self.pwm.stop(&node.pin);
-                            self.inflight.clear();
-                        }
-                    }
-                    // Recurse in case there is more to do.
-                    self.do_next_op();
-                });
+                Operation::Stop => {
+                    let _ = self.pwm.stop(&node.pin);
+                }
             });
         }
     }
