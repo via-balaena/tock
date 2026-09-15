@@ -33,6 +33,7 @@
 pub mod adc;
 pub mod dma;
 pub mod i2c;
+pub mod nvic;
 pub mod pads;
 pub mod pio;
 pub mod pio_gspi;

@@ -24,6 +24,7 @@ use kernel::utilities::cells::OptionalCell;
 use kernel::utilities::leasable_buffer::SubSliceMut;
 
 use crate::dma::{DmaChannelClient, DmaPacer, PeripheralDma};
+use crate::nvic::InterruptLine;
 use kernel::utilities::registers::interfaces::{ReadWriteable, Readable, Writeable};
 use kernel::utilities::registers::{ReadOnly, ReadWrite, register_bitfields, register_structs};
 
@@ -240,9 +241,14 @@ register_bitfields![u32,
     ]
 ];
 
-pub struct Spi<'a, C: PeripheralClock, P: hil::gpio::Output> {
+pub struct Spi<'a, C: PeripheralClock, P: hil::gpio::Output, N: InterruptLine> {
     registers: StaticRef<SpiRegisters>,
     clocks: &'a C,
+
+    /// This block's line into the chip's interrupt controller.
+    ///
+    /// `SSPIMSC` alone does not arm it -- see `crate::nvic`.
+    nvic: N,
     master_client: OptionalCell<&'a dyn hil::spi::SpiMasterClient>,
     active_slave: OptionalCell<ChipSelectPolar<'a, P>>,
 
@@ -273,15 +279,28 @@ const MIN_DMA_LEN: usize = 64;
 /// Offset of `SSPDR` within the block, which is where a channel writes.
 const SSPDR_OFFSET: u32 = 0x008;
 
-impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
+impl<'a, C: PeripheralClock, P: hil::gpio::Output, N: InterruptLine> Spi<'a, C, P, N> {
+    /// Arm this block's interrupt line, alongside its `SSPIMSC` mask.
+    ///
+    /// Every site that sets a bit in `SSPIMSC` calls this. Setting the mask
+    /// alone leaves the line disabled in the chip's interrupt controller,
+    /// where a pending interrupt is not a `wfi` wake-up event -- so a
+    /// completion arriving while the kernel sleeps would wait for some
+    /// unrelated interrupt to wake it. See `crate::nvic`.
+    fn arm_nvic(&self) {
+        self.nvic.enable();
+    }
+
     /// Create a driver for the SPI block at `registers`.
     ///
-    /// Chip crates wrap this with their own base addresses; see
-    /// `rp2040::spi::new_spi0` and its RP2350 counterpart.
-    pub fn new(registers: StaticRef<SpiRegisters>, clocks: &'a C) -> Self {
+    /// Chip crates wrap this with their own base addresses and the matching
+    /// interrupt line; see `rp2040::spi::new_spi0` and its RP2350
+    /// counterpart.
+    pub fn new(registers: StaticRef<SpiRegisters>, clocks: &'a C, nvic: N) -> Self {
         Self {
             registers,
             clocks,
+            nvic,
             master_client: OptionalCell::empty(),
             active_slave: OptionalCell::empty(),
 
@@ -444,6 +463,7 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
                 self.len.set(len);
                 self.rx_position.set(0);
                 self.registers.sspimsc.modify(SSPIMSC::RXIM::SET);
+                self.arm_nvic();
             });
 
             if let Some(buf) = write_buffer {
@@ -469,6 +489,7 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
                         self.tx_buffer.replace(buf);
                         self.tx_position.set(0);
                         self.registers.sspimsc.modify(SSPIMSC::TXIM::SET);
+                        self.arm_nvic();
                     }
                 }
             }
@@ -542,7 +563,9 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> Spi<'a, C, P> {
     }
 }
 
-impl<'a, C: PeripheralClock, P: hil::gpio::Output> SpiMaster<'a> for Spi<'a, C, P> {
+impl<'a, C: PeripheralClock, P: hil::gpio::Output, N: InterruptLine> SpiMaster<'a>
+    for Spi<'a, C, P, N>
+{
     type ChipSelect = ChipSelectPolar<'a, P>;
 
     fn set_client(&self, client: &'a dyn SpiMasterClient) {
@@ -739,7 +762,9 @@ impl<'a, C: PeripheralClock, P: hil::gpio::Output> SpiMaster<'a> for Spi<'a, C, 
     }
 }
 
-impl<C: PeripheralClock, P: hil::gpio::Output> DmaChannelClient for Spi<'_, C, P> {
+impl<C: PeripheralClock, P: hil::gpio::Output, N: InterruptLine> DmaChannelClient
+    for Spi<'_, C, P, N>
+{
     /// The channel has handed the last byte to the transmit FIFO.
     ///
     /// That is not the end of the transfer: the shifter still has up to eight
@@ -751,5 +776,6 @@ impl<C: PeripheralClock, P: hil::gpio::Output> DmaChannelClient for Spi<'_, C, P
     fn transfer_done(&self) {
         self.registers.sspdmacr.modify(SSPDMACR::TXDMAE::CLEAR);
         self.registers.sspimsc.modify(SSPIMSC::TXIM::SET);
+        self.arm_nvic();
     }
 }

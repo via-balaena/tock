@@ -18,6 +18,8 @@
 //! [1]: https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
 
 use crate::gpio::{GpioFunction, RPGpioPin};
+use crate::interrupts;
+use crate::nvic::Nvic;
 use kernel::utilities::StaticRef;
 use rp2xxx::pio::{PioIrqRegisters, PioRegisters};
 
@@ -37,7 +39,7 @@ pub enum PIONumber {
 impl PioBlock for PIONumber {}
 
 /// The shared PIO driver, with this chip's block numbering filled in.
-pub type Pio = rp2xxx::pio::Pio<PIONumber>;
+pub type Pio = rp2xxx::pio::Pio<PIONumber, Nvic>;
 
 const PIO_0_BASE_ADDRESS: usize = 0x50200000;
 const PIO_1_BASE_ADDRESS: usize = 0x50300000;
@@ -57,7 +59,7 @@ const fn irq_regs(base: usize) -> StaticRef<PioIrqRegisters> {
     unsafe { StaticRef::new((base + IRQ_OFFSET) as *const PioIrqRegisters) }
 }
 
-fn new_pio(block: PIONumber, base: usize) -> Pio {
+fn new_pio(block: PIONumber, base: usize, lines: [u32; 2]) -> Pio {
     Pio::new(
         block,
         regs(base),
@@ -65,17 +67,26 @@ fn new_pio(block: PIONumber, base: usize) -> Pio {
         regs(base + 0x1000),
         regs(base + 0x2000),
         regs(base + 0x3000),
+        [Nvic::new(lines[0]), Nvic::new(lines[1])],
     )
 }
 
 /// Create a driver for PIO0.
 pub fn new_pio0() -> Pio {
-    new_pio(PIONumber::PIO0, PIO_0_BASE_ADDRESS)
+    new_pio(
+        PIONumber::PIO0,
+        PIO_0_BASE_ADDRESS,
+        [interrupts::PIO0_IRQ_0, interrupts::PIO0_IRQ_1],
+    )
 }
 
 /// Create a driver for PIO1.
 pub fn new_pio1() -> Pio {
-    new_pio(PIONumber::PIO1, PIO_1_BASE_ADDRESS)
+    new_pio(
+        PIONumber::PIO1,
+        PIO_1_BASE_ADDRESS,
+        [interrupts::PIO1_IRQ_0, interrupts::PIO1_IRQ_1],
+    )
 }
 
 /// Point a pin at one of this chip's PIO blocks.

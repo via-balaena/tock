@@ -5,6 +5,7 @@
 //! PIO gSPI (generic SPI) support
 
 use crate::dma::{DmaChannel, DmaChannelClient};
+use crate::nvic::InterruptLine;
 use crate::pads::{DriveStrength, PioPad, SlewRate};
 use crate::pio::{Pio, PioIrqClient, PioPin, SMNumber, StateMachineConfiguration};
 use kernel::ErrorCode;
@@ -46,8 +47,8 @@ impl<D: DmaChannel, T> PinFor<D> for T where
 }
 
 /// The gSPI PIO peripheral driver
-pub struct PioGSpi<'a, D: DmaChannel, P: PinFor<D>> {
-    pio: &'a Pio<D::Block>,
+pub struct PioGSpi<'a, D: DmaChannel, P: PinFor<D>, N: InterruptLine> {
+    pio: &'a Pio<D::Block, N>,
     dma: D,
     clock_pin: &'a P,
     dio_pin: &'a P,
@@ -66,10 +67,10 @@ enum Pending {
     Read,
 }
 
-impl<'a, D: DmaChannel, P: PinFor<D>> PioGSpi<'a, D, P> {
+impl<'a, D: DmaChannel, P: PinFor<D>, N: InterruptLine> PioGSpi<'a, D, P, N> {
     /// Create a new `PioCyw43Spi` instance
     pub fn new(
-        pio: &'a Pio<D::Block>,
+        pio: &'a Pio<D::Block, N>,
         dma: D,
         clock_pin: &'a P,
         dio_pin: &'a P,
@@ -145,7 +146,7 @@ impl<'a, D: DmaChannel, P: PinFor<D>> PioGSpi<'a, D, P> {
     }
 }
 
-impl<D: DmaChannel, P: PinFor<D>> DmaChannelClient for PioGSpi<'_, D, P> {
+impl<D: DmaChannel, P: PinFor<D>, N: InterruptLine> DmaChannelClient for PioGSpi<'_, D, P, N> {
     fn transfer_done(&self) {
         let Some(pending) = self.pending.take() else {
             return;
@@ -170,7 +171,7 @@ impl<D: DmaChannel, P: PinFor<D>> DmaChannelClient for PioGSpi<'_, D, P> {
     }
 }
 
-impl<D: DmaChannel, P: PinFor<D>> PioGSpi<'_, D, P> {
+impl<D: DmaChannel, P: PinFor<D>, N: InterruptLine> PioGSpi<'_, D, P, N> {
     fn dma_pull(&self, addr: u32, len: u32) {
         assert!(addr.is_multiple_of(4));
         let current_sm = self.pio.sm(self.sm_number);
@@ -195,7 +196,9 @@ impl<D: DmaChannel, P: PinFor<D>> PioGSpi<'_, D, P> {
     }
 }
 
-impl<'a, D: DmaChannel, P: PinFor<D>> SpiMasterDevice<'a> for PioGSpi<'a, D, P> {
+impl<'a, D: DmaChannel, P: PinFor<D>, N: InterruptLine> SpiMasterDevice<'a>
+    for PioGSpi<'a, D, P, N>
+{
     fn set_client(&self, client: &'a dyn spi::SpiMasterClient) {
         self.client.set(client);
     }
@@ -274,7 +277,7 @@ impl<'a, D: DmaChannel, P: PinFor<D>> SpiMasterDevice<'a> for PioGSpi<'a, D, P> 
     }
 }
 
-impl<D: DmaChannel, P: PinFor<D>> PioIrqClient for PioGSpi<'_, D, P> {
+impl<D: DmaChannel, P: PinFor<D>, N: InterruptLine> PioIrqClient for PioGSpi<'_, D, P, N> {
     fn on_irq(&self, _flags: u32) {
         // The driver has already cleared the flag. This block raises only
         // flag 0, from cyw43_spi_program_init, so there is nothing to sort.
@@ -287,8 +290,8 @@ impl<D: DmaChannel, P: PinFor<D>> PioIrqClient for PioGSpi<'_, D, P> {
 /// The half-duplex bus needs pad settings the generic PIO API does not
 /// expose, which is why this lives with its one caller rather than in
 /// `pio.rs`.
-fn cyw43_spi_program_init<D: DmaChannel, P: PinFor<D>>(
-    pio: &Pio<D::Block>,
+fn cyw43_spi_program_init<D: DmaChannel, P: PinFor<D>, N: InterruptLine>(
+    pio: &Pio<D::Block, N>,
     sm_number: SMNumber,
     clock_pin: &P,
     dio_pin: &P,

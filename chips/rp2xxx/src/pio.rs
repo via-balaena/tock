@@ -30,6 +30,7 @@
 //! [1]: https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
 //! [2]: https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf
 
+use crate::nvic::InterruptLine;
 use core::cell::Cell;
 
 use kernel::utilities::StaticRef;
@@ -1353,9 +1354,17 @@ impl StateMachine {
     }
 }
 
-pub struct Pio<B: PioBlock> {
+pub struct Pio<B: PioBlock, N: InterruptLine> {
     registers: StaticRef<PioRegisters>,
     irq_registers: StaticRef<PioIrqRegisters>,
+
+    /// This block's two lines into the chip's interrupt controller, indexed
+    /// by [`PioInterrupt`].
+    ///
+    /// Two, because the block's two interrupt lines reach the controller
+    /// separately and either can be the one a state machine is routed to.
+    /// `INTE` alone does not arm them -- see `crate::nvic`.
+    nvic: [N; NUMBER_INTERRUPT_LINES],
     irq_client: OptionalCell<&'static dyn PioIrqClient>,
     /// Which PIO block this is, in the chip crate's own terms.
     block: B,
@@ -1434,7 +1443,7 @@ impl Default for StateMachineConfiguration {
     }
 }
 
-impl<B: PioBlock> Pio<B> {
+impl<B: PioBlock, N: InterruptLine> Pio<B, N> {
     /// Create a driver for one PIO block.
     ///
     /// `block` names the block in the chip crate's own terms. `registers` is
@@ -1448,10 +1457,12 @@ impl<B: PioBlock> Pio<B> {
         xor_registers: StaticRef<PioRegisters>,
         set_registers: StaticRef<PioRegisters>,
         clear_registers: StaticRef<PioRegisters>,
+        nvic: [N; NUMBER_INTERRUPT_LINES],
     ) -> Self {
         Self {
             registers,
             irq_registers,
+            nvic,
             _clear_registers: clear_registers,
             irq_client: OptionalCell::empty(),
             block,
@@ -1488,6 +1499,18 @@ impl<B: PioBlock> Pio<B> {
         self.irq_registers.irq_lines[interrupt as usize]
             .inte
             .modify(interrupt_source_bits(interrupt_source, enabled));
+
+        // Arm the line this source travels on. `INTE` is the block's own
+        // mask; with the chip's line still disabled a flag raised while the
+        // kernel sleeps is not a `wfi` wake-up event. See `crate::nvic`.
+        //
+        // Only on the way up, and the line is never disabled on the way down:
+        // the other seven sources on this line may still be enabled, and
+        // `interrupt_source_bits` has just cleared this one's own bit, which
+        // is what stops it.
+        if enabled {
+            self.nvic[interrupt as usize].enable();
+        }
     }
 
     /// Checks if a PIO interrupt is set.

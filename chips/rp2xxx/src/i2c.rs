@@ -11,6 +11,7 @@
 //! and each chip crate supplies what differs: the base addresses, the system
 //! clock, and the reset line.
 
+use crate::nvic::InterruptLine;
 use crate::{ResetLine, SystemClock};
 use core::cell::Cell;
 use kernel::debug;
@@ -242,12 +243,17 @@ enum State {
     WaitingForStop,
 }
 
-pub struct I2c<'a, 'c, C: SystemClock, R: ResetLine> {
+pub struct I2c<'a, 'c, C: SystemClock, R: ResetLine, N: InterruptLine> {
     /// What to call this controller in a diagnostic, e.g. `"I2C0"`.
     name: &'static str,
     registers: StaticRef<I2cRegisters>,
     clocks: &'a C,
     reset_line: R,
+
+    /// This controller's line into the chip's interrupt controller.
+    ///
+    /// `IC_INTR_MASK` alone does not arm it -- see `crate::nvic`.
+    nvic: N,
 
     client: OptionalCell<&'c dyn hil::i2c::I2CHwMasterClient>,
     buf: TakeCell<'static, [u8]>,
@@ -261,7 +267,7 @@ pub struct I2c<'a, 'c, C: SystemClock, R: ResetLine> {
     abort_reason: OptionalCell<LocalRegisterCopy<u32, IC_TX_ABRT_SOURCE::Register>>,
 }
 
-impl<'a, C: SystemClock, R: ResetLine> I2c<'a, '_, C, R> {
+impl<'a, C: SystemClock, R: ResetLine, N: InterruptLine> I2c<'a, '_, C, R, N> {
     /// A driver for the controller at `registers`.
     ///
     /// `reset_line` is that controller's own reset, released in `init`, and
@@ -271,12 +277,14 @@ impl<'a, C: SystemClock, R: ResetLine> I2c<'a, '_, C, R> {
         registers: StaticRef<I2cRegisters>,
         clocks: &'a C,
         reset_line: R,
+        nvic: N,
     ) -> Self {
         Self {
             name,
             registers,
             clocks,
             reset_line,
+            nvic,
 
             client: OptionalCell::empty(),
             buf: TakeCell::empty(),
@@ -353,6 +361,14 @@ impl<'a, C: SystemClock, R: ResetLine> I2c<'a, '_, C, R> {
         self.registers
             .ic_intr_mask
             .write(IC_INTR_MASK::M_STOP_DET::SET);
+
+        // And the line they travel on. `IC_INTR_MASK` is the block's own
+        // mask; with the chip's line still disabled a completion arriving
+        // while the kernel sleeps is not a `wfi` wake-up event, so it waits
+        // for some unrelated interrupt. See `crate::nvic`. Here rather than
+        // at each transfer because the line is per-controller and this runs
+        // once -- and after `Chip::init()`, which disables every line.
+        self.nvic.enable();
 
         // Configure as a fast-mode master with RepStart support, 7-bit addresses
         self.registers.ic_con.write(
@@ -668,7 +684,9 @@ impl<'a, C: SystemClock, R: ResetLine> I2c<'a, '_, C, R> {
     }
 }
 
-impl<'c, C: SystemClock, R: ResetLine> hil::i2c::I2CMaster<'c> for I2c<'_, 'c, C, R> {
+impl<'c, C: SystemClock, R: ResetLine, N: InterruptLine> hil::i2c::I2CMaster<'c>
+    for I2c<'_, 'c, C, R, N>
+{
     fn set_master_client(&self, client: &'c dyn hil::i2c::I2CHwMasterClient) {
         self.client.set(client);
     }

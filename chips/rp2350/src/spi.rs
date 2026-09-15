@@ -13,6 +13,8 @@
 
 use crate::clocks::Clocks;
 use crate::gpio::RPGpioPin;
+use crate::interrupts;
+use crate::nvic::Nvic;
 use kernel::mmio;
 use rp2xxx::spi::SpiRegisters;
 
@@ -24,14 +26,14 @@ mmio! {
 }
 
 /// The shared PL022 driver, with this chip's clocks and GPIO pins filled in.
-pub type Spi<'a> = rp2xxx::spi::Spi<'a, Clocks, RPGpioPin<'a>>;
+pub type Spi<'a> = rp2xxx::spi::Spi<'a, Clocks, RPGpioPin<'a>, Nvic>;
 
 /// Create a driver for SPI0.
 pub fn new_spi0(clocks: &Clocks) -> Spi<'_> {
-    Spi::new(SPI0_BASE, clocks)
+    Spi::new(SPI0_BASE, clocks, Nvic::new(interrupts::SPI0_IRQ))
 }
 
 /// Create a driver for SPI1.
 pub fn new_spi1(clocks: &Clocks) -> Spi<'_> {
-    Spi::new(SPI1_BASE, clocks)
+    Spi::new(SPI1_BASE, clocks, Nvic::new(interrupts::SPI1_IRQ))
 }

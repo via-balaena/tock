@@ -12,6 +12,7 @@ pub mod dma;
 pub mod gpio;
 pub mod i2c;
 pub mod interrupts;
+pub mod nvic;
 pub mod pio;
 pub mod pio_gspi;
 pub mod pio_pwm;

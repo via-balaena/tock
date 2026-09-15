@@ -11,4 +11,5 @@ use crate::dma::DmaChannel;
 use crate::gpio::RPGpioPin;
 
 /// The shared gSPI transport, with this chip's DMA and pins filled in.
-pub type PioGSpi<'a> = rp2xxx::pio_gspi::PioGSpi<'a, DmaChannel<'a>, RPGpioPin<'a>>;
+pub type PioGSpi<'a> =
+    rp2xxx::pio_gspi::PioGSpi<'a, DmaChannel<'a>, RPGpioPin<'a>, crate::nvic::Nvic>;
