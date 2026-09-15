@@ -699,12 +699,12 @@ pub unsafe fn setup(
         create_capability!(capabilities::MemoryAllocationCapability),
     )
     // Sized to the largest single write any app on this board makes, which is
-    // one band of Doom's frame: 320 x 20 pixels at RGB565. It was 57,600,
+    // one band of Doom's frame: 320 x 10 pixels at RGB565. It was 57,600,
     // chosen before anything drew, and that is 44,800 bytes of KERNEL RAM --
     // RAM the app cannot have, on a board where Doom fits or does not by less
     // than that. An app that writes more than this in one call gets an error,
     // not a truncated picture.
-    .finalize(components::screen_component_static!(12800));
+    .finalize(components::screen_component_static!(6400));
 
     // Fill the panel from the kernel and report how fast it managed it.
     //
