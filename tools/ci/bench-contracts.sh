@@ -8,10 +8,13 @@
 # all.
 #
 # Expects, on the bench host:
-#   * a Pico 2 W on the Debug Probe, console on /dev/ttyACM0, with GP20 WIRED
-#     TO GP21 -- the uart pads and gpio tests both use that jumper, which is
-#     why they cannot run in the same build
-#   * an STM32F3 Discovery on its own ST-LINK, console on /dev/ttyACM1
+#   * a Pico 2 W on the Debug Probe, with GP20 WIRED TO GP21 -- the uart pads
+#     and gpio tests both use that jumper, which is why they cannot run in the
+#     same build
+#   * an STM32F3 Discovery on its own ST-LINK
+#
+# Both consoles are resolved by USB identity, not by ttyACM index -- see
+# `resolve_tty`.
 #
 # Exit status:
 #   0  every clause held, on every board that answered
@@ -54,28 +57,28 @@ silent=0
 # a different clause, from the other guard, and the control passed anyway. A
 # count is satisfied by the wrong failure.
 RUNS=(
-  "raspberry_pi_pico_2_w|uart_contract_test_pads|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|kept"
-  "raspberry_pi_pico_2_w|spi_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|spi-contract|pico|kept"
-  "raspberry_pi_pico_2_w|gpio_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|gpio-contract|pico|kept"
+  "raspberry_pi_pico_2_w|uart_contract_test_pads|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|pico|uart-contract|pico|kept"
+  "raspberry_pi_pico_2_w|spi_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|pico|spi-contract|pico|kept"
+  "raspberry_pi_pico_2_w|gpio_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|pico|gpio-contract|pico|kept"
   # Needs no wiring at all: every clause is a rejection the driver must make
   # before the buffer reaches the hardware, so no device and no pull-ups. It
   # runs here rather than in `all` only because nothing emulated has an I2C
   # controller, not because it needs the bench's jumper.
-  "raspberry_pi_pico_2_w|i2c_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|i2c-contract|pico|kept"
-  "stm32f3discovery|uart_contract_test|thumbv7em-none-eabi|stm32f3discovery|/dev/ttyACM1|uart-contract|stlink|kept"
+  "raspberry_pi_pico_2_w|i2c_contract_test|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|pico|i2c-contract|pico|kept"
+  "stm32f3discovery|uart_contract_test|thumbv7em-none-eabi|stm32f3discovery|stlink|uart-contract|stlink|kept"
   # THIS ONE ERASES AND WRITES PAGE 120 on the Discovery. That page is inside
   # the region the board already hands to userspace for nonvolatile storage
   # (0x08038000 for 0x8000, which at 2 KiB pages is 112..127), so it destroys
   # only what an app using storage would already overwrite. Clause 6 reports
   # rather than judges: whether this chip accepts a write over un-erased flash
   # is the thing `hil::flash` deliberately does not settle.
-  "stm32f3discovery|flash_contract_test|thumbv7em-none-eabi|stm32f3discovery|/dev/ttyACM1|flash-contract|stlink|kept"
+  "stm32f3discovery|flash_contract_test|thumbv7em-none-eabi|stm32f3discovery|stlink|flash-contract|stlink|kept"
   # The Err(OFF) control: the board skips configure(), so UART1 is never
   # enabled. Unguarded this stalled dead after nine clauses with the buffer
   # stranded, which the runner could only report as silence. Guarded it
   # refuses with OFF and says so. Exactly one clause may break -- the one that
   # asks an unconfigured UART to start a receive.
-  "raspberry_pi_pico_2_w|uart_contract_test_unconfigured|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|/dev/ttyACM0|uart-contract|pico|broken:receive_buffer() on an idle UART"
+  "raspberry_pi_pico_2_w|uart_contract_test_unconfigured|thumbv8m.main-none-eabi|raspberry_pi_pico_2_w|pico|uart-contract|pico|broken:receive_buffer() on an idle UART"
 )
 
 printf 'hil conformance on the bench (%s)\n' "$BENCH"
@@ -87,8 +90,40 @@ if [ "$?" -ne 0 ]; then
   exit 0
 fi
 
+# Resolve each console by USB identity rather than by enumeration order.
+#
+# `ttyACM<n>` is assigned in the order the kernel enumerates the two adapters,
+# which is not stable across a reboot or a replug. On 2026-09-15 the Debug
+# Probe was ttyACM1 and the ST-LINK ttyACM0 -- the reverse of what this script
+# had hardcoded. That direction fails loudly rather than quietly, because a
+# console that says nothing is counted as "did not report" and not as a pass,
+# so no past green run is in doubt. It still costs a bench session to diagnose,
+# and /dev/serial/by-id names the adapter by its own serial number.
+resolve_tty() {
+  ssh "$BENCH" "readlink -f /dev/serial/by-id/*$1* 2>/dev/null | head -1" 2>/dev/null
+}
+PICO_TTY="$(resolve_tty Debug_Probe)"
+STLINK_TTY="$(resolve_tty STM32_STLink)"
+for pair in "Pico 2 W Debug Probe:$PICO_TTY" "STM32F3 Discovery ST-LINK:$STLINK_TTY"; do
+  if [ -z "${pair#*:}" ]; then
+    fail "${pair%%:*}" "no /dev/serial/by-id entry on $BENCH"
+    note "      is it plugged in? \`ls /dev/serial/by-id/\` on the bench"
+    silent=$((silent + 1))
+  fi
+done
+if [ "$silent" -ne 0 ]; then
+  printf '\n%d board(s) absent -- nothing was run\n' "$silent"
+  exit 2
+fi
+note "pico   $PICO_TTY"
+note "stlink $STLINK_TTY"
+
 for spec in "${RUNS[@]}"; do
   IFS='|' read -r board feature triple binary tty marker recipe expect <<< "$spec"
+  case "$tty" in
+    pico)   tty="$PICO_TTY" ;;
+    stlink) tty="$STLINK_TTY" ;;
+  esac
   label="$board/$feature"
   if [ "$recipe" = pico ]; then budget="$PICO_SECONDS"; else budget="$STLINK_SECONDS"; fi
 
