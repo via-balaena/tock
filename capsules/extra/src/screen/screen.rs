@@ -370,12 +370,38 @@ impl<'a> Screen<'a> {
             });
             if start_command {
                 match self.call_screen(command, process_id) {
+                    // BUSY means "wait" on the way in and it has to mean the
+                    // same on the way out. Put the command back and leave the
+                    // queue alone: the next `screen_is_ready` or completion
+                    // walks it again.
+                    //
+                    // This is NOT a completion-callback-only path, which is
+                    // what makes it reachable. Two of the six callers of this
+                    // function are inside `call_screen` itself -- the Fill and
+                    // Write arms at :282 and :318, on their zero-length path,
+                    // neither of which consults the driver's state. And
+                    // zero-length is ordinary: `app.width`/`app.height` are
+                    // only set by SetWriteFrame, so an app that calls `fill`
+                    // before setting a frame takes it. That app's downcall
+                    // would otherwise dequeue a DIFFERENT app's queued command
+                    // into a driver that is still initialising, and report it
+                    // as failed -- the exact loss the enqueue path was fixed
+                    // to stop. Found by the parallel libtock-rs session, by
+                    // enumerating the call sites after I characterised them.
+                    Err(ErrorCode::BUSY) => {
+                        self.current_process.clear();
+                        let _ = self.apps.enter(process_id, |app, _| {
+                            app.pending_command = true;
+                        });
+                        break;
+                    }
+
+                    // `schedule_callback` takes `current_process`, so
+                    // clearing it first made the call a no-op: the app was
+                    // never told its command failed AND `pending_command`
+                    // stayed set, which answers BUSY forever. Let the
+                    // callback take it.
                     Err(err) => {
-                        // `schedule_callback` takes `current_process`, so
-                        // clearing it first made the call a no-op: the app was
-                        // never told its command failed AND `pending_command`
-                        // stayed set, which answers BUSY forever. Let the
-                        // callback take it.
                         self.schedule_callback(kernel::errorcode::into_statuscode(Err(err)), 0, 0);
                     }
                     Ok(()) => {
