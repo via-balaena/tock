@@ -1413,6 +1413,25 @@ impl<'a> hil::gpio::Interrupt<'a> for RPGpioPin<'a> {
         (current_val & (0b1111 << l_low_reg_no)) != 0
     }
 
+    /// Arm the pin's edge detector, and the bank's NVIC line with it.
+    ///
+    /// Setting the pin's own `INTE` bit is NOT sufficient. `Chip::init`
+    /// disables every NVIC line, and on a Cortex-M a pending interrupt whose
+    /// line is disabled is not a `wfi` wake-up event -- so an edge arriving
+    /// while the kernel sleeps leaves `ISPR` bit 21 set and the core asleep.
+    ///
+    /// The line heals itself once the kernel is awake for any other reason:
+    /// `next_pending_with_mask` reads `ISPR` and never `ISER`, so the poll
+    /// path services a pending-but-disabled source and
+    /// `service_pending_interrupts` calls `enable()` afterwards. That bounds
+    /// the hazard to the FIRST edge, and makes it fatal only when nothing
+    /// else is running to do the waking -- a board sleeping on one button.
+    ///
+    /// Measured on a Pico 2 W with the `nvic_wake_probe` board feature: with
+    /// this line absent, an edge driven from the debug port set `ISPR` bit 21
+    /// and the callback did not arrive; the core slept three seconds with the
+    /// interrupt pending, and delivered it only after an unrelated console
+    /// byte woke the kernel, which is also what set `ISER` bit 21.
     fn enable_interrupts(&self, mode: hil::gpio::InterruptEdge) {
         let interrupt_bank_no = self.pin / 8;
         match mode {
@@ -1439,8 +1458,15 @@ impl<'a> hil::gpio::Interrupt<'a> for RPGpioPin<'a> {
                     .set((1 << high_reg_no) | (1 << low_reg_no) | current_val);
             }
         }
+        cortexm33::nvic::Nvic::new(crate::interrupts::IO_IRQ_BANK0).enable();
     }
 
+    /// Disarm the pin's edge detector, and NOT the bank's NVIC line.
+    ///
+    /// Every pin in the bank shares `IO_IRQ_BANK0`, so disabling the line
+    /// here would silence the other 47 pins as well. The pin's own `INTE`
+    /// bits are what stop this pin from raising anything, and clearing them
+    /// is sufficient.
     fn disable_interrupts(&self) {
         let interrupt_bank_no = self.pin / 8;
         let low_reg_no = (self.pin * 4 + 2) % 32;

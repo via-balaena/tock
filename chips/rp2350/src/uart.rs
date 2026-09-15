@@ -363,6 +363,15 @@ pub struct Uart<'a> {
     registers: StaticRef<UartRegisters>,
     clocks: &'a clocks::Clocks,
 
+    /// This UART's own NVIC line.
+    ///
+    /// Carried as the line itself rather than derived from `registers` at the
+    /// point of use: the two instances differ only by base address, and
+    /// mapping an address back to an interrupt number at each call site is
+    /// the numeric-index shape the tree avoids. The constructor knows which
+    /// instance it is building, so it says so once.
+    nvic: cortexm33::nvic::Nvic,
+
     tx_client: OptionalCell<&'a dyn TransmitClient>,
     rx_client: OptionalCell<&'a dyn ReceiveClient>,
 
@@ -384,6 +393,7 @@ impl<'a> Uart<'a> {
         Self {
             registers: UART0_BASE,
             clocks,
+            nvic: cortexm33::nvic::Nvic::new(crate::interrupts::UART0_IRQ),
 
             tx_client: OptionalCell::empty(),
             rx_client: OptionalCell::empty(),
@@ -405,6 +415,7 @@ impl<'a> Uart<'a> {
         Self {
             registers: UART1_BASE,
             clocks,
+            nvic: cortexm33::nvic::Nvic::new(crate::interrupts::UART1_IRQ),
 
             tx_client: OptionalCell::empty(),
             rx_client: OptionalCell::empty(),
@@ -485,6 +496,7 @@ impl<'a> Uart<'a> {
     pub fn enable_transmit_interrupt(&self) {
         self.registers.uartifls.modify(UARTIFLS::TXIFLSEL::FIFO_1_8);
         self.registers.uartimsc.modify(UARTIMSC::TXIM::SET);
+        self.enable_nvic();
     }
 
     pub fn disable_transmit_interrupt(&self) {
@@ -504,6 +516,31 @@ impl<'a> Uart<'a> {
         self.registers
             .uartimsc
             .modify(UARTIMSC::RXIM::SET + UARTIMSC::RTIM::SET + UARTIMSC::OEIM::SET);
+        self.enable_nvic();
+    }
+
+    /// Arm this UART's NVIC line.
+    ///
+    /// `UARTIMSC` alone is not sufficient. `Chip::init` disables every NVIC
+    /// line, and on a Cortex-M a pending interrupt whose line is disabled is
+    /// not a `wfi` wake-up event, so a byte arriving while the kernel sleeps
+    /// does not wake it.
+    ///
+    /// Unlike GPIO, this one is not observably broken today, and the reason
+    /// is an accident worth naming: the line heals itself the first time the
+    /// kernel is awake to poll `ISPR`, and the boot banner is longer than the
+    /// 32-byte transmit FIFO, so `enable_transmit_interrupt` raises UART0's
+    /// line while the board is still being built. Measured on a Pico 2 W --
+    /// `ISER` bit 33 reads set on a running board with nothing in the tree
+    /// enabling it. A board with a shorter banner, or one that only ever
+    /// receives, has no such accident. Arming the line here removes the
+    /// dependency on it rather than relying on it continuing to hold.
+    ///
+    /// Not disabled anywhere: TX and RX share one line per instance, so
+    /// disarming it for one would silence the other. The `UARTIMSC` bits are
+    /// what stop a source from raising anything.
+    fn enable_nvic(&self) {
+        self.nvic.enable();
     }
 
     pub fn disable_receive_interrupt(&self) {
