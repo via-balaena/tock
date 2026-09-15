@@ -37,6 +37,8 @@ use rp2350::timer::RPTimer;
 use rp2350::{BASE_VECTORS, xosc};
 
 mod flash_bootloader;
+#[cfg(feature = "nvic_wake_probe")]
+pub mod nvic_wake_probe;
 
 // Manually setting the boot header section that contains the FCB header
 //
@@ -514,6 +516,27 @@ pub unsafe fn setup(
         );
         Interrupt::set_client(in_pin, gpio_contract);
         gpio_contract.run();
+    }
+
+    // Can a GPIO edge wake the kernel out of `wfi`? Nothing enables
+    // IO_IRQ_BANK0 in the NVIC, so the first edge is the one at risk -- see
+    // `nvic_wake_probe`, which explains why the edge has to come from the
+    // debug port rather than from the kernel. Same GP20/GP21 jumper as the
+    // gpio conformance test, so the same exclusions apply.
+    #[cfg(feature = "nvic_wake_probe")]
+    {
+        use crate::nvic_wake_probe::NvicWakeProbe;
+        use kernel::hil::gpio::Interrupt;
+
+        let out_pin = peripherals.pins.get_pin(RPGpio::GPIO20);
+        let in_pin = peripherals.pins.get_pin(RPGpio::GPIO21);
+
+        let probe = static_init!(
+            NvicWakeProbe<RPGpioPin, RPGpioPin>,
+            NvicWakeProbe::new(out_pin, in_pin)
+        );
+        Interrupt::set_client(in_pin, probe);
+        probe.arm();
     }
 
     // The `hil::i2c` conformance test. Every clause it runs is a rejection
