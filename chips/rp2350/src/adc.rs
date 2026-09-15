@@ -22,6 +22,30 @@
 use kernel::utilities::StaticRef;
 use rp2xxx::adc::AdcRegisters;
 
+/// Enable the ADC's NVIC line.
+///
+/// Setting `INTE::FIFO` in the block is NOT sufficient, and this is the second
+/// driver on this chip to need saying so -- see `enable_interrupt` in
+/// `dma.rs`. The kernel sleeps in WFI whenever no process is runnable, and on
+/// a Cortex-M a pending interrupt whose NVIC line is disabled does not wake
+/// it. `Chip::init` disables every line and `service_pending_interrupts`
+/// re-enables one only AFTER servicing it, so a conversion completing while
+/// the kernel is asleep is never serviced, the process waiting on its upcall
+/// never runs again, and the system sleeps forever.
+///
+/// What makes it nasty is that it is INTERMITTENT. While anything else keeps
+/// the kernel awake the pending bit is polled and serviced normally and the
+/// converter looks perfect -- thousands of conversions, no errors -- until the
+/// one that completes in the gap. Measured on a Pico 2 W: Doom ran for a
+/// minute or two, then stopped with no error, no output, the process still
+/// Yielded, and the core in WFI where the debugger reports it as "in unknown
+/// state when halt was requested".
+///
+/// Must be called AFTER `Chip::init()`, which disables every line.
+pub fn enable_nvic() {
+    cortexm33::nvic::Nvic::new(crate::interrupts::ADC_IRQ_FIFO).enable();
+}
+
 const ADC_BASE: StaticRef<AdcRegisters> =
     unsafe { StaticRef::new(0x400A0000 as *const AdcRegisters) };
 

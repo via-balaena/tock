@@ -820,6 +820,12 @@ pub unsafe fn setup(
 
         peripherals.adc.init();
 
+        // The block's own interrupt enable is not enough: without this the
+        // kernel can sleep through a completed conversion and never wake. See
+        // `rp2350::adc::enable_nvic`. Safe here because `ChipHw::init()`, which
+        // disables every line, has already run far above.
+        rp2350::adc::enable_nvic();
+
         let adc_mux = components::adc::AdcMuxComponent::new(&peripherals.adc)
             .finalize(components::adc_mux_component_static!(rp2350::adc::Adc));
 
