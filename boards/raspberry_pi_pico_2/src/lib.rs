@@ -78,6 +78,8 @@ pub static PANIC_RESOURCES: SingleThreadValue<PanicResources<ChipHw, ProcessPrin
 /// another. So [`setup`] takes a closure that builds this, and each board
 /// names its own pins with `components::gpio_component_helper!`.
 pub type GpioDriver = capsules_core::gpio::GPIO<'static, RPGpioPin<'static>>;
+/// Userspace randomness, over this chip's hardware TRNG.
+pub type RngDriver = components::rng::RngComponentType<rp2350::trng::Trng<'static>>;
 
 /// The scheduler this board uses.
 pub type SchedulerInUse = components::sched::round_robin::RoundRobinComponentType;
@@ -96,6 +98,9 @@ pub struct Platform {
         VirtualMuxAlarm<'static, rp2350::timer::RPTimer<'static>>,
     >,
     gpio: &'static GpioDriver,
+    /// Not feature gated the way the kit drivers are: the TRNG is on the die,
+    /// needs no pin and no wiring, so there is no board it would be wrong for.
+    rng: &'static RngDriver,
     #[cfg(feature = "kit_display")]
     screen: &'static capsules_extra::screen::screen::Screen<'static>,
     #[cfg(feature = "kit_input")]
@@ -113,6 +118,7 @@ impl SyscallDriverLookup for Platform {
             capsules_core::console::DRIVER_NUM => f(Some(self.console)),
             capsules_core::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
+            capsules_core::rng::DRIVER_NUM => f(Some(self.rng)),
             #[cfg(feature = "kit_display")]
             capsules_extra::screen::screen::DRIVER_NUM => f(Some(self.screen)),
             #[cfg(feature = "kit_input")]
@@ -518,11 +524,6 @@ pub unsafe fn setup(
         gpio_contract.run();
     }
 
-    // Can a GPIO edge wake the kernel out of `wfi`? Nothing enables
-    // IO_IRQ_BANK0 in the NVIC, so the first edge is the one at risk -- see
-    // `nvic_wake_probe`, which explains why the edge has to come from the
-    // debug port rather than from the kernel. Same GP20/GP21 jumper as the
-    // gpio conformance test, so the same exclusions apply.
     #[cfg(feature = "nvic_wake_probe")]
     {
         use crate::nvic_wake_probe::NvicWakeProbe;
@@ -870,6 +871,53 @@ pub unsafe fn setup(
         ))
     };
 
+    // Userspace randomness. `Entropy32ToRandom` adapts the chip's 192-bit
+    // collections to the `Rng` the syscall driver wants, so the driver never
+    // sees the six-word shape.
+    let rng = components::rng::RngComponent::new(
+        board_kernel,
+        capsules_core::rng::DRIVER_NUM,
+        &peripherals.trng,
+        create_capability!(capabilities::MemoryAllocationCapability),
+    )
+    .finalize(components::rng_component_static!(rp2350::trng::Trng));
+
+    // AFTER the component above, deliberately. `RngComponent::finalize` calls
+    // `set_client` on the TRNG as well, so a test placed before it has its
+    // client silently replaced: the collection completes, the interrupt is
+    // delivered to `Entropy32ToRandom` instead, which has no request pending
+    // and answers `Done`. Measured that way round first, and the only symptom
+    // was eight values that never printed with `RNG_IMR` back to 0xf and
+    // `RND_SOURCE_ENABLE` clear -- which reads exactly like a driver fault.
+    //
+    // So this TAKES THE CLIENT BACK, and userspace has no randomness in this
+    // build: the same trade `kit_display_test` makes with the screen.
+    // Can a GPIO edge wake the kernel out of `wfi`? Nothing enables
+    // IO_IRQ_BANK0 in the NVIC, so the first edge is the one at risk -- see
+    // `nvic_wake_probe`, which explains why the edge has to come from the
+    // debug port rather than from the kernel. Same GP20/GP21 jumper as the
+    // gpio conformance test, so the same exclusions apply.
+    // Ask the chip's TRNG for eight 32-bit values and print them.
+    //
+    // Eight is more than one collection: the hardware fills six words at a
+    // time, so this needs TWO runs and therefore exercises the parts most
+    // likely to be wrong -- the iterator stopping at six rather than
+    // re-reading, the `Continue::More` restart, and the drain of `EHR_DATA5`
+    // between runs. A driver that ignored the six-word boundary would show
+    // repeats; one that never restarted would print nothing.
+    #[cfg(feature = "trng_test")]
+    {
+        use capsules_core::test::rng::TestEntropy32;
+        use kernel::hil::entropy::Entropy32;
+
+        let trng_test = static_init!(
+            TestEntropy32<'static>,
+            TestEntropy32::new(&peripherals.trng)
+        );
+        Entropy32::set_client(&peripherals.trng, trng_test);
+        trng_test.run();
+    }
+
     let platform = Platform {
         ipc: kernel::ipc::IPC::new(
             board_kernel,
@@ -879,6 +927,7 @@ pub unsafe fn setup(
         console,
         alarm,
         gpio,
+        rng,
         #[cfg(feature = "kit_display")]
         screen,
         #[cfg(feature = "kit_input")]

@@ -22,6 +22,7 @@ pub mod resets;
 pub mod spi;
 pub mod ticks;
 pub mod timer;
+pub mod trng;
 pub mod uart;
 pub mod xosc;
 

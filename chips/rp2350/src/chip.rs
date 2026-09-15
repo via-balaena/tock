@@ -140,6 +140,11 @@ pub struct Rp2350DefaultPeripherals<'a> {
     pub spi0: spi::Spi<'a>,
     pub ticks: Ticks,
     pub timer0: RPTimer<'a>,
+    /// The true random number generator. Held rather than left to boards the
+    /// way `i2c1` and `pio1` are, because it carries one client cell and a
+    /// word index and nothing else -- and because a kernel that wants
+    /// randomness has no other source on this chip.
+    pub trng: crate::trng::Trng<'a>,
     pub uart0: Uart<'a>,
     pub uart1: Uart<'a>,
     pub xosc: Xosc,
@@ -158,6 +163,7 @@ impl Rp2350DefaultPeripherals<'_> {
             spi0: spi::new_spi0(clocks),
             ticks: Ticks::new(),
             timer0: RPTimer::new_timer0(),
+            trng: crate::trng::Trng::new(),
             uart0: Uart::new_uart0(clocks),
             uart1: Uart::new_uart1(clocks),
             xosc: Xosc::new(),
@@ -221,6 +227,10 @@ impl InterruptService for Rp2350DefaultPeripherals<'_> {
             }
             interrupts::SPI0_IRQ => {
                 self.spi0.handle_interrupt();
+                true
+            }
+            interrupts::TRNG_IRQ => {
+                self.trng.handle_interrupt();
                 true
             }
             interrupts::UART0_IRQ => {

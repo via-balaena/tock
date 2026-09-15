@@ -54,6 +54,12 @@ gpio_contract_test = []
 # GPIO edge wakes the kernel when IO_IRQ_BANK0 is masked. Same GP20/GP21
 # jumper as gpio_contract_test, so also exclusive with uart_contract_test_pads.
 nvic_wake_probe = []
+# Ask the chip's TRNG for eight 32-bit values at boot and print them. Needs no
+# wiring: the block is on the die. Eight spans two 192-bit collections, which
+# is the point -- one collection would not exercise the restart. TAKES THE
+# ENTROPY CLIENT BACK from the rng syscall driver, so userspace has no
+# randomness in this build.
+trng_test = []
 
 # Drive the breadboard kit's 320x480 TFT on SPI0 and expose it to userspace
 # through the screen syscall driver. GP2 SCLK, GP3 MOSI, GP5 CS, GP6 DC,
