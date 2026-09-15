@@ -240,9 +240,15 @@ fn load_processes_from_flash<C: Chip, D: ProcessStandardDebug + 'static>(
                             }
                             Err((new_mem, err)) => {
                                 remaining_memory = new_mem;
-                                if config::CONFIG.debug_load_processes {
-                                    debug!("Processes load error: {:?}.", err);
-                                }
+                                // Not gated behind `debug_load_processes`:
+                                // this is a failure, not tracing.
+                                // A process that cannot be loaded otherwise
+                                // vanishes -- absent from `list`, with the
+                                // error dropped and `Ok` returned, so the
+                                // board's own error arm never runs. That is
+                                // indistinguishable from a flash that did not
+                                // take or an app that died instantly.
+                                debug!("Processes load error: {:?}.", err);
                             }
                         }
                     }
@@ -263,9 +269,9 @@ fn load_processes_from_flash<C: Chip, D: ProcessStandardDebug + 'static>(
                             | ProcessBinaryError::IncorrectFlashAddress { .. }
                             | ProcessBinaryError::NotEnabledProcess
                             | ProcessBinaryError::Padding => {
-                                if config::CONFIG.debug_load_processes {
-                                    debug!("Unable to use process binary: {:?}.", err);
-                                }
+                                // A binary that is present and skipped, so
+                                // it is reported whether or not tracing is on.
+                                debug!("Unable to use process binary: {:?}.", err);
 
                                 // Skip this binary and move to the next one.
                                 continue;
@@ -275,10 +281,9 @@ fn load_processes_from_flash<C: Chip, D: ProcessStandardDebug + 'static>(
                 }
             }
             Err(()) => {
-                // No slot available.
-                if config::CONFIG.debug_load_processes {
-                    debug!("No more process slots to load processes into.");
-                }
+                // No slot available. Reported unconditionally: apps are still
+                // waiting in flash and none of them will run.
+                debug!("No more process slots to load processes into.");
                 break;
             }
         }
@@ -752,9 +757,9 @@ impl<'a, C: Chip, D: ProcessStandardDebug> SequentialProcessLoaderMachine<'a, C,
                             }
                             Err((new_mem, err)) => {
                                 self.app_memory.replace(new_mem);
-                                if config::CONFIG.debug_load_processes {
-                                    debug!("Could not load process: {:?}.", err);
-                                }
+                                // See the synchronous path: a failure, not
+                                // tracing.
+                                debug!("Could not load process: {:?}.", err);
                                 self.get_current_client().map(|client| {
                                     client.process_loaded(Err(err));
                                 });
