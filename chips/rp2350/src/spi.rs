@@ -33,7 +33,8 @@ pub fn new_spi0(clocks: &Clocks) -> Spi<'_> {
     Spi::new(SPI0_BASE, clocks, Nvic::new(interrupts::SPI0_IRQ))
 }
 
-/// Create a driver for SPI1.///
+/// Create a driver for SPI1.
+///
 /// **No `DefaultPeripherals` holds this one, and `chip.rs` does not route its
 /// interrupt.** A board that builds it must add the `service_interrupt` arm
 /// with it, or the first completion reaches `_ => false` and panics the

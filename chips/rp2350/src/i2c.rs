@@ -44,7 +44,8 @@ pub fn new_i2c0<'a, 'c>(clocks: &'a Clocks, resets: &'a Resets) -> I2c<'a, 'c> {
     )
 }
 
-/// Create a driver for I2C1.///
+/// Create a driver for I2C1.
+///
 /// **No `DefaultPeripherals` holds this one, and `chip.rs` does not route its
 /// interrupt.** A board that builds it must add the `service_interrupt` arm
 /// with it, or the first completion reaches `_ => false` and panics the
