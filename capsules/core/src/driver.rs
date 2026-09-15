@@ -24,6 +24,7 @@ pub enum NUM {
     ReadOnlyState         = 0x00009,
     Pwm                   = 0x00010,
     Stepper               = 0x00011,
+    Throttle              = 0x00012,
 
     // Kernel
     Ipc                   = 0x10000,

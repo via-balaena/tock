@@ -82,16 +82,26 @@ pub static PANIC_RESOURCES: SingleThreadValue<PanicResources<ChipHw, ProcessPrin
 pub type GpioDriver = capsules_core::gpio::GPIO<'static, RPGpioPin<'static>>;
 /// Userspace randomness, over this chip's hardware TRNG.
 pub type RngDriver = components::rng::RngComponentType<rp2350::trng::Trng<'static>>;
-/// Userspace PWM, on the two free pins below.
+/// Userspace PWM, on the free pin below.
 pub type PwmDriver = components::pwm::PwmDriverComponentType<PWM_PINS>;
+/// A throttle output, on its own pin and with its own safety policy.
+pub type ThrottleDriver = capsules_extra::throttle::Throttle<
+    'static,
+    VirtualMuxAlarm<'static, RPTimer<'static>>,
+    capsules_core::virtualizers::virtual_pwm::PwmPinUser<'static, rp2350::pwm::Pwm<'static>>,
+>;
 
-/// PWM pins exposed to userspace, in the order the syscall interface indexes
-/// them: index 0 is GP18, index 1 is GP19.
+/// PWM pins exposed to userspace: index 0 is GP18.
 ///
 /// Free on the breadboard kit and clear of the bench jumper, which sits on
 /// GP20/GP21. Nothing is driven until an application claims a pin, so the
-/// cost of offering them is a grant rather than a pin.
-const PWM_PINS: usize = 2;
+/// cost of offering one is a grant rather than a pin.
+///
+/// GP19 is deliberately NOT here. It belongs to the throttle driver, which
+/// enforces a slew limit and closes on a dead or silent owner -- guarantees
+/// the generic driver cannot make, and which a second route to the same pin
+/// would let an application walk around.
+const PWM_PINS: usize = 1;
 
 /// The scheduler this board uses.
 pub type SchedulerInUse = components::sched::round_robin::RoundRobinComponentType;
@@ -118,6 +128,7 @@ pub struct Platform {
     /// needs no pin and no wiring, so there is no board it would be wrong for.
     rng: &'static RngDriver,
     pwm: &'static PwmDriver,
+    throttle: &'static ThrottleDriver,
     #[cfg(feature = "kit_display")]
     screen: &'static capsules_extra::screen::screen::Screen<'static>,
     #[cfg(feature = "kit_input")]
@@ -137,6 +148,7 @@ impl SyscallDriverLookup for Platform {
             capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules_core::rng::DRIVER_NUM => f(Some(self.rng)),
             capsules_extra::pwm::DRIVER_NUM => f(Some(self.pwm)),
+            capsules_extra::throttle::DRIVER_NUM => f(Some(self.throttle)),
             #[cfg(feature = "kit_display")]
             capsules_extra::screen::screen::DRIVER_NUM => f(Some(self.screen)),
             #[cfg(feature = "kit_input")]
@@ -949,14 +961,36 @@ pub unsafe fn setup(
         .finalize(components::pwm_mux_component_static!(rp2350::pwm::Pwm));
     let pwm_gp18 = components::pwm::PwmPinUserComponent::new(mux_pwm, RPGpio::GPIO18)
         .finalize(components::pwm_pin_user_component_static!(rp2350::pwm::Pwm));
-    let pwm_gp19 = components::pwm::PwmPinUserComponent::new(mux_pwm, RPGpio::GPIO19)
-        .finalize(components::pwm_pin_user_component_static!(rp2350::pwm::Pwm));
     let pwm = components::pwm::PwmDriverComponent::new(
         board_kernel,
         capsules_extra::pwm::DRIVER_NUM,
         create_capability!(capabilities::MemoryAllocationCapability),
     )
-    .finalize(components::pwm_driver_component_helper!(pwm_gp18, pwm_gp19));
+    .finalize(components::pwm_driver_component_helper!(pwm_gp18));
+
+    // The throttle takes GP19 and does not share it. Its whole purpose is to
+    // hold guarantees about that pin, which it cannot do if something else
+    // can drive it.
+    let pwm_gp19 = components::pwm::PwmPinUserComponent::new(mux_pwm, RPGpio::GPIO19)
+        .finalize(components::pwm_pin_user_component_static!(rp2350::pwm::Pwm));
+    let throttle_alarm = static_init!(
+        VirtualMuxAlarm<'static, RPTimer<'static>>,
+        VirtualMuxAlarm::new(mux_alarm)
+    );
+    throttle_alarm.setup();
+    let throttle = static_init!(
+        ThrottleDriver,
+        capsules_extra::throttle::Throttle::new(
+            pwm_gp19,
+            throttle_alarm,
+            1000,
+            board_kernel.create_grant(
+                capsules_extra::throttle::DRIVER_NUM,
+                &create_capability!(capabilities::MemoryAllocationCapability)
+            )
+        )
+    );
+    kernel::hil::time::Alarm::set_alarm_client(throttle_alarm, throttle);
 
     let platform = Platform {
         ipc: kernel::ipc::IPC::new(
@@ -969,6 +1003,7 @@ pub unsafe fn setup(
         gpio,
         rng,
         pwm,
+        throttle,
         #[cfg(feature = "kit_display")]
         screen,
         #[cfg(feature = "kit_input")]

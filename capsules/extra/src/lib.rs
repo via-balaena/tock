@@ -7,6 +7,7 @@
 
 pub mod stepper;
 pub mod test;
+pub mod throttle;
 pub mod tutorials;
 
 #[macro_use]
