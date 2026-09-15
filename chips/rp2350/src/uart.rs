@@ -531,10 +531,10 @@ impl<'a> Uart<'a> {
     /// kernel is awake to poll `ISPR`, and the boot banner is longer than the
     /// 32-byte transmit FIFO, so `enable_transmit_interrupt` raises UART0's
     /// line while the board is still being built. Measured on a Pico 2 W --
-    /// `ISER` bit 33 reads set on a running board with nothing in the tree
-    /// enabling it. A board with a shorter banner, or one that only ever
-    /// receives, has no such accident. Arming the line here removes the
-    /// dependency on it rather than relying on it continuing to hold.
+    /// `ISER1` bit 1, which is IRQ 33, reads set on a running board with
+    /// nothing in the tree enabling it. A board with a shorter banner, or one
+    /// that only ever receives, has no such accident. Arming the line here
+    /// removes the dependency rather than relying on it continuing to hold.
     ///
     /// Not disabled anywhere: TX and RX share one line per instance, so
     /// disarming it for one would silence the other. The `UARTIMSC` bits are
