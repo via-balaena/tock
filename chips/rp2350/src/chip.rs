@@ -147,6 +147,9 @@ pub struct Rp2350DefaultPeripherals<'a> {
     pub trng: crate::trng::Trng<'a>,
     pub uart0: Uart<'a>,
     pub uart1: Uart<'a>,
+    /// The watchdog. Held here so a board can name it as its `WatchDog` and
+    /// have the kernel loop drive it; see `crate::watchdog`.
+    pub watchdog: crate::watchdog::Watchdog,
     pub xosc: Xosc,
 }
 
@@ -166,6 +169,7 @@ impl Rp2350DefaultPeripherals<'_> {
             trng: crate::trng::Trng::new(),
             uart0: Uart::new_uart0(clocks),
             uart1: Uart::new_uart1(clocks),
+            watchdog: crate::watchdog::Watchdog::new(),
             xosc: Xosc::new(),
         }
     }
@@ -173,6 +177,9 @@ impl Rp2350DefaultPeripherals<'_> {
     pub fn init(&'static self) {
         self.ticks.set_timer0_generator();
         self.ticks.set_timer1_generator();
+        // The watchdog counts down on its own generator, which nothing else
+        // starts. Without this it would be enabled and never fire.
+        self.ticks.set_watchdog_generator();
         kernel::deferred_call::DeferredCallClient::register(&self.uart0);
         kernel::deferred_call::DeferredCallClient::register(&self.uart1);
     }

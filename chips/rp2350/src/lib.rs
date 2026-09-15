@@ -24,6 +24,7 @@ pub mod ticks;
 pub mod timer;
 pub mod trng;
 pub mod uart;
+pub mod watchdog;
 pub mod xosc;
 
 use cortexm33::{CortexM33, CortexMVariant, initialize_ram_jump_to_main, unhandled_interrupt};

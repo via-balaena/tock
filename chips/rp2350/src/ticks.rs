@@ -37,9 +37,11 @@ register_structs! {
         /// Controls the tick generator
         (0x030 => watchdog_ctrl: ReadWrite<u32, WATCHDOG_CTRL::Register>),
 
-        (0x034 => watchdog_cycles: ReadWrite<u32>),
+        /// Cycles of the reference per tick
+        (0x034 => watchdog_cycles: ReadWrite<u32, WATCHDOG_CYCLES::Register>),
 
-        (0x038 => watchdog_count: ReadWrite<u32>),
+        /// The generator's own counter
+        (0x038 => watchdog_count: ReadOnly<u32, WATCHDOG_COUNT::Register>),
         /// Controls the tick generator
         (0x03C => riscv_ctrl: ReadWrite<u32, RISCV_CTRL::Register>),
 
@@ -169,6 +171,30 @@ impl Ticks {
             .timer1_cycles
             .modify(TIMER1_CYCLES::TIMER1_CYCLES.val(12));
         self.registers.timer1_ctrl.modify(TIMER1_CTRL::ENABLE::SET);
+    }
+
+    /// Start the tick the watchdog counts down on.
+    ///
+    /// Without this the watchdog's `LOAD` never decrements, so it is enabled
+    /// and harmless -- which is the worst of both. **This chip is where that
+    /// trap comes from**: on the RP2040 the watchdog owns its own `TICK`
+    /// register and starting the watchdog is enough, while here the tick
+    /// generators all live in this block and the watchdog's is a separate
+    /// one that nothing else turns on.
+    ///
+    /// Twelve cycles of the 12 MHz reference, the same divisor the timer
+    /// generators use, so one tick is one microsecond -- which is the unit
+    /// `LOAD` and `CTRL.TIME` are both documented in.
+    pub fn set_watchdog_generator(&self) {
+        self.registers
+            .watchdog_ctrl
+            .modify(WATCHDOG_CTRL::ENABLE::CLEAR);
+        self.registers
+            .watchdog_cycles
+            .modify(WATCHDOG_CYCLES::WATCHDOG_CYCLES.val(12));
+        self.registers
+            .watchdog_ctrl
+            .modify(WATCHDOG_CTRL::ENABLE::SET);
     }
 
     pub fn is_timer0_on(&self) -> bool {
