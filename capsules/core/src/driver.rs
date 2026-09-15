@@ -25,6 +25,7 @@ pub enum NUM {
     Pwm                   = 0x00010,
     Stepper               = 0x00011,
     Throttle              = 0x00012,
+    PulseCounter          = 0x00013,
 
     // Kernel
     Ipc                   = 0x10000,

@@ -84,6 +84,12 @@ pub type GpioDriver = capsules_core::gpio::GPIO<'static, RPGpioPin<'static>>;
 pub type RngDriver = components::rng::RngComponentType<rp2350::trng::Trng<'static>>;
 /// Userspace PWM, on the free pin below.
 pub type PwmDriver = components::pwm::PwmDriverComponentType<PWM_PINS>;
+/// Wheel speed, or any other pulse train. Channel 0 is GP21, channel 1 GP22.
+pub type PulseCounterDriver = capsules_extra::pulse_counter::PulseCounter<
+    'static,
+    VirtualMuxAlarm<'static, RPTimer<'static>>,
+    PULSE_CHANNELS,
+>;
 /// A throttle output, on its own pin and with its own safety policy.
 pub type ThrottleDriver = capsules_extra::throttle::Throttle<
     'static,
@@ -101,7 +107,16 @@ pub type ThrottleDriver = capsules_extra::throttle::Throttle<
 /// enforces a slew limit and closes on a dead or silent owner -- guarantees
 /// the generic driver cannot make, and which a second route to the same pin
 /// would let an application walk around.
-const PWM_PINS: usize = 1;
+const PWM_PINS: usize = 2;
+
+/// Counted inputs: channel 0 is GP21, channel 1 is GP22.
+///
+/// GP21 is the far end of the bench jumper, so PWM index 1 on GP20 can drive
+/// it at a known frequency -- a wheel sensor whose speed is known exactly,
+/// which is what lets the counting be checked rather than merely observed.
+/// GP22 is free and left as a second channel, because slip is the difference
+/// between two wheels and one of them is not a measurement.
+const PULSE_CHANNELS: usize = 2;
 
 /// The scheduler this board uses.
 pub type SchedulerInUse = components::sched::round_robin::RoundRobinComponentType;
@@ -129,6 +144,7 @@ pub struct Platform {
     rng: &'static RngDriver,
     pwm: &'static PwmDriver,
     throttle: &'static ThrottleDriver,
+    pulses: &'static PulseCounterDriver,
     #[cfg(feature = "kit_display")]
     screen: &'static capsules_extra::screen::screen::Screen<'static>,
     #[cfg(feature = "kit_input")]
@@ -149,6 +165,7 @@ impl SyscallDriverLookup for Platform {
             capsules_core::rng::DRIVER_NUM => f(Some(self.rng)),
             capsules_extra::pwm::DRIVER_NUM => f(Some(self.pwm)),
             capsules_extra::throttle::DRIVER_NUM => f(Some(self.throttle)),
+            capsules_extra::pulse_counter::DRIVER_NUM => f(Some(self.pulses)),
             #[cfg(feature = "kit_display")]
             capsules_extra::screen::screen::DRIVER_NUM => f(Some(self.screen)),
             #[cfg(feature = "kit_input")]
@@ -956,22 +973,63 @@ pub unsafe fn setup(
         kernel::debug!("watchdog: the last reset was mine");
     }
 
-    // Userspace PWM on GP18 and GP19.
+    // Userspace PWM. Index 0 is GP18; index 1 is GP20, which is the far end
+    // of the bench jumper and so can drive the pulse counter's GP21 at a
+    // frequency this board chose.
     let mux_pwm = components::pwm::PwmMuxComponent::new(&peripherals.pwm)
         .finalize(components::pwm_mux_component_static!(rp2350::pwm::Pwm));
     let pwm_gp18 = components::pwm::PwmPinUserComponent::new(mux_pwm, RPGpio::GPIO18)
         .finalize(components::pwm_pin_user_component_static!(rp2350::pwm::Pwm));
+    let pwm_gp20 = components::pwm::PwmPinUserComponent::new(mux_pwm, RPGpio::GPIO20)
+        .finalize(components::pwm_pin_user_component_static!(rp2350::pwm::Pwm));
+
+    // The throttle's pin. Normally GP19; under `throttle_on_jumper` it is
+    // GP20, the bench jumper's far end, so the throttle's own output feeds
+    // the pulse counter on GP21 -- the only way on this bench to see that the
+    // signal reaches the PIN rather than merely that the slice was enabled.
+    #[cfg(not(feature = "throttle_on_jumper"))]
+    let throttle_gpio = RPGpio::GPIO19;
+    #[cfg(feature = "throttle_on_jumper")]
+    let throttle_gpio = RPGpio::GPIO20;
+
+    // Point the pads at the PWM block. Without this the slices run and reach
+    // nothing: `PwmPin` holds a (channel, channel pin) pair rather than a
+    // GPIO, and on this chip one channel reaches several pads, so the driver
+    // cannot know which to mux. That is why muxing is the board's job here,
+    // the same way `set_function(UART)` and `set_function(SPI)` are above.
+    //
+    // Measured before this existed: GP18, GP19 and GP20 all read FUNCSEL 0x1f
+    // -- NULL, connected to nothing -- while the slices were being enabled and
+    // disabled correctly. A pulse counter jumpered to GP20 read zero at every
+    // frequency, which looks exactly like a broken counter.
+    {
+        for pin in [RPGpio::GPIO18, throttle_gpio] {
+            peripherals
+                .pins
+                .get_pin(pin)
+                .set_function(rp2350::gpio::GpioFunction::PWM);
+        }
+        // GP20 only on request. It is the bench jumper's far end, and the
+        // gpio and uart-pads conformance tests drive it themselves from
+        // earlier in this function -- muxing it to PWM here would silently
+        // take it away from them.
+        #[cfg(feature = "wheel_source")]
+        peripherals
+            .pins
+            .get_pin(RPGpio::GPIO20)
+            .set_function(rp2350::gpio::GpioFunction::PWM);
+    }
     let pwm = components::pwm::PwmDriverComponent::new(
         board_kernel,
         capsules_extra::pwm::DRIVER_NUM,
         create_capability!(capabilities::MemoryAllocationCapability),
     )
-    .finalize(components::pwm_driver_component_helper!(pwm_gp18));
+    .finalize(components::pwm_driver_component_helper!(pwm_gp18, pwm_gp20));
 
     // The throttle takes GP19 and does not share it. Its whole purpose is to
     // hold guarantees about that pin, which it cannot do if something else
     // can drive it.
-    let pwm_gp19 = components::pwm::PwmPinUserComponent::new(mux_pwm, RPGpio::GPIO19)
+    let pwm_gp19 = components::pwm::PwmPinUserComponent::new(mux_pwm, throttle_gpio)
         .finalize(components::pwm_pin_user_component_static!(rp2350::pwm::Pwm));
     let throttle_alarm = static_init!(
         VirtualMuxAlarm<'static, RPTimer<'static>>,
@@ -992,6 +1050,57 @@ pub unsafe fn setup(
     );
     kernel::hil::time::Alarm::set_alarm_client(throttle_alarm, throttle);
 
+    // Pulse counting, for wheel speed. The pins are wrapped so each reports
+    // its own index when it fires, which is how one client serves both.
+    let pulse_pins = static_init!(
+        [&'static dyn kernel::hil::gpio::InterruptWithValue<'static>; PULSE_CHANNELS],
+        [
+            static_init!(
+                kernel::hil::gpio::InterruptValueWrapper<'static, RPGpioPin<'static>>,
+                kernel::hil::gpio::InterruptValueWrapper::new(
+                    peripherals.pins.get_pin(RPGpio::GPIO21)
+                )
+            )
+            .finalize(),
+            static_init!(
+                kernel::hil::gpio::InterruptValueWrapper<'static, RPGpioPin<'static>>,
+                kernel::hil::gpio::InterruptValueWrapper::new(
+                    peripherals.pins.get_pin(RPGpio::GPIO22)
+                )
+            )
+            .finalize(),
+        ]
+    );
+    // Pulled down rather than left floating: an unconnected counting input
+    // reads whatever the air is doing and reports it as road speed.
+    for pin in [RPGpio::GPIO21, RPGpio::GPIO22] {
+        use kernel::hil::gpio::Configure;
+        let p = peripherals.pins.get_pin(pin);
+        p.make_input();
+        p.set_floating_state(kernel::hil::gpio::FloatingState::PullDown);
+    }
+    let pulse_alarm = static_init!(
+        VirtualMuxAlarm<'static, RPTimer<'static>>,
+        VirtualMuxAlarm::new(mux_alarm)
+    );
+    pulse_alarm.setup();
+    let pulses = static_init!(
+        PulseCounterDriver,
+        capsules_extra::pulse_counter::PulseCounter::new(
+            pulse_pins,
+            pulse_alarm,
+            board_kernel.create_grant(
+                capsules_extra::pulse_counter::DRIVER_NUM,
+                &create_capability!(capabilities::MemoryAllocationCapability)
+            )
+        )
+    );
+    pulses.initialise();
+    for pin in pulse_pins.iter() {
+        kernel::hil::gpio::InterruptWithValue::set_client(*pin, pulses);
+    }
+    kernel::hil::time::Alarm::set_alarm_client(pulse_alarm, pulses);
+
     let platform = Platform {
         ipc: kernel::ipc::IPC::new(
             board_kernel,
@@ -1004,6 +1113,7 @@ pub unsafe fn setup(
         rng,
         pwm,
         throttle,
+        pulses,
         #[cfg(feature = "kit_display")]
         screen,
         #[cfg(feature = "kit_input")]

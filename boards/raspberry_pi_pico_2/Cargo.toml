@@ -64,6 +64,14 @@ trng_test = []
 # the board. Proves the whole path: the tick generator, PSM_WDSEL, and the
 # kernel's own tickle. The board then resets in a loop, on purpose.
 watchdog_probe = []
+# Mux GP20 to PWM so it can drive the pulse counter's GP21 through the bench
+# jumper. Off by default: the gpio and uart-pads conformance tests drive GP20
+# themselves and muxing it away from them would break them silently.
+wheel_source = []
+# Put the throttle's output on GP20 instead of GP19, so it feeds the pulse
+# counter through the bench jumper. Proves the signal reaches the pin, which
+# reading the PWM slice cannot tell you.
+throttle_on_jumper = []
 
 # Drive the breadboard kit's 320x480 TFT on SPI0 and expose it to userspace
 # through the screen syscall driver. GP2 SCLK, GP3 MOSI, GP5 CS, GP6 DC,

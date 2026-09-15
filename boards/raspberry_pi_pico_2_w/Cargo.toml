@@ -34,6 +34,8 @@ gpio_contract_test = ["raspberry_pi_pico_2/gpio_contract_test"]
 nvic_wake_probe = ["raspberry_pi_pico_2/nvic_wake_probe"]
 trng_test = ["raspberry_pi_pico_2/trng_test"]
 watchdog_probe = ["raspberry_pi_pico_2/watchdog_probe"]
+wheel_source = ["raspberry_pi_pico_2/wheel_source"]
+throttle_on_jumper = ["raspberry_pi_pico_2/throttle_on_jumper"]
 i2c_contract_test = ["raspberry_pi_pico_2/i2c_contract_test"]
 # The breadboard kit TFT on SPI0; see the shared board crate.
 kit_display = ["raspberry_pi_pico_2/kit_display"]
