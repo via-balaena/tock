@@ -51,7 +51,16 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-IMPL = re.compile(r"impl[^\n{]*\bI2CMaster<'[a-z]+>\s+for\s+[^\n{]*\{")
+# `[^{;]*?` and not `[^\n{]*`: rustfmt wraps an impl header too long for one
+# line, and this scan stopped seeing rp2xxx's I2c the day it gained a generic
+# parameter -- three bodies, invisible, so a broken rule in them would have
+# been reported as clean. `{` and `;` are what bound the match to one item, so
+# it cannot run past the opening brace of a different impl.
+#
+# FLOOR is what caught it, and that is the point of having one: the failure
+# was "only 30 transfer bodies found", not a quiet pass. A scan that reports
+# what it found against what it expects fails loudly when it goes blind.
+IMPL = re.compile(r"impl[^{;]*?\bI2CMaster<'[a-z]+>\s+for\s+[^{;]*?\{")
 SIG = re.compile(r"\n    fn (write_read|write|read)\(\s*&self,")
 CALL = re.compile(r"self\.(\w+)\s*\(")
 FN = r"\bfn\s+%s\s*\("
