@@ -391,8 +391,7 @@ impl<'a> Screen<'a> {
                                                 // clock was halved, which is
                                                 // what named it -- a bus-bound
                                                 // transfer would have.
-                                                let n =
-                                                    core::cmp::min(chunk.len(), len - pos);
+                                                let n = core::cmp::min(chunk.len(), len - pos);
                                                 chunk[..n].copy_to_slice(&mut buffer[..n]);
                                                 pos += n;
                                                 n

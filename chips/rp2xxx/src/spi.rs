@@ -261,11 +261,13 @@ pub struct Spi<'a, C: PeripheralClock, P: hil::gpio::Output> {
     dma: OptionalCell<(&'static dyn PeripheralDma, DmaPacer)>,
 }
 
-/// Shorter writes stay on the interrupt path. Arming a channel costs four
-/// register writes plus a completion interrupt, which only pays once a
-/// transfer is longer than the FIFO can absorb in a couple of refills. The
-/// panel's commands are a handful of bytes each and stay where they were;
-/// its pixel writes are tens of thousands and are what this exists for.
+/// The shortest write that goes to DMA rather than the interrupt path.
+///
+/// Arming a channel costs four register writes plus a completion interrupt,
+/// which only pays once a transfer is longer than the FIFO can absorb in a
+/// couple of refills. The panel's commands are a handful of bytes each and
+/// stay where they were; its pixel writes are tens of thousands and are what
+/// this exists for.
 const MIN_DMA_LEN: usize = 64;
 
 /// Offset of `SSPDR` within the block, which is where a channel writes.

@@ -842,7 +842,9 @@ pub unsafe fn setup(
             capsules_core::adc::DRIVER_NUM,
             create_capability!(capabilities::MemoryAllocationCapability),
         )
-        .finalize(components::adc_syscall_component_helper!(adc_0, adc_1, adc_2))
+        .finalize(components::adc_syscall_component_helper!(
+            adc_0, adc_1, adc_2
+        ))
     };
 
     let platform = Platform {

@@ -922,7 +922,7 @@ impl ReadableProcessSlice {
             // running at 48% of its clock.
             unsafe {
                 core::ptr::copy_nonoverlapping(
-                    self.slice.as_ptr() as *const u8,
+                    self.slice.as_ptr().cast::<u8>(),
                     dest.as_mut_ptr(),
                     dest.len(),
                 );
@@ -1124,7 +1124,7 @@ impl WriteableProcessSlice {
             // running at 48% of its clock.
             unsafe {
                 core::ptr::copy_nonoverlapping(
-                    self.slice.as_ptr() as *const u8,
+                    self.slice.as_ptr().cast::<u8>(),
                     dest.as_mut_ptr(),
                     dest.len(),
                 );
