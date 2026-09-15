@@ -160,20 +160,55 @@ impl<'a> Screen<'a> {
             Ok(r) => {
                 if self.current_process.is_none() {
                     self.current_process.set(process_id);
-                    let r = self.call_screen(command, process_id);
-                    if r != Ok(()) {
-                        // Clear `pending_command` as well as the current
-                        // process. It was set just above, and the error is
-                        // returned to the app right here rather than through a
-                        // callback -- so nothing else will ever clear it, and
-                        // every later command from this app answers BUSY for
-                        // the life of the process.
-                        self.current_process.clear();
-                        let _ = self.apps.enter(process_id, |app, _| {
-                            app.pending_command = false;
-                        });
+                    match self.call_screen(command, process_id) {
+                        Ok(()) => CommandReturn::success(),
+
+                        // BUSY is the panel, not the app. `st77xx` answers it
+                        // to every call until its init sequence finishes --
+                        // about 1.25 s after boot on the breadboard kit's
+                        // ST7796 -- and an app has no way to know: `exists`
+                        // and `get_resolution` are answered here without ever
+                        // touching the driver, so they succeed immediately.
+                        //
+                        // The capsule already has the mechanism that makes
+                        // this a non-problem. `ScreenClient::screen_is_ready`
+                        // is raised by the driver when init completes and
+                        // calls `run_next_command`, which starts the first app
+                        // with `pending_command` set. So leave the command
+                        // queued and answer success: the app waits in
+                        // `yield_wait` and is served at ready. Clearing
+                        // `current_process` is what keeps `schedule_callback`
+                        // from delivering a spurious upcall in the meantime.
+                        //
+                        // Discarding it instead is what made every screen app
+                        // open-code a retry loop, and the timeout is the hard
+                        // part -- one that gave up at 1017 ms still failed.
+                        //
+                        // BOUNDED: this trades a visible BUSY for a wait, so
+                        // it is right only where a driver's BUSY is transient
+                        // by construction. In `st77xx` it is `status != Idle`,
+                        // and every path out of non-Idle ends in a callback
+                        // that runs the queue.
+                        Err(ErrorCode::BUSY) => {
+                            self.current_process.clear();
+                            CommandReturn::success()
+                        }
+
+                        // Everything else fails now. Clear `pending_command`
+                        // as well as the current process: it was set just
+                        // above, and the error goes back to the app right here
+                        // rather than through a callback, so nothing else
+                        // would ever clear it and every later command from
+                        // this app would answer BUSY for the life of the
+                        // process.
+                        Err(e) => {
+                            self.current_process.clear();
+                            let _ = self.apps.enter(process_id, |app, _| {
+                                app.pending_command = false;
+                            });
+                            CommandReturn::failure(e)
+                        }
                     }
-                    CommandReturn::from(r)
                 } else {
                     r
                 }
