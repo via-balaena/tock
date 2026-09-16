@@ -713,29 +713,37 @@ impl<'a, A: Alarm<'a>, B: Bus<'a, BusAddr8>, P: Pin> screen::ScreenSetup<'a>
         self.setup_client.set(setup_client);
     }
 
+    // What was asked for is decided before whether the driver is free, and the
+    // order is the point. This panel has exactly one resolution and one pixel
+    // format for its whole life, so a request for another is answerable
+    // without consulting `status` -- and answering `BUSY` to it reports on
+    // when the call arrived rather than on what it asked for. A caller that
+    // stores that has frozen "not asked yet" as "refused", and nothing
+    // re-asks after an `Err`. `st77xx` is busy for ~1.24 s after boot, so the
+    // wrong answer is the one a cold-booting app gets.
     fn set_resolution(&self, resolution: (usize, usize)) -> Result<(), ErrorCode> {
-        if self.status.get() == Status::Idle {
-            if resolution.0 == self.width.get() && resolution.1 == self.height.get() {
-                self.setup_client
-                    .map(|setup_client| setup_client.command_complete(Ok(())));
-                Ok(())
-            } else {
-                Err(ErrorCode::NOSUPPORT)
-            }
+        if resolution.0 != self.width.get() || resolution.1 != self.height.get() {
+            Err(ErrorCode::NOSUPPORT)
+        } else if self.status.get() == Status::Idle {
+            self.setup_client
+                .map(|setup_client| setup_client.command_complete(Ok(())));
+            Ok(())
         } else {
             Err(ErrorCode::BUSY)
         }
     }
 
+    // Same ordering as `set_resolution` above, and `NOSUPPORT` rather than
+    // `INVAL`: that is what `hil::screen::ScreenSetup` names for a format the
+    // screen does not have, and it is what this file's own `set_resolution`
+    // already answered for the identical condition.
     fn set_pixel_format(&self, depth: ScreenPixelFormat) -> Result<(), ErrorCode> {
-        if self.status.get() == Status::Idle {
-            if depth == ScreenPixelFormat::RGB_565 {
-                self.setup_client
-                    .map(|setup_client| setup_client.command_complete(Ok(())));
-                Ok(())
-            } else {
-                Err(ErrorCode::INVAL)
-            }
+        if depth != ScreenPixelFormat::RGB_565 {
+            Err(ErrorCode::NOSUPPORT)
+        } else if self.status.get() == Status::Idle {
+            self.setup_client
+                .map(|setup_client| setup_client.command_complete(Ok(())));
+            Ok(())
         } else {
             Err(ErrorCode::BUSY)
         }

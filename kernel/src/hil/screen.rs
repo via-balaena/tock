@@ -180,6 +180,10 @@ pub trait ScreenSetup<'a> {
     ///
     /// Returns `Err(NOSUPPORT)` if the resolution is not supported. No callback will
     /// be triggered.
+    ///
+    /// Returns `Err(BUSY)` if the screen cannot take the request yet — while
+    /// it is still running its initialisation sequence, for instance. No
+    /// callback will be triggered.
     fn set_resolution(&self, resolution: (usize, usize)) -> Result<(), ErrorCode>;
 
     /// Set the pixel format.
@@ -190,6 +194,18 @@ pub trait ScreenSetup<'a> {
     /// ErrorCode>` to indicate if the pixel format change was successful.
     ///
     /// Returns `Err(NOSUPPORT)` if the pixel format is not supported.
+    ///
+    /// Returns `Err(BUSY)` if the screen cannot take the request yet — while
+    /// it is still running its initialisation sequence, for instance. No
+    /// callback will be triggered.
+    ///
+    /// **Decide `NOSUPPORT` before `BUSY`.** `NOSUPPORT` is a verdict on
+    /// `format` and is the same answer at every moment; `BUSY` is a verdict on
+    /// when the call arrived and says nothing about `format` at all. An
+    /// implementation that checks its own state first answers `BUSY` to a
+    /// format it will never accept, which a caller cannot tell from a format
+    /// it should ask about again — and callers do not re-ask after an `Err`.
+    /// The same order applies to [`ScreenSetup::set_resolution`].
     fn set_pixel_format(&self, format: ScreenPixelFormat) -> Result<(), ErrorCode>;
 
     /// Set the rotation of the display.
