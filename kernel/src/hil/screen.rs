@@ -257,6 +257,25 @@ pub trait ScreenSetup<'a> {
 }
 
 /// Basic interface for screens.
+///
+/// # `BUSY` is a promise, not just a refusal
+///
+/// Several methods here may answer `Err(BUSY)`. An implementation that does so
+/// **must eventually raise a callback** — `command_complete`, `write_complete`,
+/// or [`ScreenClient::screen_is_ready`] — without the caller asking again.
+/// `BUSY` says *not yet*, and a caller has no other way to learn when.
+///
+/// This is a requirement on implementers rather than advice, because a caller
+/// that treats `BUSY` as "wait" cannot be correct without it. The screen
+/// syscall driver does exactly that: it keeps the command queued and runs the
+/// queue from those callbacks, so a driver that answers `BUSY` and then goes
+/// quiet wedges every later command from that process for the life of the
+/// process. Nothing in the type system enforces this and no test in the tree
+/// would catch a driver that broke it.
+///
+/// The obligation is discharged by any of the three callbacks, not
+/// specifically the one matching the refused call — running the queue is what
+/// matters, not which operation reports.
 pub trait Screen<'a> {
     /// Set the object to receive the asynchronous command callbacks.
     fn set_client(&self, client: &'a dyn ScreenClient);

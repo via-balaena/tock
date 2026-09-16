@@ -184,11 +184,23 @@ impl<'a> Screen<'a> {
                         // open-code a retry loop, and the timeout is the hard
                         // part -- one that gave up at 1017 ms still failed.
                         //
-                        // BOUNDED: this trades a visible BUSY for a wait, so
-                        // it is right only where a driver's BUSY is transient
-                        // by construction. In `st77xx` it is `status != Idle`,
-                        // and every path out of non-Idle ends in a callback
-                        // that runs the queue.
+                        // BOUNDED: this trades a visible BUSY for a wait, and
+                        // it is correct only because `hil::screen::Screen` now
+                        // REQUIRES a driver that answers BUSY to raise a
+                        // callback afterwards without being asked again.
+                        //
+                        // That sentence used to read "in `st77xx` it is
+                        // `status != Idle`, and every path out of non-Idle ends
+                        // in a callback" -- which was a characterisation of one
+                        // driver, checked by reading it once, and it is the
+                        // form that has been wrong repeatedly in this file.
+                        // Enumerating the six callers of `run_next_command`
+                        // showed two are NOT completions (the zero-length Fill
+                        // and Write arms below), so the queue is only
+                        // guaranteed to be walked again by the driver's own
+                        // callback -- which made the unwritten assumption
+                        // load-bearing and worth writing down where
+                        // implementers read it.
                         //
                         // AND IT MOVES WHERE AN ERROR ARRIVES, which matters
                         // to a caller that stores the answer. A command whose
