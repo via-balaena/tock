@@ -205,14 +205,39 @@ impl<C: Channel> Adc<'_, C> {
     }
 
     pub fn handle_interrupt(&self) {
+        // Mask first, and unconditionally. The FIFO interrupt is level
+        // triggered, so any path out of this handler that leaves it unmasked
+        // with the condition still true re-enters immediately and spins the
+        // kernel. There were two such paths, and both of them left the mask
+        // set because `disable_interrupt` used to sit *inside* the
+        // `client.map` below:
+        //
+        //   - no client set, so the closure never ran; and
+        //   - an interrupt arriving with `CS::READY` clear, which skipped the
+        //     whole body.
+        //
+        // Nothing is lost by masking early: `sample` re-enables it for the
+        // next conversion, which is the only time it is wanted.
+        //
+        // Neither path is reachable on any board in this tree today -- every
+        // board that builds the ADC also gives it a client through the mux,
+        // and this driver never sets `START_MANY`, so a sample cannot land
+        // while a conversion is still running. This is a guard against a
+        // configuration that does not exist yet, not a fix for an observed
+        // hang.
+        self.disable_interrupt();
+
         if self.registers.cs.is_set(CS::READY) {
             if self.status.get() == AdcStatus::OneSample {
                 self.status.set(AdcStatus::Idle);
             }
-            self.client.map(|client| {
-                self.disable_interrupt();
-                client.sample_ready((self.registers.fifo.read(FIFO::VAL) << 4) as u16)
-            });
+
+            // Popped whether or not anyone is listening. Leaving the entry in
+            // the FIFO would make the next `sample` deliver this conversion's
+            // result instead of its own, because `THRESH` is 1 and the stale
+            // entry alone satisfies it.
+            let sample = (self.registers.fifo.read(FIFO::VAL) << 4) as u16;
+            self.client.map(|client| client.sample_ready(sample));
         }
     }
 }
