@@ -38,6 +38,7 @@ use crate::test::capsule_test::{CapsuleTest, CapsuleTestClient, CapsuleTestError
 use core::cell::Cell;
 use kernel::ErrorCode;
 use kernel::debug;
+use kernel::deferred_call::{DeferredCall, DeferredCallClient};
 use kernel::hil::adc::{Adc, Client};
 use kernel::utilities::cells::OptionalCell;
 
@@ -45,7 +46,11 @@ pub struct TestAdcContract<'a, A: Adc<'a>> {
     adc: &'a A,
     channel: A::Channel,
     failures: Cell<usize>,
+    /// Set once the final sample has been issued, so `sample_ready` knows the
+    /// callback it receives is the one the last clause is waiting for.
+    awaiting_sample: Cell<bool>,
     client: OptionalCell<&'static dyn CapsuleTestClient>,
+    deferred_call: DeferredCall,
 }
 
 impl<'a, A: Adc<'a>> TestAdcContract<'a, A> {
@@ -54,7 +59,9 @@ impl<'a, A: Adc<'a>> TestAdcContract<'a, A> {
             adc,
             channel,
             failures: Cell::new(0),
+            awaiting_sample: Cell::new(false),
             client: OptionalCell::empty(),
+            deferred_call: DeferredCall::new(),
         }
     }
 
@@ -67,7 +74,13 @@ impl<'a, A: Adc<'a>> TestAdcContract<'a, A> {
         }
     }
 
+    /// Schedule the run. The clauses execute from the deferred call, which is
+    /// to say from the kernel's main loop rather than from board setup.
     pub fn run(&self) {
+        self.deferred_call.set();
+    }
+
+    fn run_clauses(&self) {
         self.failures.set(0);
 
         // Clause 1: the resolution is a number a caller can use. Everything
@@ -118,8 +131,15 @@ impl<'a, A: Adc<'a>> TestAdcContract<'a, A> {
                     self.adc.sample(&self.channel) == Ok(()),
                 );
 
-                // Leave the driver as it was found.
-                let _ = self.adc.stop_sampling();
+                // Leave one sample outstanding on purpose: the clause that
+                // needs a delivered value is in `sample_ready`.
+                //
+                // Say so, because the run stops here if the callback never
+                // comes and silence is ambiguous. It once meant "this board
+                // never called `adc.init()`", and read as "callbacks do not
+                // work".
+                self.awaiting_sample.set(true);
+                debug!("adc-contract: waiting for the delivered sample");
             }
             Err(e) => {
                 self.check("a sample on an idle ADC is accepted", false);
@@ -127,6 +147,14 @@ impl<'a, A: Adc<'a>> TestAdcContract<'a, A> {
             }
         }
 
+        if self.awaiting_sample.get() {
+            // The run finishes in `sample_ready`.
+            return;
+        }
+        self.report();
+    }
+
+    fn report(&self) {
         let failures = self.failures.get();
         if failures == 0 {
             debug!("adc-contract: all clauses passed");
@@ -144,15 +172,44 @@ impl<'a, A: Adc<'a>> TestAdcContract<'a, A> {
 }
 
 impl<'a, A: Adc<'a>> Client for TestAdcContract<'a, A> {
-    fn sample_ready(&self, _sample: u16) {
-        // Not reached -- see the module documentation. Present because the
-        // test has to be a `Client` to set itself as one, which is what the
-        // clauses above need in order to be refused rather than ignored.
+    fn sample_ready(&self, sample: u16) {
+        if !self.awaiting_sample.get() {
+            return;
+        }
+        self.awaiting_sample.set(false);
+
+        // The rule `hil::adc` states twice, on `sample` and on
+        // `sample_continuous`: "All ADC samples will be the raw ADC value
+        // left-justified in the u16." A 12-bit converter must therefore leave
+        // the low four bits clear. A 16-bit one has none to leave, so the
+        // clause is skipped rather than passed vacuously.
+        let bits = self.adc.get_resolution_bits();
+        if bits < 16 {
+            let low = sample & ((1u16 << (16 - bits)) - 1);
+            debug!("adc-contract: delivered sample 0x{:04X}", sample);
+            self.check("sample is left-justified", low == 0);
+        } else {
+            debug!(
+                "adc-contract: skip  left-justification -- {} bits fills the u16",
+                bits
+            );
+        }
+        self.report();
     }
 }
 
 impl<'a, A: Adc<'a>> CapsuleTest for TestAdcContract<'a, A> {
     fn set_client(&self, client: &'static dyn CapsuleTestClient) {
         self.client.set(client);
+    }
+}
+
+impl<'a, A: Adc<'a>> DeferredCallClient for TestAdcContract<'a, A> {
+    fn handle_deferred_call(&self) {
+        self.run_clauses();
+    }
+
+    fn register(&'static self) {
+        self.deferred_call.register(self);
     }
 }

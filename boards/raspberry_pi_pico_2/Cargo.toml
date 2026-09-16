@@ -55,7 +55,17 @@ i2c_contract_test = []
 # nonsense rather than hanging. Mutually exclusive with
 # uart_contract_test_pads, which muxes the same pins to UART1.
 gpio_contract_test = []
-adc_contract_test = []
+# Run the hil::adc conformance test at boot on ADC channel 0. Needs nothing
+# wired -- every clause is about what the driver does with a request rather
+# than what voltage is on the pin.
+#
+# REQUIRES kit_input, and that is not a convenience: `peripherals.adc.init()`
+# and `rp2350::adc::enable_nvic()` live inside that block and nowhere else, so
+# without it the ADC is never brought up and its interrupt can never reach the
+# CPU. The test's synchronous clauses all pass anyway, because they exercise
+# the driver's state machine rather than the hardware -- six green clauses
+# against a peripheral that was switched off.
+adc_contract_test = ["kit_input"]
 # Arm a GP21 rising-edge interrupt and leave GP20 low, so the FIRST edge can
 # be driven from the debug port while the kernel is asleep. Answers whether a
 # GPIO edge wakes the kernel when IO_IRQ_BANK0 is masked. Same GP20/GP21

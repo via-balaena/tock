@@ -955,7 +955,9 @@ pub unsafe fn setup(
             TestAdcContract<rp2350::adc::Adc>,
             TestAdcContract::new(&peripherals.adc, rp2350::adc::Channel::Channel0)
         );
+        use kernel::deferred_call::DeferredCallClient;
         Adc::set_client(&peripherals.adc, adc_contract);
+        adc_contract.register();
         adc_contract.run();
     }
 
