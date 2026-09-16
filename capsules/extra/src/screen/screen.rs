@@ -189,6 +189,21 @@ impl<'a> Screen<'a> {
                         // by construction. In `st77xx` it is `status != Idle`,
                         // and every path out of non-Idle ends in a callback
                         // that runs the queue.
+                        //
+                        // AND IT MOVES WHERE AN ERROR ARRIVES, which matters
+                        // to a caller that stores the answer. A command whose
+                        // eventual answer is a failure now reports it through
+                        // the upcall instead of the return value, because the
+                        // driver was not consulted before this returned. So
+                        // `set_pixel_format` with an unsupported format is
+                        // `Err(INVAL)` from `command` once the panel is idle,
+                        // and `success()` followed by upcall 0 carrying
+                        // `into_statuscode(Err(INVAL))` while it is not -- the
+                        // same call, answered in two places, chosen by how
+                        // early in boot the app ran. A caller that keeps only
+                        // the return value is right on one of those and wrong
+                        // on the other. Reported to the libtock-rs session,
+                        // whose screen adapter stores exactly that.
                         Err(ErrorCode::BUSY) => {
                             self.current_process.clear();
                             CommandReturn::success()
