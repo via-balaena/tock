@@ -701,14 +701,24 @@ impl<'a> hil::adc::Adc<'a> for Adc<'a> {
     }
 
     fn stop_sampling(&self) -> Result<(), ErrorCode> {
-        if self.status.get() != ADCStatus::Idle && self.status.get() != ADCStatus::Off {
-            self.registers.cr.modify(CR::ADSTP::SET);
-            if self.registers.cfgr.is_set(CFGR::CONT) {
-                self.registers.cfgr.modify(CFGR::CONT::CLEAR);
+        match self.status.get() {
+            // Nothing is sampling, so the promise this method makes -- that no
+            // further callbacks occur -- already holds. This answered `BUSY`,
+            // which asks the caller to try again for a condition that nothing
+            // will ever change.
+            ADCStatus::Idle => Ok(()),
+
+            // Powered down is a different thing from idle, and `hil::adc`
+            // names it separately.
+            ADCStatus::Off => Err(ErrorCode::OFF),
+
+            _ => {
+                self.registers.cr.modify(CR::ADSTP::SET);
+                if self.registers.cfgr.is_set(CFGR::CONT) {
+                    self.registers.cfgr.modify(CFGR::CONT::CLEAR);
+                }
+                Ok(())
             }
-            Ok(())
-        } else {
-            Err(ErrorCode::BUSY)
         }
     }
 
