@@ -775,8 +775,21 @@ pub unsafe fn setup(
     // one band of Doom's frame: 320 x 10 pixels at RGB565. It was 57,600,
     // chosen before anything drew, and that is 44,800 bytes of KERNEL RAM --
     // RAM the app cannot have, on a board where Doom fits or does not by less
-    // than that. An app that writes more than this in one call gets an error,
-    // not a truncated picture.
+    // than that.
+    //
+    // IT IS A CHUNKING GRANULARITY, NOT A LIMIT. An earlier version of this
+    // comment said a larger write gets an error; it does not, and both the
+    // code and the glass say so. `ScreenCommand::Write`
+    // (`capsules/extra/src/screen/screen.rs:304`) compares the length against
+    // nothing but zero and the colour depth, and `write_complete` at `:536`
+    // re-issues with `continue_write` for as long as
+    // `fill_next_buffer_for_write` returns non-zero. A 19,200-byte write --
+    // half again this buffer -- painted correctly on this panel on 09-14.
+    //
+    // So the cost of a large write is ONE KERNEL ROUND-TRIP PER CHUNK, which
+    // is a budget an app should know about and not a rejection it must code
+    // around. Found by the libtock-rs session, who had the measured run and
+    // read the code I had only read the comment of.
     .finalize(components::screen_component_static!(12800));
 
     // Fill the panel from the kernel and report how fast it managed it.
