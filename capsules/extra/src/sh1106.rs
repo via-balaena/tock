@@ -109,6 +109,20 @@ impl<'a, I: hil::i2c::I2CDevice> Sh1106<'a, I> {
         }
     }
 
+    /// Answer `BUSY` unless the driver is between operations.
+    ///
+    /// Every public entry point takes this first. The page walk in
+    /// `write_continue` deliberately does not: it runs *from* a non-idle
+    /// state, and is the one caller allowed to re-enter `send_sequence`
+    /// while an operation is outstanding.
+    fn ensure_idle(&self) -> Result<(), ErrorCode> {
+        if self.state.get() == State::Idle {
+            Ok(())
+        } else {
+            Err(ErrorCode::BUSY)
+        }
+    }
+
     fn send_sequence(&self, sequence: &[Command]) -> Result<(), ErrorCode> {
         self.buffer.take().map_or(Err(ErrorCode::NOMEM), |buffer| {
             let mut buf_slice = SubSliceMut::new(buffer);
@@ -161,6 +175,21 @@ impl<'a, I: hil::i2c::I2CDevice> Sh1106<'a, I> {
                         // Move the window of the subslice after the command
                         // byte header.
                         buf_slice.slice(1..);
+
+                        // Both ends of the copy are bounded, because neither
+                        // length is this driver's to choose.
+                        //
+                        // `data` is whatever the caller handed over, and the
+                        // screen syscall driver sizes it from the length the
+                        // app passed to command 200 -- nothing makes that
+                        // cover the frame. `buf_slice` is the board's buffer,
+                        // which is only conventionally `BUFFER_SIZE`.
+                        // Indexing either by the frame's geometry alone runs
+                        // off the end of a slice, which in the kernel is a
+                        // panic reachable from an ordinary syscall.
+                        let page_len = core::cmp::min(page_len, buf_slice.len());
+                        let page_len =
+                            core::cmp::min(page_len, data.len().saturating_sub(buffer_start_index));
 
                         // Copy the correct page data to the buffer.
                         for i in 0..page_len {
@@ -295,6 +324,20 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Sh1106<'a, I> {
         width: usize,
         height: usize,
     ) -> Result<(), ErrorCode> {
+        // Decide on the arguments before consulting the driver's state, so
+        // that a frame which can never fit is refused the same way at every
+        // moment rather than reported as a thing to retry.
+        //
+        // The casts below are why this is not optional: a width of 384 is
+        // `128` once truncated to `u8`, and the page walk then indexes both
+        // the caller's data and the bus buffer by it.
+        if x.checked_add(width).is_none_or(|right| right > WIDTH)
+            || y.checked_add(height).is_none_or(|bottom| bottom > HEIGHT)
+        {
+            return Err(ErrorCode::INVAL);
+        }
+        self.ensure_idle()?;
+
         // Save the current frame settings.
         self.active_frame_x.set(x as u8);
         self.active_frame_y.set(y as u8);
@@ -325,6 +368,10 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Sh1106<'a, I> {
     }
 
     fn write(&self, data: SubSliceMut<'static, u8>, _continue: bool) -> Result<(), ErrorCode> {
+        // Before the replace, not after: `MapCell::replace` returns the
+        // value it displaced, and dropping that here would strand a buffer
+        // the previous caller is still owed a `write_complete` for.
+        self.ensure_idle()?;
         self.write_buffer.replace(data);
 
         // Start by setting the page as active in the screen.
@@ -332,6 +379,7 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Sh1106<'a, I> {
     }
 
     fn set_brightness(&self, brightness: u16) -> Result<(), ErrorCode> {
+        self.ensure_idle()?;
         let commands = [Command::SetContrast {
             contrast: (brightness >> 8) as u8,
         }];
@@ -345,6 +393,7 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Sh1106<'a, I> {
     }
 
     fn set_power(&self, enabled: bool) -> Result<(), ErrorCode> {
+        self.ensure_idle()?;
         let commands = [Command::SetDisplayOnOff { on: enabled }];
         match self.send_sequence(&commands) {
             Ok(()) => {
@@ -356,6 +405,7 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Sh1106<'a, I> {
     }
 
     fn set_invert(&self, enabled: bool) -> Result<(), ErrorCode> {
+        self.ensure_idle()?;
         let commands = [Command::SetDisplayInvert { inverse: enabled }];
         match self.send_sequence(&commands) {
             Ok(()) => {
@@ -384,7 +434,17 @@ impl<I: hil::i2c::I2CDevice> hil::i2c::I2CClient for Sh1106<'_, I> {
             }
 
             State::WritePage(_) | State::WriteSetPage(_) => {
-                let _ = self.write_continue();
+                // A failure part-way through the page walk still owes the
+                // caller its buffer and a report. Dropping the error here
+                // left the driver non-idle forever, holding a buffer the
+                // screen syscall driver was waiting on before it would run
+                // anything else for that process.
+                if let Err(e) = self.write_continue() {
+                    self.state.set(State::Idle);
+                    self.write_buffer.take().map(|buf| {
+                        self.client.map(|client| client.write_complete(buf, Err(e)));
+                    });
+                }
             }
             _ => {}
         }

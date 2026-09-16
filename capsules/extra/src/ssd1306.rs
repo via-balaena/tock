@@ -346,6 +346,15 @@ impl<'a, I: hil::i2c::I2CDevice> Ssd1306<'a, I> {
         }
     }
 
+    /// Answer `BUSY` unless the driver is between operations.
+    fn ensure_idle(&self) -> Result<(), ErrorCode> {
+        if self.state.get() == State::Idle {
+            Ok(())
+        } else {
+            Err(ErrorCode::BUSY)
+        }
+    }
+
     fn send_sequence(&self, sequence: &[Command]) -> Result<(), ErrorCode> {
         if self.state.get() == State::Idle {
             self.buffer.take().map_or(Err(ErrorCode::NOMEM), |buffer| {
@@ -447,6 +456,23 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Ssd1306<'a, I> {
         width: usize,
         height: usize,
     ) -> Result<(), ErrorCode> {
+        // Decide on the arguments before consulting the driver's state: a
+        // frame which can never fit is the same answer at every moment, and
+        // reporting it as BUSY would invite a caller to retry forever.
+        //
+        // Both subtractions below underflow on an empty frame -- `width` of
+        // 0 takes `x + width - 1`, and any `height` under 8 takes
+        // `(y / 8) + (height / 8) - 1`. The frame comes straight from an
+        // app: the screen syscall driver passes command 100's arguments
+        // through without looking at them.
+        if width == 0
+            || height < 8
+            || x.checked_add(width).is_none_or(|right| right > WIDTH)
+            || y.checked_add(height).is_none_or(|bottom| bottom > HEIGHT)
+        {
+            return Err(ErrorCode::INVAL);
+        }
+
         let commands = [
             Command::SetPageAddress {
                 page_start: (y / 8) as u8,
@@ -467,6 +493,7 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Ssd1306<'a, I> {
     }
 
     fn write(&self, data: SubSliceMut<'static, u8>, _continue: bool) -> Result<(), ErrorCode> {
+        self.ensure_idle()?;
         self.buffer.take().map_or(Err(ErrorCode::NOMEM), |buffer| {
             let mut buf_slice = SubSliceMut::new(buffer);
 
@@ -476,8 +503,18 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Ssd1306<'a, I> {
             // Move the window of the subslice after the command byte header.
             buf_slice.slice(1..);
 
-            // Figure out how much we can send.
-            let copy_len = core::cmp::min(buf_slice.len(), data.len());
+            // Data that does not fit is refused, not quietly shortened.
+            //
+            // The `min` this replaces sent the first `buf_slice.len()` bytes
+            // and then reported `Ok(())` for the whole buffer in
+            // `write_complete`, so a caller could not tell a full write from
+            // a partial one. `SIZE` is what the HIL enumerates for a buffer
+            // too long for the frame.
+            if data.len() > buf_slice.len() {
+                self.buffer.replace(buf_slice.take());
+                return Err(ErrorCode::SIZE);
+            }
+            let copy_len = data.len();
 
             for i in 0..copy_len {
                 buf_slice[i] = data[i];
