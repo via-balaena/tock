@@ -114,6 +114,66 @@ pub struct ScreenOnLed<
     dirty: Cell<bool>,
 }
 
+/// Width in pixels of the word "led" drawn at `height`, or `None` if
+/// `height` is too small to draw it in at all.
+///
+/// Fallible because the subtraction below underflows at `height < 8`, and
+/// [`fitted_geometry`] walks `height` downwards looking for a fit.
+const fn led_text_width(height: usize) -> Option<usize> {
+    if height < TEXT_TOP_BOTTOM_PADDING * 2 {
+        return None;
+    }
+    let height = height - (TEXT_TOP_BOTTOM_PADDING * 2);
+    // 'l' and 'e' are 3/5 of the height, 'd' is 2/4.
+    let l_width = (height * 3) / 5;
+    let e_width = (height * 3) / 5;
+    let d_width = (height * 2) / 4;
+    Some(l_width + TEXT_SPACING + e_width + TEXT_SPACING + d_width)
+}
+
+/// Shrink the LEDs until the whole graphic fits the screen width, and answer
+/// `(width, led_dimension, y_offset)`.
+///
+/// `None` when no positive LED size fits -- which is a real configuration,
+/// not a theoretical one: 12 LEDs fit a 128x64 screen and 16 do not, the
+/// search running `led_dimension` down to 7 where the text no longer has
+/// room. Left unguarded this underflowed, which in a release build wraps
+/// into a very long loop over nonsense sizes and in a dev build panics.
+///
+/// The caller that matters is a compile-time assertion, so an unfittable
+/// board fails the build rather than the boot -- see
+/// `ScreenOnLed::GEOMETRY_FITS`.
+const fn fitted_geometry(
+    num_leds: usize,
+    screen_width: usize,
+    screen_height: usize,
+) -> Option<(usize, usize, usize)> {
+    if num_leds == 0 || screen_height <= TOP_BOTTOM_PADDING * 2 {
+        return None;
+    }
+
+    let mut width = screen_width + 1;
+    let mut led_dimension = screen_height - (TOP_BOTTOM_PADDING * 2);
+
+    while width > screen_width {
+        if led_dimension == 0 {
+            return None;
+        }
+        led_dimension -= 1;
+
+        let text_width = match led_text_width(led_dimension) {
+            Some(w) => w,
+            None => return None,
+        };
+        let leds_width: usize = (led_dimension * num_leds) + (num_leds - 1);
+        width =
+            LEFT_RIGTH_PADDING + text_width + TEXT_LEDS_PADDING + leds_width + LEFT_RIGTH_PADDING;
+    }
+
+    let y_offset = (screen_height - (TOP_BOTTOM_PADDING * 2) - led_dimension) / 2;
+    Some((width, led_dimension, y_offset))
+}
+
 impl<
     'a,
     S: hil::screen::Screen<'a>,
@@ -122,7 +182,18 @@ impl<
     const SCREEN_HEIGHT: usize,
 > ScreenOnLed<'a, S, NUM_LEDS, SCREEN_WIDTH, SCREEN_HEIGHT>
 {
+    /// Fails the build when this board's LED count cannot be drawn on this
+    /// board's screen. Referenced from `new` so that it is evaluated: an
+    /// associated const nothing mentions is never checked.
+    const GEOMETRY_FITS: () = assert!(
+        fitted_geometry(NUM_LEDS, SCREEN_WIDTH, SCREEN_HEIGHT).is_some(),
+        "screen_on_led: NUM_LEDS cannot be drawn on this SCREEN_WIDTH x \
+         SCREEN_HEIGHT -- the LEDs shrink until the word `led` no longer \
+         fits beside them. 12 LEDs fit a 128x64 screen; 16 do not."
+    );
+
     pub const fn new(screen: &'a S, buffer: &'static mut [u8]) -> Self {
+        let () = Self::GEOMETRY_FITS;
         Self {
             screen,
             leds: Cell::new([false; NUM_LEDS]),
@@ -340,24 +411,12 @@ impl<
     /// Find a size of the graphic that works with the screen by shrinking the
     /// LEDs until everything fits.
     pub const fn get_size(&self) -> (usize, usize, usize) {
-        let mut width = SCREEN_WIDTH + 1;
-        let mut led_dimension = SCREEN_HEIGHT - (TOP_BOTTOM_PADDING * 2);
-
-        while width > SCREEN_WIDTH {
-            // Shrink LEDs by 1 pixel.
-            led_dimension -= 1;
-
-            let leds_width: usize = (led_dimension * NUM_LEDS) + (NUM_LEDS - 1);
-            width = LEFT_RIGTH_PADDING
-                + self.get_led_width(led_dimension)
-                + TEXT_LEDS_PADDING
-                + leds_width
-                + LEFT_RIGTH_PADDING;
+        match fitted_geometry(NUM_LEDS, SCREEN_WIDTH, SCREEN_HEIGHT) {
+            Some(geometry) => geometry,
+            // Unreachable: `GEOMETRY_FITS` is asserted at compile time and
+            // an instance cannot exist without having gone through `new`.
+            None => (0, 0, 0),
         }
-
-        let y_offset = (SCREEN_HEIGHT - (TOP_BOTTOM_PADDING * 2) - led_dimension) / 2;
-
-        (width, led_dimension, y_offset)
     }
 
     pub const fn get_char_width(&self, height: usize, c: char) -> usize {
@@ -369,13 +428,17 @@ impl<
         }
     }
 
+    /// Width of the word "led" at `height`, or 0 at a height too small to
+    /// draw it.
+    ///
+    /// Delegates rather than repeating the arithmetic: a second copy of a
+    /// sizing rule is a copy that drifts, and this one is what decides
+    /// whether a board's geometry fits at all.
     pub const fn get_led_width(&self, height: usize) -> usize {
-        let height = height - (TEXT_TOP_BOTTOM_PADDING * 2);
-
-        let l_width = self.get_char_width(height, 'l');
-        let e_width = self.get_char_width(height, 'e');
-        let d_width = self.get_char_width(height, 'd');
-        l_width + TEXT_SPACING + e_width + TEXT_SPACING + d_width
+        match led_text_width(height) {
+            Some(width) => width,
+            None => 0,
+        }
     }
 }
 
