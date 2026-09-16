@@ -331,9 +331,28 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Sh1106<'a, I> {
         // The casts below are why this is not optional: a width of 384 is
         // `128` once truncated to `u8`, and the page walk then indexes both
         // the caller's data and the bus buffer by it.
-        if x.checked_add(width).is_none_or(|right| right > WIDTH)
+        if width == 0
+            || height == 0
+            || x.checked_add(width).is_none_or(|right| right > WIDTH)
             || y.checked_add(height).is_none_or(|bottom| bottom > HEIGHT)
         {
+            return Err(ErrorCode::INVAL);
+        }
+
+        // The panel is addressed in 8-row pages and this driver walks the
+        // frame one page at a time, so a frame that does not begin and end on
+        // a page boundary cannot be expressed. It used to be accepted and
+        // then quietly reshaped: `y` fell to the page below it, and the row
+        // count was rounded DOWN by `(y + height) / 8`.
+        //
+        // Measured before this check existed: a 128x20 frame at y=0 issued
+        // four I2C transfers -- two pages -- and reported `Ok(())`, so the
+        // caller was told all 20 rows were painted when 16 were.
+        //
+        // `INVAL` is what the HIL enumerates for a frame whose parameters are
+        // not valid, and a caller that has to guess at the granularity is
+        // better off being told than being agreed with.
+        if !y.is_multiple_of(8) || !height.is_multiple_of(8) {
             return Err(ErrorCode::INVAL);
         }
         self.ensure_idle()?;

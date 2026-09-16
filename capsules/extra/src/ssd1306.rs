@@ -466,10 +466,22 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Ssd1306<'a, I> {
         // app: the screen syscall driver passes command 100's arguments
         // through without looking at them.
         if width == 0
-            || height < 8
+            || height == 0
             || x.checked_add(width).is_none_or(|right| right > WIDTH)
             || y.checked_add(height).is_none_or(|bottom| bottom > HEIGHT)
         {
+            return Err(ErrorCode::INVAL);
+        }
+
+        // `SetPageAddress` addresses whole 8-row pages, so a frame that does
+        // not begin and end on a page boundary cannot be sent. It used to be
+        // accepted and then quietly reshaped by the two divisions below: `y`
+        // fell to the page beneath it and the row count was rounded down.
+        //
+        // This also subsumes the `height < 8` guard it replaces -- that guard
+        // existed because `(height / 8) - 1` underflows below one page, and
+        // any height that is a nonzero multiple of 8 is at least 8.
+        if !y.is_multiple_of(8) || !height.is_multiple_of(8) {
             return Err(ErrorCode::INVAL);
         }
 

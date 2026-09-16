@@ -367,3 +367,57 @@ fn ssd1306_refuses_a_second_write_as_busy() {
     assert_eq!(client.completes.get(), 1);
     assert_eq!(client.returned_first_byte.get(), 0x55);
 }
+
+#[test]
+fn sh1106_refuses_a_frame_that_is_not_page_aligned() {
+    let (_i2c, screen, _client) = fixture();
+
+    // The panel is addressed in 8-row pages. A `y` between boundaries used
+    // to be accepted and then snapped down to the page below it.
+    assert_eq!(screen.set_write_frame(0, 4, 128, 8), Err(ErrorCode::INVAL));
+
+    // A height that is not a whole number of pages used to be rounded DOWN
+    // and still reported as fully painted. Measured before this guard: a
+    // 128x20 frame issued four I2C transfers -- two pages, 16 rows -- and
+    // answered Ok(()).
+    assert_eq!(screen.set_write_frame(0, 0, 128, 20), Err(ErrorCode::INVAL));
+
+    // A zero-area frame is not a frame.
+    assert_eq!(screen.set_write_frame(0, 0, 0, 8), Err(ErrorCode::INVAL));
+    assert_eq!(screen.set_write_frame(0, 0, 128, 0), Err(ErrorCode::INVAL));
+}
+
+#[test]
+fn sh1106_accepts_every_page_aligned_frame() {
+    // The positive control: the guard must reject only what it is for. Each
+    // of these is a legal frame on a 128x64 paged panel.
+    for (y, h) in [(0, 8), (8, 8), (0, 64), (56, 8), (24, 32)] {
+        let (_i2c, screen, _client) = fixture();
+        assert_eq!(
+            screen.set_write_frame(0, y, 128, h),
+            Ok(()),
+            "y={y} height={h} is page aligned and fits"
+        );
+    }
+}
+
+#[test]
+fn ssd1306_refuses_a_frame_that_is_not_page_aligned() {
+    let (_i2c, screen, _client) = ssd1306_fixture();
+
+    assert_eq!(screen.set_write_frame(0, 4, 128, 8), Err(ErrorCode::INVAL));
+    assert_eq!(screen.set_write_frame(0, 0, 128, 20), Err(ErrorCode::INVAL));
+    assert_eq!(screen.set_write_frame(0, 0, 128, 0), Err(ErrorCode::INVAL));
+}
+
+#[test]
+fn ssd1306_accepts_every_page_aligned_frame() {
+    for (y, h) in [(0, 8), (8, 8), (0, 64), (56, 8), (24, 32)] {
+        let (_i2c, screen, _client) = ssd1306_fixture();
+        assert_eq!(
+            screen.set_write_frame(0, y, 128, h),
+            Ok(()),
+            "y={y} height={h} is page aligned and fits"
+        );
+    }
+}
