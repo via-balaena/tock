@@ -21,6 +21,12 @@ capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
 
 [features]
+# Measure how late a periodic kernel alarm actually fires, and print a
+# histogram when the run ends. The kernel half of a jitter measurement whose
+# other half is a userspace app; the DIFFERENCE between the two is the answer.
+# Off by default -- it prints on every boot and holds a virtual alarm for the
+# life of the board.
+jitter_probe = []
 # Run the hil::uart conformance test at boot and print the result.
 # Off by default: it costs about 4 KB of text and prints on every boot.
 uart_contract_test = []

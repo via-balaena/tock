@@ -37,6 +37,8 @@ use rp2350::timer::RPTimer;
 use rp2350::{BASE_VECTORS, xosc};
 
 mod flash_bootloader;
+#[cfg(feature = "jitter_probe")]
+pub mod jitter_probe;
 #[cfg(feature = "nvic_wake_probe")]
 pub mod nvic_wake_probe;
 #[cfg(feature = "watchdog_probe")]
@@ -1139,6 +1141,37 @@ pub unsafe fn setup(
         let probe = static_init!(
             WatchdogProbe<'static, VirtualMuxAlarm<'static, RPTimer<'static>>>,
             WatchdogProbe::new(probe_alarm, 2000)
+        );
+        Alarm::set_alarm_client(probe_alarm, probe);
+        probe.arm();
+    }
+
+    // Measure how late a periodic kernel alarm fires. Armed last so the
+    // reported lateness is against a board that has finished setting up --
+    // arming earlier would fold the rest of this function into sample 0 and
+    // put a one-off startup cost in the same histogram as steady-state
+    // scheduling, where nothing would distinguish them.
+    #[cfg(feature = "jitter_probe")]
+    {
+        use crate::jitter_probe::JitterProbe;
+        use kernel::hil::time::Alarm;
+
+        // Edited in place per run rather than read from the environment:
+        // cargo refingerprints on a source change and does NOT on an
+        // `option_env!` change, so a build flag here would silently keep
+        // whichever value was compiled first. 1000 is 1 kHz; 100 is 10 kHz,
+        // which this board sustains -- measured, see the module doc.
+        const JITTER_PERIOD_US: u32 = 1000;
+        const JITTER_SAMPLES: u32 = 10_000;
+
+        let probe_alarm = static_init!(
+            VirtualMuxAlarm<'static, RPTimer<'static>>,
+            VirtualMuxAlarm::new(mux_alarm)
+        );
+        probe_alarm.setup();
+        let probe = static_init!(
+            JitterProbe<'static, VirtualMuxAlarm<'static, RPTimer<'static>>>,
+            JitterProbe::new(probe_alarm, JITTER_PERIOD_US, JITTER_SAMPLES)
         );
         Alarm::set_alarm_client(probe_alarm, probe);
         probe.arm();
