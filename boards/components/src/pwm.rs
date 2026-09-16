@@ -79,11 +79,7 @@ impl<P: 'static + pwm::Pwm> Component for PwmPinUserComponent<P> {
     type Output = &'static PwmPinUser<'static, P>;
 
     fn finalize(self, static_buffer: Self::StaticInput) -> Self::Output {
-        let pwm_pin = static_buffer.write(PwmPinUser::new(self.pwm_mux, self.channel));
-
-        pwm_pin.add_to_mux();
-
-        pwm_pin
+        static_buffer.write(PwmPinUser::new(self.pwm_mux, self.channel))
     }
 }
 
