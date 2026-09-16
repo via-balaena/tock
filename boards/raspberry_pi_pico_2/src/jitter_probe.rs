@@ -40,10 +40,17 @@
 //! Microseconds, 10,000 samples per probe per run (50,000 for the last).
 //!
 //! **The contended row is the measurement worth having, and it confirms a
-//! bound that was derived before it was measured.** `round_robin.rs` grants a
-//! 10,000 us timeslice, so a process waiting behind one CPU-bound sibling
-//! should miss its deadline by up to about that. It missed by 10,537 us --
-//! quantum plus overhead -- and not rarely: 64% of wakes were over 4 ms late.
+//! bound that was derived before it was measured.** The whole chain, because
+//! a bare `round_robin.rs` is ambiguous -- there are two in this tree:
+//!
+//! * `lib.rs:641` calls `RoundRobinComponent::new(processes)` with no custom
+//!   timeslice, so this board runs the default;
+//! * `capsules/system/src/scheduler/round_robin.rs:62` sets that default,
+//!   `DEFAULT_TIMESLICE_US = 10000`.
+//!
+//! So a process waiting behind one CPU-bound sibling should miss its deadline
+//! by about a quantum. It missed by 10,537 us -- quantum plus 537 us, 5.4%
+//! overhead -- and not rarely: 64% of wakes were over 4 ms late.
 //! The capsule under the identical load peaked at 87 us, two orders of
 //! magnitude better, because an interrupt's bottom half stops a running
 //! process rather than queueing behind it.
