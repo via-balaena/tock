@@ -506,11 +506,30 @@ impl<'a> Screen<'a> {
                                                     buffer[i] = byte.get();
                                                 }
                                             }
-                                            for i in 1..write_len {
-                                                // bytes per pixel
-                                                for j in 0..bytes_per_pixel {
-                                                    buffer[bytes_per_pixel * i + j] = buffer[j]
-                                                }
+                                            // Double the filled prefix rather
+                                            // than assign every byte. The old
+                                            // loop did `write_len *
+                                            // bytes_per_pixel` single
+                                            // bounds-checked assignments --
+                                            // 12,800 of them per chunk at
+                                            // RGB565 -- where this does about
+                                            // log2 of that many `copy_within`
+                                            // calls, each a bulk move.
+                                            //
+                                            // MEASURED on an ST7796 over SPI
+                                            // at 62.5 MHz: `fill` cost 0.524
+                                            // us/pixel against `write`'s 0.344
+                                            // for the same pixels, and `write`
+                                            // differs only in doing one bulk
+                                            // copy. Synthesising the pattern
+                                            // was costing more than moving the
+                                            // caller's bytes.
+                                            let total = write_len * bytes_per_pixel;
+                                            let mut filled = bytes_per_pixel;
+                                            while filled < total {
+                                                let n = core::cmp::min(filled, total - filled);
+                                                buffer.copy_within(0..n, filled);
+                                                filled += n;
                                             }
                                             write_len * bytes_per_pixel
                                         })
