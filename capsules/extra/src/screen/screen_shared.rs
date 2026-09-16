@@ -251,7 +251,10 @@ impl<'a, S: hil::screen::Screen<'a>> ScreenShared<'a, S> {
                                         // Send to screen.
                                         let mut data = SubSliceMut::new(buffer);
                                         data.slice(..copy_len);
-                                        self.screen.write(data, false)
+                                        self.screen.write(data, false).map_err(|(e, data)| {
+                                            self.buffer.replace(data.take());
+                                            e
+                                        })
                                     })
                                 }
                             })

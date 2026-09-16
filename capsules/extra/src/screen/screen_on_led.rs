@@ -137,7 +137,12 @@ impl<
         self.buffer.take().map(|buffer| {
             self.render(buffer);
             let data = SubSliceMut::new(buffer);
-            let _ = self.screen.write(data, false);
+            // A refusal returns the buffer, and this capsule has only the
+            // one -- without putting it back, every later LED change would
+            // find nothing to draw into.
+            if let Err((_e, data)) = self.screen.write(data, false) {
+                self.buffer.replace(data.take());
+            }
         });
     }
 
@@ -165,7 +170,12 @@ impl<
                     self.render_led_state(buffer, i, *led_state);
                 }
                 let data = SubSliceMut::new(buffer);
-                let _ = self.screen.write(data, false);
+                if let Err((_e, data)) = self.screen.write(data, false) {
+                    // Same buffer, same reason as `initialize_leds`. The
+                    // LEDs stay as drawn and the next change tries again.
+                    self.buffer.replace(data.take());
+                    self.dirty.set(true);
+                }
             },
         );
     }

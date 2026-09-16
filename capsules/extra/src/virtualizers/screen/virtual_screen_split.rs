@@ -161,15 +161,28 @@ impl<'a, S: hil::screen::Screen<'a>> hil::screen::Screen<'a> for ScreenSplitUser
         &self,
         buffer: SubSliceMut<'static, u8>,
         continue_write: bool,
-    ) -> Result<(), ErrorCode> {
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)> {
         if self.pending.is_some() {
-            Err(ErrorCode::BUSY)
+            Err((ErrorCode::BUSY, buffer))
         } else {
             // Just mark this operation as intended and then ask the shared
             // split manager to execute it.
             self.pending
                 .set(ScreenSplitOperation::WriteBuffer(buffer, continue_write));
-            self.mux.request_operation()
+            // The buffer is inside `pending` now. If the mux refuses, it
+            // has to come back out again -- leaving it queued against an
+            // operation that will never run strands it.
+            self.mux.request_operation().map_err(|e| {
+                match self.pending.take() {
+                    Some(ScreenSplitOperation::WriteBuffer(buffer, _)) => (e, buffer),
+                    // `pending` was empty a few lines above and this is the
+                    // only thing that could have been put in it.
+                    other => {
+                        other.map(|o| self.pending.set(o));
+                        (e, SubSliceMut::new(&mut []))
+                    }
+                }
+            })
         }
     }
 
@@ -324,10 +337,19 @@ impl<'a, S: hil::screen::Screen<'a>> hil::screen::ScreenClient for ScreenSplitMu
         if let Some((current_user, ScreenSplitState::WriteSetFrame(subslice, continue_write))) =
             self.current_user.take()
         {
-            let _ = self.screen.write(subslice, continue_write).inspect(|()| {
-                self.current_user
-                    .set((current_user, ScreenSplitState::WriteBuffer))
-            });
+            match self.screen.write(subslice, continue_write) {
+                Ok(()) => self
+                    .current_user
+                    .set((current_user, ScreenSplitState::WriteBuffer)),
+                // The frame was set and then the write was refused. The
+                // user is owed both its buffer and an answer: dropping the
+                // error here left the buffer nowhere and the user waiting
+                // for a callback that had nothing left to raise it.
+                Err((e, buffer)) => {
+                    current_user.write_complete(buffer, Err(e));
+                    let _ = self.request_operation();
+                }
+            }
         } else {
             // No other state will trigger this callback.
         }

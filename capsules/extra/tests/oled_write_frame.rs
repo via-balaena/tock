@@ -171,6 +171,28 @@ fn data(len: usize, fill: u8) -> SubSliceMut<'static, u8> {
     SubSliceMut::new(Box::leak(vec![fill; len].into_boxed_slice()))
 }
 
+/// The error half of a refused write, having first checked that the buffer
+/// came back and is the one that was offered.
+///
+/// The caller of `write` holds one `'static` buffer and has no way to ask
+/// for it back, so a refusal that keeps it is permanent.
+fn refused(
+    result: Result<(), (ErrorCode, SubSliceMut<'static, u8>)>,
+    expected_fill: u8,
+) -> ErrorCode {
+    match result {
+        Ok(()) => panic!("the write was accepted when it should have been refused"),
+        Err((e, buffer)) => {
+            assert_eq!(
+                buffer.as_slice().first().copied(),
+                Some(expected_fill),
+                "a refused write has to hand the buffer back"
+            );
+            e
+        }
+    }
+}
+
 #[test]
 fn a_frame_wider_than_the_panel_is_refused() {
     let (_i2c, screen, _client) = fixture();
@@ -216,7 +238,7 @@ fn data_shorter_than_the_frame_does_not_index_past_it() {
     // A full frame spans 1024 bytes. The screen syscall driver will hand
     // down fewer whenever the app asks to write fewer -- it sizes the chunk
     // from `write_len`, which is the app's own argument to command 200.
-    assert_eq!(screen.write(data(100, 0xAA), false), Ok(()));
+    assert!(screen.write(data(100, 0xAA), false).is_ok());
     drain(i2c);
 
     assert_eq!(
@@ -234,15 +256,15 @@ fn a_second_write_is_refused_rather_than_dropping_the_first() {
     assert!(i2c.complete());
 
     // First write: 128 bytes, one page, still in flight.
-    assert_eq!(screen.write(data(128, 0x11), false), Ok(()));
+    assert!(screen.write(data(128, 0x11), false).is_ok());
 
     // Second write while the first has not reported. The HIL enumerates
     // BUSY for exactly this -- "another write is in progress" -- and the
     // screen syscall driver keeps a BUSY command queued and re-runs it from
     // the driver's own callback.
     assert_eq!(
-        screen.write(data(128, 0x22), false),
-        Err(ErrorCode::BUSY),
+        refused(screen.write(data(128, 0x22), false), 0x22),
+        ErrorCode::BUSY,
         "a write during a write is BUSY, and the HIL does not enumerate \
          NOMEM here at all"
     );
@@ -312,15 +334,16 @@ fn ssd1306_refuses_data_too_long_for_its_buffer_rather_than_shortening_it() {
     // one more than a single transfer can hold.
     let too_long = SSD1306_BUFFER_SIZE;
     assert_eq!(
-        screen.write(data(too_long, 0x33), false),
-        Err(ErrorCode::SIZE),
-        "an over-long write is refused; it used to send the first          {} bytes and then report Ok(()) for all {}",
+        refused(screen.write(data(too_long, 0x33), false), 0x33),
+        ErrorCode::SIZE,
+        "an over-long write is refused; it used to send the first {} bytes \
+         and then report Ok(()) for all {}",
         SSD1306_BUFFER_SIZE - 1,
         too_long
     );
 
     // Positive control: a full frame still goes out and reports.
-    assert_eq!(screen.write(data(1024, 0x44), false), Ok(()));
+    assert!(screen.write(data(1024, 0x44), false).is_ok());
     drain(i2c);
     assert_eq!(client.completes.get(), 1);
     assert_eq!(client.last_result.get(), Ok(()));
@@ -333,10 +356,10 @@ fn ssd1306_refuses_a_second_write_as_busy() {
     assert_eq!(screen.set_write_frame(0, 0, 128, 64), Ok(()));
     assert!(i2c.complete());
 
-    assert_eq!(screen.write(data(1024, 0x55), false), Ok(()));
+    assert!(screen.write(data(1024, 0x55), false).is_ok());
     assert_eq!(
-        screen.write(data(1024, 0x66), false),
-        Err(ErrorCode::BUSY),
+        refused(screen.write(data(1024, 0x66), false), 0x66),
+        ErrorCode::BUSY,
         "the HIL enumerates BUSY for another write in progress, not NOMEM"
     );
 

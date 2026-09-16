@@ -827,53 +827,51 @@ impl<'a, A: Alarm<'a>, B: Bus<'a, BusAddr8>, P: Pin> screen::Screen<'a> for ST77
         &self,
         mut data: SubSliceMut<'static, u8>,
         continue_write: bool,
-    ) -> Result<(), ErrorCode> {
-        if self.status.get() == Status::Idle {
-            // Data arrives as RGB565 with the high byte first
-            // ( RRRRR GGG | GGG BBBBB ). Some controllers want it the other way
-            // round on the bus ( GGG BBBBB | RRRRR GGG ) and some want it as
-            // it came, so which one this is belongs to the screen rather than
-            // to the format -- see `ST77XXScreen::swap_pixel_bytes`.
-            // TODO(alevy): replace `chunks_mut` wit `array_chunks` when stable.
-            if self.screen.swap_pixel_bytes {
-                for pair in data.as_mut_slice().chunks_mut(2) {
-                    pair.swap(0, 1);
-                }
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)> {
+        if self.status.get() != Status::Idle {
+            return Err((ErrorCode::BUSY, data));
+        }
+
+        // Whether the write can go out at all is decided before the
+        // caller's buffer is taken. This check used to run after
+        // `data.take()` had already emptied it, which left the `NOMEM`
+        // return with nothing to hand back.
+        if !continue_write && self.buffer.map_or(0, |buffer| buffer.len()) == 0 {
+            return Err((ErrorCode::NOMEM, data));
+        }
+
+        // Data arrives as RGB565 with the high byte first
+        // ( RRRRR GGG | GGG BBBBB ). Some controllers want it the other way
+        // round on the bus ( GGG BBBBB | RRRRR GGG ) and some want it as
+        // it came, so which one this is belongs to the screen rather than
+        // to the format -- see `ST77XXScreen::swap_pixel_bytes`.
+        // TODO(alevy): replace `chunks_mut` wit `array_chunks` when stable.
+        if self.screen.swap_pixel_bytes {
+            for pair in data.as_mut_slice().chunks_mut(2) {
+                pair.swap(0, 1);
             }
+        }
 
-            self.setup_command.set(false);
-            let len = data.len();
-            self.write_buffer.replace(data.take());
+        self.setup_command.set(false);
+        let len = data.len();
+        self.write_buffer.replace(data.take());
 
-            if !continue_write {
-                // Writing new data for the first time, make sure to reset
-                // the screen buffer location to the beginning.
-
-                let buffer_len = self.buffer.map_or_else(
-                    || panic!("st77xx: buffer is not available"),
-                    |buffer| buffer.len(),
-                );
-                if buffer_len > 0 {
-                    // set buffer
-                    self.sequence_buffer.map_or_else(
-                        || panic!("st77xx: write no sequence buffer"),
-                        |sequence| {
-                            sequence[0] = SendCommand::Slice(&WRITE_RAM, len);
-                            self.sequence_len.set(1);
-                        },
-                    );
-                    let _ = self.send_sequence_buffer();
-                    Ok(())
-                } else {
-                    Err(ErrorCode::NOMEM)
-                }
-            } else {
-                // Continuing the previous write.
-                self.send_parameters_slice(len);
-                Ok(())
-            }
+        if !continue_write {
+            // Writing new data for the first time, make sure to reset
+            // the screen buffer location to the beginning.
+            self.sequence_buffer.map_or_else(
+                || panic!("st77xx: write no sequence buffer"),
+                |sequence| {
+                    sequence[0] = SendCommand::Slice(&WRITE_RAM, len);
+                    self.sequence_len.set(1);
+                },
+            );
+            let _ = self.send_sequence_buffer();
+            Ok(())
         } else {
-            Err(ErrorCode::BUSY)
+            // Continuing the previous write.
+            self.send_parameters_slice(len);
+            Ok(())
         }
     }
 

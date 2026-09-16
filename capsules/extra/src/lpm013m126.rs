@@ -566,7 +566,7 @@ where
         &self,
         data: SubSliceMut<'static, u8>,
         _continue_write: bool,
-    ) -> Result<(), ErrorCode> {
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)> {
         let len = data.len();
         let buffer = data.take();
 
@@ -622,9 +622,16 @@ where
             State::Bug => Err(ErrorCode::FAIL),
         };
 
-        self.buffer.replace(buffer);
-
-        ret
+        match ret {
+            Ok(()) => {
+                self.buffer.replace(buffer);
+                Ok(())
+            }
+            // The write never started, so the buffer goes back to the caller
+            // rather than into `self.buffer`, which is only emptied by a
+            // `write_complete` that is not coming.
+            Err(e) => Err((e, SubSliceMut::new(buffer))),
+        }
     }
 
     fn set_client(&self, client: &'a dyn ScreenClient) {

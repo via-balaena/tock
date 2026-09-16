@@ -367,15 +367,27 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Sh1106<'a, I> {
         }
     }
 
-    fn write(&self, data: SubSliceMut<'static, u8>, _continue: bool) -> Result<(), ErrorCode> {
+    fn write(
+        &self,
+        data: SubSliceMut<'static, u8>,
+        _continue: bool,
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)> {
         // Before the replace, not after: `MapCell::replace` returns the
         // value it displaced, and dropping that here would strand a buffer
         // the previous caller is still owed a `write_complete` for.
-        self.ensure_idle()?;
+        if let Err(e) = self.ensure_idle() {
+            return Err((e, data));
+        }
+        // Start by setting the page as active in the screen. The buffer is
+        // only taken once that command has been accepted: if it fails the
+        // write never started, and the caller gets its buffer back rather
+        // than leaving it here waiting for a callback that has nothing left
+        // to trigger it.
+        if let Err(e) = self.set_page(self.active_frame_y.get() / 8) {
+            return Err((e, data));
+        }
         self.write_buffer.replace(data);
-
-        // Start by setting the page as active in the screen.
-        self.set_page(self.active_frame_y.get() / 8)
+        Ok(())
     }
 
     fn set_brightness(&self, brightness: u16) -> Result<(), ErrorCode> {

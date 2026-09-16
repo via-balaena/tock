@@ -922,10 +922,10 @@ impl<'a, F: DmaFence> Screen<'a> for VirtIOGPU<'a, '_, F> {
         &self,
         buffer: SubSliceMut<'static, u8>,
         continue_write: bool,
-    ) -> Result<(), ErrorCode> {
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)> {
         // Make sure we're idle:
         let VirtIOGPUState::Idle = self.state.get() else {
-            return Err(ErrorCode::BUSY);
+            return Err((ErrorCode::BUSY, buffer));
         };
 
         // If `continue_write` is false, we must reset `x_off` and
@@ -946,10 +946,10 @@ impl<'a, F: DmaFence> Screen<'a> for VirtIOGPU<'a, '_, F> {
         // Ensure that this buffer is evenly divisible by PIXEL_STRIDE and that
         // it can fit into the remaining part of the draw area:
         if !buffer.len().is_multiple_of(PIXEL_STRIDE) {
-            return Err(ErrorCode::INVAL);
+            return Err((ErrorCode::INVAL, buffer));
         }
         if buffer.len() / PIXEL_STRIDE > remaining_pixels {
-            return Err(ErrorCode::SIZE);
+            return Err((ErrorCode::SIZE, buffer));
         }
 
         // Now, the `TRANSFER_TO_HOST_2D` command can only copy rectangles.

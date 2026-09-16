@@ -120,7 +120,11 @@ impl<'a, S: Screen<'a>, A: Time + ConvertTicks<<A as Time>::Ticks>> TestScreenFi
 
         let mut slice = SubSliceMut::new(buffer);
         slice.slice(0..len);
-        if let Err(e) = self.screen.write(slice, continuing) {
+        if let Err((e, slice)) = self.screen.write(slice, continuing) {
+            // Put the buffer back. A benchmark that loses it on the first
+            // refusal reports "no buffer" for every pass after, which reads
+            // like a different fault than the one that happened.
+            self.buffer.replace(slice.take());
             debug!("screen-fill: write failed: {:?}", e);
         }
     }

@@ -327,6 +327,16 @@ pub trait Screen<'a> {
     /// `true`. If `continue_write` is false, the buffer write position will be
     /// reset before the data are written.
     ///
+    /// On `Err` the buffer comes back, because there is nowhere else for it
+    /// to go. It is a `'static` buffer the caller cannot replace: an
+    /// implementation that swallowed one on a refusal would strand it for
+    /// the life of the board, and the caller -- which has no second buffer
+    /// and no way to ask for that one back -- would answer every later
+    /// request with an error. This is the same shape as
+    /// [`uart::Transmit::transmit_buffer`](crate::hil::uart::Transmit::transmit_buffer)
+    /// and [`i2c::I2CDevice::write`](crate::hil::i2c::I2CDevice::write), for
+    /// the same reason.
+    ///
     /// Return values:
     /// - `Ok(())`: Write is valid and will be sent to the screen.
     /// - `SIZE`: The buffer is too long for the selected write frame.
@@ -335,7 +345,7 @@ pub trait Screen<'a> {
         &self,
         buffer: SubSliceMut<'static, u8>,
         continue_write: bool,
-    ) -> Result<(), ErrorCode>;
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)>;
 
     /// Set the display brightness value.
     ///

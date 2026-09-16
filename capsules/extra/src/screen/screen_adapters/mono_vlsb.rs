@@ -282,7 +282,12 @@ impl<'a, S: Screen<'a>> ScreenARGB8888ToMono8BitPage<'a, S> {
     /// `start_next_sub_op`'s `set_write_frame` finishes.
     fn write_current_sub_op(&self) -> Result<(), ErrorCode> {
         let draw_buffer = self.draw_buffer.take().ok_or(ErrorCode::FAIL)?;
-        self.screen.write(draw_buffer, false)
+        // This buffer belongs to the adapter, so a refusal puts it back
+        // where the next sub-op will look for it.
+        self.screen.write(draw_buffer, false).map_err(|(e, buf)| {
+            self.draw_buffer.replace(buf);
+            e
+        })
     }
 
     /// End of chunk: return the client's buffer and deliver
@@ -337,13 +342,13 @@ impl<'a, S: Screen<'a>> Screen<'a> for ScreenARGB8888ToMono8BitPage<'a, S> {
         &self,
         buffer: SubSliceMut<'static, u8>,
         continue_write: bool,
-    ) -> Result<(), ErrorCode> {
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)> {
         if self.current_op.get().is_some() {
-            return Err(ErrorCode::BUSY);
+            return Err((ErrorCode::BUSY, buffer));
         }
         let frame = self.display_frame.get();
         if frame.width == 0 || frame.height == 0 {
-            return Err(ErrorCode::INVAL);
+            return Err((ErrorCode::INVAL, buffer));
         }
 
         if !continue_write {
@@ -353,11 +358,11 @@ impl<'a, S: Screen<'a>> Screen<'a> for ScreenARGB8888ToMono8BitPage<'a, S> {
         let cursor = self.frame_cursor.get();
         let total_frame_bytes = frame.width * frame.height.div_ceil(8);
         if cursor >= total_frame_bytes {
-            return Err(ErrorCode::SIZE);
+            return Err((ErrorCode::SIZE, buffer));
         }
         let chunk_len = core::cmp::min(buffer.len(), total_frame_bytes - cursor);
         if chunk_len == 0 {
-            return Err(ErrorCode::SIZE);
+            return Err((ErrorCode::SIZE, buffer));
         }
 
         // Truncate the client buffer's active window to the portion we
@@ -370,8 +375,22 @@ impl<'a, S: Screen<'a>> Screen<'a> for ScreenARGB8888ToMono8BitPage<'a, S> {
         assert!(self.client_buffer.replace(buffer).is_none());
 
         if let Err(e) = self.start_next_sub_op() {
-            self.finish_chunk(Err(e));
-            return Err(e);
+            // Report through the return value, not through
+            // `finish_chunk`. Two reasons: a capsule must not issue a
+            // callback from inside a downcall, and the caller would
+            // otherwise be told twice about one failure.
+            //
+            // `start_next_sub_op` puts the client buffer back before its
+            // only fallible call, and this method put it there a few lines
+            // above, so the `None` arm cannot be taken. If it somehow were,
+            // some other holder owes the callback and claiming failure
+            // without returning the buffer is not something this signature
+            // can express.
+            self.current_op.set(None);
+            return match self.client_buffer.take() {
+                Some(cb) => Err((e, cb)),
+                None => Ok(()),
+            };
         }
         Ok(())
     }

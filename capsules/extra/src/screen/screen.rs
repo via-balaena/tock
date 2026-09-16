@@ -303,7 +303,15 @@ impl<'a> Screen<'a> {
                         if len > 0 {
                             let mut data = SubSliceMut::new(buffer);
                             data.slice(..len);
-                            self.screen.write(data, false)
+                            // A refusal hands the buffer back, and it has to
+                            // be put away again: this capsule holds exactly
+                            // one, has no way to ask for it back, and
+                            // answers every later command with an error once
+                            // it is gone.
+                            self.screen.write(data, false).map_err(|(e, data)| {
+                                self.buffer.replace(data.take());
+                                e
+                            })
                         } else {
                             self.buffer.replace(buffer);
                             self.run_next_command(kernel::errorcode::into_statuscode(Ok(())), 0, 0);
@@ -339,7 +347,15 @@ impl<'a> Screen<'a> {
                         if len > 0 {
                             let mut data = SubSliceMut::new(buffer);
                             data.slice(..len);
-                            self.screen.write(data, false)
+                            // A refusal hands the buffer back, and it has to
+                            // be put away again: this capsule holds exactly
+                            // one, has no way to ask for it back, and
+                            // answers every later command with an error once
+                            // it is gone.
+                            self.screen.write(data, false).map_err(|(e, data)| {
+                                self.buffer.replace(data.take());
+                                e
+                            })
                         } else {
                             self.buffer.replace(buffer);
                             self.run_next_command(kernel::errorcode::into_statuscode(Ok(())), 0, 0);
@@ -571,7 +587,13 @@ impl hil::screen::ScreenClient for Screen<'_> {
         if r == Ok(()) && len > 0 {
             let mut data = SubSliceMut::new(buffer);
             data.slice(..len);
-            let _ = self.screen.write(data, true);
+            if let Err((e, data)) = self.screen.write(data, true) {
+                // Refused part-way through a chunked write. Dropping this
+                // took the capsule's only buffer with it and left the
+                // process waiting on an upcall that nothing would raise.
+                self.buffer.replace(data.take());
+                self.run_next_command(kernel::errorcode::into_statuscode(Err(e)), 0, 0);
+            }
         } else {
             self.buffer.replace(buffer);
             self.run_next_command(kernel::errorcode::into_statuscode(r), 0, 0);

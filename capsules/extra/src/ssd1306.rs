@@ -492,9 +492,18 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Ssd1306<'a, I> {
         }
     }
 
-    fn write(&self, data: SubSliceMut<'static, u8>, _continue: bool) -> Result<(), ErrorCode> {
-        self.ensure_idle()?;
-        self.buffer.take().map_or(Err(ErrorCode::NOMEM), |buffer| {
+    fn write(
+        &self,
+        data: SubSliceMut<'static, u8>,
+        _continue: bool,
+    ) -> Result<(), (ErrorCode, SubSliceMut<'static, u8>)> {
+        if let Err(e) = self.ensure_idle() {
+            return Err((e, data));
+        }
+        let Some(buffer) = self.buffer.take() else {
+            return Err((ErrorCode::NOMEM, data));
+        };
+        {
             let mut buf_slice = SubSliceMut::new(buffer);
 
             // Specify this is data.
@@ -512,7 +521,7 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Ssd1306<'a, I> {
             // too long for the frame.
             if data.len() > buf_slice.len() {
                 self.buffer.replace(buf_slice.take());
-                return Err(ErrorCode::SIZE);
+                return Err((ErrorCode::SIZE, data));
             }
             let copy_len = data.len();
 
@@ -531,10 +540,10 @@ impl<'a, I: hil::i2c::I2CDevice> hil::screen::Screen<'a> for Ssd1306<'a, I> {
                 }
                 Err((_e, buf)) => {
                     self.buffer.replace(buf);
-                    Err(ErrorCode::INVAL)
+                    Err((ErrorCode::INVAL, data))
                 }
             }
-        })
+        }
     }
 
     fn set_brightness(&self, brightness: u16) -> Result<(), ErrorCode> {
