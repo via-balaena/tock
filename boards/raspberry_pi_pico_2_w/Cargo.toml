@@ -32,6 +32,7 @@ uart_contract_test_unconfigured = ["raspberry_pi_pico_2/uart_contract_test_uncon
 spi_contract_test = ["raspberry_pi_pico_2/spi_contract_test"]
 spi_contract_test_loopback = ["raspberry_pi_pico_2/spi_contract_test_loopback"]
 gpio_contract_test = ["raspberry_pi_pico_2/gpio_contract_test"]
+adc_contract_test = ["raspberry_pi_pico_2/adc_contract_test"]
 nvic_wake_probe = ["raspberry_pi_pico_2/nvic_wake_probe"]
 trng_test = ["raspberry_pi_pico_2/trng_test"]
 watchdog_probe = ["raspberry_pi_pico_2/watchdog_probe"]

@@ -55,6 +55,7 @@ i2c_contract_test = []
 # nonsense rather than hanging. Mutually exclusive with
 # uart_contract_test_pads, which muxes the same pins to UART1.
 gpio_contract_test = []
+adc_contract_test = []
 # Arm a GP21 rising-edge interrupt and leave GP20 low, so the FIRST edge can
 # be driven from the debug port while the kernel is asleep. Answers whether a
 # GPIO edge wakes the kernel when IO_IRQ_BANK0 is masked. Same GP20/GP21

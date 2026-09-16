@@ -933,6 +933,32 @@ pub unsafe fn setup(
         ))
     };
 
+    // The `hil::adc` conformance test. Nothing needs to be wired: every
+    // clause is about what the driver does with a request rather than what
+    // voltage is on the pin, so a floating input is a perfectly good one.
+    //
+    // Deliberately OUTSIDE the `kit_input` block above, which is where this
+    // first went and where it silently did nothing: that block is behind
+    // `#[cfg(feature = "kit_input")]`, so a test nested in it is compiled out
+    // unless the kit is configured too. `&peripherals.adc` needs no such
+    // thing.
+    //
+    // It takes the client back from the ADC mux, so while this feature is on
+    // the app-facing ADC driver receives nothing -- the same trade the uart
+    // and spi contract tests make, and why all of them are features.
+    #[cfg(feature = "adc_contract_test")]
+    {
+        use capsules_core::test::adc_contract::TestAdcContract;
+        use kernel::hil::adc::Adc;
+
+        let adc_contract = static_init!(
+            TestAdcContract<rp2350::adc::Adc>,
+            TestAdcContract::new(&peripherals.adc, rp2350::adc::Channel::Channel0)
+        );
+        Adc::set_client(&peripherals.adc, adc_contract);
+        adc_contract.run();
+    }
+
     // Userspace randomness. `Entropy32ToRandom` adapts the chip's 192-bit
     // collections to the `Rng` the syscall driver wants, so the driver never
     // sees the six-word shape.

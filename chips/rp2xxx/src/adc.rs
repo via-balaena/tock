@@ -153,6 +153,17 @@ enum AdcStatus {
     OneSample,
 }
 
+/// Depth of the ADC's hardware sample FIFO, used to bound the drain in
+/// `stop_sampling` so a FIFO that never reports empty cannot hang the kernel.
+const FIFO_DEPTH: usize = 4;
+
+/// Bound on the wait for `CS::READY` in `stop_sampling`.
+///
+/// Past this the driver is declared idle regardless, because a converter that
+/// never reports ready must not hang the kernel. A conversion is 96 ADC
+/// clocks, so this is roughly two orders of magnitude more than one needs.
+const READY_SPIN_LIMIT: usize = 10_000;
+
 pub struct Adc<'a, C: Channel> {
     registers: StaticRef<AdcRegisters>,
     status: Cell<AdcStatus>,
@@ -236,7 +247,61 @@ impl<'a, C: Channel> hil::adc::Adc<'a> for Adc<'a, C> {
     }
 
     fn stop_sampling(&self) -> Result<(), ErrorCode> {
-        Err(ErrorCode::NOSUPPORT)
+        // This answered `NOSUPPORT` unconditionally, which left the driver
+        // with no way back out of `OneSample`. A conversion whose interrupt
+        // never arrives wedged it permanently: every later `sample` answers
+        // `BUSY`, and the syscall driver's `active` flag stays set with it,
+        // so the ADC was gone for every process until the board was reset.
+        //
+        // What this method can promise is exactly what the HIL states -- "no
+        // further callbacks will occur" -- and that does not require aborting
+        // a conversion already in flight. A `START_ONCE` conversion finishes
+        // in about 2 us and cannot be cancelled; masking the interrupt and
+        // draining the FIFO discards whatever it produces.
+        if self.status.get() == AdcStatus::Idle {
+            // Already stopped, so the guarantee already holds. Idempotent
+            // rather than an error: a caller stopping an ADC it is not sure
+            // about is the case this exists for.
+            return Ok(());
+        }
+
+        // Stop any free-running conversion, then stop listening.
+        self.registers.cs.modify(CS::START_MANY::CLEAR);
+        self.disable_interrupt();
+
+        // Wait for the conversion already in flight to finish before calling
+        // the driver idle. Without this the ADC is still busy when
+        // `stop_sampling` returns, and the next `START_ONCE` lands on a busy
+        // converter and is ignored -- so the following `sample` is accepted,
+        // starts nothing, and its callback never comes. Found on silicon by
+        // the conformance test, which got five clauses in and then waited
+        // forever for a sample that was never taken.
+        //
+        // A conversion is 96 ADC clocks, about 2 us at the 48 MHz this chip
+        // runs the ADC at, so this spin is short. It is bounded anyway: a
+        // converter that never reports ready must not hang the kernel, and
+        // leaving the status Idle is the right answer even then, because the
+        // point of this method is to make the driver usable again.
+        for _ in 0..READY_SPIN_LIMIT {
+            if self.registers.cs.is_set(CS::READY) {
+                break;
+            }
+        }
+
+        // Drain whatever the last conversion left. Bounded rather than
+        // `while !EMPTY`: this runs in the kernel, and a FIFO that never
+        // reports empty would hang the board instead of reporting a fault.
+        // The hardware FIFO is four entries deep.
+        for _ in 0..FIFO_DEPTH {
+            if self.registers.fcs.is_set(FCS::EMPTY) {
+                break;
+            }
+            let _ = self.registers.fifo.read(FIFO::VAL);
+        }
+        self.registers.fcs.modify(FCS::EN::CLEAR);
+
+        self.status.set(AdcStatus::Idle);
+        Ok(())
     }
 
     fn get_resolution_bits(&self) -> usize {
