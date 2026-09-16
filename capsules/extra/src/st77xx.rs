@@ -794,6 +794,28 @@ impl<'a, A: Alarm<'a>, B: Bus<'a, BusAddr8>, P: Pin> screen::Screen<'a> for ST77
         width: usize,
         height: usize,
     ) -> Result<(), ErrorCode> {
+        // Decide on the frame before consulting `status`, so a frame this
+        // panel can never show is answered the same way at every moment
+        // rather than `BUSY` for the first ~1.24 s after boot. Same rule as
+        // the `ScreenSetup` setters in this file.
+        //
+        // The two subtractions below underflow on an empty frame. In a
+        // release build that wraps to a value `set_memory_frame`'s bounds
+        // check then rejects; with the dev profile's overflow checks it is a
+        // kernel panic. The frame comes straight from an app -- the screen
+        // syscall driver passes command 100's arguments through without
+        // examining them -- so the two profiles disagree about whether an
+        // ordinary syscall can bring the board down.
+        if width == 0
+            || height == 0
+            || x.checked_add(width)
+                .is_none_or(|right| right > self.width.get())
+            || y.checked_add(height)
+                .is_none_or(|bottom| bottom > self.height.get())
+        {
+            return Err(ErrorCode::INVAL);
+        }
+
         if self.status.get() == Status::Idle {
             self.setup_command.set(false);
             let buffer_len = self.buffer.map_or_else(
