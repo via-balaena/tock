@@ -26,10 +26,25 @@ use super::utils::Frame;
 /// / 8)` bytes; if the height is not a multiple of 8, the high bits
 /// of each column in the last page are unused.
 ///
-/// # ARGB8888 output layout
+/// # 32-bit output layout
 ///
-/// One pixel per four bytes, in byte order `[A, R, G, B]` with A =
-/// 0xFF.
+/// One pixel per four bytes, in byte order **`[B, G, R, A]`** -- which is
+/// `ScreenPixelFormat::BGRA_8888`, whose own doc enumerates the channels in
+/// that order, and which is what the one underlying driver in the tree
+/// actually asks the device for: `virtio_gpu` requests
+/// `VideoFormat::B8G8R8A8Unorm`.
+///
+/// The `ARGB8888` in this type's name is the same memory layout under the
+/// other convention -- DRM's `DRM_FORMAT_ARGB8888` names the 32-bit
+/// little-endian word `0xAARRGGBB`, whose bytes are B, G, R, A. Both names
+/// are in use in this tree for the same pixels. **The byte order above is
+/// the one to write code against**; a name alone does not say which
+/// convention it is using.
+///
+/// This block previously read `[A, R, G, B]` with `A = 0xFF`, which puts the
+/// alpha in byte 0. Every pixel this adapter emits has `0xFF` in byte 3 and
+/// something else in byte 0, so code written to that description produces a
+/// fully transparent screen.
 ///
 /// # Chunking and draw-buffer sizing
 ///
@@ -116,8 +131,10 @@ impl<'a, S: Screen<'a>> ScreenARGB8888ToMono8BitPage<'a, S> {
 /// the final page (when the row count is not a multiple of 8) are
 /// ignored.
 ///
-/// A set bit becomes an opaque white ARGB pixel; a cleared bit an opaque
-/// black one. Output byte order is `[A, R, G, B]` with A = 0xFF.
+/// A set bit becomes an opaque **yellow** pixel and a cleared bit an opaque
+/// black one -- see the colours a few lines below, which is where this
+/// description has to agree. Output byte order is `[B, G, R, A]`, so the
+/// `0xFF` that makes both of them opaque is the LAST byte, not the first.
 fn convert_mvlsb_sub_rect(src: &[u8], dst: &mut [u8], sub_cols: usize) {
     // destination bytes per row
     let row_bytes = sub_cols * 4;
