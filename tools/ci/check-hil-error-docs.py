@@ -121,7 +121,44 @@ def scan(path, codes):
     return documented, fallible
 
 
+def check_every_file_is_compiled():
+    """Refuse to run if a HIL file is not reachable from the crate root.
+
+    This script counts methods by walking the directory, so a `.rs` file that
+    no `mod` declaration names would be counted despite never being compiled
+    -- the census would describe code the crate does not contain. That is the
+    class the libtock-rs session hit twice on 2026-09-16: a target cargo
+    silently skips, and a name nothing resolves. Neither produces an error,
+    and both make a check report confidently on nothing.
+
+    Exit 2 rather than 1: an inconsistent tree is a broken check, not a
+    failing one.
+    """
+    problems = []
+    for path in sorted(HIL.rglob("*.rs")):
+        if path.name == "mod.rs":
+            continue
+        parent = path.parent / "mod.rs"
+        if not parent.exists():
+            problems.append(f"{path}: no mod.rs in its directory")
+            continue
+        declared = re.findall(r"^\s*(?:pub )?mod\s+([a-z_0-9]+)", parent.read_text(), re.M)
+        if path.stem not in declared:
+            problems.append(f"{path}: not declared in {parent}")
+    for d in sorted(p for p in HIL.rglob("*") if p.is_dir()):
+        parent = d.parent / "mod.rs"
+        if parent.exists():
+            declared = re.findall(r"^\s*(?:pub )?mod\s+([a-z_0-9]+)", parent.read_text(), re.M)
+            if d.name not in declared:
+                problems.append(f"{d}: directory not declared in {parent}")
+    if problems:
+        for p in problems:
+            print(f"  UNCOMPILED  {p}")
+        sys.exit(2)
+
+
 def collect():
+    check_every_file_is_compiled()
     codes = error_names()
     out = {}
     for path in sorted(HIL.rglob("*.rs")):
