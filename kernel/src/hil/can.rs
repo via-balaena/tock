@@ -489,6 +489,7 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok(bool)` - The current automatic retransmission setting
+    ///
     /// The one implementation cannot fail this call; it answers the stored
     /// value.
     fn get_automatic_retransmission(&self) -> Result<bool, ErrorCode>;
@@ -498,6 +499,7 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok(bool)` - The current automatic wake up setting
+    ///
     /// The one implementation cannot fail this call; it answers the stored
     /// value.
     fn get_wake_up(&self) -> Result<bool, ErrorCode>;
@@ -659,6 +661,7 @@ pub trait Controller {
     /// * `Ok(State)` - The state of the CAN peripheral if it is functional
     /// * `Err(ErrorCode)` - The driver cannot report the state of the
     ///   peripheral if it is not functional.
+    ///
     /// The one implementation cannot fail this call.
     fn get_state(&self) -> Result<State, ErrorCode>;
 }
