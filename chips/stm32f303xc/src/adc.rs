@@ -717,6 +717,15 @@ impl<'a> hil::adc::Adc<'a> for Adc<'a> {
                 if self.registers.cfgr.is_set(CFGR::CONT) {
                     self.registers.cfgr.modify(CFGR::CONT::CLEAR);
                 }
+
+                // Back to idle, which the hardware stop alone did not do.
+                // `status` is only cleared on the completion paths in the
+                // interrupt handler, so a stopped sample left it saying
+                // `OneSample` forever -- and `sample` reads exactly that to
+                // decide whether it may start, so the next one never could.
+                // Stopping an ADC and thereby making it unusable is the
+                // failure `stop_sampling` exists to prevent.
+                self.status.set(ADCStatus::Idle);
                 Ok(())
             }
         }
