@@ -60,6 +60,30 @@ impl<'a, Spi: hil::spi::SpiMaster<'a>> MuxSpiMaster<'a, Spi> {
             mnode.map(|node| {
                 let configuration = node.configuration.get();
                 let cs = configuration.chip_select;
+
+                // NOT error-checked, and that is a hazard rather than a
+                // decision. Four lines below, failures from `set_rate`,
+                // `set_polarity` and `set_phase` are all caught and turned
+                // into `Op::ReadWriteDone(Err(INVAL))`. This is the fourth
+                // configuration call and the only one whose failure means
+                // the transfer goes to the WRONG DEVICE.
+                //
+                // `specify_chip_select` can fail: `rp2040` and `rp2xxx`
+                // answer `BUSY` when the controller is still busy, and
+                // `do_next_op` runs straight out of a completion callback,
+                // where the last byte may not have finished shifting out.
+                // On a mux with two devices that is silent cross-talk --
+                // device B's bytes arriving at device A.
+                //
+                // It is left alone deliberately. Simply joining the check
+                // below would REGRESS the common case: with one device on
+                // the mux the chip select never changes, so a `BUSY` here is
+                // harmless today and would become a failed transfer. A
+                // correct fix distinguishes "the chip select is already the
+                // one we want" from "we could not change it", and
+                // `hil::spi` has no way to ask. Reported rather than
+                // guessed; no board here has two devices on one SPI mux to
+                // test either behaviour against.
                 let _ = self.spi.specify_chip_select(cs);
 
                 let op = node.operation.get();

@@ -437,11 +437,46 @@ pub trait SpiMaster<'a> {
 ///
 /// This restricts the SPI peripherals the client can access to a specific
 /// peripheral.
+/// One chip select on a bus that may have several.
+///
+/// # This is NOT the same interface as [`SpiMaster`]
+///
+/// Several methods below used to say "Same as `SpiMaster::x`". They are not,
+/// in three ways that a caller has to know:
+///
+/// - **The settings calls do not reach the hardware.** `configure`,
+///   `set_rate`, `set_polarity` and `set_phase` record what this chip select
+///   wants; the bus is not touched until this device's next
+///   [`SpiMasterDevice::read_write_bytes`] is actually run, because another
+///   device may hold the bus in a different configuration meanwhile. So
+///   `Ok(())` here means the setting was *stored*, not that the hardware
+///   accepted it -- a rate the controller cannot produce is not refused here.
+/// - **`set_rate` does not report what it achieved.** [`SpiMaster::set_rate`]
+///   answers `Result<u32, ErrorCode>` with the rate actually obtained; this
+///   one answers `Result<(), ErrorCode>` and discards it. Read
+///   [`SpiMasterDevice::get_rate`] afterwards if the difference matters, and
+///   expect the answer to be the requested rate rather than the achieved one
+///   until the operation has run.
+/// - **`BUSY` is about this device, not the bus.** It means *this* chip
+///   select already has an operation outstanding. Another device holding the
+///   bus does not produce `BUSY`: the request is queued behind it and the
+///   caller is told `Ok(())`.
+///
+/// # Errors
+///
+/// - `BUSY`: this device has an operation outstanding, as above.
+/// - `read_write_bytes` returns both buffers with the error, because the
+///   caller has no other way to recover them.
 pub trait SpiMasterDevice<'a> {
     /// Set the callback for read_write operations.
     fn set_client(&self, client: &'a dyn SpiMasterClient);
 
-    /// Configure the bus for this chip select.
+    /// Record polarity, phase and rate for this chip select in one call.
+    ///
+    /// Stored, not applied -- see the trait documentation.
+    ///
+    /// - `Ok(())`: the settings were stored.
+    /// - `BUSY`: this device has an operation outstanding.
     fn configure(&self, cpol: ClockPolarity, cpal: ClockPhase, rate: u32) -> Result<(), ErrorCode>;
 
     /// Same as [`SpiMaster::read_write_bytes`].
@@ -458,19 +493,25 @@ pub trait SpiMasterDevice<'a> {
         ),
     >;
 
-    /// Same as [`SpiMaster::set_rate`].
+    /// Record the clock rate this chip select wants.
+    ///
+    /// Stored, not applied; and the achieved rate is not reported. See the
+    /// trait documentation, which is where the difference from
+    /// [`SpiMaster::set_rate`] is spelled out.
     fn set_rate(&self, rate: u32) -> Result<(), ErrorCode>;
 
     /// Return the current chip select's clock rate.
     fn get_rate(&self) -> u32;
 
-    /// Same as [`SpiMaster::set_polarity`].
+    /// Record the clock polarity this chip select wants. Stored, not
+    /// applied -- see the trait documentation.
     fn set_polarity(&self, polarity: ClockPolarity) -> Result<(), ErrorCode>;
 
     /// Return the current bus polarity.
     fn get_polarity(&self) -> ClockPolarity;
 
-    /// Same as [`SpiMaster::set_phase`].
+    /// Record the clock phase this chip select wants. Stored, not applied
+    /// -- see the trait documentation.
     fn set_phase(&self, phase: ClockPhase) -> Result<(), ErrorCode>;
 
     /// Get the current bus phase for the current chip select.
@@ -605,6 +646,17 @@ pub trait SpiSlave<'a> {
 ///
 /// It is the standard trait used by services within the kernel: [`SpiSlave`] is
 /// for lower-level access responsible for initializing hardware.
+/// One slave-mode user of a bus that may have several.
+///
+/// The same distinction applies as on [`SpiMasterDevice`]: `configure`,
+/// `set_polarity` and `set_phase` record what this user wants rather than
+/// touching the hardware, and `BUSY` means this device has an operation
+/// outstanding rather than that the bus does.
+///
+/// # Errors
+///
+/// - `BUSY`: this device has an operation outstanding.
+/// - `read_write_bytes` returns both buffers with the error.
 pub trait SpiSlaveDevice<'a> {
     /// Specify the callback of [`SpiSlaveDevice::read_write_bytes`] operations.
     fn set_client(&self, client: &'a dyn SpiSlaveClient);
