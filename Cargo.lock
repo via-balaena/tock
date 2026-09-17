@@ -236,7 +236,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cy8cproto_62_4243_w"
+name = "cy8cproto_62_4343_w"
 version = "0.2.4-dev"
 dependencies = [
  "capsules-core",

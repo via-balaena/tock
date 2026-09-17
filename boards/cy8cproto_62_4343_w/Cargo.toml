@@ -3,7 +3,7 @@
 # Copyright OxidOS Automotive 2025 SRL.
 
 [package]
-name = "cy8cproto_62_4243_w"
+name = "cy8cproto_62_4343_w"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
