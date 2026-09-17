@@ -28,7 +28,7 @@ kernel/src/hil/rng.rs 2 2
 kernel/src/hil/screen.rs 7 8
 kernel/src/hil/sensors.rs 7 18
 kernel/src/hil/servo.rs 2 2
-kernel/src/hil/spi.rs 12 22
+kernel/src/hil/spi.rs 21 22
 kernel/src/hil/symmetric_encryption.rs 5 11
 kernel/src/hil/text_screen.rs 9 9
 kernel/src/hil/time.rs 5 5
