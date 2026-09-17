@@ -354,6 +354,20 @@ impl<T: Configure> StandardBitTiming for T {
 ///   `set_wake_up` to configure the behaviour of the peripheral
 /// - To apply the settings and be able to use the peripheral, call `enable`
 ///   (from the `Controller` trait)
+/// # One implementation
+///
+/// `stm32f4xx` is the only chip in this tree that implements CAN, so the
+/// errors enumerated on these traits are that driver's behaviour written
+/// down, not a contract several implementations were found to agree on --
+/// which is what the other audited HILs here mean by one. **A second
+/// implementer that finds a divergence should treat it as a question about
+/// which behaviour is right, not as a rule it has broken.**
+///
+/// Two things in the enumerations below are flagged as wrong rather than
+/// described as correct: `Receive::stop_receive` answering `SIZE` for "no
+/// buffer to stop with", and `Configure::set_bitrate`, whose one
+/// implementation computes timing against a hardcoded 16 MHz rather than the
+/// clock the board actually feeds the peripheral.
 pub trait Configure {
     /// Constants that define the minimum and maximum values that the timing
     /// parameters can take. They are used when calculating the optimum timing
@@ -379,8 +393,10 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok()` - The timing parameters were calculated and stored.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(INVAL)` - No timing parameters produce this bitrate at the
+    ///   controller's clock.
+    /// * `Err(BUSY)` - The peripheral is already running; bit timing can only
+    ///   be set before `enable`.
     fn set_bitrate(&self, bitrate: u32) -> Result<(), ErrorCode>;
 
     /// Configures the CAN peripheral with the given arguments. This function is
@@ -396,8 +412,8 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok()` - The parameters were stored.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(BUSY)` - The peripheral is already running; bit timing can only
+    ///   be set before `enable`.
     fn set_bit_timing(&self, bit_timing: BitTiming) -> Result<(), ErrorCode>;
 
     /// Configures the CAN peripheral with the given arguments. This function is
@@ -413,8 +429,8 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok()` - The parameters were stored.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(BUSY)` - The peripheral is already running; the mode can only be
+    ///   set before `enable`.
     fn set_operation_mode(&self, mode: OperationMode) -> Result<(), ErrorCode>;
 
     /// Returns the current timing parameters for the CAN peripheral.
@@ -423,8 +439,8 @@ pub trait Configure {
     ///
     /// * `Ok(BitTiming)` - The current timing parameters given to the
     ///   peripheral
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(INVAL)` - No bit timing has been stored yet, so there is nothing
+    ///   to report.
     fn get_bit_timing(&self) -> Result<BitTiming, ErrorCode>;
 
     /// Returns the current operating mode for the CAN peripheral.
@@ -433,8 +449,7 @@ pub trait Configure {
     ///
     /// * `Ok(OperationMode)` - The current operating mode parameter given to
     ///   the peripheral
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(INVAL)` - No operation mode has been stored yet.
     fn get_operation_mode(&self) -> Result<OperationMode, ErrorCode>;
 
     /// Configures the CAN peripheral with the automatic retransmission setting.
@@ -449,8 +464,8 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok()` - The setting was stored.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(BUSY)` - The peripheral is already running; this can only be set
+    ///   before `enable`.
     fn set_automatic_retransmission(&self, automatic: bool) -> Result<(), ErrorCode>;
 
     /// Configures the CAN peripheral with the automatic wake up setting.
@@ -465,8 +480,8 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok()` - The setting was stored.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(BUSY)` - The peripheral is already running; this can only be set
+    ///   before `enable`.
     fn set_wake_up(&self, wake_up: bool) -> Result<(), ErrorCode>;
 
     /// Returns the current automatic retransmission setting of the peripheral.
@@ -474,8 +489,8 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok(bool)` - The current automatic retransmission setting
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// The one implementation cannot fail this call; it answers the stored
+    /// value.
     fn get_automatic_retransmission(&self) -> Result<bool, ErrorCode>;
 
     /// Returns the current automatic wake up setting of the peripheral.
@@ -483,8 +498,8 @@ pub trait Configure {
     /// # Return values:
     ///
     /// * `Ok(bool)` - The current automatic wake up setting
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// The one implementation cannot fail this call; it answers the stored
+    /// value.
     fn get_wake_up(&self) -> Result<bool, ErrorCode>;
 
     /// Returns the number of receive FIFOs the peripheral provides
@@ -506,6 +521,11 @@ pub trait Configure {
 ///   `set_wake_up` to configure the behaviour of the peripheral
 /// - To apply the settings and be able to use the peripheral, call `enable`
 ///   (from the `Controller` trait)
+/// # Nothing implements this
+///
+/// No in-tree driver implements `ConfigureFd`, so the returns below state
+/// what the interface intends rather than what anything has been observed to
+/// do. A first implementer should treat them as the specification.
 pub trait ConfigureFd: Configure {
     /// Configures the CAN FD peripheral with the given arguments. This function is
     /// supposed to be called before the `enable` function. This function is
@@ -520,10 +540,7 @@ pub trait ConfigureFd: Configure {
     /// # Return values:
     ///
     /// * `Ok()` - The parameters were stored.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
-    ///   - `ErrorCode::NOSUPPORT` indicates that payload timing is not
-    ///     supported
+    /// * `Err(NOSUPPORT)` - This controller does not support payload timing.
     fn set_payload_bit_timing(&self, payload_bit_timing: BitTiming) -> Result<(), ErrorCode>;
 
     /// Returns the current timing parameters for the CAN peripheral.
@@ -532,10 +549,7 @@ pub trait ConfigureFd: Configure {
     ///
     /// * `Ok(BitTiming)` - The current timing for the frame payload given to
     ///   the peripheral
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
-    ///   - `ErrorCode::NOSUPPORT` indicates that payload timing is not
-    ///     supported
+    /// * `Err(NOSUPPORT)` - This controller does not support payload timing.
     fn get_payload_bit_timing(&self) -> Result<BitTiming, ErrorCode>;
 
     /// Returns the maximum accepted frame size in bytes.
@@ -549,6 +563,12 @@ pub trait ConfigureFd: Configure {
 ///
 /// When the receiving process starts by calling the `start_receiving_process`
 /// in the `Receive` trait, there MUST be no filter enabled.
+/// # Nothing implements this either
+///
+/// No in-tree driver implements `Filter` -- and the one CAN driver that has
+/// the hardware for it, `stm32f4xx`, configures its filters through an
+/// inherent `config_filter` method instead and never offers them through this
+/// trait. So the abstraction is unused by the only chip that could use it.
 pub trait Filter {
     /// Enables a filter for message reception.
     ///
@@ -603,8 +623,11 @@ pub trait Controller {
     ///   report the error. A client cannot otherwise differentiate between a
     ///   callback issued due to failed `enable` or a peripheral's decision to
     ///   enter a disabled state.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed.
+    /// * `Err(ALREADY)` - The peripheral is already enabled.
+    /// * `Err(INVAL)` - No bit timing has been configured, so there is nothing
+    ///   to enable with.
+    /// * `Err(BUSY)` - Another deferred action is outstanding.
+    /// * `Err(FAIL)` - The hardware did not leave initialisation mode..
     ///     * `ErrorCode::BUSY` - the peripheral was already enabled
     ///     * `ErrorCode::INVAL` - no arguments were previously provided
     fn enable(&self) -> Result<(), ErrorCode>;
@@ -623,8 +646,9 @@ pub trait Controller {
     ///   it does not report the error. A client cannot otherwise differentiate
     ///   between a callback issued due to failed `disable` or a peripheral's
     ///   decision to enter the enable state.
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed.
+    /// * `Err(OFF)` - The peripheral is not enabled, so there is nothing to
+    ///   disable.
+    /// * `Err(BUSY)` - Another deferred action is outstanding..
     ///     * `ErrorCode::OFF` - the peripheral was not previously enabled
     fn disable(&self) -> Result<(), ErrorCode>;
 
@@ -635,6 +659,7 @@ pub trait Controller {
     /// * `Ok(State)` - The state of the CAN peripheral if it is functional
     /// * `Err(ErrorCode)` - The driver cannot report the state of the
     ///   peripheral if it is not functional.
+    /// The one implementation cannot fail this call.
     fn get_state(&self) -> Result<State, ErrorCode>;
 }
 
@@ -711,8 +736,15 @@ pub trait Receive<const PACKET_SIZE: usize> {
     ///
     /// * `Ok()` - The request was successful an the caller waits for the
     ///   `stopped` callback function after this command
-    /// * `Err(ErrorCode)` - Indicates the error because of which the request
-    ///   cannot be completed
+    /// * `Err(OFF)` - The peripheral is not enabled.
+    /// * `Err(BUSY)` - Another deferred action is outstanding.
+    ///
+    /// The one implementation also answers `Err(SIZE)` when it holds no
+    /// receive buffer to stop with. That is a misuse of the code --
+    /// `ErrorCode::SIZE` means a length larger than the buffer it indexes,
+    /// everywhere else in this tree -- and `INVAL` is what "there is nothing
+    /// to stop" should be. Recorded rather than changed: there is no CAN
+    /// hardware on hand to test a different return against.
     fn stop_receive(&self) -> Result<(), ErrorCode>;
 }
 

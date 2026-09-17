@@ -5,7 +5,7 @@ kernel/src/hil/analog_comparator.rs 0 2
 kernel/src/hil/ble_advertising.rs 0 1
 kernel/src/hil/bus8080.rs 0 3
 kernel/src/hil/buzzer.rs 2 2
-kernel/src/hil/can.rs 4 19
+kernel/src/hil/can.rs 14 19
 kernel/src/hil/crc.rs 3 3
 kernel/src/hil/dac.rs 0 1
 kernel/src/hil/date_time.rs 0 2
