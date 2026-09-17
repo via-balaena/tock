@@ -28,6 +28,19 @@ use kernel::grant::{AllowRoCount, AllowRwCount, Grant, UpcallCount};
 
 pub const BUFFER_LENGTH: usize = 256;
 
+/// Longest slave receive this driver arms, which must fit [`BUFFER_LENGTH`].
+///
+/// `max_len` indexes the buffer handed to `write_receive`, and `hil::i2c`
+/// requires an implementation to refuse one that is larger -- but neither
+/// in-tree slave driver checks, and `nrf52` writes the number straight into
+/// its DMA length register. So the bound is this caller's to keep.
+///
+/// It was two bare `255`s at the call sites with the 256 twenty lines away,
+/// which is a bound held by coincidence rather than by construction: correct
+/// today, and silently wrong the moment either number moves. Same value, now
+/// derived from the buffer it has to fit inside.
+const SLAVE_RECEIVE_MAX: usize = BUFFER_LENGTH - 1;
+
 /// Syscall driver number.
 use crate::driver;
 pub const DRIVER_NUM: usize = driver::NUM::I2cMasterSlave as usize;
@@ -270,7 +283,7 @@ impl<'a, I: hil::i2c::I2CMasterSlave<'a>> hil::i2c::I2CHwSlaveClient
         // we can respond.
         self.slave_buffer1.take().map(|buffer| {
             // TODO verify errors
-            let _ = hil::i2c::I2CSlave::write_receive(self.i2c, buffer, 255);
+            let _ = hil::i2c::I2CSlave::write_receive(self.i2c, buffer, SLAVE_RECEIVE_MAX);
         });
     }
 }
@@ -395,7 +408,7 @@ impl<'a, I: hil::i2c::I2CMasterSlave<'a>> SyscallDriver for I2CMasterSlaveDriver
                 // .map will handle if we have already done this.
                 self.slave_buffer1.take().map(|buffer| {
                     // TODO verify errors
-                    let _ = hil::i2c::I2CSlave::write_receive(self.i2c, buffer, 255);
+                    let _ = hil::i2c::I2CSlave::write_receive(self.i2c, buffer, SLAVE_RECEIVE_MAX);
                 });
 
                 // Actually get things going

@@ -53,6 +53,7 @@ HIL = ROOT / "kernel" / "src" / "hil"
 BASELINE = ROOT / "tools" / "ci" / "hil-error-docs-baseline.txt"
 
 FN = re.compile(r"^\s*(?:pub\s+)?fn\s+\w+")
+TRAIT = re.compile(r"^\s*pub\s+trait\s+\w+")
 # `Result<_, ()>` carries no error code, so there is nothing to enumerate.
 UNIT_ERR = re.compile(r"->\s*Result<[^;{]*,\s*\(\)\s*>")
 
@@ -77,12 +78,34 @@ def local_error_names(src):
     return set(re.findall(r"^\s*([A-Z]\w+)\s*(?:,|\{|\()", m.group(1), re.M))
 
 
+def doc_block_above(lines, i):
+    """The `///` block immediately preceding line `i`, as one string."""
+    k, block = i - 1, []
+    while k >= 0 and (
+        lines[k].strip().startswith("///") or lines[k].strip().startswith("#[")
+    ):
+        block.append(lines[k])
+        k -= 1
+    return "\n".join(block)
+
+
 def scan(path, codes):
-    """Answer (documented, fallible) for one HIL file."""
+    """Answer (documented, fallible) for one HIL file.
+
+    A method counts as documented if its own doc block names an error OR the
+    doc block of the trait it belongs to does. Stating the contract once on
+    the trait and pointing every method at it is better practice than
+    repeating six enumerations that drift apart -- `hil::i2c` does exactly
+    that under "# The transfer contract", and counting only per-method blocks
+    reported it as 0 of 21 when it is one of the best documented files here.
+    """
     lines = path.read_text().split("\n")
     names = codes | local_error_names("\n".join(lines))
     fallible = documented = 0
+    trait_doc = ""
     for i, line in enumerate(lines):
+        if TRAIT.match(line):
+            trait_doc = doc_block_above(lines, i)
         if not FN.match(line):
             continue
         sig, j = line, i
@@ -92,13 +115,7 @@ def scan(path, codes):
         if "-> Result" not in sig or UNIT_ERR.search(sig):
             continue
         fallible += 1
-        k, block = i - 1, []
-        while k >= 0 and (
-            lines[k].strip().startswith("///") or lines[k].strip().startswith("#[")
-        ):
-            block.append(lines[k])
-            k -= 1
-        text = "\n".join(block)
+        text = doc_block_above(lines, i) + "\n" + trait_doc
         if any(re.search(r"\b%s\b" % re.escape(n), text) for n in names):
             documented += 1
     return documented, fallible

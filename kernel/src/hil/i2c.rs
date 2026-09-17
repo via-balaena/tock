@@ -157,6 +157,17 @@ pub trait I2CMaster<'a> {
 /// Interface for an SMBus Master hardware driver.
 /// The device implementing this will also separately implement
 /// I2CMaster.
+/// SMBus variants of the master operations.
+///
+/// The return values mean exactly what [`I2CMaster`]'s do -- same `Ok(())`
+/// promise of one callback, same `Err((error, buffer))` giving the buffer
+/// back with no callback, same three errors. See that trait rather than
+/// repeating them here.
+///
+/// What differs is on the wire, not in the signature: these make whatever
+/// hardware changes SMBus needs and revert them afterwards, as a best effort
+/// against what the controller can actually do. One in-tree implementer,
+/// `apollo3`.
 pub trait SMBusMaster<'a>: I2CMaster<'a> {
     /// Write data then read data via the I2C Master device in an SMBus
     /// compatible way.
@@ -218,6 +229,45 @@ pub trait SMBusMaster<'a>: I2CMaster<'a> {
 }
 
 /// Interface for an I2C Slave hardware driver.
+/// Interface for an I2C Slave hardware driver.
+///
+/// # The slave contract
+///
+/// [`I2CSlave::write_receive`] and [`I2CSlave::read_send`] are asynchronous
+/// and share the shape [`I2CMaster`] uses: on `Ok(())` the hardware is armed
+/// and an [`I2CHwSlaveClient`] callback will follow with the buffer; on
+/// `Err((error, buffer))` nothing was armed, the buffer comes back inside the
+/// error, and **there will be no callback**.
+///
+/// `max_len` indexes `data` and so must be no larger than it, exactly as the
+/// lengths do on the master side, and for the same reason: an implementation
+/// may hand that number to a DMA engine, where a length past the buffer is
+/// read or written outside anything Rust can see. `nrf52` writes it straight
+/// into `MAXCNT`.
+///
+/// - [`Error::Size`]: `max_len` is larger than `data`. MUST be checked before
+///   the buffer reaches the hardware.
+/// - [`Error::Busy`]: the hardware is already armed or a transfer is
+///   outstanding.
+/// - [`Error::NotSupported`]: this controller has no slave mode, or has not
+///   been enabled.
+///
+/// Errors detected once a master has started talking to us arrive in the
+/// client callback, not here.
+///
+/// # No implementation returns any of them today
+///
+/// Both in-tree slave drivers -- `sam4l` and `nrf52` -- answer `Ok(())`
+/// unconditionally from all three fallible methods, so the `Result` is
+/// currently decorative and **the `Size` check above is performed by neither**.
+/// It is stated anyway: it is the rule the master half of this same HIL
+/// already states and enforces, and a caller has no way to discover that its
+/// length was not checked.
+///
+/// What keeps the tree safe meanwhile is arithmetic in the one caller rather
+/// than a check in the drivers. `i2c_master_slave_driver` arms receives with a
+/// length one byte shorter than its own buffer and clamps sends to the
+/// smaller of the app's buffer and its own.
 pub trait I2CSlave<'a> {
     fn set_slave_client(&self, slave_client: &'a dyn I2CHwSlaveClient);
     fn enable(&self);
@@ -238,6 +288,10 @@ pub trait I2CSlave<'a> {
 
 /// Convenience type for capsules that need hardware that supports both
 /// Master and Slave modes.
+/// A controller that can be both master and slave.
+///
+/// A marker with no methods of its own: both contracts apply unchanged, and
+/// which one is in force is whichever call was made.
 pub trait I2CMasterSlave<'a>: I2CMaster<'a> + I2CSlave<'a> {}
 // Provide blanket implementations for trait group
 // impl<T: I2CMaster + I2CSlave> I2CMasterSlave for T {}
@@ -305,6 +359,11 @@ pub trait I2CDevice {
     -> Result<(), (Error, &'static mut [u8])>;
 }
 
+/// SMBus variants of the per-device operations.
+///
+/// The return values mean exactly what [`I2CDevice`]'s do; see that trait.
+/// As with [`SMBusMaster`], what differs is the bus behaviour rather than the
+/// contract.
 pub trait SMBusDevice: I2CDevice {
     /// Write data then read data to a slave device in an SMBus
     /// compatible way.
