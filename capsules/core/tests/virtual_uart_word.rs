@@ -45,10 +45,11 @@ unsafe impl ThreadIdProvider for OneThread {
     }
 }
 
-/// A UART that records what it was asked to do and answers however the test
-/// tells it to, so both the "underlying driver refuses" case (which is what
-/// every driver in the tree actually does) and the "underlying driver
-/// accepts" case can be driven.
+/// A UART that records what it was asked to do and answers on command.
+///
+/// Both cases can be driven: "the underlying driver refuses", which is what
+/// every driver in the tree actually does, and "the underlying driver
+/// accepts", which none of them do.
 struct FakeUart {
     word_calls: Cell<usize>,
     word_result: Cell<Result<(), ErrorCode>>,

@@ -36,6 +36,7 @@ const SRC_BYTES: usize = FRAME_W * FRAME_H / 8;
 const DRAW_CAP: usize = FRAME_W * FRAME_H * 4;
 
 /// A screen that refuses on demand and never completes anything by itself.
+///
 /// The test decides when each callback lands, which is the only way the
 /// callback arrival order under test can be driven deliberately.
 struct FakeScreen {

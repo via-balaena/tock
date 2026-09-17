@@ -406,6 +406,18 @@ ci-job-readme-check:
 ci-job-clippy:
 	$(call banner,CI-Job: Clippy)
 	@cargo clippy -- -D warnings
+	# `cargo clippy` without `--all-targets` lints the libs and bins and NOT
+	# the integration tests, so everything under `capsules/*/tests/` was
+	# never linted at all. Two `too_long_first_doc_paragraph` errors were
+	# sitting in there, in files that pass `cargo test` and always have.
+	#
+	# Targeted at the crates that have a `tests/` directory rather than
+	# passed to the workspace, because `--all-targets` at the root also
+	# builds every board crate as a host test binary, where `io.rs`'s panic
+	# handler imports are unused and about twenty warnings appear that mean
+	# nothing. The hole and the noise are both in the seam between what a
+	# flag covers and what a crate is for.
+	@cargo clippy -p capsules-core -p capsules-extra --all-targets -- -D warnings
 	# Run `cargo clippy` in select boards so we run clippy with targets that
 	# actually check the arch-specific functions.
 	# 
