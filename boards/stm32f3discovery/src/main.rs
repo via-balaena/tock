@@ -730,6 +730,28 @@ unsafe fn start() -> (
     let adc_mux = components::adc::AdcMuxComponent::new(&peripherals.adc1)
         .finalize(components::adc_mux_component_static!(stm32f303xc::adc::Adc));
 
+    // The `hil::adc` conformance test, the same one the RP2350 runs. Nothing
+    // needs to be wired: every clause is about what the driver does with a
+    // request rather than what voltage is on the pin.
+    //
+    // A second chip is the point. The clauses are about the HIL, not about
+    // this board, and a contract test that has only ever run against one
+    // implementation has not been shown to be about the contract at all.
+    #[cfg(feature = "adc_contract_test")]
+    {
+        use capsules_core::test::adc_contract::TestAdcContract;
+        use kernel::deferred_call::DeferredCallClient;
+        use kernel::hil::adc::Adc;
+
+        let adc_contract = static_init!(
+            TestAdcContract<stm32f303xc::adc::Adc>,
+            TestAdcContract::new(&peripherals.adc1, stm32f303xc::adc::Channel::Channel1)
+        );
+        Adc::set_client(&peripherals.adc1, adc_contract);
+        adc_contract.register();
+        adc_contract.run();
+    }
+
     // Uncomment this if you want to use ADC MCU temp sensor
     // let temp_sensor = components::temperature_stm::TemperatureSTMComponent::new(4.3, 1.43)
     //     .finalize(components::temperaturestm_adc_component_static!(

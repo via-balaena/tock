@@ -96,13 +96,22 @@ impl<'a, A: Adc<'a>> TestAdcContract<'a, A> {
             self.adc.get_voltage_reference_mv() != Some(0),
         );
 
-        // Clause 3: stopping an ADC that is not sampling is not an error. The
+        // Clause 3: stopping an ADC that is not sampling is not a retry. The
         // promise is that no further callbacks occur, and that already holds
-        // when idle -- a caller stopping an ADC it is unsure about, which is
-        // what this method is for, should not have to know which it is.
+        // when nothing is running -- a caller stopping an ADC it is unsure
+        // about, which is what this method is for, should not have to know
+        // which state it is in.
+        //
+        // `OFF` counts: the HIL enumerates it for an ADC that is not powered,
+        // and whether one is powered at boot is a board's choice, not the
+        // driver's. This clause asserted `Ok` alone until it ran on a second
+        // chip whose board brings the ADC up lazily -- the assumption was the
+        // test's, not the driver's. What is still forbidden is `BUSY`, which
+        // asks the caller to retry something nothing will change.
+        let stopped = self.adc.stop_sampling();
         self.check(
-            "stop_sampling when idle is Ok",
-            self.adc.stop_sampling() == Ok(()),
+            "stop_sampling when not running is Ok or OFF, never BUSY",
+            stopped == Ok(()) || stopped == Err(ErrorCode::OFF),
         );
 
         // Clause 4: a second sample while one is in flight is refused, rather

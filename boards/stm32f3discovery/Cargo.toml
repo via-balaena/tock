@@ -20,6 +20,9 @@ capsules-extra = { path = "../../capsules/extra" }
 capsules-system = { path = "../../capsules/system" }
 
 [features]
+# Run the hil::adc conformance test at boot. Takes the ADC client back from
+# the mux, so the app-facing ADC driver receives nothing while it is on.
+adc_contract_test = []
 # Run the hil::uart conformance test on USART2 at boot and print the result.
 # USART1 carries the console over the ST-LINK virtual COM port; USART2 has
 # its clock and NVIC enabled and is otherwise unused.
